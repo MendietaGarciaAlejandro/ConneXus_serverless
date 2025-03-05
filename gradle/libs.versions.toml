@@ -22,6 +22,7 @@ kotlinxCrypto = "0.1.0"
 firebaseFirestoreKtx = "25.1.2"
 kotlinxDatetime = "0.6.0"
 decompose = "0.8.0"
+navigation-compose = "2.8.0-alpha10"
 
 [libraries]
 core = { module = "kotlinx.io.core:core", version.ref = "core" }
@@ -43,7 +44,7 @@ firebase-firestore-ktx = { group = "com.google.firebase", name = "firebase-fires
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinxDatetime" }
 decompose = { module = "com.arkivanov.decompose:decompose", version.ref = "decompose" }
 decompose-compose = { module = "com.arkivanov.decompose:extensions-compose-jetpack", version.ref = "decompose" }
-
+navigation-compose = { module = "org.jetbrains.androidx.navigation:navigation-compose", version.ref = "navigation-compose" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
