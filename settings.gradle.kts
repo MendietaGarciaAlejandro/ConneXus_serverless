@@ -13,6 +13,7 @@ pluginManagement {
         mavenCentral()
         gradlePluginPortal()
         maven { url = uri("https://maven.pkg.jetbrains.space/public/p/compose/dev") }
+        maven("https://repo.repsy.io/mvn/arkivanov/public") // Repositorio de Arkivanov
     }
 }
 

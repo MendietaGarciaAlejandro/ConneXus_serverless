@@ -50,8 +50,9 @@ kotlin {
         androidMain.dependencies {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
-            implementation("com.arkivanov.decompose:decompose:0.8.0")
-            implementation("com.arkivanov.decompose:extensions-compose-jetpack:0.8.0")
+            implementation(libs.arkivanov.decompose.v080)
+            implementation(libs.decompose.extensions.compose.jetpack.v080)
+            //implementation(libs.decompose)
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -63,14 +64,16 @@ kotlin {
             implementation(libs.androidx.lifecycle.viewmodel)
             implementation(libs.androidx.lifecycle.runtime.compose)
             implementation(libs.kotlinx.datetime)
-            implementation("org.jetbrains.androidx.navigation:navigation-compose:2.8.0-alpha10")
             implementation(libs.navigation.compose)
+            implementation(libs.navigation.compose)
+            //implementation(libs.decompose.jetbrains)
+            //implementation(libs.decompose)
         }
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutines.swing)
-            implementation("com.arkivanov.decompose:decompose:0.8.0")
-            implementation("com.arkivanov.decompose:extensions-compose-jetpack:0.8.0")
+            implementation(libs.arkivanov.decompose.v080)
+            implementation(libs.decompose.extensions.compose.jetpack.v080)
         }
         wasmJsMain.dependencies {
             //implementation("org.jetbrains.compose.web:compose-web-router:1.0.0-beta6")

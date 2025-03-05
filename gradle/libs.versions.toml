@@ -11,8 +11,10 @@ androidx-espresso-core = "3.6.1"
 androidx-lifecycle = "2.8.4"
 androidx-material = "1.12.0"
 androidx-test-junit = "1.2.1"
+arkivanovDecompose = "0.8.0"
 compose-multiplatform = "1.7.0"
 core = "0.1.0"
+extensionsComposeJetpackVersion = "0.8.0"
 identityCrypto = "1.0.0"
 junit = "4.13.2"
 kotlin = "2.1.0"
@@ -21,11 +23,14 @@ identityJvm = "202411.1"
 kotlinxCrypto = "0.1.0"
 firebaseFirestoreKtx = "25.1.2"
 kotlinxDatetime = "0.6.0"
-decompose = "0.8.0"
+decompose = "2.2.0-alpha03"
 navigation-compose = "2.8.0-alpha10"
+extensionsComposeJetbrains = "2.2.0-alpha03"
 
 [libraries]
+arkivanov-decompose-v080 = { module = "com.arkivanov.decompose:decompose", version.ref = "arkivanovDecompose" }
 core = { module = "kotlinx.io.core:core", version.ref = "core" }
+decompose-extensions-compose-jetpack-v080 = { module = "com.arkivanov.decompose:extensions-compose-jetpack", version.ref = "extensionsComposeJetpackVersion" }
 identity-crypto = { module = "com.android.identity:identity-crypto", version.ref = "identityCrypto" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
@@ -45,6 +50,7 @@ kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.
 decompose = { module = "com.arkivanov.decompose:decompose", version.ref = "decompose" }
 decompose-compose = { module = "com.arkivanov.decompose:extensions-compose-jetpack", version.ref = "decompose" }
 navigation-compose = { module = "org.jetbrains.androidx.navigation:navigation-compose", version.ref = "navigation-compose" }
+decompose-jetbrains = { module = "com.arkivanov.decompose:extensions-jetbrains-compose", version.ref = "extensionsComposeJetbrains" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
