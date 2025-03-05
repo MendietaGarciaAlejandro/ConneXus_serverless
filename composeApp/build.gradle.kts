@@ -53,6 +53,7 @@ kotlin {
             implementation(libs.arkivanov.decompose.v080)
             implementation(libs.decompose.extensions.compose.jetpack.v080)
             //implementation(libs.decompose)
+            implementation(libs.kotlinx.serialization)
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -68,6 +69,7 @@ kotlin {
             implementation(libs.navigation.compose)
             //implementation(libs.decompose.jetbrains)
             //implementation(libs.decompose)
+            implementation(libs.kotlinx.serialization)
         }
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
@@ -77,6 +79,7 @@ kotlin {
         }
         wasmJsMain.dependencies {
             //implementation("org.jetbrains.compose.web:compose-web-router:1.0.0-beta6")
+            implementation(libs.kotlinx.serialization)
         }
     }
 }
