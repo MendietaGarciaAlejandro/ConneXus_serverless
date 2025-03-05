@@ -98,7 +98,7 @@ fun muestraUsuarios(navController: NavHostController) {
             }
         }
     }
-    navController.navigate("usuarios")
+    //navController.navigate("usuarios")
 }
 
 // --- Pantalla Registro ---
@@ -175,7 +175,7 @@ fun pantallaRegistro(navController: NavHostController) {
             }
         }
     }
-    navController.navigate("registro")
+    //navController.navigate("registro")
 }
 
 // --- Pantalla Login ---
@@ -217,7 +217,8 @@ fun pantallaLogin(navController: NavHostController) {
                 Spacer(modifier = Modifier.height(16.dp))
                 Button(
                     onClick = {
-                        // Implementar lógica de inicio de sesión
+                        // Lógica de autenticación...
+                        // Si es correcto -> navController.navigate("home") u otra ruta
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -225,13 +226,17 @@ fun pantallaLogin(navController: NavHostController) {
                 }
                 if (errorMessage.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text(errorMessage, color = MaterialTheme.colors.error, textAlign = TextAlign.Center)
+                    Text(
+                        errorMessage,
+                        color = MaterialTheme.colors.error,
+                        textAlign = TextAlign.Center
+                    )
                 }
             }
         }
     }
-    navController.navigate("login")
 }
+
 
 // --- Restablecer Contraseña ---
 @Composable
@@ -276,7 +281,7 @@ fun restableceContrasenna(navController: NavHostController) {
             }
         }
     }
-    navController.navigate("restablecer")
+    //navController.navigate("restablecer")
 }
 
 // --- Home Page ---
@@ -297,23 +302,47 @@ fun muestraHomePage(navController: NavHostController) {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Button(onClick = { /* Nuevo Chat */ }, modifier = Modifier.fillMaxWidth()) {
-                    Text("Nuevo Chat")
+                Button(
+                    onClick = {
+                        // Aquí sí se hace la navegación cuando el usuario pulsa el botón
+                        navController.navigate("login")
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Ir a Login")
                 }
-                Button(onClick = { /* Ver Chats */ }, modifier = Modifier.fillMaxWidth()) {
-                    Text("Ver Chats")
+
+                Button(
+                    onClick = {
+                        navController.navigate("registro")
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Ir a Registro")
                 }
-                Button(onClick = { /* Ver Contactos */ }, modifier = Modifier.fillMaxWidth()) {
+
+                Button(
+                    onClick = {
+                        navController.navigate("contactos")
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
                     Text("Contactos")
                 }
-                Button(onClick = { /* Ajustes */ }, modifier = Modifier.fillMaxWidth()) {
+
+                Button(
+                    onClick = {
+                        navController.navigate("ajustes")
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
                     Text("Ajustes")
                 }
             }
         }
     }
-    navController.navigate("home")
 }
+
 
 // --- Contactos ---
 @Composable
@@ -362,7 +391,7 @@ fun muestraContactos(navController: NavHostController) {
             }
         }
     }
-    navController.navigate("contactos")
+    //navController.navigate("contactos")
 }
 
 // --- Ajustes ---
@@ -393,5 +422,5 @@ fun muestraAjustes(navController: NavHostController) {
             }
         }
     }
-    navController.navigate("ajustes")
+    //navController.navigate("ajustes")
 }
