@@ -454,12 +454,14 @@ fun SplashScreen(navController: NavHostController) {
                 contentAlignment = Alignment.Center
             ) {
                 // Muestra el ícono de la app en el centro
+                /*
                 Image(
                     painter = painterResource(
-                        resource = "drawable/connexus.webp"
+                        resource = Res.
                     ),
                     contentDescription = "Ícono de la aplicación"
                 )
+                 */
             }
         }
     }
