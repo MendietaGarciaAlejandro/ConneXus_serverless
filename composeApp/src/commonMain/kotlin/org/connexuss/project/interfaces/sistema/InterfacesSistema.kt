@@ -13,11 +13,15 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.Button
 import androidx.compose.material.Card
+import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
 import androidx.compose.material.TopAppBar
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -37,8 +41,23 @@ import org.connexuss.project.usuario.Usuario
 import org.connexuss.project.usuario.UtilidadesUsuario
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
+@Composable
+fun DefaultTopBar(title: String, navController: NavHostController? = null, showBackButton: Boolean = false) {
+    TopAppBar(
+        title = { Text(title) },
+        navigationIcon = if (showBackButton && navController != null) {
+            {
+                IconButton(onClick = { navController.popBackStack() }) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás")
+                }
+            }
+        } else null
+    )
+}
+
 // --- Muestra Usuarios ---
 @Composable
+@Preview
 fun muestraUsuarios(navController: NavHostController) {
     val almacenamientoUsuario = remember { AlmacenamientoUsuario() }
     val usuarios = remember { mutableStateListOf<Usuario>() }
@@ -61,7 +80,8 @@ fun muestraUsuarios(navController: NavHostController) {
     MaterialTheme {
         Scaffold(
             topBar = {
-                TopAppBar(title = { Text("Usuarios") })
+                // Se muestra el botón de retroceso en esta pantalla
+                DefaultTopBar(title = "Usuarios", navController = navController, showBackButton = true)
             }
         ) { padding ->
             Column(
@@ -89,7 +109,6 @@ fun muestraUsuarios(navController: NavHostController) {
                                     Text("Alias: ${usuario.getAlias()}", style = MaterialTheme.typography.body1)
                                     Text("Activo: ${usuario.getActivo()}", style = MaterialTheme.typography.body2)
                                     Spacer(modifier = Modifier.height(8.dp))
-                                    // Puedes agregar aquí más detalles o acciones
                                 }
                             }
                         }
@@ -98,7 +117,6 @@ fun muestraUsuarios(navController: NavHostController) {
             }
         }
     }
-    //navController.navigate("usuarios")
 }
 
 // --- Pantalla Registro ---
@@ -114,7 +132,8 @@ fun pantallaRegistro(navController: NavHostController) {
     MaterialTheme {
         Scaffold(
             topBar = {
-                TopAppBar(title = { Text("Registro") })
+                // Aquí se muestra el botón de retroceso
+                DefaultTopBar(title = "Registro", navController = navController, showBackButton = true)
             }
         ) { padding ->
             Column(
@@ -158,7 +177,7 @@ fun pantallaRegistro(navController: NavHostController) {
                 Button(
                     onClick = {
                         errorMessage = if (password == confirmPassword && password.isNotBlank()) {
-                            // Aquí iría la lógica real de registro
+                            // Lógica real de registro
                             ""
                         } else {
                             "Las contraseñas no coinciden o están vacías"
@@ -175,7 +194,6 @@ fun pantallaRegistro(navController: NavHostController) {
             }
         }
     }
-    //navController.navigate("registro")
 }
 
 // --- Pantalla Login ---
@@ -189,7 +207,7 @@ fun pantallaLogin(navController: NavHostController) {
     MaterialTheme {
         Scaffold(
             topBar = {
-                TopAppBar(title = { Text("Iniciar Sesión") })
+                DefaultTopBar(title = "Iniciar Sesión", navController = navController, showBackButton = true)
             }
         ) { padding ->
             Column(
@@ -218,7 +236,6 @@ fun pantallaLogin(navController: NavHostController) {
                 Button(
                     onClick = {
                         // Lógica de autenticación...
-                        // Si es correcto -> navController.navigate("home") u otra ruta
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -226,17 +243,12 @@ fun pantallaLogin(navController: NavHostController) {
                 }
                 if (errorMessage.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        errorMessage,
-                        color = MaterialTheme.colors.error,
-                        textAlign = TextAlign.Center
-                    )
+                    Text(errorMessage, color = MaterialTheme.colors.error, textAlign = TextAlign.Center)
                 }
             }
         }
     }
 }
-
 
 // --- Restablecer Contraseña ---
 @Composable
@@ -248,7 +260,7 @@ fun restableceContrasenna(navController: NavHostController) {
     MaterialTheme {
         Scaffold(
             topBar = {
-                TopAppBar(title = { Text("Restablecer Contraseña") })
+                DefaultTopBar(title = "Restablecer Contraseña", navController = navController, showBackButton = true)
             }
         ) { padding ->
             Column(
@@ -281,68 +293,7 @@ fun restableceContrasenna(navController: NavHostController) {
             }
         }
     }
-    //navController.navigate("restablecer")
 }
-
-// --- Home Page ---
-@Composable
-@Preview
-fun muestraHomePage(navController: NavHostController) {
-    MaterialTheme {
-        Scaffold(
-            topBar = {
-                TopAppBar(title = { Text("ConneXus") })
-            }
-        ) { padding ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                Button(
-                    onClick = {
-                        // Aquí sí se hace la navegación cuando el usuario pulsa el botón
-                        navController.navigate("login")
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Ir a Login")
-                }
-
-                Button(
-                    onClick = {
-                        navController.navigate("registro")
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Ir a Registro")
-                }
-
-                Button(
-                    onClick = {
-                        navController.navigate("contactos")
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Contactos")
-                }
-
-                Button(
-                    onClick = {
-                        navController.navigate("ajustes")
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Ajustes")
-                }
-            }
-        }
-    }
-}
-
 
 // --- Contactos ---
 @Composable
@@ -367,7 +318,9 @@ fun muestraContactos(navController: NavHostController) {
 
     MaterialTheme {
         Scaffold(
-            topBar = { TopAppBar(title = { Text("Contactos") }) }
+            topBar = {
+                DefaultTopBar(title = "Contactos", navController = navController, showBackButton = true)
+            }
         ) { padding ->
             LazyColumn(
                 modifier = Modifier
@@ -391,7 +344,6 @@ fun muestraContactos(navController: NavHostController) {
             }
         }
     }
-    //navController.navigate("contactos")
 }
 
 // --- Ajustes ---
@@ -400,7 +352,9 @@ fun muestraContactos(navController: NavHostController) {
 fun muestraAjustes(navController: NavHostController) {
     MaterialTheme {
         Scaffold(
-            topBar = { TopAppBar(title = { Text("Ajustes") }) }
+            topBar = {
+                DefaultTopBar(title = "Ajustes", navController = navController, showBackButton = true)
+            }
         ) { padding ->
             Column(
                 modifier = Modifier
@@ -422,5 +376,58 @@ fun muestraAjustes(navController: NavHostController) {
             }
         }
     }
-    //navController.navigate("ajustes")
+}
+
+// --- Home Page ---
+// En la HomePage NO se muestra el botón de retroceso.
+@Composable
+@Preview
+fun muestraHomePage(navController: NavHostController) {
+    MaterialTheme {
+        Scaffold(
+            topBar = {
+                DefaultTopBar(title = "ConneXus", navController = navController, showBackButton = false)
+            }
+        ) { padding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Button(
+                    onClick = { navController.navigate("login") },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Ir a Login")
+                }
+                Button(
+                    onClick = { navController.navigate("registro") },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Ir a Registro")
+                }
+                Button(
+                    onClick = { navController.navigate("contactos") },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Contactos")
+                }
+                Button(
+                    onClick = { navController.navigate("ajustes") },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Ajustes")
+                }
+                Button(
+                    onClick = { navController.navigate("usuarios") },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Usuarios")
+                }
+            }
+        }
+    }
 }
