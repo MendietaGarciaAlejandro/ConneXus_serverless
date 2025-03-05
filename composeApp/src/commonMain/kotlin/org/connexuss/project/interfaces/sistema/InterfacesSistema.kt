@@ -202,7 +202,7 @@ fun pantallaRegistro(navController: NavHostController) {
 fun pantallaLogin(navController: NavHostController) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var errorMessage by remember { mutableStateOf("") }
+    val errorMessage by remember { mutableStateOf("") }
 
     MaterialTheme {
         Scaffold(
@@ -255,7 +255,7 @@ fun pantallaLogin(navController: NavHostController) {
 @Preview
 fun restableceContrasenna(navController: NavHostController) {
     var email by remember { mutableStateOf("") }
-    var errorMessage by remember { mutableStateOf("") }
+    val errorMessage by remember { mutableStateOf("") }
 
     MaterialTheme {
         Scaffold(
