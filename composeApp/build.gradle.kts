@@ -75,7 +75,8 @@ kotlin {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutines.swing)
             implementation(libs.arkivanov.decompose.v080)
-            implementation(libs.decompose.extensions.compose.jetpack.v080)
+            //implementation(libs.decompose.extensions.compose.jetpack.v080)
+            implementation(libs.decompose.jetbrains)
         }
         wasmJsMain.dependencies {
             //implementation("org.jetbrains.compose.web:compose-web-router:1.0.0-beta6")
