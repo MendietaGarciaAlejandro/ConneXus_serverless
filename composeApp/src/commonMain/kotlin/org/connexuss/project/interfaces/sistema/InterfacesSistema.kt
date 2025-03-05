@@ -31,6 +31,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
 import org.connexuss.project.usuario.AlmacenamientoUsuario
 import org.connexuss.project.usuario.Usuario
 import org.connexuss.project.usuario.UtilidadesUsuario
@@ -38,7 +39,7 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 
 // --- Muestra Usuarios ---
 @Composable
-fun muestraUsuarios() {
+fun muestraUsuarios(navController: NavHostController) {
     val almacenamientoUsuario = remember { AlmacenamientoUsuario() }
     val usuarios = remember { mutableStateListOf<Usuario>() }
     var showContent by remember { mutableStateOf(false) }
@@ -97,12 +98,13 @@ fun muestraUsuarios() {
             }
         }
     }
+    navController.navigate("usuarios")
 }
 
 // --- Pantalla Registro ---
 @Composable
 @Preview
-fun pantallaRegistro() {
+fun pantallaRegistro(navController: NavHostController) {
     var nombre by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -173,12 +175,13 @@ fun pantallaRegistro() {
             }
         }
     }
+    navController.navigate("registro")
 }
 
 // --- Pantalla Login ---
 @Composable
 @Preview
-fun pantallaLogin() {
+fun pantallaLogin(navController: NavHostController) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
@@ -227,12 +230,13 @@ fun pantallaLogin() {
             }
         }
     }
+    navController.navigate("login")
 }
 
 // --- Restablecer Contraseña ---
 @Composable
 @Preview
-fun restableceContrasenna() {
+fun restableceContrasenna(navController: NavHostController) {
     var email by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
 
@@ -272,12 +276,13 @@ fun restableceContrasenna() {
             }
         }
     }
+    navController.navigate("restablecer")
 }
 
 // --- Home Page ---
 @Composable
 @Preview
-fun muestraHomePage() {
+fun muestraHomePage(navController: NavHostController) {
     MaterialTheme {
         Scaffold(
             topBar = {
@@ -307,12 +312,13 @@ fun muestraHomePage() {
             }
         }
     }
+    navController.navigate("home")
 }
 
 // --- Contactos ---
 @Composable
 @Preview
-fun muestraContactos() {
+fun muestraContactos(navController: NavHostController) {
     val almacenamientoUsuario = remember { AlmacenamientoUsuario() }
     val usuarios = remember { mutableStateListOf<Usuario>() }
 
@@ -356,12 +362,13 @@ fun muestraContactos() {
             }
         }
     }
+    navController.navigate("contactos")
 }
 
 // --- Ajustes ---
 @Composable
 @Preview
-fun muestraAjustes() {
+fun muestraAjustes(navController: NavHostController) {
     MaterialTheme {
         Scaffold(
             topBar = { TopAppBar(title = { Text("Ajustes") }) }
@@ -386,4 +393,5 @@ fun muestraAjustes() {
             }
         }
     }
+    navController.navigate("ajustes")
 }

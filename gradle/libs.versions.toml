@@ -21,6 +21,7 @@ identityJvm = "202411.1"
 kotlinxCrypto = "0.1.0"
 firebaseFirestoreKtx = "25.1.2"
 kotlinxDatetime = "0.6.0"
+decompose = "0.8.0"
 
 [libraries]
 core = { module = "kotlinx.io.core:core", version.ref = "core" }
@@ -40,6 +41,9 @@ androidx-lifecycle-runtime-compose = { group = "org.jetbrains.androidx.lifecycle
 kotlinx-coroutines-swing = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-swing", version.ref = "kotlinx-coroutines" }
 firebase-firestore-ktx = { group = "com.google.firebase", name = "firebase-firestore-ktx", version.ref = "firebaseFirestoreKtx" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinxDatetime" }
+decompose = { module = "com.arkivanov.decompose:decompose", version.ref = "decompose" }
+decompose-compose = { module = "com.arkivanov.decompose:extensions-compose-jetpack", version.ref = "decompose" }
+
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
