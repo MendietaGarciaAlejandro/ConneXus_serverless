@@ -1,7 +1,9 @@
 package org.connexuss.project.interfaces.sistema
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -36,9 +38,11 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import kotlinx.coroutines.delay
 import org.connexuss.project.usuario.AlmacenamientoUsuario
 import org.connexuss.project.usuario.Usuario
 import org.connexuss.project.usuario.UtilidadesUsuario
+import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
@@ -427,6 +431,35 @@ fun muestraHomePage(navController: NavHostController) {
                 ) {
                     Text("Usuarios")
                 }
+            }
+        }
+    }
+}
+
+// --- SpashScreen ---
+@Composable
+fun SplashScreen(navController: NavHostController) {
+    // Efecto para esperar 2 segundos y navegar a "home"
+    LaunchedEffect(Unit) {
+        delay(2000)
+        navController.navigate("home") {
+            popUpTo("splash") { inclusive = true }
+        }
+    }
+
+    MaterialTheme {
+        Scaffold {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                // Muestra el ícono de la app en el centro
+                Image(
+                    painter = painterResource(
+                        resource = "drawable/connexus.webp"
+                    ),
+                    contentDescription = "Ícono de la aplicación"
+                )
             }
         }
     }

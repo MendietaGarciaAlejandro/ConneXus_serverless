@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import org.connexuss.project.interfaces.sistema.SplashScreen
 import org.connexuss.project.interfaces.sistema.muestraAjustes
 import org.connexuss.project.interfaces.sistema.muestraContactos
 import org.connexuss.project.interfaces.sistema.muestraHomePage
@@ -16,7 +17,10 @@ import org.connexuss.project.interfaces.sistema.restableceContrasenna
 @Composable
 fun Navegacion() {
     val navController = rememberNavController()
-    NavHost(navController = navController, startDestination = "home") {
+    NavHost(navController = navController, startDestination = "splash") {
+        composable("splash") {
+            SplashScreen(navController)
+        }
         composable("home") {
             muestraHomePage(navController)
         }
