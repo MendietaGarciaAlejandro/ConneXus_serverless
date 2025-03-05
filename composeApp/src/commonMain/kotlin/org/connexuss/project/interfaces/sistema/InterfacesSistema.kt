@@ -38,6 +38,8 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import connexus_serverless.composeapp.generated.resources.Res
+import connexus_serverless.composeapp.generated.resources.connexus
 import kotlinx.coroutines.delay
 import org.connexuss.project.usuario.AlmacenamientoUsuario
 import org.connexuss.project.usuario.Usuario
@@ -454,14 +456,11 @@ fun SplashScreen(navController: NavHostController) {
                 contentAlignment = Alignment.Center
             ) {
                 // Muestra el ícono de la app en el centro
-                /*
                 Image(
-                    painter = painterResource(
-                        resource = Res.
+                    painter = painterResource(Res.drawable.connexus
                     ),
                     contentDescription = "Ícono de la aplicación"
                 )
-                 */
             }
         }
     }
