@@ -5,6 +5,8 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import org.connexuss.project.interfaces.ajustes.PantallaAjustesAyuda
+import org.connexuss.project.interfaces.ajustes.PantallaAjustesControlCuentas
 import org.connexuss.project.interfaces.sistema.*
 
 @Composable
@@ -43,6 +45,12 @@ fun Navegacion() {
         }
         composable("emailNoEnSistema") {
             PantallaEmailNoEnElSistema(navController)
+        }
+        composable("ajustesControlCuentas") {
+            PantallaAjustesControlCuentas(navController)
+        }
+        composable("ajustesAyuda") {
+            PantallaAjustesAyuda(navController)
         }
     }
 }

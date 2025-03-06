@@ -1039,6 +1039,23 @@ fun PantallaLogin(navController: NavHostController) {
                         ) {
                             Text("Acceder")
                         }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Button(
+                                onClick = { navController.navigate("ajustesControlCuentas") },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text("Debug: Ajustes control cuentas")
+                            }
+                            Button(
+                                onClick = { navController.navigate("ajustesAyuda") },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text("Debug: Ajustes ayuda/FAQ")
+                            }
+                        }
                         if (errorMessage.isNotEmpty()) {
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
