@@ -2,14 +2,17 @@ package org.connexuss.project.interfaces.sistema
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
@@ -50,7 +53,11 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 @Composable
 fun DefaultTopBar(title: String, navController: NavHostController? = null, showBackButton: Boolean = false) {
     TopAppBar(
-        title = { Text(title) },
+        title = {
+            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                Text(title)
+            }
+        },
         navigationIcon = if (showBackButton && navController != null) {
             {
                 IconButton(onClick = { navController.popBackStack() }) {
@@ -570,6 +577,307 @@ fun SplashScreen(navController: NavHostController) {
                     ),
                     contentDescription = "Ícono de la aplicación"
                 )
+            }
+        }
+    }
+}
+
+//--------------------------------------------------
+
+
+// Si el email NO está en el sistema
+@Composable
+fun PantallaEmailNoEnElSistema(navController: NavHostController) {
+    MaterialTheme {
+        Scaffold(
+            topBar = {
+                DefaultTopBar(title = "Email no existe", navController = navController, showBackButton = true)
+            }
+        ) { padding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Image(
+                    painter = painterResource(Res.drawable.connexus),
+                    contentDescription = "Ícono de la aplicación",
+                    modifier = Modifier.size(100.dp)
+                )
+                Text("La dirección de correo no está registrada.", style = MaterialTheme.typography.h6)
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("Verifica que hayas escrito bien tu correo o regístrate.")
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(onClick = { navController.navigate("registro") }) {
+                    Text("Ir a Registro")
+                }
+            }
+        }
+    }
+}
+
+// Si el email está en el sistema
+@Composable
+fun PantallaEmailEnElSistema(navController: NavHostController) {
+    MaterialTheme {
+        Scaffold(
+            topBar = {
+                DefaultTopBar(title = "Email en el Sistema", navController = navController, showBackButton = true)
+            }
+        ) { padding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Image(
+                    painter = painterResource(Res.drawable.connexus),
+                    contentDescription = "Ícono de la aplicación",
+                    modifier = Modifier.size(100.dp)
+                )
+                Text("El correo está registrado en el sistema.", style = MaterialTheme.typography.h6)
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("Se ha enviado un enlace para restablecer la contraseña a tu correo.")
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(onClick = { navController.navigate("login") }) {
+                    Text("Volver al Login")
+                }
+            }
+        }
+    }
+}
+
+// Pantalla de Restablecer Contraseña
+@Composable
+fun PantallaRestablecer(navController: NavHostController) {
+    var email by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf("") }
+
+    MaterialTheme {
+        Scaffold(
+            topBar = {
+                DefaultTopBar(title = "Restablecer Contraseña", navController = navController, showBackButton = true)
+            }
+        ) { padding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Image(
+                    painter = painterResource(Res.drawable.connexus),
+                    contentDescription = "Ícono de la aplicación",
+                    modifier = Modifier.size(100.dp)
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                OutlinedTextField(
+                    value = email,
+                    onValueChange = { email = it },
+                    label = { Text("Email") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(
+                    onClick = {
+                        if (email.isNotBlank()) {
+                            // Lógica para enviar el correo de restablecimiento
+                            // Podríamos verificar si el email está o no en el sistema
+                            // navController.navigate("restablecer_ok") o "restablecer_fail"
+                            errorMessage = ""
+                        } else {
+                            errorMessage = "Debes ingresar un correo"
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Enviar Correo")
+                }
+                if (errorMessage.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(errorMessage, color = MaterialTheme.colors.error, textAlign = TextAlign.Center)
+                }
+            }
+        }
+    }
+}
+
+// Pantalla de Registro nuevo
+@Composable
+fun PantallaRegistro(navController: NavHostController) {
+    var nombre by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf("") }
+
+    MaterialTheme {
+        Scaffold(
+            topBar = {
+                DefaultTopBar(title = "Registro", navController = navController, showBackButton = true)
+            }
+        ) { padding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Image(
+                    painter = painterResource(Res.drawable.connexus),
+                    contentDescription = "Ícono de la aplicación",
+                    modifier = Modifier.size(100.dp)
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                OutlinedTextField(
+                    value = nombre,
+                    onValueChange = { nombre = it },
+                    label = { Text("Nombre") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = email,
+                    onValueChange = { email = it },
+                    label = { Text("Email") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text("Contraseña") },
+                    visualTransformation = PasswordVisualTransformation(),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = confirmPassword,
+                    onValueChange = { confirmPassword = it },
+                    label = { Text("Confirmar Contraseña") },
+                    visualTransformation = PasswordVisualTransformation(),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(
+                    onClick = {
+                        if (password == confirmPassword && password.isNotBlank()) {
+                            // Lógica real de registro
+                            errorMessage = ""
+                            // navController.navigate("login")
+                        } else {
+                            errorMessage = "Las contraseñas no coinciden o están vacías"
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Registrar")
+                }
+                if (errorMessage.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(errorMessage, color = MaterialTheme.colors.error, textAlign = TextAlign.Center)
+                }
+            }
+        }
+    }
+}
+
+// Pantalla de Login nuevo
+@Composable
+fun PantallaLogin(navController: NavHostController) {
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf("") }
+
+    MaterialTheme {
+        Scaffold(
+            topBar = {
+                DefaultTopBar(title = "Login", navController = navController, showBackButton = true)
+            }
+        ) { padding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Imagen de la aplicación (100dp x 100dp)
+                Image(
+                    painter = painterResource(Res.drawable.connexus),
+                    contentDescription = "Ícono de la aplicación",
+                    modifier = Modifier.size(100.dp)
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                OutlinedTextField(
+                    value = email,
+                    onValueChange = { email = it },
+                    label = { Text("Email") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text("Contraseña") },
+                    visualTransformation = PasswordVisualTransformation(),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                // Dos botones horizontales: "¿Olvidaste tu contraseña?" y "Registrarse"
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Button(
+                        onClick = { navController.navigate("restablecer") },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("¿Olvidaste tu contraseña?")
+                    }
+                    Button(
+                        onClick = { navController.navigate("registro") },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Registrarse")
+                    }
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                // Botón vertical "Acceder"
+                Button(
+                    onClick = {
+                        if (email.isNotBlank() && password.isNotBlank()) {
+                            errorMessage = ""
+                            // Aquí iría la lógica real de autenticación
+                            // navController.navigate("home")
+                        } else {
+                            errorMessage = "Debes completar ambos campos"
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Acceder")
+                }
+                if (errorMessage.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        errorMessage,
+                        color = MaterialTheme.colors.error,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
         }
     }
