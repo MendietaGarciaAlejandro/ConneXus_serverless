@@ -2,7 +2,6 @@ package org.connexuss.project.interfaces.sistema
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -44,6 +43,7 @@ import androidx.navigation.NavHostController
 import connexus_serverless.composeapp.generated.resources.Res
 import connexus_serverless.composeapp.generated.resources.connexus
 import kotlinx.coroutines.delay
+import org.connexuss.project.interfaces.modificadorTamannio.LimitaTamanioAncho
 import org.connexuss.project.usuario.AlmacenamientoUsuario
 import org.connexuss.project.usuario.Usuario
 import org.connexuss.project.usuario.UtilidadesUsuario
@@ -97,31 +97,47 @@ fun muestraUsuarios(navController: NavHostController) {
                 DefaultTopBar(title = "Usuarios", navController = navController, showBackButton = true)
             }
         ) { padding ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center // Centrar contenido en pantallas grandes
             ) {
-                Button(onClick = { showContent = !showContent }) {
-                    Text("Mostrar Usuarios")
-                }
-                Spacer(modifier = Modifier.height(16.dp))
-                AnimatedVisibility(visible = showContent) {
-                    LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                        items(usuarios) { usuario ->
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp),
-                                elevation = 4.dp
-                            ) {
-                                Column(modifier = Modifier.padding(16.dp)) {
-                                    Text("Nombre: ${usuario.getNombreCompleto()}", style = MaterialTheme.typography.subtitle1)
-                                    Text("Alias: ${usuario.getAlias()}", style = MaterialTheme.typography.body1)
-                                    Text("Activo: ${usuario.getActivo()}", style = MaterialTheme.typography.body2)
-                                    Spacer(modifier = Modifier.height(8.dp))
+                LimitaTamanioAncho { modifier ->
+                    Column(
+                        modifier = modifier
+                            .fillMaxSize()
+                            .padding(padding)
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Button(onClick = { showContent = !showContent }) {
+                            Text("Mostrar Usuarios")
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+                        AnimatedVisibility(visible = showContent) {
+                            LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                                items(usuarios) { usuario ->
+                                    Card(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 4.dp),
+                                        elevation = 4.dp
+                                    ) {
+                                        Column(modifier = Modifier.padding(16.dp)) {
+                                            Text(
+                                                "Nombre: ${usuario.getNombreCompleto()}",
+                                                style = MaterialTheme.typography.subtitle1
+                                            )
+                                            Text(
+                                                "Alias: ${usuario.getAlias()}",
+                                                style = MaterialTheme.typography.body1
+                                            )
+                                            Text(
+                                                "Activo: ${usuario.getActivo()}",
+                                                style = MaterialTheme.typography.body2
+                                            )
+                                            Spacer(modifier = Modifier.height(8.dp))
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -149,60 +165,72 @@ fun pantallaRegistro(navController: NavHostController) {
                 DefaultTopBar(title = "Registro", navController = navController, showBackButton = true)
             }
         ) { padding ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center // Centrar contenido en pantallas grandes
             ) {
-                OutlinedTextField(
-                    value = nombre,
-                    onValueChange = { nombre = it },
-                    label = { Text("Nombre") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = email,
-                    onValueChange = { email = it },
-                    label = { Text("Email") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = password,
-                    onValueChange = { password = it },
-                    label = { Text("Contraseña") },
-                    visualTransformation = PasswordVisualTransformation(),
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = confirmPassword,
-                    onValueChange = { confirmPassword = it },
-                    label = { Text("Confirmar Contraseña") },
-                    visualTransformation = PasswordVisualTransformation(),
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                Button(
-                    onClick = {
-                        errorMessage = if (password == confirmPassword && password.isNotBlank()) {
-                            // Lógica real de registro
-                            ""
-                        } else {
-                            "Las contraseñas no coinciden o están vacías"
+                LimitaTamanioAncho { modifier ->
+                    Column(
+                        modifier = modifier
+                            .fillMaxSize()
+                            .padding(padding)
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        OutlinedTextField(
+                            value = nombre,
+                            onValueChange = { nombre = it },
+                            label = { Text("Nombre") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = email,
+                            onValueChange = { email = it },
+                            label = { Text("Email") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = password,
+                            onValueChange = { password = it },
+                            label = { Text("Contraseña") },
+                            visualTransformation = PasswordVisualTransformation(),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = confirmPassword,
+                            onValueChange = { confirmPassword = it },
+                            label = { Text("Confirmar Contraseña") },
+                            visualTransformation = PasswordVisualTransformation(),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(
+                            onClick = {
+                                errorMessage =
+                                    if (password == confirmPassword && password.isNotBlank()) {
+                                        // Lógica real de registro
+                                        ""
+                                    } else {
+                                        "Las contraseñas no coinciden o están vacías"
+                                    }
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Registrar")
                         }
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Registrar")
-                }
-                if (errorMessage.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(errorMessage, color = MaterialTheme.colors.error, textAlign = TextAlign.Center)
+                        if (errorMessage.isNotEmpty()) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                errorMessage,
+                                color = MaterialTheme.colors.error,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -223,40 +251,51 @@ fun pantallaLogin(navController: NavHostController) {
                 DefaultTopBar(title = "Iniciar Sesión", navController = navController, showBackButton = true)
             }
         ) { padding ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center // Centrar contenido en pantallas grandes
             ) {
-                OutlinedTextField(
-                    value = email,
-                    onValueChange = { email = it },
-                    label = { Text("Email") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = password,
-                    onValueChange = { password = it },
-                    label = { Text("Contraseña") },
-                    visualTransformation = PasswordVisualTransformation(),
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                Button(
-                    onClick = {
-                        // Lógica de autenticación...
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Iniciar Sesión")
-                }
-                if (errorMessage.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(errorMessage, color = MaterialTheme.colors.error, textAlign = TextAlign.Center)
+                LimitaTamanioAncho { modifier ->
+                    Column(
+                        modifier = modifier
+                            .fillMaxSize()
+                            .padding(padding)
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        OutlinedTextField(
+                            value = email,
+                            onValueChange = { email = it },
+                            label = { Text("Email") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = password,
+                            onValueChange = { password = it },
+                            label = { Text("Contraseña") },
+                            visualTransformation = PasswordVisualTransformation(),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(
+                            onClick = {
+                                // Lógica de autenticación...
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Iniciar Sesión")
+                        }
+                        if (errorMessage.isNotEmpty()) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                errorMessage,
+                                color = MaterialTheme.colors.error,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -276,32 +315,43 @@ fun restableceContrasenna(navController: NavHostController) {
                 DefaultTopBar(title = "Restablecer Contraseña", navController = navController, showBackButton = true)
             }
         ) { padding ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center // Centrar contenido en pantallas grandes
             ) {
-                OutlinedTextField(
-                    value = email,
-                    onValueChange = { email = it },
-                    label = { Text("Email") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                Button(
-                    onClick = {
-                        // Lógica para enviar el correo de restablecimiento
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Enviar Correo")
-                }
-                if (errorMessage.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(errorMessage, color = MaterialTheme.colors.error, textAlign = TextAlign.Center)
+                LimitaTamanioAncho { modifier ->
+                    Column(
+                        modifier = modifier
+                            .fillMaxSize()
+                            .padding(padding)
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        OutlinedTextField(
+                            value = email,
+                            onValueChange = { email = it },
+                            label = { Text("Email") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(
+                            onClick = {
+                                // Lógica para enviar el correo de restablecimiento
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Enviar Correo")
+                        }
+                        if (errorMessage.isNotEmpty()) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                errorMessage,
+                                color = MaterialTheme.colors.error,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -441,22 +491,35 @@ fun muestraContactos(navController: NavHostController) {
                 DefaultTopBar(title = "Contactos", navController = navController, showBackButton = true)
             }
         ) { padding ->
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .padding(16.dp)
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center // Centrar contenido en pantallas grandes
             ) {
-                items(usuarios) { usuario ->
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp),
-                        elevation = 4.dp
+                LimitaTamanioAncho { modifier ->
+                    LazyColumn(
+                        modifier = modifier
+                            .fillMaxSize()
+                            .padding(padding)
+                            .padding(16.dp)
                     ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Text("Nombre: ${usuario.getNombreCompleto()}", style = MaterialTheme.typography.subtitle1)
-                            Text("Alias: ${usuario.getAlias()}", style = MaterialTheme.typography.body1)
+                        items(usuarios) { usuario ->
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                elevation = 4.dp
+                            ) {
+                                Column(modifier = Modifier.padding(16.dp)) {
+                                    Text(
+                                        "Nombre: ${usuario.getNombreCompleto()}",
+                                        style = MaterialTheme.typography.subtitle1
+                                    )
+                                    Text(
+                                        "Alias: ${usuario.getAlias()}",
+                                        style = MaterialTheme.typography.body1
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -475,22 +538,38 @@ fun muestraAjustes(navController: NavHostController) {
                 DefaultTopBar(title = "Ajustes", navController = navController, showBackButton = true)
             }
         ) { padding ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center // Centrar contenido en pantallas grandes
             ) {
-                Button(onClick = { /* Cambiar Tema */ }, modifier = Modifier.fillMaxWidth()) {
-                    Text("Cambiar Tema")
-                }
-                Button(onClick = { /* Cambiar Idioma */ }, modifier = Modifier.fillMaxWidth()) {
-                    Text("Cambiar Idioma")
-                }
-                Button(onClick = { /* Cerrar Sesión */ }, modifier = Modifier.fillMaxWidth()) {
-                    Text("Cerrar Sesión")
+                LimitaTamanioAncho { modifier ->
+                    Column(
+                        modifier = modifier
+                            .fillMaxSize()
+                            .padding(padding)
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Button(
+                            onClick = { /* Cambiar Tema */ },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Cambiar Tema")
+                        }
+                        Button(
+                            onClick = { /* Cambiar Idioma */ },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Cambiar Idioma")
+                        }
+                        Button(
+                            onClick = { /* Cerrar Sesión */ },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Cerrar Sesión")
+                        }
+                    }
                 }
             }
         }
@@ -505,54 +584,57 @@ fun muestraHomePage(navController: NavHostController) {
     MaterialTheme {
         Scaffold(
             topBar = {
-                TopAppBar(
-                    title = { Text("ConneXus") }
-                )
+                TopAppBar(title = { Text("ConneXus") })
             }
         ) { padding ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
             ) {
-                Button(
-                    onClick = { navController.navigate("login") },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Ir a Login")
-                }
-                Button(
-                    onClick = { navController.navigate("registro") },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Ir a Registro")
-                }
-                Button(
-                    onClick = { navController.navigate("contactos") },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Contactos")
-                }
-                Button(
-                    onClick = { navController.navigate("ajustes") },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Ajustes")
-                }
-                Button(
-                    onClick = { navController.navigate("usuarios") },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Usuarios")
+                LimitaTamanioAncho { modifier ->
+                    Column(
+                        modifier = modifier
+                            .padding(padding)
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Button(
+                            onClick = { navController.navigate("login") },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Ir a Login")
+                        }
+                        Button(
+                            onClick = { navController.navigate("registro") },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Ir a Registro")
+                        }
+                        Button(
+                            onClick = { navController.navigate("contactos") },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Contactos")
+                        }
+                        Button(
+                            onClick = { navController.navigate("ajustes") },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Ajustes")
+                        }
+                        Button(
+                            onClick = { navController.navigate("usuarios") },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Usuarios")
+                        }
+                    }
                 }
             }
         }
     }
 }
-
 
 // --- SpashScreen ---
 @Composable
@@ -584,7 +666,6 @@ fun SplashScreen(navController: NavHostController) {
 
 //--------------------------------------------------
 
-
 // Si el email NO está en el sistema
 @Composable
 fun PantallaEmailNoEnElSistema(navController: NavHostController) {
@@ -594,25 +675,31 @@ fun PantallaEmailNoEnElSistema(navController: NavHostController) {
                 DefaultTopBar(title = "Email no existe", navController = navController, showBackButton = true)
             }
         ) { padding ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
             ) {
-                Image(
-                    painter = painterResource(Res.drawable.connexus),
-                    contentDescription = "Ícono de la aplicación",
-                    modifier = Modifier.size(100.dp)
-                )
-                Text("La dirección de correo no está registrada.", style = MaterialTheme.typography.h6)
-                Spacer(modifier = Modifier.height(16.dp))
-                Text("Verifica que hayas escrito bien tu correo o regístrate.")
-                Spacer(modifier = Modifier.height(16.dp))
-                Button(onClick = { navController.navigate("registro") }) {
-                    Text("Ir a Registro")
+                LimitaTamanioAncho { modifier ->
+                    Column(
+                        modifier = modifier
+                            .padding(padding)
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Image(
+                            painter = painterResource(Res.drawable.connexus),
+                            contentDescription = "Ícono de la aplicación",
+                            modifier = Modifier.size(100.dp)
+                        )
+                        Text("La dirección de correo no está registrada.", style = MaterialTheme.typography.h6)
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text("Verifica que hayas escrito bien tu correo o regístrate.")
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(onClick = { navController.navigate("registro") }) {
+                            Text("Ir a Registro")
+                        }
+                    }
                 }
             }
         }
@@ -628,39 +715,50 @@ fun PantallaEmailEnElSistema(navController: NavHostController) {
                 DefaultTopBar(title = "Email en el Sistema", navController = navController, showBackButton = true)
             }
         ) { padding ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
             ) {
-                Image(
-                    painter = painterResource(Res.drawable.connexus),
-                    contentDescription = "Ícono de la aplicación",
-                    modifier = Modifier.size(100.dp)
-                )
-                //Text("El correo está registrado en el sistema.", style = MaterialTheme.typography.h6)
-                Text("Se ha enviado un código para restablecer la contraseña a tu correo.")
-                Spacer(modifier = Modifier.height(16.dp))
-                OutlinedTextField(
-                    value = "",
-                    onValueChange = {},
-                    label = { Text("Código de Verificación") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    Button(onClick = { navController.navigate("restablecer") }, modifier = Modifier.weight(1f)) {
-                        Text("Restablecer Contraseña")
-                    }
-                    Button(onClick = { navController.navigate("login") }, modifier = Modifier.weight(1f)) {
-                        Text("Cancelar")
+                LimitaTamanioAncho { modifier ->
+                    Column(
+                        modifier = modifier
+                            .padding(padding)
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Image(
+                            painter = painterResource(Res.drawable.connexus),
+                            contentDescription = "Ícono de la aplicación",
+                            modifier = Modifier.size(100.dp)
+                        )
+                        Text("Se ha enviado un código para restablecer la contraseña a tu correo.")
+                        Spacer(modifier = Modifier.height(16.dp))
+                        OutlinedTextField(
+                            value = "",
+                            onValueChange = {},
+                            label = { Text("Código de Verificación") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Button(
+                                onClick = { navController.navigate("restablecer") },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text("Restablecer Contraseña")
+                            }
+                            Button(
+                                onClick = { navController.navigate("login") },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text("Cancelar")
+                            }
+                        }
                     }
                 }
             }
@@ -680,73 +778,80 @@ fun PantallaRestablecer(navController: NavHostController) {
                 DefaultTopBar(title = "Restablecer Contraseña", navController = navController, showBackButton = true)
             }
         ) { padding ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
             ) {
-                Image(
-                    painter = painterResource(Res.drawable.connexus),
-                    contentDescription = "Ícono de la aplicación",
-                    modifier = Modifier.size(100.dp)
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                OutlinedTextField(
-                    value = email,
-                    onValueChange = { email = it },
-                    label = { Text("Email") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    Button(
-                        onClick = {
-                            errorMessage = if (email.isNotBlank()) {
-                            // Lógica para enviar el correo de restablecimiento
-                            // Podríamos verificar si el email está o no en el sistema
-                            // navController.navigate("restablecer_ok") o "restablecer_fail"
-                                ""
-                            } else {
-                                "Debes ingresar un correo"
+                LimitaTamanioAncho { modifier ->
+                    Column(
+                        modifier = modifier
+                            .padding(padding)
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Image(
+                            painter = painterResource(Res.drawable.connexus),
+                            contentDescription = "Ícono de la aplicación",
+                            modifier = Modifier.size(100.dp)
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        OutlinedTextField(
+                            value = email,
+                            onValueChange = { email = it },
+                            label = { Text("Email") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Button(
+                                onClick = {
+                                    errorMessage = if (email.isNotBlank()) {
+                                        ""
+                                    } else {
+                                        "Debes ingresar un correo"
+                                    }
+                                },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text("Enviar Correo")
                             }
-                        },
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text("Enviar Correo")
+                            Button(
+                                onClick = { navController.navigate("login") },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text("Cancelar")
+                            }
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Button(
+                                onClick = { navController.navigate("emailEnSistema") },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text("Debug: Restablecer OK")
+                            }
+                            Button(
+                                onClick = { navController.navigate("emailNoEnSistema") },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text("Debug: Restablecer FAIL")
+                            }
+                        }
+                        if (errorMessage.isNotEmpty()) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                errorMessage,
+                                color = MaterialTheme.colors.error,
+                                textAlign = TextAlign.Center
+                            )
+                        }
                     }
-                    Button(
-                        onClick = { navController.navigate("login") },
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text("Cancelar")
-                    }
-                }
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    Button(
-                        onClick = { navController.navigate("emailEnSistema") },
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text("Degug: Restablecer OK")
-                    }
-                    Button(
-                        onClick = { navController.navigate("emailNoEnSistema") },
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text("Degug: Restablecer FAIL")
-                    }
-                }
-                if (errorMessage.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(errorMessage, color = MaterialTheme.colors.error, textAlign = TextAlign.Center)
                 }
             }
         }
@@ -768,88 +873,93 @@ fun PantallaRegistro(navController: NavHostController) {
                 DefaultTopBar(title = "Registro", navController = navController, showBackButton = true)
             }
         ) { padding ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
             ) {
-                Image(
-                    painter = painterResource(Res.drawable.connexus),
-                    contentDescription = "Ícono de la aplicación",
-                    modifier = Modifier.size(100.dp)
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                OutlinedTextField(
-                    value = nombre,
-                    onValueChange = { nombre = it },
-                    label = { Text("Nombre") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = email,
-                    onValueChange = { email = it },
-                    label = { Text("Email") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = password,
-                    onValueChange = { password = it },
-                    label = { Text("Contraseña") },
-                    visualTransformation = PasswordVisualTransformation(),
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = confirmPassword,
-                    onValueChange = { confirmPassword = it },
-                    label = { Text("Confirmar Contraseña") },
-                    visualTransformation = PasswordVisualTransformation(),
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    Button(
-                        onClick = {
-                            errorMessage = if (password == confirmPassword && password.isNotBlank()) {
-                                // Lógica real de registro
-                                ""
-                            } else {
-                                "Las contraseñas no coinciden o están vacías"
+                LimitaTamanioAncho { modifier ->
+                    Column(
+                        modifier = modifier
+                            .padding(padding)
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Image(
+                            painter = painterResource(Res.drawable.connexus),
+                            contentDescription = "Ícono de la aplicación",
+                            modifier = Modifier.size(100.dp)
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        OutlinedTextField(
+                            value = nombre,
+                            onValueChange = { nombre = it },
+                            label = { Text("Nombre") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = email,
+                            onValueChange = { email = it },
+                            label = { Text("Email") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = password,
+                            onValueChange = { password = it },
+                            label = { Text("Contraseña") },
+                            visualTransformation = PasswordVisualTransformation(),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = confirmPassword,
+                            onValueChange = { confirmPassword = it },
+                            label = { Text("Confirmar Contraseña") },
+                            visualTransformation = PasswordVisualTransformation(),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Button(
+                                onClick = {
+                                    errorMessage =
+                                        if (password == confirmPassword && password.isNotBlank()) {
+                                            ""
+                                        } else {
+                                            "Las contraseñas no coinciden o están vacías"
+                                        }
+                                },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text("Registrar")
                             }
-                        },
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text("Registrar")
+                            Button(
+                                onClick = { navController.navigate("login") },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text("Cancelar")
+                            }
+                        }
+                        if (errorMessage.isNotEmpty()) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                errorMessage,
+                                color = MaterialTheme.colors.error,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
                     }
-                    Button(
-                        onClick = { navController.navigate("login") },
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text("Cancelar")
-                    }
-                }
-                if (errorMessage.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        errorMessage,
-                        color = MaterialTheme.colors.error,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
-                    )
                 }
             }
         }
     }
 }
-
 
 // Pantalla de Login nuevo
 @Composable
@@ -862,86 +972,83 @@ fun PantallaLogin(navController: NavHostController) {
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = {
-                        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                            Text("Login")
-                        }
-                    }
+                    title = { Text("Login", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) }
                 )
             }
         ) { padding ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center // Centrar contenido en pantallas grandes
             ) {
-                // Imagen de la aplicación (100dp x 100dp)
-                Image(
-                    painter = painterResource(Res.drawable.connexus),
-                    contentDescription = "Ícono de la aplicación",
-                    modifier = Modifier.size(100.dp)
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                OutlinedTextField(
-                    value = email,
-                    onValueChange = { email = it },
-                    label = { Text("Email") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = password,
-                    onValueChange = { password = it },
-                    label = { Text("Contraseña") },
-                    visualTransformation = PasswordVisualTransformation(),
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                // Dos botones horizontales: "¿Olvidaste tu contraseña?" y "Registrarse"
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    Button(
-                        onClick = { navController.navigate("restablecer") },
-                        modifier = Modifier.weight(1f)
+                LimitaTamanioAncho { modifier ->
+                    Column(
+                        modifier = modifier.padding(padding).padding(16.dp), // Aquí sí se aplica el `modifier`
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text("¿Olvidaste tu contraseña?")
-                    }
-                    Button(
-                        onClick = { navController.navigate("registro") },
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text("Registrarse")
-                    }
-                }
-                Spacer(modifier = Modifier.height(16.dp))
-                // Botón vertical "Acceder"
-                Button(
-                    onClick = {
-                        errorMessage = if (email.isNotBlank() && password.isNotBlank()) {
-                            ""
-                            // Aquí iría la lógica real de autenticación
-                            // navController.navigate("home")
-                        } else {
-                            "Debes completar ambos campos"
+                        Image(
+                            painter = painterResource(Res.drawable.connexus),
+                            contentDescription = "Ícono de la aplicación",
+                            modifier = Modifier.size(100.dp)
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        OutlinedTextField(
+                            value = email,
+                            onValueChange = { email = it },
+                            label = { Text("Email") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = password,
+                            onValueChange = { password = it },
+                            label = { Text("Contraseña") },
+                            visualTransformation = PasswordVisualTransformation(),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Button(
+                                onClick = { navController.navigate("restablecer") },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text("¿Olvidaste tu contraseña?")
+                            }
+                            Button(
+                                onClick = { navController.navigate("registro") },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text("Registrarse")
+                            }
                         }
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Acceder")
-                }
-                if (errorMessage.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        errorMessage,
-                        color = MaterialTheme.colors.error,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(
+                            onClick = {
+                                errorMessage = if (email.isNotBlank() && password.isNotBlank()) {
+                                    ""
+                                    // Lógica real de autenticación
+                                    // navController.navigate("home")
+                                } else {
+                                    "Debes completar ambos campos"
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Acceder")
+                        }
+                        if (errorMessage.isNotEmpty()) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                errorMessage,
+                                color = MaterialTheme.colors.error,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
                 }
             }
         }
