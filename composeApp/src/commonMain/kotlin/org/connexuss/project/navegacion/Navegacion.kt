@@ -7,6 +7,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import org.connexuss.project.interfaces.sistema.SplashScreen
 import org.connexuss.project.interfaces.sistema.muestraAjustes
+import org.connexuss.project.interfaces.sistema.muestraChats
 import org.connexuss.project.interfaces.sistema.muestraContactos
 import org.connexuss.project.interfaces.sistema.muestraHomePage
 import org.connexuss.project.interfaces.sistema.muestraUsuarios
@@ -34,7 +35,7 @@ fun Navegacion() {
             muestraAjustes(navController)
         }
         composable("contactos") {
-            muestraContactos(navController)
+            muestraChats(navController)
         }
         composable("restablecer") {
             restableceContrasenna(navController)

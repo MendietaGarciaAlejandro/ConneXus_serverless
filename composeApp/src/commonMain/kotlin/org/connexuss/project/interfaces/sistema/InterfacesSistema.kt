@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.BottomNavigation
+import androidx.compose.material.BottomNavigationItem
 import androidx.compose.material.Button
 import androidx.compose.material.Card
 import androidx.compose.material.Icon
@@ -24,6 +26,7 @@ import androidx.compose.material.Text
 import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -38,6 +41,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import androidx.navigation.compose.currentBackStackEntryAsState
 import connexus_serverless.composeapp.generated.resources.Res
 import connexus_serverless.composeapp.generated.resources.connexus
 import kotlinx.coroutines.delay
@@ -48,7 +52,11 @@ import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
-fun DefaultTopBar(title: String, navController: NavHostController? = null, showBackButton: Boolean = false) {
+fun DefaultTopBar(
+    title: String,
+    navController: NavHostController? = null,
+    showBackButton: Boolean = false
+) {
     TopAppBar(
         title = { Text(title) },
         navigationIcon = if (showBackButton && navController != null) {
@@ -57,9 +65,76 @@ fun DefaultTopBar(title: String, navController: NavHostController? = null, showB
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás")
                 }
             }
-        } else null
+        } else null,
+        actions = {
+            // icono de Ajustes a la derecha
+            if (navController != null) {
+                IconButton(onClick = { navController.navigate("ajustes") }) {
+                    Icon(
+                        imageVector = Icons.Default.Settings,
+                        contentDescription = "Ajustes"
+                    )
+                }
+            }
+        }
     )
 }
+/*
+//BottomBar
+@Composable
+fun MiBottomBar(navController: NavHostController) {
+    // Necesitamos el estado de la ruta actual para marcar el ítem seleccionado
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+
+    BottomNavigation {
+        // Ítem de Chats
+        BottomNavigationItem(
+            selected = currentRoute == "chats",
+            onClick = {
+                navController.navigate("chats") {
+                    // Evitar acumulaciones en el back stack
+                    popUpTo(navController.graph.startDestinationId) {
+                        saveState = true
+                    }
+                    launchSingleTop = true
+                    restoreState = true
+                }
+            },
+            icon = {
+                // Cambia a tu propio ícono
+                Icon(
+                    painterResource(Res.drawable.ic),
+                    contentDescription = "Chats"
+                )
+            },
+            label = { Text("Chats") }
+        )
+
+        // Ítem de Foros
+        BottomNavigationItem(
+            selected = currentRoute == "foros",
+            onClick = {
+                navController.navigate("foros") {
+                    popUpTo(navController.graph.startDestinationId) {
+                        saveState = true
+                    }
+                    launchSingleTop = true
+                    restoreState = true
+                }
+            },
+            icon = {
+                // Cambia a tu propio ícono
+                Icon(
+                    painterResource(id = R.drawable.ic_foros),
+                    contentDescription = "Foros"
+                )
+            },
+            label = { Text("Foros") }
+        )
+    }
+}
+*/
 
 // --- Muestra Usuarios ---
 @Composable
@@ -300,6 +375,36 @@ fun restableceContrasenna(navController: NavHostController) {
         }
     }
 }
+
+// --- Chats PorDefecto ---
+@Composable
+@Preview
+fun muestraChats(navController: NavHostController) {
+    MaterialTheme {
+        Scaffold(
+            topBar = {
+                DefaultTopBar(
+                    title = "Chats",
+                    navController = navController,
+                    showBackButton = true
+                )
+            }
+        ) { padding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text("Chats por defecto")
+            }
+        }
+    }
+}
+
+
+
 
 // --- Contactos ---
 @Composable
