@@ -5,14 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import org.connexuss.project.interfaces.sistema.SplashScreen
-import org.connexuss.project.interfaces.sistema.muestraAjustes
-import org.connexuss.project.interfaces.sistema.muestraContactos
-import org.connexuss.project.interfaces.sistema.muestraHomePage
-import org.connexuss.project.interfaces.sistema.muestraUsuarios
-import org.connexuss.project.interfaces.sistema.pantallaLogin
-import org.connexuss.project.interfaces.sistema.pantallaRegistro
-import org.connexuss.project.interfaces.sistema.restableceContrasenna
+import org.connexuss.project.interfaces.sistema.*
 
 @Composable
 fun Navegacion() {
@@ -25,10 +18,12 @@ fun Navegacion() {
             muestraHomePage(navController)
         }
         composable("login") {
-            pantallaLogin(navController)
+            //pantallaLogin(navController)
+            PantallaLogin(navController)
         }
         composable("registro") {
-            pantallaRegistro(navController)
+            //pantallaRegistro(navController)
+            PantallaRegistro(navController)
         }
         composable("ajustes") {
             muestraAjustes(navController)
@@ -37,10 +32,17 @@ fun Navegacion() {
             muestraContactos(navController)
         }
         composable("restablecer") {
-            restableceContrasenna(navController)
+            //restableceContrasenna(navController)
+            PantallaRestablecer(navController)
         }
         composable("usuarios") {
             muestraUsuarios(navController)
+        }
+        composable("emailEnSistema") {
+            PantallaEmailEnElSistema(navController)
+        }
+        composable("emailNoEnSistema") {
+            PantallaEmailNoEnElSistema(navController)
         }
     }
 }
