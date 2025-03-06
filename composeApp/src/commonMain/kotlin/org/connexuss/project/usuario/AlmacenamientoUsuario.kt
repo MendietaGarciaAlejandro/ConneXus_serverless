@@ -15,7 +15,7 @@ class AlmacenamientoUsuario {
         return usuarios
     }
 
-    fun obtenerUsuarioPorId(id: Int): Usuario {
+    fun obtenerUsuarioPorId(id: String): Usuario {
         return usuarios.find { it.getIdUnico() == id }!!
     }
 

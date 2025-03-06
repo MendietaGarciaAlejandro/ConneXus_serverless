@@ -32,6 +32,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.daysUntil
+import kotlinx.datetime.toLocalDateTime
 import org.connexuss.project.comunicacion.ChatMessage
 import org.connexuss.project.comunicacion.ChatRoom
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -162,7 +165,9 @@ fun muestraChatRoom() {
                                 ChatMessage(
                                     id = Clock.System.now().toEpochMilliseconds().toString(),
                                     senderId = "user", // Aquí usar el ID del usuario autenticado
-                                    content = nuevoMensaje
+                                    receiverId = "user", // Aquí usar el ID del destinatario
+                                    content = nuevoMensaje,
+                                    fechaMensaje = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
                                 )
                             )
                             nuevoMensaje = ""

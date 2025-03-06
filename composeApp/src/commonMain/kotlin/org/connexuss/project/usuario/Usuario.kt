@@ -3,6 +3,7 @@ package org.connexuss.project.usuario
 import androidx.compose.foundation.content.MediaType.Companion.Text
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import org.connexuss.project.comunicacion.ChatsUsers
 import org.connexuss.project.encriptacion.hash
 
 // Clase usuario con sus atributos y metodos
@@ -12,11 +13,13 @@ class Usuario {
     private var correo: String = ""
     private var aliasPublico: String = ""
     private var aliasPrivado: String = ""
-    private var idUnico: Int = 0
+    private var idUnico: String = ""
     private var activo: Boolean = false
+    private lateinit var contactos: List<String>
+    private lateinit var chatUser: ChatsUsers
 
     // Constructor completo
-    constructor(nombre: String, edad: Int, correo: String, aliasPublico: String, activo: Boolean) {
+    constructor(nombre: String, edad: Int, correo: String, aliasPublico: String, activo: Boolean, contactos: List<String>, chatUser: ChatsUsers) {
         this.idUnico = UtilidadesUsuario().generarIdUnico()
         this.nombre = nombre
         this.edad = edad
@@ -24,6 +27,8 @@ class Usuario {
         this.aliasPublico = aliasPublico
         this.aliasPrivado = hash(aliasPublico)
         this.activo = activo
+        this.contactos = contactos
+        this.chatUser = chatUser
     }
 
     // Constructor vacio
@@ -76,10 +81,10 @@ class Usuario {
         this.aliasPrivado = aliasPrivado
     }
 
-    fun getIdUnico(): Int {
+    fun getIdUnico(): String {
         return idUnico
     }
-    fun setIdUnico(idUnico: Int) {
+    fun setIdUnico(idUnico: String) {
         this.idUnico = idUnico
     }
 
@@ -88,6 +93,22 @@ class Usuario {
     }
     fun setActivo(activo: Boolean) {
         this.activo = activo
+    }
+
+    fun getContactos(): List<String> {
+        return contactos
+    }
+
+    fun setContactos(contactos: List<String>) {
+        this.contactos = contactos
+    }
+
+    fun getChatUser(): ChatsUsers {
+        return chatUser
+    }
+
+    fun setChatUser(chatUser: ChatsUsers) {
+        this.chatUser = chatUser
     }
 
     // Metodo para imprimir los datos públicos del usuario
