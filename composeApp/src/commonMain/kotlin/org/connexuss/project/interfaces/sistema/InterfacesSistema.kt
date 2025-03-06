@@ -560,7 +560,7 @@ fun SplashScreen(navController: NavHostController) {
     // Efecto para esperar 2 segundos y navegar a "home"
     LaunchedEffect(Unit) {
         delay(2000)
-        navController.navigate("home") {
+        navController.navigate("login") {
             popUpTo("splash") { inclusive = true }
         }
     }
@@ -641,12 +641,27 @@ fun PantallaEmailEnElSistema(navController: NavHostController) {
                     contentDescription = "Ícono de la aplicación",
                     modifier = Modifier.size(100.dp)
                 )
-                Text("El correo está registrado en el sistema.", style = MaterialTheme.typography.h6)
+                //Text("El correo está registrado en el sistema.", style = MaterialTheme.typography.h6)
+                Text("Se ha enviado un código para restablecer la contraseña a tu correo.")
                 Spacer(modifier = Modifier.height(16.dp))
-                Text("Se ha enviado un enlace para restablecer la contraseña a tu correo.")
+                OutlinedTextField(
+                    value = "",
+                    onValueChange = {},
+                    label = { Text("Código de Verificación") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth()
+                )
                 Spacer(modifier = Modifier.height(16.dp))
-                Button(onClick = { navController.navigate("login") }) {
-                    Text("Volver al Login")
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Button(onClick = { navController.navigate("restablecer") }, modifier = Modifier.weight(1f)) {
+                        Text("Restablecer Contraseña")
+                    }
+                    Button(onClick = { navController.navigate("login") }, modifier = Modifier.weight(1f)) {
+                        Text("Cancelar")
+                    }
                 }
             }
         }
@@ -686,20 +701,48 @@ fun PantallaRestablecer(navController: NavHostController) {
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(16.dp))
-                Button(
-                    onClick = {
-                        if (email.isNotBlank()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Button(
+                        onClick = {
+                            errorMessage = if (email.isNotBlank()) {
                             // Lógica para enviar el correo de restablecimiento
                             // Podríamos verificar si el email está o no en el sistema
                             // navController.navigate("restablecer_ok") o "restablecer_fail"
-                            errorMessage = ""
-                        } else {
-                            errorMessage = "Debes ingresar un correo"
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth()
+                                ""
+                            } else {
+                                "Debes ingresar un correo"
+                            }
+                        },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Enviar Correo")
+                    }
+                    Button(
+                        onClick = { navController.navigate("login") },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Cancelar")
+                    }
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Text("Enviar Correo")
+                    Button(
+                        onClick = { navController.navigate("emailEnSistema") },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Degug: Restablecer OK")
+                    }
+                    Button(
+                        onClick = { navController.navigate("emailNoEnSistema") },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Degug: Restablecer FAIL")
+                    }
                 }
                 if (errorMessage.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(8.dp))
@@ -769,28 +812,44 @@ fun PantallaRegistro(navController: NavHostController) {
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(16.dp))
-                Button(
-                    onClick = {
-                        if (password == confirmPassword && password.isNotBlank()) {
-                            // Lógica real de registro
-                            errorMessage = ""
-                            // navController.navigate("login")
-                        } else {
-                            errorMessage = "Las contraseñas no coinciden o están vacías"
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth()
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Text("Registrar")
+                    Button(
+                        onClick = {
+                            errorMessage = if (password == confirmPassword && password.isNotBlank()) {
+                                // Lógica real de registro
+                                ""
+                            } else {
+                                "Las contraseñas no coinciden o están vacías"
+                            }
+                        },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Registrar")
+                    }
+                    Button(
+                        onClick = { navController.navigate("login") },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Cancelar")
+                    }
                 }
                 if (errorMessage.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text(errorMessage, color = MaterialTheme.colors.error, textAlign = TextAlign.Center)
+                    Text(
+                        errorMessage,
+                        color = MaterialTheme.colors.error,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
             }
         }
     }
 }
+
 
 // Pantalla de Login nuevo
 @Composable
@@ -802,7 +861,13 @@ fun PantallaLogin(navController: NavHostController) {
     MaterialTheme {
         Scaffold(
             topBar = {
-                DefaultTopBar(title = "Login", navController = navController, showBackButton = true)
+                TopAppBar(
+                    title = {
+                        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                            Text("Login")
+                        }
+                    }
+                )
             }
         ) { padding ->
             Column(
@@ -857,12 +922,12 @@ fun PantallaLogin(navController: NavHostController) {
                 // Botón vertical "Acceder"
                 Button(
                     onClick = {
-                        if (email.isNotBlank() && password.isNotBlank()) {
-                            errorMessage = ""
+                        errorMessage = if (email.isNotBlank() && password.isNotBlank()) {
+                            ""
                             // Aquí iría la lógica real de autenticación
                             // navController.navigate("home")
                         } else {
-                            errorMessage = "Debes completar ambos campos"
+                            "Debes completar ambos campos"
                         }
                     },
                     modifier = Modifier.fillMaxWidth()
