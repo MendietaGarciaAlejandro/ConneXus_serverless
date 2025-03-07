@@ -48,6 +48,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
 import connexus_serverless.composeapp.generated.resources.Res
 import connexus_serverless.composeapp.generated.resources.*
 import kotlinx.coroutines.delay
@@ -477,6 +478,24 @@ fun ChatCard(chatItem: ConversacionesUsuario) {
         }
     }
 }
+
+// --- elemento usuario ---
+@Composable
+fun UsuCard(usuario: Usuario) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        elevation = 4.dp
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(text = "Nombre: ${usuario.getNombreCompleto()}")
+            Text(text = "Alias Público: ${usuario.getAlias()}")
+            Text(text = "Alias Privado: ${usuario.getAliasPrivado()}")
+        }
+    }
+}
+
 
 
 // --- Chats PorDefecto ---
@@ -1085,12 +1104,18 @@ fun GeneraUsuarios(): SnapshotStateList<Usuario> {
 
 // --- Ajustes ---
 @Composable
-@Preview
-fun muestraAjustes(navController: NavHostController) {
+@Preview()
+fun muestraAjustes(navController: NavHostController = rememberNavController()) {
     MaterialTheme {
         Scaffold(
             topBar = {
-                DefaultTopBar(title = "Ajustes", navController = navController, showBackButton = true, irParaAtras = true,muestraEngranaje = false)
+                DefaultTopBar(
+                    title = "Ajustes",
+                    navController = navController,
+                    showBackButton = true,
+                    irParaAtras = true,
+                    muestraEngranaje = false
+                )
             }
         ) { padding ->
             Box(
@@ -1106,17 +1131,56 @@ fun muestraAjustes(navController: NavHostController) {
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
+                        // Se crea un usuario dummy para mostrar datos de prueba
+                        UsuCard(
+                            Usuario(
+                                nombre = "Isabel Fuentes",
+                                edad = 26,
+                                correo = "isabel.fuentes@example.com",
+                                aliasPublico = "isabelf26",
+                                activo = true,
+                                contactos = emptyList(),
+                                chatUser = ConversacionesUsuario(
+                                    id = "dummyChatsUser",
+                                    idUser = "dummyUser",
+                                    conversacion = Conversacion(
+                                        id = "dummyChatRoom",
+                                        participants = listOf("dummyUser"),
+                                        messages = emptyList()
+                                    )
+                                )
+                            )
+                        )
+
                         Button(
                             onClick = { /* Cambiar Tema */ },
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("Cambiar Tema")
+                            Text("Cambiar Modo Oscuro / Tea")
                         }
                         Button(
                             onClick = { /* Cambiar Idioma */ },
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("Cambiar Idioma")
+                            Text("Cambiar Fuente")
+                        }
+                        Button(
+                            onClick = { /* Cerrar Sesión */ },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("(Eliminar Chats)")
+                        }
+                        Button(
+                            onClick = { /* Cerrar Sesión */ },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("(Control de Cuentas)")
+                        }
+                        Button(
+                            onClick = { /* Cerrar Sesión */ },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Ayuda")
                         }
                         Button(
                             onClick = { /* Cerrar Sesión */ },
