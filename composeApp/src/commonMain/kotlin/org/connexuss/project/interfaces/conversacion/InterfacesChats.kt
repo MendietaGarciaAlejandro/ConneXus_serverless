@@ -21,7 +21,7 @@ import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
 import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -33,10 +33,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
-import kotlinx.datetime.daysUntil
 import kotlinx.datetime.toLocalDateTime
-import org.connexuss.project.comunicacion.ChatMessage
-import org.connexuss.project.comunicacion.ChatRoom
+import org.connexuss.project.comunicacion.Mensaje
+import org.connexuss.project.comunicacion.Conversacion
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 // --- Nuevo Chat ---
@@ -104,7 +103,7 @@ fun muestraNuevoChat() {
 @Composable
 @Preview
 fun muestraChatRoom() {
-    val mensajes = remember { mutableStateListOf<ChatMessage>() }
+    val mensajes = remember { mutableStateListOf<Mensaje>() }
     var nuevoMensaje by remember { mutableStateOf("") }
 
     MaterialTheme {
@@ -114,7 +113,7 @@ fun muestraChatRoom() {
                     title = { Text("Chat Room") },
                     navigationIcon = {
                         IconButton(onClick = { /* Navegar atrás */ }) {
-                            Icon(Icons.Default.ArrowBack, contentDescription = "Atrás")
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás")
                         }
                     }
                 )
@@ -162,7 +161,7 @@ fun muestraChatRoom() {
                     Button(onClick = {
                         if (nuevoMensaje.isNotEmpty()) {
                             mensajes.add(
-                                ChatMessage(
+                                Mensaje(
                                     id = Clock.System.now().toEpochMilliseconds().toString(),
                                     senderId = "user", // Aquí usar el ID del usuario autenticado
                                     receiverId = "user", // Aquí usar el ID del destinatario
@@ -185,7 +184,7 @@ fun muestraChatRoom() {
 @Composable
 @Preview
 fun muestraChats() {
-    val chats = remember { mutableStateListOf<ChatRoom>() }
+    val chats = remember { mutableStateListOf<Conversacion>() }
     var nuevoChat by remember { mutableStateOf("") }
 
     MaterialTheme {
@@ -208,7 +207,7 @@ fun muestraChats() {
                 Button(
                     onClick = {
                         if (nuevoChat.isNotEmpty()) {
-                            chats.add(ChatRoom(id = nuevoChat, participants = listOf("user1", "user2")))
+                            chats.add(Conversacion(id = nuevoChat, participants = listOf("user1", "user2")))
                             nuevoChat = ""
                         }
                     },
