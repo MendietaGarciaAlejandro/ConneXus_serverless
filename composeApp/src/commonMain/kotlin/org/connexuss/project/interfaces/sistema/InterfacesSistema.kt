@@ -1107,7 +1107,7 @@ fun muestraAjustes(navController: NavHostController) {
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Button(
-                            onClick = { /* Cambiar Tema */ },
+                            onClick = { navController.navigate("cambiarTema") },
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text("Cambiar Tema")
@@ -1119,7 +1119,7 @@ fun muestraAjustes(navController: NavHostController) {
                             Text("Cambiar Idioma")
                         }
                         Button(
-                            onClick = { /* Cerrar Sesión */ },
+                            onClick = { navController.navigate("login") },
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text("Cerrar Sesión")
