@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
@@ -42,9 +43,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
 import connexus_serverless.composeapp.generated.resources.Res
-import connexus_serverless.composeapp.generated.resources.connexus
+import connexus_serverless.composeapp.generated.resources.*
 import kotlinx.coroutines.delay
+import kotlinx.datetime.LocalDateTime
+import org.connexuss.project.comunicacion.ChatMessage
+import org.connexuss.project.comunicacion.ChatRoom
+import org.connexuss.project.comunicacion.ChatsUsers
 import org.connexuss.project.usuario.AlmacenamientoUsuario
 import org.connexuss.project.usuario.Usuario
 import org.connexuss.project.usuario.UtilidadesUsuario
@@ -58,7 +64,15 @@ fun DefaultTopBar(
     showBackButton: Boolean = false
 ) {
     TopAppBar(
-        title = { Text(title) },
+        title = {
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(title)
+            }
+
+        },
         navigationIcon = if (showBackButton && navController != null) {
             {
                 IconButton(onClick = { navController.popBackStack() }) {
@@ -79,7 +93,7 @@ fun DefaultTopBar(
         }
     )
 }
-/*
+
 //BottomBar
 @Composable
 fun MiBottomBar(navController: NavHostController) {
@@ -93,19 +107,20 @@ fun MiBottomBar(navController: NavHostController) {
             selected = currentRoute == "chats",
             onClick = {
                 navController.navigate("chats") {
-                    // Evitar acumulaciones en el back stack
-                    popUpTo(navController.graph.startDestinationId) {
-                        saveState = true
+                    navController.graph.startDestinationRoute?.let {
+                        popUpTo(it) {
+                            saveState = true
+                        }
                     }
                     launchSingleTop = true
                     restoreState = true
                 }
             },
             icon = {
-                // Cambia a tu propio ícono
                 Icon(
-                    painterResource(Res.drawable.ic),
-                    contentDescription = "Chats"
+                    painterResource(Res.drawable.ic_chats),
+                    contentDescription = "Chats",
+                    modifier = Modifier.size(20.dp)
                 )
             },
             label = { Text("Chats") }
@@ -116,25 +131,27 @@ fun MiBottomBar(navController: NavHostController) {
             selected = currentRoute == "foros",
             onClick = {
                 navController.navigate("foros") {
-                    popUpTo(navController.graph.startDestinationId) {
-                        saveState = true
+                    navController.graph.startDestinationRoute?.let {
+                        popUpTo(it) {
+                            saveState = true
+                        }
                     }
                     launchSingleTop = true
                     restoreState = true
                 }
             },
             icon = {
-                // Cambia a tu propio ícono
                 Icon(
-                    painterResource(id = R.drawable.ic_foros),
-                    contentDescription = "Foros"
+                    painterResource(Res.drawable.ic_foros),
+                    contentDescription = "Foros",
+                    modifier = Modifier.size(20.dp)
                 )
             },
             label = { Text("Foros") }
         )
     }
 }
-*/
+
 
 // --- Muestra Usuarios ---
 @Composable
@@ -375,11 +392,66 @@ fun restableceContrasenna(navController: NavHostController) {
         }
     }
 }
+// --- elemento chat ---
+@Composable
+fun ChatCard(chatItem: ChatsUsers) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        elevation = 4.dp
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(text = "ID Chat: ${chatItem.chatRoom.id}")
+            Text(text = "Participantes: ${chatItem.chatRoom.participants.joinToString()}")
+            Text(text = "Número de mensajes: ${chatItem.chatRoom.messages.size}")
+        }
+    }
+}
+
 
 // --- Chats PorDefecto ---
 @Composable
-@Preview
 fun muestraChats(navController: NavHostController) {
+    // Se define la sala de chat de ejemplo
+    val dummyChatRoom = ChatRoom(
+        id = "chatRoom_123",
+        participants = listOf("user1", "user2"),
+        messages = listOf(
+            ChatMessage(
+                id = "msg1",
+                senderId = "user1",
+                receiverId = "user2",
+                content = "Hola, ¿cómo estás?",
+                fechaMensaje = LocalDateTime(2023, 1, 1, 12, 0)
+            ),
+            ChatMessage(
+                id = "msg2",
+                senderId = "user2",
+                receiverId = "user1",
+                content = "Todo bien, ¿y tú?",
+                fechaMensaje = LocalDateTime(2023, 1, 1, 12, 5)
+            )
+        )
+    )
+
+    // Lista de ChatsUsers de ejemplo
+    val dummyChatsUsers = listOf(
+        ChatsUsers(
+            id = "chatsUsers_1",
+            idUser = "user1",
+            chatRoom = dummyChatRoom
+        ),
+        ChatsUsers(
+            id = "chatsUsers_2",
+            idUser = "user1",
+            chatRoom = dummyChatRoom.copy(id = "chatRoom_456")
+        )
+    )
+
+    // Se inicializa la lista mutable con los chats de ejemplo
+    val listaChats = remember { mutableStateListOf<ChatsUsers>().apply { addAll(dummyChatsUsers) } }
+
     MaterialTheme {
         Scaffold(
             topBar = {
@@ -388,20 +460,26 @@ fun muestraChats(navController: NavHostController) {
                     navController = navController,
                     showBackButton = true
                 )
+            },
+            bottomBar = {
+                MiBottomBar(navController)
             }
         ) { padding ->
-            Column(
+            LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
-                    .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .padding(16.dp)
             ) {
-                Text("Chats por defecto")
+                items(listaChats) { chatItem ->
+                    ChatCard(chatItem = chatItem)
+                }
             }
         }
     }
 }
+
+
 
 
 
@@ -603,10 +681,9 @@ fun muestraHomePage(navController: NavHostController) {
     MaterialTheme {
         Scaffold(
             topBar = {
-                TopAppBar(
-                    title = { Text("ConneXus") }
-                )
+                DefaultTopBar( title = "Inicio", navController = null, showBackButton = false)
             }
+
         ) { padding ->
             Column(
                 modifier = Modifier
