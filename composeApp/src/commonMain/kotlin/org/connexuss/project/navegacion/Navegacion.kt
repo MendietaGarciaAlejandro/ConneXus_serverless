@@ -6,19 +6,11 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 
-import kotlinx.datetime.LocalDateTime
-import org.connexuss.project.comunicacion.ChatMessage
-import org.connexuss.project.comunicacion.ChatRoom
-import org.connexuss.project.comunicacion.ChatsUsers
 import org.connexuss.project.interfaces.sistema.SplashScreen
 import org.connexuss.project.interfaces.sistema.muestraAjustes
 import org.connexuss.project.interfaces.sistema.muestraChats
-import org.connexuss.project.interfaces.sistema.muestraContactos
 import org.connexuss.project.interfaces.sistema.muestraHomePage
 import org.connexuss.project.interfaces.sistema.muestraUsuarios
-import org.connexuss.project.interfaces.sistema.pantallaLogin
-import org.connexuss.project.interfaces.sistema.pantallaRegistro
-import org.connexuss.project.interfaces.sistema.restableceContrasenna
 
 import org.connexuss.project.interfaces.ajustes.PantallaAjustesAyuda
 import org.connexuss.project.interfaces.ajustes.PantallaAjustesControlCuentas
@@ -49,9 +41,11 @@ fun Navegacion() {
 
         //para mostrar los  datos predefinidos contactos
         composable("contactos") {
-
-
             muestraChats(navController)
+        }
+
+        composable("nuevo") {
+            muestraContactos(navController, GeneraUsuarios())
         }
 
         composable("restablecer") {

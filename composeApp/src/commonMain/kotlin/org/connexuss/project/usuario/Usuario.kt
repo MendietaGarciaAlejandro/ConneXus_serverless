@@ -1,9 +1,8 @@
 package org.connexuss.project.usuario
 
-import androidx.compose.foundation.content.MediaType.Companion.Text
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import org.connexuss.project.comunicacion.ChatsUsers
+import org.connexuss.project.comunicacion.ConversacionesUsuario
 import org.connexuss.project.encriptacion.hash
 
 // Clase usuario con sus atributos y metodos
@@ -16,10 +15,10 @@ class Usuario {
     private var idUnico: String = ""
     private var activo: Boolean = false
     private lateinit var contactos: List<String>
-    private lateinit var chatUser: ChatsUsers
+    private lateinit var chatUser: ConversacionesUsuario
 
     // Constructor completo
-    constructor(nombre: String, edad: Int, correo: String, aliasPublico: String, activo: Boolean, contactos: List<String>, chatUser: ChatsUsers) {
+    constructor(nombre: String, edad: Int, correo: String, aliasPublico: String, activo: Boolean, contactos: List<String>, chatUser: ConversacionesUsuario) {
         this.idUnico = UtilidadesUsuario().generarIdUnico()
         this.nombre = nombre
         this.edad = edad
@@ -103,11 +102,11 @@ class Usuario {
         this.contactos = contactos
     }
 
-    fun getChatUser(): ChatsUsers {
+    fun getChatUser(): ConversacionesUsuario {
         return chatUser
     }
 
-    fun setChatUser(chatUser: ChatsUsers) {
+    fun setChatUser(chatUser: ConversacionesUsuario) {
         this.chatUser = chatUser
     }
 

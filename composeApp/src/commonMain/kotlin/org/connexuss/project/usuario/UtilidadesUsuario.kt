@@ -1,7 +1,7 @@
 package org.connexuss.project.usuario
 
-import org.connexuss.project.comunicacion.ChatRoom
-import org.connexuss.project.comunicacion.ChatsUsers
+import org.connexuss.project.comunicacion.Conversacion
+import org.connexuss.project.comunicacion.ConversacionesUsuario
 import kotlin.random.Random
 
 class UtilidadesUsuario {
@@ -36,6 +36,6 @@ class UtilidadesUsuario {
         if (!correoValido || !edadValida || !nombreValido || !aliasPublicoValido) {
             throw IllegalArgumentException("Datos de usuario no validos")
         }
-        return Usuario(nombre, edad, correo, aliasPublico, activo, emptyList(), ChatsUsers(generarIdUnico(), generarIdUnico(), ChatRoom(generarIdUnico(), emptyList())))
+        return Usuario(nombre, edad, correo, aliasPublico, activo, emptyList(), ConversacionesUsuario(generarIdUnico(), generarIdUnico(), Conversacion(generarIdUnico(), emptyList())))
     }
 }
