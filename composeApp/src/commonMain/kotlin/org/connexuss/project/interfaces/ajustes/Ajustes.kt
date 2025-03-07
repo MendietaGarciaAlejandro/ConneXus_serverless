@@ -51,7 +51,9 @@ fun PantallaAjustesControlCuentas(navController: NavHostController) {
                 DefaultTopBar(
                     title = "Ajustes / Control cuentas",
                     navController = navController,
-                    showBackButton = true
+                    showBackButton = true,
+                    muestraEngranaje = true,
+                    irParaAtras = true
                 )
             }
         ) { padding ->
@@ -144,7 +146,9 @@ fun PantallaAjustesAyuda(navController: NavHostController) {
                 DefaultTopBar(
                     title = "Ajustes / Ayuda",
                     navController = navController,
-                    showBackButton = true
+                    showBackButton = true,
+                    muestraEngranaje = true,
+                    irParaAtras = true
                 )
             }
         ) { padding ->
