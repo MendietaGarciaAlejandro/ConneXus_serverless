@@ -38,16 +38,13 @@ fun Navegacion() {
         composable("ajustes") {
             muestraAjustes(navController)
         }
-
         //para mostrar los  datos predefinidos contactos
         composable("contactos") {
             muestraChats(navController)
         }
-
         composable("nuevo") {
             muestraContactos(navController, GeneraUsuarios())
         }
-
         composable("restablecer") {
             //restableceContrasenna(navController)
             PantallaRestablecer(navController)

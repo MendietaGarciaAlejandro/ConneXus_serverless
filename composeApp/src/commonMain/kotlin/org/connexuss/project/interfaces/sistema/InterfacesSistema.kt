@@ -1140,7 +1140,7 @@ fun muestraHomePage(navController: NavHostController) {
         Scaffold(
             topBar = {
 
-                DefaultTopBar( title = "Inicio", navController = null, showBackButton = false)
+                DefaultTopBar( title = "Inicio", navController = null, showBackButton = false, muestraEngranaje = false, irParaAtras = false)
 
             }
 
@@ -1230,7 +1230,7 @@ fun PantallaEmailNoEnElSistema(navController: NavHostController) {
     MaterialTheme {
         Scaffold(
             topBar = {
-                DefaultTopBar(title = "Email no existe", navController = navController, showBackButton = true)
+                DefaultTopBar(title = "Email no existe", navController = navController, showBackButton = true, muestraEngranaje = true, irParaAtras = true)
             }
         ) { padding ->
             Box(
@@ -1270,7 +1270,7 @@ fun PantallaEmailEnElSistema(navController: NavHostController) {
     MaterialTheme {
         Scaffold(
             topBar = {
-                DefaultTopBar(title = "Email en el Sistema", navController = navController, showBackButton = true)
+                DefaultTopBar(title = "Email en el Sistema", navController = navController, showBackButton = true, muestraEngranaje = true, irParaAtras = true)
             }
         ) { padding ->
             Box(
@@ -1333,7 +1333,7 @@ fun PantallaRestablecer(navController: NavHostController) {
     MaterialTheme {
         Scaffold(
             topBar = {
-                DefaultTopBar(title = "Restablecer Contraseña", navController = navController, showBackButton = true)
+                DefaultTopBar(title = "Restablecer Contraseña", navController = navController, showBackButton = true, muestraEngranaje = true, irParaAtras = true)
             }
         ) { padding ->
             Box(
@@ -1428,7 +1428,7 @@ fun PantallaRegistro(navController: NavHostController) {
     MaterialTheme {
         Scaffold(
             topBar = {
-                DefaultTopBar(title = "Registro", navController = navController, showBackButton = true)
+                DefaultTopBar(title = "Registro", navController = navController, showBackButton = true, muestraEngranaje = true, irParaAtras = true)
             }
         ) { padding ->
             Box(
