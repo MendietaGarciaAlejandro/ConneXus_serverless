@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+
 import kotlinx.datetime.LocalDateTime
 import org.connexuss.project.comunicacion.ChatMessage
 import org.connexuss.project.comunicacion.ChatRoom
@@ -19,6 +20,11 @@ import org.connexuss.project.interfaces.sistema.pantallaLogin
 import org.connexuss.project.interfaces.sistema.pantallaRegistro
 import org.connexuss.project.interfaces.sistema.restableceContrasenna
 
+import org.connexuss.project.interfaces.ajustes.PantallaAjustesAyuda
+import org.connexuss.project.interfaces.ajustes.PantallaAjustesControlCuentas
+import org.connexuss.project.interfaces.sistema.*
+
+
 @Composable
 fun Navegacion() {
     val navController = rememberNavController()
@@ -30,10 +36,12 @@ fun Navegacion() {
             muestraHomePage(navController)
         }
         composable("login") {
-            pantallaLogin(navController)
+            //pantallaLogin(navController)
+            PantallaLogin(navController)
         }
         composable("registro") {
-            pantallaRegistro(navController)
+            //pantallaRegistro(navController)
+            PantallaRegistro(navController)
         }
         composable("ajustes") {
             muestraAjustes(navController)
@@ -47,10 +55,23 @@ fun Navegacion() {
         }
 
         composable("restablecer") {
-            restableceContrasenna(navController)
+            //restableceContrasenna(navController)
+            PantallaRestablecer(navController)
         }
         composable("usuarios") {
             muestraUsuarios(navController)
+        }
+        composable("emailEnSistema") {
+            PantallaEmailEnElSistema(navController)
+        }
+        composable("emailNoEnSistema") {
+            PantallaEmailNoEnElSistema(navController)
+        }
+        composable("ajustesControlCuentas") {
+            PantallaAjustesControlCuentas(navController)
+        }
+        composable("ajustesAyuda") {
+            PantallaAjustesAyuda(navController)
         }
     }
 }
