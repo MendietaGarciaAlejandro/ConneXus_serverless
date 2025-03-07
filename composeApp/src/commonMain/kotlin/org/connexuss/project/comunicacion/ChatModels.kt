@@ -1,9 +1,8 @@
 package org.connexuss.project.comunicacion
 
-import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDateTime
 
-data class ChatMessage(
+data class Mensaje(
     val id: String,
     val senderId: String,
     val receiverId: String,
@@ -12,14 +11,14 @@ data class ChatMessage(
     val fechaMensaje: LocalDateTime
 )
 
-data class ChatRoom(
+data class Conversacion(
     val id: String,
     val participants: List<String>, // IDs de los usuarios
-    val messages: List<ChatMessage> = emptyList()
+    val messages: List<Mensaje> = emptyList()
 )
 
-data class ChatsUsers(
+data class ConversacionesUsuario(
     val id: String,
     val idUser: String,
-    val chatRoom: ChatRoom,
+    val conversacion: Conversacion,
 )

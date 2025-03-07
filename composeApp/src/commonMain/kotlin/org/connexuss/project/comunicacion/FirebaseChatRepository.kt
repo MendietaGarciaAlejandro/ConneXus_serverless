@@ -1,9 +1,5 @@
 package org.connexuss.project.comunicacion
 
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
-import org.connexuss.project.comunicacion.ChatMessage
-import org.connexuss.project.comunicacion.ChatRoom
 // import com.google.firebase.firestore.FirebaseFirestore
 
 class FirebaseChatRepository : ChatRepository {
@@ -45,11 +41,11 @@ class FirebaseChatRepository : ChatRepository {
         awaitClose { listenerRegistration.remove() }
     }
     */
-    override suspend fun sendMessage(roomId: String, message: ChatMessage): Boolean {
+    override suspend fun sendMessage(roomId: String, message: Mensaje): Boolean {
         TODO("Not yet implemented")
     }
 
-    override suspend fun getChatRoom(roomId: String): ChatRoom? {
+    override suspend fun getChatRoom(roomId: String): Conversacion? {
         TODO("Not yet implemented")
     }
 }
