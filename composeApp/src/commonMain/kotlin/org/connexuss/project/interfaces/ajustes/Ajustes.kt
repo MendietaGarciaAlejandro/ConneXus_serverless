@@ -20,6 +20,8 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
+import androidx.compose.material.darkColors
+import androidx.compose.material.lightColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -40,9 +42,7 @@ import org.jetbrains.compose.resources.painterResource
 @Composable
 fun PantallaAjustesControlCuentas(navController: NavHostController) {
     // Lista de cuentas de ejemplo
-    val cuentas = listOf(
-        "xi_xin", "marytu5", "gatito47", "pup7", "paap7", "xi_xin"
-    )
+    val cuentas = generaUsuariosAleatorios()
 
     MaterialTheme {
         Scaffold(
@@ -102,9 +102,9 @@ fun PantallaAjustesControlCuentas(navController: NavHostController) {
                                             Spacer(modifier = Modifier.width(8.dp))
                                             Text(cuenta)
                                         }
-                                        // Ícono de persona a la derecha
+                                        // Ícono de desbloqueo a la derecha
                                         Icon(
-                                            painter = painterResource(Res.drawable.ic_person),
+                                            painter = painterResource(Res.drawable.unblock),
                                             contentDescription = "Persona",
                                             modifier = Modifier.size(32.dp)
                                         )
@@ -124,20 +124,16 @@ fun PantallaAjustesControlCuentas(navController: NavHostController) {
 fun PantallaAjustesAyuda(navController: NavHostController) {
     // Lista de Preguntas y Respuestas de ejemplo
     val faqs = listOf(
-        "No puedo agregar a alguien",
-        "RE: Haber estudiado",
-        "Me han silenciado",
-        "RE: le paso por tóxico",
-        "Cómo cambio mi alias público",
-        "RE: Con la mano",
-        "¿Puedo cambiar mi contraseña?",
-        "RE: Sí",
-        "Vender mis datos",
-        "RE: S.. NO, me re"
+        "No puedo agregar a alguien\n\rRE: Haber estudiado",
+        "Me han silenciado\n\rRE: Por algo será",
+        "Cómo cambio mi alias público\n\rRE: No se puede",
+        "¿Puedo cambiar mi contraseña?\n\rRE: Si",
+        "Vendeis mis datos\n\rRE: No, bueno, un poco",
     )
 
     // Estado para el reporte que el usuario escriba
     var reporte by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf("") }
 
     MaterialTheme {
         Scaffold(
@@ -182,7 +178,6 @@ fun PantallaAjustesAyuda(navController: NavHostController) {
                                 }
                             }
                         }
-
                         Spacer(modifier = Modifier.height(16.dp))
                         // Sección para escribir un reporte
                         Text("Envíe un reporte", style = MaterialTheme.typography.subtitle1)
@@ -199,20 +194,82 @@ fun PantallaAjustesAyuda(navController: NavHostController) {
                                 modifier = Modifier.weight(1f)
                             )
                             Button(onClick = {
-                                // Lógica para enviar el reporte
-                                // Ejemplo: se limpia el campo
-                                reporte = ""
+                                errorMessage = if (reporte.isBlank()) {
+                                    "Por favor, escribe algo"
+                                } else {
+                                    "Reporte enviado"
+                                }
                             }) {
-                                // Ícono de sobre
+                                // Ícono de sobre con un tamaño reducido de 24dp
                                 Icon(
                                     painter = painterResource(Res.drawable.ic_email),
-                                    contentDescription = "Enviar reporte"
+                                    contentDescription = "Enviar reporte",
+                                    modifier = Modifier.size(24.dp)
                                 )
                             }
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        // Mensaje de error o confirmación
+                        if (errorMessage.equals("Por favor, escribe algo")) {
+                            Text(errorMessage, color = Color.Red)
+                        } else if (errorMessage.equals("Reporte enviado")) {
+                            Text(errorMessage, color = Color.Green)
                         }
                     }
                 }
             }
         }
     }
+}
+
+@Composable
+fun PantallaCambiarTema(
+    navController: NavHostController,
+    temaClaro: Boolean,
+    onToggleTheme: () -> Unit
+) {
+    // La paleta de colores ya se aplica a nivel de MaterialTheme en AppContent
+    Scaffold(
+        topBar = {
+            DefaultTopBar(
+                title = "Cambiar Tema",
+                navController = navController,
+                showBackButton = true,
+                muestraEngranaje = false,
+                irParaAtras = true
+            )
+        }
+    ) { padding ->
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            LimitaTamanioAncho { modifier ->
+                Column(
+                    modifier = modifier
+                        .padding(padding)
+                        .padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text("Cambiar Tema", style = MaterialTheme.typography.h6)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(
+                        onClick = onToggleTheme,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Cambiar a tema ${if (temaClaro) "oscuro" else "claro"}")
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun generaUsuariosAleatorios(): List<String> {
+    val usuariosGenerados = mutableListOf<String>()
+    for (i in 1..100) {
+        usuariosGenerados.add("Usuario $i")
+    }
+    return usuariosGenerados
 }

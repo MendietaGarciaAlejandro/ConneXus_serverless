@@ -14,11 +14,12 @@ import org.connexuss.project.interfaces.sistema.muestraUsuarios
 
 import org.connexuss.project.interfaces.ajustes.PantallaAjustesAyuda
 import org.connexuss.project.interfaces.ajustes.PantallaAjustesControlCuentas
+import org.connexuss.project.interfaces.ajustes.PantallaCambiarTema
 import org.connexuss.project.interfaces.sistema.*
 
 
 @Composable
-fun Navegacion() {
+fun Navegacion(temaClaro: Boolean, onToggleTheme: () -> Unit) {
     val navController = rememberNavController()
     NavHost(navController = navController, startDestination = "splash") {
         composable("splash") {
@@ -28,17 +29,14 @@ fun Navegacion() {
             muestraHomePage(navController)
         }
         composable("login") {
-            //pantallaLogin(navController)
             PantallaLogin(navController)
         }
         composable("registro") {
-            //pantallaRegistro(navController)
             PantallaRegistro(navController)
         }
         composable("ajustes") {
             muestraAjustes(navController)
         }
-        //para mostrar los  datos predefinidos contactos
         composable("contactos") {
             muestraChats(navController)
         }
@@ -46,7 +44,6 @@ fun Navegacion() {
             muestraContactos(navController, GeneraUsuarios())
         }
         composable("restablecer") {
-            //restableceContrasenna(navController)
             PantallaRestablecer(navController)
         }
         composable("usuarios") {
@@ -63,6 +60,9 @@ fun Navegacion() {
         }
         composable("ajustesAyuda") {
             PantallaAjustesAyuda(navController)
+        }
+        composable("cambiarTema") {
+            PantallaCambiarTema(navController, temaClaro, onToggleTheme)
         }
     }
 }
