@@ -64,5 +64,25 @@ fun Navegacion(temaClaro: Boolean, onToggleTheme: () -> Unit) {
         composable("cambiarTema") {
             PantallaCambiarTema(navController, temaClaro, onToggleTheme)
         }
+        composable("mostrarPerfil/{userId}") {
+            backStackEntry ->
+            // Obtener userId de los argumentos
+            val userId = backStackEntry.arguments?.getString("userId")
+            mostrarPerfil(navController, userId)
+        }
+        composable("mostrarChat/{chatId}") {
+            backStackEntry ->
+            // Obtener chatId de los argumentos
+            val chatId = backStackEntry.arguments?.getString("chatId")
+                mostrarChat(navController, chatId)
+
+        }
+        composable("mostrarChatGrupo/{chatId}") {
+            backStackEntry ->
+            val chatId = backStackEntry.arguments?.getString("chatId")
+            mostrarChatGrupo(navController, chatId)
+        }
+
+
     }
 }
