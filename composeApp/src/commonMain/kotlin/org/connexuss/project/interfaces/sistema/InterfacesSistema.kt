@@ -2,6 +2,7 @@ package org.connexuss.project.interfaces.sistema
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,16 +11,21 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.AlertDialog
 import androidx.compose.material.BottomNavigation
 import androidx.compose.material.BottomNavigationItem
 import androidx.compose.material.Button
 import androidx.compose.material.Card
+import androidx.compose.material.Checkbox
 import androidx.compose.material.FloatingActionButton
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
@@ -27,9 +33,11 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
+import androidx.compose.material.TextButton
 import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
@@ -44,8 +52,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
@@ -112,6 +122,11 @@ fun DefaultTopBar(
         }
     )
 }
+
+//TopBar para conversaciones y grupos
+
+
+
 
 
 //BottomBar
@@ -464,11 +479,20 @@ fun restableceContrasenna(navController: NavHostController) {
 }
 // --- elemento chat ---
 @Composable
-fun ChatCard(chatItem: ConversacionesUsuario) {
+fun ChatCard(chatItem: ConversacionesUsuario, navController: NavHostController) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
+            .padding(vertical = 4.dp)
+            .clickable{
+                if(chatItem.conversacion.grupo){
+                    // Navegar a la pantalla de chat de grupo
+                    navController.navigate("mostrarChatGrupo/${chatItem.conversacion.id}")
+                }else {
+                    // Navegar a la pantalla de chat individual
+                    navController.navigate("mostrarChat/${chatItem.conversacion.id}")
+                }
+            },
         elevation = 4.dp
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -479,63 +503,12 @@ fun ChatCard(chatItem: ConversacionesUsuario) {
     }
 }
 
-// --- elemento usuario ---
-@Composable
-fun UsuCard(usuario: Usuario) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        elevation = 4.dp
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = "Nombre: ${usuario.getNombreCompleto()}")
-            Text(text = "Alias Público: ${usuario.getAlias()}")
-            Text(text = "Alias Privado: ${usuario.getAliasPrivado()}")
-        }
-    }
-}
-
 
 
 // --- Chats PorDefecto ---
 @Composable
 fun muestraChats(navController: NavHostController) {
-    // Genera 10 salas de chat de ejemplo
-    val dummyChatsRooms = List(10) { index ->
-        Conversacion(
-            id = "chatRoom_$index",
-            participants = listOf("user${index + 1}", "user${(index + 2)}"),
-            messages = listOf(
-                Mensaje(
-                    id = "msg${index}_1",
-                    senderId = "user${index + 1}",
-                    receiverId = "user${(index + 2)}",
-                    content = "Hola, ¿cómo estás en chat $index?",
-                    fechaMensaje = LocalDateTime(2023, 1, 1, 12, 0)
-                ),
-                Mensaje(
-                    id = "msg${index}_2",
-                    senderId = "user${(index + 2)}",
-                    receiverId = "user${index + 1}",
-                    content = "Todo bien, ¿y tú?",
-                    fechaMensaje = LocalDateTime(2023, 1, 1, 12, 5)
-                )
-            )
-        )
-    }
-
-    // Asocia cada sala de chat a un objeto ChatsUsers
-    val dummyChatsUsers = dummyChatsRooms.mapIndexed { index, chatRoom ->
-        ConversacionesUsuario(
-            id = "chatsUsers_$index",
-            idUser = "user${index + 1}",
-            conversacion = chatRoom
-        )
-    }
-
-    // Se inicializa la lista mutable con los chats generados
-    val listaChats = remember { mutableStateListOf<ConversacionesUsuario>().apply { addAll(dummyChatsUsers) } }
+    val listaChats = generaConversacionesUsuarios()
 
     MaterialTheme {
         Scaffold(
@@ -559,12 +532,10 @@ fun muestraChats(navController: NavHostController) {
                         .padding(padding)
                         .padding(16.dp)
                 ) {
-
                     items(listaChats) { chatItem ->
-                        ChatCard(chatItem = chatItem)
+                        ChatCard(chatItem = chatItem, navController = navController)
                     }
                 }
-                // Creo una caja con un botón flotante para mostrar contactos con un margen del tamaño de la botom bar
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -578,15 +549,96 @@ fun muestraChats(navController: NavHostController) {
                         Icon(Icons.Default.Person, contentDescription = "Nuevo")
                     }
                 }
-
             }
         }
     }
 }
 
+//funcion que genera una lista de conversaciones
+@Composable
+private fun generaConversacionesUsuarios(): SnapshotStateList<ConversacionesUsuario> {
+    // Conversaciones individuales (dummy)
+    val dummyChatsRooms = List(4) { index ->
+        Conversacion(
+            id = "chatRoom_$index",
+            participants = listOf("user${index + 1}", "user${(index + 2)}"),
+            messages = listOf(
+                Mensaje(
+                    id = "msg${index}_1",
+                    senderId = "user${index + 1}",
+                    receiverId = "user${(index + 2)}",
+                    content = "Hola, ¿cómo estás en chat $index?",
+                    fechaMensaje = LocalDateTime(2023, 1, 1, 12, 0)
+                ),
+                Mensaje(
+                    id = "msg${index}_2",
+                    senderId = "user${(index + 2)}",
+                    receiverId = "user${index + 1}",
+                    content = "Todo bien, ¿y tú?",
+                    fechaMensaje = LocalDateTime(2023, 1, 1, 12, 5)
+                )
+            )
+        )
+    }
 
+    val dummyChatsUsers = dummyChatsRooms.mapIndexed { index, chatRoom ->
+        ConversacionesUsuario(
+            id = "chatsUsers_$index",
+            idUser = "user${index + 1}",
+            conversacion = chatRoom
+        )
+    }
 
+    // Conversaciones de grupo
+    val dummyGroupChats = List(3) { index ->
+        Conversacion(
+            id = "groupChat_$index",
+            // Se crean grupos con tres participantes para que 'grupo' sea true, tenemos que ver como gestionar lo ed receiverId, ya que si es un grupo tiene que ser una lista de ids
+            participants = listOf("user${index + 1}", "user${index + 2}", "user${index + 3}"),
+            messages = listOf(
+                Mensaje(
+                    id = "group_msg${index}_1",
+                    senderId = "user${index + 1}",
+                    receiverId = "user${index + 2}",
+                    content = "Bienvenidos al grupo $index",
+                    fechaMensaje = LocalDateTime(2023, 1, 1, 12, 0)
+                ),
+                Mensaje(
+                    id = "group_msg${index}_1",
+                    senderId = "user${index + 2}",
+                    receiverId = "user${index + 1}",
+                    content = "Bienvenidos $index",
+                    fechaMensaje = LocalDateTime(2023, 1, 1, 12, 0)
+                ),
+                Mensaje(
+                    id = "group_msg${index}_2",
+                    senderId = "user${index + 3}",
+                    receiverId = "user${index + 1}",
+                    content = "Hola, ¿cómo estás en grupo $index?",
+                    fechaMensaje = LocalDateTime(2023, 1, 1, 12, 5)
+            )
+        )
+    )
+    }
 
+    val dummyGroupChatsUsers = dummyGroupChats.mapIndexed { index, chatRoom ->
+        ConversacionesUsuario(
+            id = "groupChatsUsers_$index",
+
+            idUser = chatRoom.participants.first(),
+            conversacion = chatRoom
+        )
+    }
+
+    // Se combinan ambas listas: chats individuales y grupos.
+    val listaChats = remember {
+        mutableStateListOf<ConversacionesUsuario>().apply {
+            addAll(dummyChatsUsers)
+            addAll(dummyGroupChatsUsers)
+        }
+    }
+    return listaChats
+}
 
 
 
@@ -595,6 +647,14 @@ fun muestraChats(navController: NavHostController) {
 @Preview
 fun muestraContactos(navController: NavHostController, contactos: List<Usuario>) {
     val usuarios = contactos
+
+    var showContactoDialog by remember { mutableStateOf(false) }
+    var idContacto by remember { mutableStateOf("") }
+    var inputText by remember { mutableStateOf("") }
+
+    var showChatDialog by remember { mutableStateOf(false) }
+    // Lista mutable para los contactos seleccionados para el chat.
+    val selectedContacts = remember { mutableStateListOf<Usuario>() }
 
     MaterialTheme {
         Scaffold(
@@ -608,17 +668,15 @@ fun muestraContactos(navController: NavHostController, contactos: List<Usuario>)
                 )
             }
         ) { padding ->
-            // Caja principal que contiene la lista y los botones superpuestos
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
             ) {
-                // Caja para la lista de usuarios, con un padding superior para dejar espacio a los botones
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(top = 80.dp) // Ajusta este valor según el alto que necesites para los botones
+                        .padding(top = 80.dp)
                 ) {
                     LimitaTamanioAncho { modifier ->
                         LazyColumn(
@@ -648,7 +706,6 @@ fun muestraContactos(navController: NavHostController, contactos: List<Usuario>)
                         }
                     }
                 }
-                // Row con botones superpuestos en la parte superior
                 Row(
                     modifier = Modifier
                         .align(Alignment.TopCenter)
@@ -658,22 +715,132 @@ fun muestraContactos(navController: NavHostController, contactos: List<Usuario>)
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     Button(
-                        onClick = { /* Mostrar todos los contactos */ },
+                        onClick = { showContactoDialog = true },
                         modifier = Modifier.weight(1f)
                     ) {
                         Text("Nuevo Contacto")
                     }
                     Button(
-                        onClick = { /* Mostrar contactos activos */ },
+                        onClick = {
+                            showChatDialog = true
+                        },
                         modifier = Modifier.weight(1f)
                     ) {
                         Text("Nuevo Chat")
                     }
                 }
+                // AlertDialog para "Nuevo Contacto"
+                if (showContactoDialog) {
+                    AlertDialog(
+                        onDismissRequest = { showContactoDialog = false },
+                        title = { Text(text = "Nuevo Contacto") },
+                        text = {
+                            Column {
+                                Text("Introduce el idContacto:")
+                                OutlinedTextField(
+                                    value = inputText,
+                                    onValueChange = { inputText = it },
+                                    label = { Text("idContacto") }
+                                )
+                            }
+                        },
+                        confirmButton = {
+                            TextButton(
+                                onClick = {
+                                    idContacto = inputText
+                                    showContactoDialog = false
+                                    // Aquí puedes agregar lógica adicional para procesar idContacto
+                                }
+                            ) {
+                                Text("Guardar")
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(
+                                onClick = { showContactoDialog = false }
+                            ) {
+                                Text("Cancelar")
+                            }
+                        }
+                    )
+                }
+                // AlertDialog para "Nuevo Chat" con selección múltiple de contactos
+                if (showChatDialog) {
+                    AlertDialog(
+                        onDismissRequest = {
+                            showChatDialog = false
+                            selectedContacts.clear()
+                        },
+                        title = { Text(text = "Nuevo Chat") },
+                        text = {
+                            Column {
+                                Text("Selecciona los contactos para el chat:")
+                                LazyColumn(modifier = Modifier.heightIn(max = 300.dp)) {
+                                    items(usuarios) { usuario ->
+                                        // Cada fila muestra el nombre y un checkbox para seleccionar/deseleccionar.
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(vertical = 4.dp)
+                                        ) {
+                                            val isSelected = selectedContacts.contains(usuario)
+                                            Checkbox(
+                                                checked = isSelected,
+                                                onCheckedChange = { checked ->
+                                                    if (checked) {
+                                                        selectedContacts.add(usuario)
+                                                    } else {
+                                                        selectedContacts.remove(usuario)
+                                                    }
+                                                }
+                                            )
+                                            Text(text = usuario.getNombreCompleto())
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        confirmButton = {
+                            TextButton(
+                                onClick = {
+                                    // Coge los IDs de los usuarios seleccionados.
+                                    val participantIds = selectedContacts.map { it.getIdUnico() }
+                                    // falta incluir el ID del usuario actual .
+                                    // Ejemplo de creación de conversación:
+                                    // val nuevaConversacion = Conversacion(
+                                    //     id = UUID.randomUUID().toString(),
+                                    //     participants = participantIds
+                                    // )
+                                    // función o navegar a otra pantalla.
+                                    showChatDialog = false
+                                    selectedContacts.clear()
+                                }
+                            ) {
+                                Text("Crear Chat")
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(
+                                onClick = {
+                                    showChatDialog = false
+                                    selectedContacts.clear()
+                                }
+                            ) {
+                                Text("Cancelar")
+                            }
+                        }
+                    )
+                }
             }
         }
     }
 }
+
+
+
+
+
 
 @Composable
 fun GeneraUsuarios(): SnapshotStateList<Usuario> {
@@ -710,7 +877,6 @@ fun GeneraUsuarios(): SnapshotStateList<Usuario> {
             almacenamientoUsuario.agregarUsuario(user2)
             almacenamientoUsuario.agregarUsuario(user3)
 
-// A continuación se generan más usuarios de ejemplo, hasta completar 50.
 // Los datos (nombre, edad, email, username) son ficticios y se reparten de forma arbitraria.
 
             val user4 = UtilidadesUsuario().instanciaUsuario(
@@ -1092,7 +1258,6 @@ fun GeneraUsuarios(): SnapshotStateList<Usuario> {
             almacenamientoUsuario.agregarUsuario(user49)
             almacenamientoUsuario.agregarUsuario(user50)
 
-// Finalmente, añadimos todos los usuarios a la lista principal `usuarios`
             usuarios.addAll(almacenamientoUsuario.obtenerUsuarios())
 
         } catch (e: IllegalArgumentException) {
@@ -1102,10 +1267,46 @@ fun GeneraUsuarios(): SnapshotStateList<Usuario> {
     return usuarios
 }
 
+// --- elemento usuario ---
+@Composable
+fun UsuCard(usuario: Usuario, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+            .clickable( onClick = onClick),
+        elevation = 4.dp
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(text = "Nombre: ${usuario.getNombreCompleto()}")
+            Text(text = "Alias Público: ${usuario.getAlias()}")
+            Text(text = "Alias Privado: ${usuario.getAliasPrivado()}")
+        }
+    }
+}
+
+
 // --- Ajustes ---
 @Composable
 @Preview()
 fun muestraAjustes(navController: NavHostController = rememberNavController()) {
+    val user = Usuario(
+        nombre = "Isabel Fuentes",
+        edad = 26,
+        correo = "isabel.fuentes@example.com",
+        aliasPublico = "isabelf26",
+        activo = true,
+        contactos = emptyList(),
+        chatUser = ConversacionesUsuario(
+            id = "dummyChatsUser",
+            idUser = "dummyUser",
+            conversacion = Conversacion(
+                id = "dummyChatRoom",
+                participants = listOf("dummyUser"),
+                messages = emptyList()
+            )
+        )
+    )
     MaterialTheme {
         Scaffold(
             topBar = {
@@ -1120,7 +1321,7 @@ fun muestraAjustes(navController: NavHostController = rememberNavController()) {
         ) { padding ->
             Box(
                 modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center // Centrar contenido en pantallas grandes
+                contentAlignment = Alignment.Center
             ) {
                 LimitaTamanioAncho { modifier ->
                     Column(
@@ -1131,25 +1332,11 @@ fun muestraAjustes(navController: NavHostController = rememberNavController()) {
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        // Se crea un usuario dummy para mostrar datos de prueba
                         UsuCard(
-                            Usuario(
-                                nombre = "Isabel Fuentes",
-                                edad = 26,
-                                correo = "isabel.fuentes@example.com",
-                                aliasPublico = "isabelf26",
-                                activo = true,
-                                contactos = emptyList(),
-                                chatUser = ConversacionesUsuario(
-                                    id = "dummyChatsUser",
-                                    idUser = "dummyUser",
-                                    conversacion = Conversacion(
-                                        id = "dummyChatRoom",
-                                        participants = listOf("dummyUser"),
-                                        messages = emptyList()
-                                    )
-                                )
-                            )
+                            usuario = user,
+                            onClick = {
+                                navController.navigate("mostrarPerfil/${user.getIdUnico()}")
+                            }
                         )
 
                         Button(
@@ -1165,13 +1352,13 @@ fun muestraAjustes(navController: NavHostController = rememberNavController()) {
                             Text("Cambiar Fuente")
                         }
                         Button(
-                            onClick = { /* Cerrar Sesión */ },
+                            onClick = { /* Eliminar Chats */ },
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text("(Eliminar Chats)")
                         }
                         Button(
-                            onClick = { /* Cerrar Sesión */ },
+                            onClick = { /* Control de Cuentas */ },
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text("(Control de Cuentas)")
@@ -1194,6 +1381,348 @@ fun muestraAjustes(navController: NavHostController = rememberNavController()) {
         }
     }
 }
+
+
+// --- Mostrar Perdil ---
+@Composable
+fun mostrarPerfil(navController: NavHostController, userId: String?) {
+    val usuario = remember { getUsuarioDummyPorId(userId) }
+
+    MaterialTheme {
+        Scaffold(
+            topBar = {
+                DefaultTopBar(
+                    title = "Perfil",
+                    navController = navController,
+                    showBackButton = true,
+                    irParaAtras = true,
+                    muestraEngranaje = false
+                )
+            }
+        ) { padding ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentAlignment = Alignment.Center
+            ) {
+                LimitaTamanioAncho { modifier ->
+                    // Por ejemplo, un Column con TextFields:
+                    Column(
+                        modifier = modifier
+                            .fillMaxSize()
+                            .padding(16.dp)
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        if (usuario == null) {
+                            Text("Usuario no encontrado")
+                        } else {
+                            // Mostramos los campos con la info del usuario
+                            var aliasPrivado by remember { mutableStateOf(usuario.getAliasPrivado()) }
+                            var aliasPublico by remember { mutableStateOf(usuario.getAlias()) }
+                            var descripcion by remember { mutableStateOf("Descripción genérica") }
+                            var nombre by remember { mutableStateOf(usuario.getNombreCompleto()) }
+                            var email by remember { mutableStateOf(usuario.getCorreo()) }
+                            var isNameVisible by remember { mutableStateOf(false) }
+                            // Tu interfaz (Row, OutlinedTextFields, Botones, etc.)
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                OutlinedTextField(
+                                    value = aliasPrivado,
+                                    onValueChange = { aliasPrivado = it },
+                                    label = { Text("Alias Privado") },
+                                    modifier = Modifier.weight(1f)
+                                )
+                                OutlinedTextField(
+                                    value = aliasPublico,
+                                    onValueChange = { aliasPublico = it },
+                                    label = { Text("Alias Público") },
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+
+                            OutlinedTextField(
+                                value = descripcion,
+                                onValueChange = { descripcion = it },
+                                label = { Text("Descripción") },
+                                modifier = Modifier.fillMaxWidth(),
+                                maxLines = 3
+                            )
+
+                            // Nombre
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                OutlinedTextField(
+                                    value = nombre,
+                                    onValueChange = { nombre = it },
+                                    label = { Text("Nombre") },
+                                    modifier = Modifier.weight(1f),
+                                    visualTransformation = if (isNameVisible) VisualTransformation.None else PasswordVisualTransformation()
+
+                                )
+                                IconButton(
+                                    onClick = { isNameVisible = !isNameVisible }
+                                ) {
+                                    Icon(
+                                        modifier = Modifier.size(20.dp),
+                                        painter = if (isNameVisible)
+                                            painterResource(Res.drawable.visibilidadOn)
+                                        else
+                                            painterResource(Res.drawable.visibilidadOff),
+                                        contentDescription = if (isNameVisible) "Ocultar nombre" else "Mostrar nombre"
+
+                                    )
+                                }
+                                TextButton(onClick = { /* Lógica para modificar nombre */ }) {
+                                    Text("Modificar")
+                                }
+                            }
+
+                            // Email
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                OutlinedTextField(
+                                    value = email,
+                                    onValueChange = { email = it },
+                                    label = { Text("Email") },
+                                    modifier = Modifier.weight(1f)
+                                )
+                                TextButton(onClick = { /* Lógica para modificar email */ }) {
+                                    Text("Modificar")
+                                }
+                            }
+
+                            // Botones inferior
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceEvenly
+                            ) {
+                                Button(onClick = { /* Guardar cambios */ }) {
+                                    Text("Aplicar")
+                                }
+                                Button(onClick = { navController.popBackStack() }) {
+                                    Text("Cancelar")
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Ejemplo de función que "busca" un usuario de prueba
+fun getUsuarioDummyPorId(userId: String?): Usuario? {
+    if (userId == null) return null
+    // Normalmente buscarías en tu DB o ViewModel, pero aquí devolvemos dummy:
+    return Usuario(
+        nombre = "Isabel Fuentes",
+        edad = 26,
+        correo = "isabel.fuentes@example.com",
+        aliasPublico = "isabelf26",
+        activo = true,
+        contactos = emptyList(),
+        chatUser = ConversacionesUsuario(
+            id = "dummyChatsUser",
+            idUser = "dummyUser",
+            conversacion = Conversacion(
+                id = "dummyChatRoom",
+                participants = listOf("dummyUser"),
+                messages = emptyList()
+            )
+        )
+    ).apply {
+        setIdUnico(userId) // Forzamos que su idUnico sea el userId que nos pasaron
+    }
+}
+
+
+
+
+//Mostrar chat entre dos personas, se podria mejorar pasandole una conversacion en vez de id del chat
+@Composable
+fun mostrarChat(navController: NavHostController, chatId : String?) {
+    // Recorrer la lista de chats y buscar el chat cuya conversación tenga el id pasado
+    val listaChats = generaConversacionesUsuarios()
+    val chat = listaChats.find { it.conversacion.id == chatId } ?: return
+    // Obtener el nombre del primer participante
+    val participant1Name = chat.conversacion.participants[0]
+
+    // Estado para el mensaje que se está escribiendo
+    var mensajeNuevo by remember { mutableStateOf("") }
+
+    Scaffold(
+        topBar = {
+            DefaultTopBar(
+                title = participant1Name, // Mostramos el nombre del participante1
+                navController = navController,
+                showBackButton = true,
+                irParaAtras = true,
+                muestraEngranaje = false
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
+            // Sección de mensajes
+            LazyColumn(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(8.dp)
+            ) {
+                items(chat.conversacion.messages) { mensaje ->
+                    // Dependiendo del senderId, izquierda o derecha
+                    val isParticipant1 = mensaje.senderId == participant1Name
+                    val alignment = if (isParticipant1) Alignment.CenterStart else Alignment.CenterEnd
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
+                        contentAlignment = alignment
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .padding(8.dp)
+                                .widthIn(max = 250.dp)
+                        ) {
+                            Text(text = mensaje.content)
+                        }
+                    }
+                }
+            }
+
+            // Barra de abajo
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedTextField(
+                    value = mensajeNuevo,
+                    onValueChange = { mensajeNuevo = it },
+                    modifier = Modifier.weight(1f),
+                    placeholder = { Text("Escribe...") }
+                )
+                IconButton(
+                    onClick = {
+                        // Aquí iría la lógica para enviar el mensaje
+                        // (por ejemplo, actualizar la lista de mensajes en tu ViewModel)
+                        // y luego limpiar el campo de texto
+                        // Ejemplo:
+                        // enviarMensaje(conversacion.id, participant1Name, participant2Name, mensajeNuevo)
+                        mensajeNuevo = ""
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.Send,
+                        contentDescription = "Enviar"
+                    )
+                }
+            }
+        }
+    }
+}
+
+//Mostrar chatGrupo
+@Composable
+fun mostrarChatGrupo(navController: NavHostController, chatId: String?) {
+    // Recorrer la lista de chats y buscar el chat cuya conversación tenga el id pasado
+    val listaChats = generaConversacionesUsuarios()
+    val chat = listaChats.find { it.conversacion.id == chatId } ?: return
+    // Definir un título para el grupo (puedes modificarlo según tus necesidades)
+    val groupTitle = "Grupo: ${chat.conversacion.id}"
+
+    // Estado para el mensaje que se está escribiendo
+    var mensajeNuevo by remember { mutableStateOf("") }
+
+    Scaffold(
+        topBar = {
+            DefaultTopBar(
+                title = groupTitle,
+                navController = navController,
+                showBackButton = true,
+                irParaAtras = true,
+                muestraEngranaje = false
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
+            // Sección de mensajes
+            LazyColumn(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(8.dp)
+            ) {
+                items(chat.conversacion.messages) { mensaje ->
+                    // En un chat de grupo se muestra el nombre del emisor junto al mensaje
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp)
+                    ) {
+                        Text(
+                            text = mensaje.senderId,
+                            style = MaterialTheme.typography.caption
+                        )
+                        Text(
+                            text = mensaje.content,
+                            style = MaterialTheme.typography.body1
+                        )
+                    }
+                }
+            }
+
+            // Barra de escritura y botón de enviar
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedTextField(
+                    value = mensajeNuevo,
+                    onValueChange = { mensajeNuevo = it },
+                    modifier = Modifier.weight(1f),
+                    placeholder = { Text("Escribe...") }
+                )
+                IconButton(
+                    onClick = {
+                        // Aquí iría la lógica para enviar el mensaje al grupo
+                        // Por ejemplo, actualizar la conversación en un ViewModel
+                        mensajeNuevo = ""
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.Send,
+                        contentDescription = "Enviar"
+                    )
+                }
+            }
+        }
+    }
+}
+
+
+
+
+
 
 // --- Home Page ---
 // En la HomePage NO se muestra el botón de retroceso.
