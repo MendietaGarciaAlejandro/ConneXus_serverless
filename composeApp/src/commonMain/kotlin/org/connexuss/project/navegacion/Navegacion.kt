@@ -15,6 +15,8 @@ import org.connexuss.project.interfaces.sistema.muestraUsuarios
 import org.connexuss.project.interfaces.ajustes.PantallaAjustesAyuda
 import org.connexuss.project.interfaces.ajustes.PantallaAjustesControlCuentas
 import org.connexuss.project.interfaces.ajustes.PantallaCambiarTema
+import org.connexuss.project.interfaces.foro.muestraForo
+import org.connexuss.project.interfaces.foro.muestraTemaForo
 import org.connexuss.project.interfaces.sistema.*
 
 
@@ -84,5 +86,11 @@ fun Navegacion(temaClaro: Boolean, onToggleTheme: () -> Unit) {
         }
 
 
+        composable("foro") {
+            muestraForo(navController)
+        }
+        composable("temaForo") {
+            muestraTemaForo(navController)
+        }
     }
 }

@@ -139,9 +139,9 @@ fun MiBottomBar(navController: NavHostController) {
     BottomNavigation {
         // Ítem de Chats
         BottomNavigationItem(
-            selected = currentRoute == "chats",
+            selected = currentRoute == "contactos",
             onClick = {
-                navController.navigate("chats") {
+                navController.navigate("contactos") {
                     navController.graph.startDestinationRoute?.let {
                         popUpTo(it) {
                             saveState = true
@@ -163,9 +163,9 @@ fun MiBottomBar(navController: NavHostController) {
 
         // Ítem de Foros
         BottomNavigationItem(
-            selected = currentRoute == "foros",
+            selected = currentRoute == "foro",
             onClick = {
-                navController.navigate("foros") {
+                navController.navigate("foro") {
                     navController.graph.startDestinationRoute?.let {
                         popUpTo(it) {
                             saveState = true
@@ -178,11 +178,11 @@ fun MiBottomBar(navController: NavHostController) {
             icon = {
                 Icon(
                     painterResource(Res.drawable.ic_foros),
-                    contentDescription = "Foros",
+                    contentDescription = "Foro",
                     modifier = Modifier.size(20.dp)
                 )
             },
-            label = { Text("Foros") }
+            label = { Text("Foro") }
         )
     }
 }
@@ -1364,7 +1364,7 @@ fun muestraAjustes(navController: NavHostController = rememberNavController()) {
                             Text("(Control de Cuentas)")
                         }
                         Button(
-                            onClick = { /* Ayuda */ },
+                            onClick = { navController.navigate("ajustesAyuda") },
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text("Ayuda")
@@ -2189,27 +2189,22 @@ fun PantallaLogin(navController: NavHostController) {
                         ) {
                             Text("Acceder")
                         }
-                        Spacer( modifier = Modifier.height(16.dp))
-                        Button(
-                            onClick = { navController.navigate("contactos") },
-                        ) {
-                            Text("Debug: Ir a Contactos")
-                        }
+                        //Spacer( modifier = Modifier.height(16.dp))
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
                             Button(
+                                onClick = { navController.navigate("contactos") },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text("Debug: Ir a Contactos")
+                            }
+                            Button(
                                 onClick = { navController.navigate("ajustesControlCuentas") },
                                 modifier = Modifier.weight(1f)
                             ) {
                                 Text("Debug: Ajustes control cuentas")
-                            }
-                            Button(
-                                onClick = { navController.navigate("ajustesAyuda") },
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Text("Debug: Ajustes ayuda/FAQ")
                             }
                         }
                         if (errorMessage.isNotEmpty()) {

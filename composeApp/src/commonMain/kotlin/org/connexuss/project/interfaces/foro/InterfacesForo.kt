@@ -32,18 +32,26 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
+import org.connexuss.project.interfaces.sistema.DefaultTopBar
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 // --- Foro ---
 @Composable
 @Preview
-fun muestraForo() {
+fun muestraForo(navController: NavHostController) {
     val temas = remember { mutableStateListOf<String>() }
     var nuevoTema by remember { mutableStateOf("") }
 
     MaterialTheme {
         Scaffold(
-            topBar = { TopAppBar(title = { Text("Foro") }) }
+            topBar = { DefaultTopBar(
+                title = "Foro",
+                navController = navController,
+                showBackButton = true,
+                irParaAtras = true,
+                muestraEngranaje = true
+            ) }
         ) { padding ->
             Column(
                 modifier = Modifier
@@ -94,21 +102,22 @@ fun muestraForo() {
 // --- Tema del Foro ---
 @Composable
 @Preview
-fun muestraTemaForo() {
+fun muestraTemaForo(navController: NavHostController) {
     val mensajes = remember { mutableStateListOf<String>() }
     var nuevoMensaje by remember { mutableStateOf("") }
 
     MaterialTheme {
         Scaffold(
             topBar = {
-                TopAppBar(
-                    title = { Text("Tema del Foro") },
-                    navigationIcon = {
-                        IconButton(onClick = { /* Navegar atrás */ }) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás")
-                        }
-                    }
-                )
+                TopAppBar({
+                    DefaultTopBar(
+                        title = "Tema del Foro",
+                        navController = navController,
+                        showBackButton = true,
+                        irParaAtras = true,
+                        muestraEngranaje = true
+                    )
+                })
             }
         ) { padding ->
             Column(modifier = Modifier.fillMaxSize().padding(padding)) {
