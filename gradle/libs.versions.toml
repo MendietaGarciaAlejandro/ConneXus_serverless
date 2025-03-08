@@ -27,6 +27,8 @@ decompose = "2.2.0-alpha03"
 navigation-compose = "2.8.0-alpha10"
 extensionsComposeJetbrains = "2.2.0-alpha03"
 kotlinxSerialization = "1.7.0"
+foundationAndroid = "1.7.8"
+animationCoreLint = "1.8.0-beta03"
 
 [libraries]
 arkivanov-decompose-v080 = { module = "com.arkivanov.decompose:decompose", version.ref = "arkivanovDecompose" }
@@ -54,6 +56,8 @@ navigation-compose = { module = "org.jetbrains.androidx.navigation:navigation-co
 #decompose-jetbrains = { module = "com.arkivanov.decompose:extensions-jetbrains-compose", version.ref = "extensionsComposeJetbrains" }
 decompose-jetbrains = { module = "com.arkivanov.decompose:extensions-compose-jetbrains", version.ref = "extensionsComposeJetbrains" }
 kotlinx-serialization = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
+androidx-foundation-android = { group = "androidx.compose.foundation", name = "foundation-android", version.ref = "foundationAndroid" }
+androidx-animation-core-lint = { group = "androidx.compose.animation", name = "animation-core-lint", version.ref = "animationCoreLint" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

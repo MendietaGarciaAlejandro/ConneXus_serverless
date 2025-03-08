@@ -115,6 +115,8 @@ android {
 dependencies {
     implementation(libs.firebase.firestore.ktx)
     implementation(libs.kotlinx.datetime)
+    implementation(libs.androidx.foundation.android)
+    implementation(libs.androidx.animation.core.lint)
     debugImplementation(compose.uiTooling)
 }
 
