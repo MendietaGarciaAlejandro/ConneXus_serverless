@@ -21,8 +21,9 @@ import org.connexuss.project.interfaces.sistema.*
 
 
 @Composable
-fun Navegacion(temaClaro: Boolean, onToggleTheme: () -> Unit) {
+fun Navegacion(temaClaro: Boolean, onToggleTheme: () -> Unit, colores: List<Any>): Int {
     val navController = rememberNavController()
+    var posicionColorPillado = 0
     NavHost(navController = navController, startDestination = "splash") {
         composable("splash") {
             SplashScreen(navController)
@@ -64,7 +65,7 @@ fun Navegacion(temaClaro: Boolean, onToggleTheme: () -> Unit) {
             PantallaAjustesAyuda(navController)
         }
         composable("cambiarTema") {
-            PantallaCambiarTema(navController, temaClaro, onToggleTheme)
+            posicionColorPillado = PantallaCambiarTema(navController, temaClaro, onToggleTheme, colores)
         }
         composable("mostrarPerfil/{userId}") {
             backStackEntry ->
@@ -93,4 +94,5 @@ fun Navegacion(temaClaro: Boolean, onToggleTheme: () -> Unit) {
             muestraTemaForo(navController)
         }
     }
+    return posicionColorPillado
 }
