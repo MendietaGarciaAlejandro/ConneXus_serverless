@@ -8,26 +8,23 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import org.connexuss.project.navegacion.Navegacion
-import org.jetbrains.compose.ui.tooling.preview.Preview
+
+data class TemaConfig(
+    val temaClaro: Boolean = true,
+    val colores: Colors = coloresClaros
+)
 
 @Composable
-@Preview
 fun App() {
-    val todosLosColores = ListaCompletaColores
-    var temaClaro by rememberSaveable { mutableStateOf(true) }
-    // Define los colores que se usarán en la aplicación
-    var colores = if (temaClaro) coloresClaros else coloresOscuros
-    var colorPillado: Any? = null
-    if (colorPillado != null) {
-        colores = ListaCompletaColores[colorPillado as Int] as Colors
-    }
-    MaterialTheme(colors = colores) {
-        // Aquí usas tu NavHost para la navegación
-        colorPillado =
+    var temaConfig by rememberSaveable { mutableStateOf(TemaConfig()) }
+    MaterialTheme(colors = temaConfig.colores) {
         Navegacion(
-            temaClaro = temaClaro,
-            onToggleTheme = { temaClaro = !temaClaro },
-            colores = todosLosColores,
+            temaConfig = temaConfig,
+            onToggleTheme = { temaConfig = temaConfig.copy(temaClaro = !temaConfig.temaClaro,
+                colores = if (temaConfig.temaClaro) coloresOscuros else coloresClaros) },
+            onColorChange = { nuevoColor ->
+                temaConfig = temaConfig.copy(colores = nuevoColor)
+            }
         )
     }
 }

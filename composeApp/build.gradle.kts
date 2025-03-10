@@ -179,6 +179,7 @@ dependencies {
     implementation(libs.kotlinx.datetime)
     implementation(libs.androidx.foundation.android)
     implementation(libs.androidx.animation.core.lint)
+    implementation(libs.androidx.material3.android)
     debugImplementation(compose.uiTooling)
 }
 

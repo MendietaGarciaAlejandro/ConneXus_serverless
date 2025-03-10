@@ -1,10 +1,12 @@
 package org.connexuss.project.navegacion
 
-
+import androidx.compose.material.Colors
 import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import org.connexuss.project.ListaCompletaColores
+import org.connexuss.project.TemaConfig
 
 import org.connexuss.project.interfaces.sistema.SplashScreen
 import org.connexuss.project.interfaces.sistema.muestraAjustes
@@ -19,9 +21,12 @@ import org.connexuss.project.interfaces.foro.muestraForo
 import org.connexuss.project.interfaces.foro.muestraTemaForo
 import org.connexuss.project.interfaces.sistema.*
 
-
 @Composable
-fun Navegacion(temaClaro: Boolean, onToggleTheme: () -> Unit, colores: List<Any>): Int {
+fun Navegacion(
+    temaConfig: TemaConfig,
+    onToggleTheme: () -> Unit,
+    onColorChange: (Colors) -> Unit
+) {
     val navController = rememberNavController()
     var posicionColorPillado = 0
     NavHost(navController = navController, startDestination = "splash") {
@@ -65,7 +70,7 @@ fun Navegacion(temaClaro: Boolean, onToggleTheme: () -> Unit, colores: List<Any>
             PantallaAjustesAyuda(navController)
         }
         composable("cambiarTema") {
-            posicionColorPillado = PantallaCambiarTema(navController, temaClaro, onToggleTheme, colores)
+            PantallaCambiarTema(navController = navController, temaConfig = temaConfig, onToggleTheme = onToggleTheme, onColorChange = onColorChange)
         }
         composable("mostrarPerfil/{userId}") {
             backStackEntry ->
@@ -78,15 +83,12 @@ fun Navegacion(temaClaro: Boolean, onToggleTheme: () -> Unit, colores: List<Any>
             // Obtener chatId de los argumentos
             val chatId = backStackEntry.arguments?.getString("chatId")
                 mostrarChat(navController, chatId)
-
         }
         composable("mostrarChatGrupo/{chatId}") {
             backStackEntry ->
             val chatId = backStackEntry.arguments?.getString("chatId")
             mostrarChatGrupo(navController, chatId)
         }
-
-
         composable("foro") {
             muestraForo(navController)
         }
@@ -94,5 +96,4 @@ fun Navegacion(temaClaro: Boolean, onToggleTheme: () -> Unit, colores: List<Any>
             muestraTemaForo(navController)
         }
     }
-    return posicionColorPillado
 }
