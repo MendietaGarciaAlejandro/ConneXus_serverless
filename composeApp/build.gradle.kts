@@ -45,7 +45,7 @@ kotlin {
     
     sourceSets {
         val desktopMain by getting
-        val wasmJsMain by getting
+        // val wasmJsMain by getting
         
         androidMain.dependencies {
             implementation(compose.preview)
@@ -54,6 +54,9 @@ kotlin {
             implementation(libs.decompose.extensions.compose.jetpack.v080)
             //implementation(libs.decompose)
             implementation(libs.kotlinx.serialization)
+
+            // Ktor
+            implementation(libs.ktor.client.okhttp)
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -70,6 +73,14 @@ kotlin {
             //implementation(libs.decompose.jetbrains)
             //implementation(libs.decompose)
             implementation(libs.kotlinx.serialization)
+
+            // Ktor
+            implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.content.negotiation)
+            implementation(libs.ktor.serialization.kotlinx.json)
+
+            // Ktor for JS
+            implementation(libs.ktor.client.js)
         }
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
@@ -77,10 +88,21 @@ kotlin {
             implementation(libs.arkivanov.decompose.v080)
             //implementation(libs.decompose.extensions.compose.jetpack.v080)
             implementation(libs.decompose.jetbrains)
+
+            // Ktor
+            implementation(libs.ktor.client.cio.jvm)
         }
-        wasmJsMain.dependencies {
-            //implementation("org.jetbrains.compose.web:compose-web-router:1.0.0-beta6")
-            implementation(libs.kotlinx.serialization)
+        val wasmJsMain by getting {
+            dependencies {
+                //implementation("org.jetbrains.compose.web:compose-web-router:1.0.0-beta6")
+                implementation(libs.kotlinx.serialization)
+
+                // Ktor
+                implementation(libs.ktor.client.js)
+                implementation(libs.ktor.client.content.negotiation) // Faltaba
+                implementation(libs.ktor.serialization.kotlinx.json) // Faltaba
+                implementation(libs.kotlinx.serialization) // Requerido
+            }
         }
     }
 }
