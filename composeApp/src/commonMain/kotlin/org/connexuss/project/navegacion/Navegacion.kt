@@ -19,6 +19,7 @@ import org.connexuss.project.interfaces.ajustes.PantallaAjustesControlCuentas
 import org.connexuss.project.interfaces.ajustes.PantallaCambiarTema
 import org.connexuss.project.interfaces.foro.muestraForo
 import org.connexuss.project.interfaces.foro.muestraTemaForo
+import org.connexuss.project.interfaces.idiomas.PantallaIdiomas
 import org.connexuss.project.interfaces.sistema.*
 
 @Composable
@@ -94,6 +95,9 @@ fun Navegacion(
         }
         composable("temaForo") {
             muestraTemaForo(navController)
+        }
+        composable("idiomas") {
+            PantallaIdiomas(navController)
         }
     }
 }
