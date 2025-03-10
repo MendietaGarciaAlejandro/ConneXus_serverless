@@ -30,6 +30,9 @@ kotlinxSerialization = "1.7.0"
 foundationAndroid = "1.7.8"
 animationCoreLint = "1.8.0-beta03"
 
+# Ktor
+ktor = "2.3.7"
+
 [libraries]
 arkivanov-decompose-v080 = { module = "com.arkivanov.decompose:decompose", version.ref = "arkivanovDecompose" }
 core = { module = "kotlinx.io.core:core", version.ref = "core" }
@@ -59,11 +62,20 @@ kotlinx-serialization = { module = "org.jetbrains.kotlinx:kotlinx-serialization-
 androidx-foundation-android = { group = "androidx.compose.foundation", name = "foundation-android", version.ref = "foundationAndroid" }
 androidx-animation-core-lint = { group = "androidx.compose.animation", name = "animation-core-lint", version.ref = "animationCoreLint" }
 
+# Ktor
+ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
+ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
+ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
+ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
+ktor-client-cio-jvm = { module = "io.ktor:ktor-client-cio-jvm", version.ref = "ktor" }
+ktor-client-js = { module = "io.ktor:ktor-client-js", version.ref = "ktor" }
+
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
 androidLibrary = { id = "com.android.library", version.ref = "agp" }
 composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "compose-multiplatform" }
 composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+
 # plugin de serializadcion de kotlin
 kotlinxSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
