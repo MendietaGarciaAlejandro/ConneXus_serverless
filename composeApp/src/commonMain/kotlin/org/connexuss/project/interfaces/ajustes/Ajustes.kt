@@ -15,10 +15,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.Button
 import androidx.compose.material.Card
+import androidx.compose.material.Colors
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Scaffold
+import androidx.compose.material.Switch
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -35,6 +37,7 @@ import connexus_serverless.composeapp.generated.resources.Res
 import connexus_serverless.composeapp.generated.resources.avatar
 import connexus_serverless.composeapp.generated.resources.ic_email
 import connexus_serverless.composeapp.generated.resources.unblock
+import org.connexuss.project.TemaConfig
 import org.connexuss.project.coloresAmarillo
 import org.connexuss.project.coloresAzul
 import org.connexuss.project.coloresGris
@@ -233,16 +236,14 @@ fun PantallaAjustesAyuda(navController: NavHostController) {
 @Composable
 fun PantallaCambiarTema(
     navController: NavHostController,
-    temaClaro: Boolean,
+    temaConfig: TemaConfig,
     onToggleTheme: () -> Unit,
-    colores: List<Any>,
-): Int {
-    var posicionColorPillado = 0
-    // La paleta de colores ya se aplica a nivel de MaterialTheme en AppContent
+    onColorChange: (Colors) -> Unit
+) {
     Scaffold(
         topBar = {
             DefaultTopBar(
-                title = "Cambiar Tema",
+                title = "Ajustes / Tema",
                 navController = navController,
                 showBackButton = true,
                 muestraEngranaje = false,
@@ -255,88 +256,77 @@ fun PantallaCambiarTema(
             contentAlignment = Alignment.Center
         ) {
             LimitaTamanioAncho { modifier ->
-                // Columnas con los nombre de los colores de los temas disponibles (azul, amarillo, verde, rojo, etc.)
-                // Si se pulsa en uno de ellos, se cambia el tema.
                 Column(
                     modifier = modifier
                         .padding(padding)
                         .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text("Cambiar Tema", style = MaterialTheme.typography.h6.copy(textAlign = TextAlign.Center))
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Button(
-                        onClick = onToggleTheme,
+                    // Título
+                    Text(
+                        "Modo",
+                        style = MaterialTheme.typography.h6.copy(textAlign = TextAlign.Center),
                         modifier = Modifier.fillMaxWidth()
+                    )
+                    // Switch para alternar entre tema claro y oscuro
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("Cambiar a tema ${if (temaClaro) "oscuro" else "claro"}")
+                        Text("Modo oscuro", style = MaterialTheme.typography.body1, /*modifier = Modifier.weight(1f) */)
+                        // Si temaConfig.temaClaro es true, entonces el modo oscuro está desactivado.
+                        val isDarkMode = !temaConfig.temaClaro
+                        Switch(checked = isDarkMode, onCheckedChange = { onToggleTheme() })
+                        Text("Modo claro", style = MaterialTheme.typography.body1, /*modifier = Modifier.weight(1f)*/)
                     }
-                    // Botón para cambiar a tema azul
+                    Spacer(modifier = Modifier.height(16.dp))
+                    // Título
+                    Text(
+                        "Colores",
+                        style = MaterialTheme.typography.h6.copy(textAlign = TextAlign.Center),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    // Botones para cambiar a otros colores
                     Button(
-                        onClick = {
-                            // Cambia el tema a azul (coloresAzul) y actualiza el estado
-                            posicionColorPillado = colores.indexOf(coloresAzul)
-                        },
+                        onClick = { onColorChange(coloresAzul) },
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text("Cambiar a tema azul")
                     }
-                    // Botón para cambiar a tema amarillo
                     Button(
-                        onClick = {
-                            // Cambia el tema a amarillo
-                            posicionColorPillado = colores.indexOf(coloresAmarillo)
-                        },
+                        onClick = { onColorChange(coloresAmarillo) },
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text("Cambiar a tema amarillo")
                     }
-                    // Botón para cambiar a tema verde
                     Button(
-                        onClick = {
-                            // Cambia el tema a verde
-                            posicionColorPillado = colores.indexOf(coloresVerde)
-                        },
+                        onClick = { onColorChange(coloresVerde) },
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text("Cambiar a tema verde")
                     }
-                    // Botón para cambiar a tema rojo
                     Button(
-                        onClick = {
-                            // Cambia el tema a rojo
-                            posicionColorPillado = colores.indexOf(coloresRojo)
-                        },
+                        onClick = { onColorChange(coloresRojo) },
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text("Cambiar a tema rojo")
                     }
-                    // Botón para cambiar a tema morado
                     Button(
-                        onClick = {
-                            // Cambia el tema a rojo
-                            posicionColorPillado = colores.indexOf(coloresMorado)
-                        },
+                        onClick = { onColorChange(coloresMorado) },
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text("Cambiar a tema morado")
                     }
-                    // Botón para cambiar a tema gris
                     Button(
-                        onClick = {
-                            // Cambia el tema a rojo
-                            posicionColorPillado = colores.indexOf(coloresGris)
-                        },
+                        onClick = { onColorChange(coloresGris) },
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text("Cambiar a tema gris")
                     }
-                    // Botón para cambiar a tema naranja
                     Button(
-                        onClick = {
-                            // Cambia el tema a rojo
-                            posicionColorPillado = colores.indexOf(coloresNaranja)
-                        },
+                        onClick = { onColorChange(coloresNaranja) },
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text("Cambiar a tema naranja")
@@ -345,7 +335,6 @@ fun PantallaCambiarTema(
             }
         }
     }
-    return posicionColorPillado
 }
 
 @Composable
