@@ -36,6 +36,6 @@ class UtilidadesUsuario {
         if (!correoValido || !edadValida || !nombreValido || !aliasPublicoValido) {
             throw IllegalArgumentException("Datos de usuario no validos")
         }
-        return Usuario(nombre, edad, correo, aliasPublico, activo, emptyList(), ConversacionesUsuario(generarIdUnico(), generarIdUnico(), Conversacion(generarIdUnico(), emptyList())))
+        return Usuario(nombre, edad, correo, aliasPublico, activo, emptyList(), ConversacionesUsuario(generarIdUnico(), generarIdUnico(), listOf( Conversacion( generarIdUnico(), emptyList() ) ) ) )
     }
 }

@@ -16,6 +16,8 @@ class Usuario {
     private var activo: Boolean = false
     private lateinit var contactos: List<String>
     private lateinit var chatUser: ConversacionesUsuario
+    private var descripcion: String = ""
+    private var contrasennia: String = ""
 
     // Constructor completo
     constructor(nombre: String, edad: Int, correo: String, aliasPublico: String, activo: Boolean, contactos: List<String>, chatUser: ConversacionesUsuario) {
@@ -109,6 +111,23 @@ class Usuario {
     fun setChatUser(chatUser: ConversacionesUsuario) {
         this.chatUser = chatUser
     }
+
+    fun getDescripcion(): String {
+        return descripcion
+    }
+
+    fun setDescripcion(descripcion: String) {
+        this.descripcion = descripcion
+    }
+
+    fun getContrasennia(): String {
+        return contrasennia
+    }
+
+    fun setContrasennia(contrasennia: String) {
+        this.contrasennia = contrasennia
+    }
+
 
     // Metodo para imprimir los datos públicos del usuario
     @Composable

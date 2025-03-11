@@ -67,6 +67,7 @@ import kotlinx.datetime.LocalDateTime
 import org.connexuss.project.comunicacion.Mensaje
 import org.connexuss.project.comunicacion.Conversacion
 import org.connexuss.project.comunicacion.ConversacionesUsuario
+import org.connexuss.project.datos.UsuarioPrincipal
 import org.connexuss.project.interfaces.modificadorTamannio.LimitaTamanioAncho
 
 import org.connexuss.project.usuario.AlmacenamientoUsuario
@@ -479,26 +480,26 @@ fun restableceContrasenna(navController: NavHostController) {
 }
 // --- elemento chat ---
 @Composable
-fun ChatCard(chatItem: ConversacionesUsuario, navController: NavHostController) {
+fun ChatCard(conversacion:Conversacion, navController: NavHostController) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
             .clickable{
-                if(chatItem.conversacion.grupo){
+                if(conversacion.grupo){
                     // Navegar a la pantalla de chat de grupo
-                    navController.navigate("mostrarChatGrupo/${chatItem.conversacion.id}")
+                    navController.navigate("mostrarChatGrupo/${conversacion.id}")
                 }else {
                     // Navegar a la pantalla de chat individual
-                    navController.navigate("mostrarChat/${chatItem.conversacion.id}")
+                    navController.navigate("mostrarChat/${conversacion.id}")
                 }
             },
         elevation = 4.dp
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = "ID Chat: ${chatItem.conversacion.id}")
-            Text(text = "Participantes: ${chatItem.conversacion.participants.joinToString()}")
-            Text(text = "Número de mensajes: ${chatItem.conversacion.messages.size}")
+            Text(text = "ID Chat: ${conversacion.id}")
+            Text(text = "Participantes: ${conversacion.participants.joinToString()}")
+            Text(text = "Número de mensajes: ${conversacion.messages.size}")
         }
     }
 }
@@ -508,7 +509,7 @@ fun ChatCard(chatItem: ConversacionesUsuario, navController: NavHostController) 
 // --- Chats PorDefecto ---
 @Composable
 fun muestraChats(navController: NavHostController) {
-    val listaChats = generaConversacionesUsuarios()
+    val listaChats = UsuarioPrincipal.getChatUser().conversaciones
 
     MaterialTheme {
         Scaffold(
@@ -532,8 +533,8 @@ fun muestraChats(navController: NavHostController) {
                         .padding(padding)
                         .padding(16.dp)
                 ) {
-                    items(listaChats) { chatItem ->
-                        ChatCard(chatItem = chatItem, navController = navController)
+                    items(listaChats) { conversacion ->
+                        ChatCard(conversacion = conversacion, navController = navController)
                     }
                 }
                 Box(
@@ -554,91 +555,6 @@ fun muestraChats(navController: NavHostController) {
     }
 }
 
-//funcion que genera una lista de conversaciones
-@Composable
-private fun generaConversacionesUsuarios(): SnapshotStateList<ConversacionesUsuario> {
-    // Conversaciones individuales (dummy)
-    val dummyChatsRooms = List(4) { index ->
-        Conversacion(
-            id = "chatRoom_$index",
-            participants = listOf("user${index + 1}", "user${(index + 2)}"),
-            messages = listOf(
-                Mensaje(
-                    id = "msg${index}_1",
-                    senderId = "user${index + 1}",
-                    receiverId = "user${(index + 2)}",
-                    content = "Hola, ¿cómo estás en chat $index?",
-                    fechaMensaje = LocalDateTime(2023, 1, 1, 12, 0)
-                ),
-                Mensaje(
-                    id = "msg${index}_2",
-                    senderId = "user${(index + 2)}",
-                    receiverId = "user${index + 1}",
-                    content = "Todo bien, ¿y tú?",
-                    fechaMensaje = LocalDateTime(2023, 1, 1, 12, 5)
-                )
-            )
-        )
-    }
-
-    val dummyChatsUsers = dummyChatsRooms.mapIndexed { index, chatRoom ->
-        ConversacionesUsuario(
-            id = "chatsUsers_$index",
-            idUser = "user${index + 1}",
-            conversacion = chatRoom
-        )
-    }
-
-    // Conversaciones de grupo
-    val dummyGroupChats = List(3) { index ->
-        Conversacion(
-            id = "groupChat_$index",
-            // Se crean grupos con tres participantes para que 'grupo' sea true, tenemos que ver como gestionar lo ed receiverId, ya que si es un grupo tiene que ser una lista de ids
-            participants = listOf("user${index + 1}", "user${index + 2}", "user${index + 3}"),
-            messages = listOf(
-                Mensaje(
-                    id = "group_msg${index}_1",
-                    senderId = "user${index + 1}",
-                    receiverId = "user${index + 2}",
-                    content = "Bienvenidos al grupo $index",
-                    fechaMensaje = LocalDateTime(2023, 1, 1, 12, 0)
-                ),
-                Mensaje(
-                    id = "group_msg${index}_1",
-                    senderId = "user${index + 2}",
-                    receiverId = "user${index + 1}",
-                    content = "Bienvenidos $index",
-                    fechaMensaje = LocalDateTime(2023, 1, 1, 12, 0)
-                ),
-                Mensaje(
-                    id = "group_msg${index}_2",
-                    senderId = "user${index + 3}",
-                    receiverId = "user${index + 1}",
-                    content = "Hola, ¿cómo estás en grupo $index?",
-                    fechaMensaje = LocalDateTime(2023, 1, 1, 12, 5)
-            )
-        )
-    )
-    }
-
-    val dummyGroupChatsUsers = dummyGroupChats.mapIndexed { index, chatRoom ->
-        ConversacionesUsuario(
-            id = "groupChatsUsers_$index",
-
-            idUser = chatRoom.participants.first(),
-            conversacion = chatRoom
-        )
-    }
-
-    // Se combinan ambas listas: chats individuales y grupos.
-    val listaChats = remember {
-        mutableStateListOf<ConversacionesUsuario>().apply {
-            addAll(dummyChatsUsers)
-            addAll(dummyGroupChatsUsers)
-        }
-    }
-    return listaChats
-}
 
 
 
@@ -838,435 +754,6 @@ fun muestraContactos(navController: NavHostController, contactos: List<Usuario>)
 }
 
 
-
-
-
-
-@Composable
-fun GeneraUsuarios(): SnapshotStateList<Usuario> {
-    val almacenamientoUsuario = remember { AlmacenamientoUsuario() }
-    val usuarios = remember { mutableStateListOf<Usuario>() }
-
-    LaunchedEffect(Unit) {
-        try {
-            // Usuarios iniciales
-            val user1 = UtilidadesUsuario().instanciaUsuario(
-                "Juan Perez",
-                25,
-                "paco@jerte.org",
-                "pakito58",
-                true
-            )
-            val user2 = UtilidadesUsuario().instanciaUsuario(
-                "Maria Lopez",
-                30,
-                "marii@si.se",
-                "marii",
-                true
-            )
-            val user3 = UtilidadesUsuario().instanciaUsuario(
-                "Pedro Sanchez",
-                40,
-                "roba@espannoles.es",
-                "roba",
-                true
-            )
-
-// Agregamos estos primeros usuarios al almacenamiento
-            almacenamientoUsuario.agregarUsuario(user1)
-            almacenamientoUsuario.agregarUsuario(user2)
-            almacenamientoUsuario.agregarUsuario(user3)
-
-// Los datos (nombre, edad, email, username) son ficticios y se reparten de forma arbitraria.
-
-            val user4 = UtilidadesUsuario().instanciaUsuario(
-                "Carla Montes",
-                27,
-                "carla.montes@example.com",
-                "carlam27",
-                true
-            )
-            val user5 = UtilidadesUsuario().instanciaUsuario(
-                "Sofía Hernández",
-                32,
-                "sofia.hernandez@example.com",
-                "sofia32",
-                true
-            )
-            val user6 = UtilidadesUsuario().instanciaUsuario(
-                "Pablo Ortiz",
-                29,
-                "pablo.ortiz@example.com",
-                "pablo29",
-                true
-            )
-            val user7 = UtilidadesUsuario().instanciaUsuario(
-                "Lucía Ramos",
-                22,
-                "lucia.ramos@example.com",
-                "luciar22",
-                true
-            )
-            val user8 = UtilidadesUsuario().instanciaUsuario(
-                "Sergio Blanco",
-                45,
-                "sergio.blanco@example.com",
-                "sergiob45",
-                true
-            )
-            val user9 = UtilidadesUsuario().instanciaUsuario(
-                "Andrea Alarcón",
-                35,
-                "andrea.alarcon@example.com",
-                "andrea35",
-                true
-            )
-            val user10 = UtilidadesUsuario().instanciaUsuario(
-                "Miguel Flores",
-                19,
-                "miguel.flores@example.com",
-                "miguelf19",
-                true
-            )
-            val user11 = UtilidadesUsuario().instanciaUsuario(
-                "Sara González",
-                31,
-                "sara.gonzalez@example.com",
-                "sarag31",
-                true
-            )
-            val user12 = UtilidadesUsuario().instanciaUsuario(
-                "David Medina",
-                28,
-                "david.medina@example.com",
-                "davidm28",
-                true
-            )
-            val user13 = UtilidadesUsuario().instanciaUsuario(
-                "Elena Ruiz",
-                26,
-                "elena.ruiz@example.com",
-                "elena26",
-                true
-            )
-            val user14 = UtilidadesUsuario().instanciaUsuario(
-                "Alberto Vega",
-                43,
-                "alberto.vega@example.com",
-                "albertov43",
-                true
-            )
-            val user15 = UtilidadesUsuario().instanciaUsuario(
-                "Julia Rojas",
-                37,
-                "julia.rojas@example.com",
-                "juliar37",
-                true
-            )
-            val user16 = UtilidadesUsuario().instanciaUsuario(
-                "Marcos Fernández",
-                41,
-                "marcos.fernandez@example.com",
-                "marcos41",
-                true
-            )
-            val user17 = UtilidadesUsuario().instanciaUsuario(
-                "Daniela Muñoz",
-                20,
-                "daniela.munoz@example.com",
-                "danimu20",
-                true
-            )
-            val user18 = UtilidadesUsuario().instanciaUsuario(
-                "Carlos Pérez",
-                34,
-                "carlos.perez@example.com",
-                "carlosp34",
-                true
-            )
-            val user19 = UtilidadesUsuario().instanciaUsuario(
-                "Tamara Díaz",
-                38,
-                "tamara.diaz@example.com",
-                "tamarad38",
-                true
-            )
-            val user20 = UtilidadesUsuario().instanciaUsuario(
-                "Gonzalo Márquez",
-                24,
-                "gonzalo.marquez@example.com",
-                "gonzalom24",
-                true
-            )
-            val user21 = UtilidadesUsuario().instanciaUsuario(
-                "Patricia Soto",
-                36,
-                "patricia.soto@example.com",
-                "patricias36",
-                true
-            )
-            val user22 = UtilidadesUsuario().instanciaUsuario(
-                "Raúl Campos",
-                42,
-                "raul.campos@example.com",
-                "raulc42",
-                true
-            )
-            val user23 = UtilidadesUsuario().instanciaUsuario(
-                "Irene Cabrera",
-                25,
-                "irene.cabrera@example.com",
-                "irene25",
-                true
-            )
-            val user24 = UtilidadesUsuario().instanciaUsuario(
-                "Rodrigo Luna",
-                33,
-                "rodrigo.luna@example.com",
-                "rodrigo33",
-                true
-            )
-            val user25 = UtilidadesUsuario().instanciaUsuario(
-                "Nerea Delgado",
-                29,
-                "nerea.delgado@example.com",
-                "neread29",
-                true
-            )
-            val user26 = UtilidadesUsuario().instanciaUsuario(
-                "Adrián Ramos",
-                44,
-                "adrian.ramos@example.com",
-                "adrianr44",
-                true
-            )
-            val user27 = UtilidadesUsuario().instanciaUsuario(
-                "Beatriz Calderón",
-                27,
-                "beatriz.calderon@example.com",
-                "beac27",
-                true
-            )
-            val user28 = UtilidadesUsuario().instanciaUsuario(
-                "Ximena Navarro",
-                23,
-                "ximena.navarro@example.com",
-                "ximenan23",
-                true
-            )
-            val user29 = UtilidadesUsuario().instanciaUsuario(
-                "Felipe Lara",
-                39,
-                "felipe.lara@example.com",
-                "felipel39",
-                true
-            )
-            val user30 = UtilidadesUsuario().instanciaUsuario(
-                "Olga Martín",
-                21,
-                "olga.martin@example.com",
-                "olgam21",
-                true
-            )
-            val user31 = UtilidadesUsuario().instanciaUsuario(
-                "Diego Castillo",
-                48,
-                "diego.castillo@example.com",
-                "diegoc48",
-                true
-            )
-            val user32 = UtilidadesUsuario().instanciaUsuario(
-                "Alicia León",
-                26,
-                "alicia.leon@example.com",
-                "alicia26",
-                true
-            )
-            val user33 = UtilidadesUsuario().instanciaUsuario(
-                "Tomás Vázquez",
-                54,
-                "tomas.vazquez@example.com",
-                "tomasv54",
-                true
-            )
-            val user34 = UtilidadesUsuario().instanciaUsuario(
-                "Natalia Espinosa",
-                29,
-                "natalia.espinosa@example.com",
-                "nataliae29",
-                true
-            )
-            val user35 = UtilidadesUsuario().instanciaUsuario(
-                "Esteban Gil",
-                51,
-                "esteban.gil@example.com",
-                "estebang51",
-                true
-            )
-            val user36 = UtilidadesUsuario().instanciaUsuario(
-                "Rosa Ibáñez",
-                30,
-                "rosa.ibanez@example.com",
-                "rosai30",
-                true
-            )
-            val user37 = UtilidadesUsuario().instanciaUsuario(
-                "Luis Morales",
-                55,
-                "luis.morales@example.com",
-                "luism55",
-                true
-            )
-            val user38 = UtilidadesUsuario().instanciaUsuario(
-                "Diana Acosta",
-                33,
-                "diana.acosta@example.com",
-                "dianaa33",
-                true
-            )
-            val user39 = UtilidadesUsuario().instanciaUsuario(
-                "Javier Ponce",
-                46,
-                "javier.ponce@example.com",
-                "javiers46",
-                true
-            )
-            val user40 = UtilidadesUsuario().instanciaUsuario(
-                "Carmen Rivero",
-                28,
-                "carmen.rivero@example.com",
-                "carmen28",
-                true
-            )
-            val user41 = UtilidadesUsuario().instanciaUsuario(
-                "Andrés Silva",
-                47,
-                "andres.silva@example.com",
-                "andress47",
-                true
-            )
-            val user42 = UtilidadesUsuario().instanciaUsuario(
-                "Laura Sancho",
-                24,
-                "laura.sancho@example.com",
-                "lauras24",
-                true
-            )
-            val user43 = UtilidadesUsuario().instanciaUsuario(
-                "Gabriel Escudero",
-                31,
-                "gabriel.escudero@example.com",
-                "gabriele31",
-                true
-            )
-            val user44 = UtilidadesUsuario().instanciaUsuario(
-                "Dario Esparza",
-                36,
-                "dario.esparza@example.com",
-                "darioe36",
-                true
-            )
-            val user45 = UtilidadesUsuario().instanciaUsuario(
-                "Verónica Salazar",
-                25,
-                "veronica.salazar@example.com",
-                "veronicas25",
-                true
-            )
-            val user46 = UtilidadesUsuario().instanciaUsuario(
-                "Ernesto Herrera",
-                34,
-                "ernesto.herrera@example.com",
-                "ernestoh34",
-                true
-            )
-            val user47 = UtilidadesUsuario().instanciaUsuario(
-                "Isabel Fuentes",
-                26,
-                "isabel.fuentes@example.com",
-                "isabelf26",
-                true
-            )
-            val user48 = UtilidadesUsuario().instanciaUsuario(
-                "Matías Rosales",
-                38,
-                "matias.rosales@example.com",
-                "matiasr38",
-                true
-            )
-            val user49 = UtilidadesUsuario().instanciaUsuario(
-                "Lorena Dávila",
-                23,
-                "lorena.davila@example.com",
-                "lorenad23",
-                true
-            )
-            val user50 = UtilidadesUsuario().instanciaUsuario(
-                "Santiago Ibarra",
-                44,
-                "santiago.ibarra@example.com",
-                "santi44",
-                true
-            )
-
-// Agregamos los usuarios recién creados al almacenamiento
-            almacenamientoUsuario.agregarUsuario(user4)
-            almacenamientoUsuario.agregarUsuario(user5)
-            almacenamientoUsuario.agregarUsuario(user6)
-            almacenamientoUsuario.agregarUsuario(user7)
-            almacenamientoUsuario.agregarUsuario(user8)
-            almacenamientoUsuario.agregarUsuario(user9)
-            almacenamientoUsuario.agregarUsuario(user10)
-            almacenamientoUsuario.agregarUsuario(user11)
-            almacenamientoUsuario.agregarUsuario(user12)
-            almacenamientoUsuario.agregarUsuario(user13)
-            almacenamientoUsuario.agregarUsuario(user14)
-            almacenamientoUsuario.agregarUsuario(user15)
-            almacenamientoUsuario.agregarUsuario(user16)
-            almacenamientoUsuario.agregarUsuario(user17)
-            almacenamientoUsuario.agregarUsuario(user18)
-            almacenamientoUsuario.agregarUsuario(user19)
-            almacenamientoUsuario.agregarUsuario(user20)
-            almacenamientoUsuario.agregarUsuario(user21)
-            almacenamientoUsuario.agregarUsuario(user22)
-            almacenamientoUsuario.agregarUsuario(user23)
-            almacenamientoUsuario.agregarUsuario(user24)
-            almacenamientoUsuario.agregarUsuario(user25)
-            almacenamientoUsuario.agregarUsuario(user26)
-            almacenamientoUsuario.agregarUsuario(user27)
-            almacenamientoUsuario.agregarUsuario(user28)
-            almacenamientoUsuario.agregarUsuario(user29)
-            almacenamientoUsuario.agregarUsuario(user30)
-            almacenamientoUsuario.agregarUsuario(user31)
-            almacenamientoUsuario.agregarUsuario(user32)
-            almacenamientoUsuario.agregarUsuario(user33)
-            almacenamientoUsuario.agregarUsuario(user34)
-            almacenamientoUsuario.agregarUsuario(user35)
-            almacenamientoUsuario.agregarUsuario(user36)
-            almacenamientoUsuario.agregarUsuario(user37)
-            almacenamientoUsuario.agregarUsuario(user38)
-            almacenamientoUsuario.agregarUsuario(user39)
-            almacenamientoUsuario.agregarUsuario(user40)
-            almacenamientoUsuario.agregarUsuario(user41)
-            almacenamientoUsuario.agregarUsuario(user42)
-            almacenamientoUsuario.agregarUsuario(user43)
-            almacenamientoUsuario.agregarUsuario(user44)
-            almacenamientoUsuario.agregarUsuario(user45)
-            almacenamientoUsuario.agregarUsuario(user46)
-            almacenamientoUsuario.agregarUsuario(user47)
-            almacenamientoUsuario.agregarUsuario(user48)
-            almacenamientoUsuario.agregarUsuario(user49)
-            almacenamientoUsuario.agregarUsuario(user50)
-
-            usuarios.addAll(almacenamientoUsuario.obtenerUsuarios())
-
-        } catch (e: IllegalArgumentException) {
-            println(e.message)
-        }
-    }
-    return usuarios
-}
-
 // --- elemento usuario ---
 @Composable
 fun UsuCard(usuario: Usuario, onClick: () -> Unit) {
@@ -1290,23 +777,7 @@ fun UsuCard(usuario: Usuario, onClick: () -> Unit) {
 @Composable
 @Preview()
 fun muestraAjustes(navController: NavHostController = rememberNavController()) {
-    val user = Usuario(
-        nombre = "Isabel Fuentes",
-        edad = 26,
-        correo = "isabel.fuentes@example.com",
-        aliasPublico = "isabelf26",
-        activo = true,
-        contactos = emptyList(),
-        chatUser = ConversacionesUsuario(
-            id = "dummyChatsUser",
-            idUser = "dummyUser",
-            conversacion = Conversacion(
-                id = "dummyChatRoom",
-                participants = listOf("dummyUser"),
-                messages = emptyList()
-            )
-        )
-    )
+    val user = UsuarioPrincipal
     MaterialTheme {
         Scaffold(
             topBar = {
@@ -1335,7 +806,7 @@ fun muestraAjustes(navController: NavHostController = rememberNavController()) {
                         UsuCard(
                             usuario = user,
                             onClick = {
-                                navController.navigate("mostrarPerfil/${user.getIdUnico()}")
+                                navController.navigate("mostrarPerfilPrincipal")
                             }
                         )
 
@@ -1385,8 +856,23 @@ fun muestraAjustes(navController: NavHostController = rememberNavController()) {
 
 // --- Mostrar Perdil ---
 @Composable
-fun mostrarPerfil(navController: NavHostController, userId: String?) {
-    val usuario = remember { getUsuarioDummyPorId(userId) }
+fun mostrarPerfil(navController: NavHostController, usuario: Usuario?) {
+    val usuario = usuario
+
+    // dialogs
+    var showDialogNombre by remember { mutableStateOf(false) }
+    var nuevoNombre by remember { mutableStateOf("") }
+    var showDialogEmail by remember { mutableStateOf(false) }
+    var nuevoEmail by remember { mutableStateOf("") }
+
+
+    // campos usuario
+    var aliasPrivado by remember { mutableStateOf(usuario?.getAliasPrivado() ?: "") }
+    var aliasPublico by remember { mutableStateOf(usuario?.getAlias() ?: "") }
+    var descripcion by remember { mutableStateOf(usuario?.getDescripcion() ?: "") }
+    var nombre by remember { mutableStateOf(usuario?.getNombreCompleto() ?: "") }
+    var email by remember { mutableStateOf(usuario?.getCorreo() ?: "") }
+    var isNameVisible by remember { mutableStateOf(false) }
 
     MaterialTheme {
         Scaffold(
@@ -1407,7 +893,6 @@ fun mostrarPerfil(navController: NavHostController, userId: String?) {
                 contentAlignment = Alignment.Center
             ) {
                 LimitaTamanioAncho { modifier ->
-                    // Por ejemplo, un Column con TextFields:
                     Column(
                         modifier = modifier
                             .fillMaxSize()
@@ -1418,14 +903,7 @@ fun mostrarPerfil(navController: NavHostController, userId: String?) {
                         if (usuario == null) {
                             Text("Usuario no encontrado")
                         } else {
-                            // Mostramos los campos con la info del usuario
-                            var aliasPrivado by remember { mutableStateOf(usuario.getAliasPrivado()) }
-                            var aliasPublico by remember { mutableStateOf(usuario.getAlias()) }
-                            var descripcion by remember { mutableStateOf("Descripción genérica") }
-                            var nombre by remember { mutableStateOf(usuario.getNombreCompleto()) }
-                            var email by remember { mutableStateOf(usuario.getCorreo()) }
-                            var isNameVisible by remember { mutableStateOf(false) }
-                            // Tu interfaz (Row, OutlinedTextFields, Botones, etc.)
+                            // Alias
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -1443,7 +921,7 @@ fun mostrarPerfil(navController: NavHostController, userId: String?) {
                                     modifier = Modifier.weight(1f)
                                 )
                             }
-
+                            // Descripción
                             OutlinedTextField(
                                 value = descripcion,
                                 onValueChange = { descripcion = it },
@@ -1451,19 +929,18 @@ fun mostrarPerfil(navController: NavHostController, userId: String?) {
                                 modifier = Modifier.fillMaxWidth(),
                                 maxLines = 3
                             )
-
-                            // Nombre
+                            // Nombre: campo de solo lectura con opción para modificar mediante Dialog
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 OutlinedTextField(
                                     value = nombre,
-                                    onValueChange = { nombre = it },
+                                    onValueChange = { /* No se edita directamente */ },
                                     label = { Text("Nombre") },
                                     modifier = Modifier.weight(1f),
+                                    readOnly = true,
                                     visualTransformation = if (isNameVisible) VisualTransformation.None else PasswordVisualTransformation()
-
                                 )
                                 IconButton(
                                     onClick = { isNameVisible = !isNameVisible }
@@ -1475,36 +952,54 @@ fun mostrarPerfil(navController: NavHostController, userId: String?) {
                                         else
                                             painterResource(Res.drawable.visibilidadOff),
                                         contentDescription = if (isNameVisible) "Ocultar nombre" else "Mostrar nombre"
-
                                     )
                                 }
-                                TextButton(onClick = { /* Lógica para modificar nombre */ }) {
+                                TextButton(
+                                    onClick = {
+                                        nuevoNombre = nombre
+                                        showDialogNombre = true
+                                    }
+                                ) {
                                     Text("Modificar")
                                 }
                             }
-
-                            // Email
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 OutlinedTextField(
                                     value = email,
-                                    onValueChange = { email = it },
+                                    onValueChange = {},
                                     label = { Text("Email") },
+                                    readOnly = true,
                                     modifier = Modifier.weight(1f)
                                 )
-                                TextButton(onClick = { /* Lógica para modificar email */ }) {
+                                TextButton(
+                                    onClick = {
+                                        nuevoEmail = email
+                                        showDialogEmail = true
+                                    }
+                                ) {
                                     Text("Modificar")
                                 }
                             }
-
-                            // Botones inferior
+                            // Botones inferiores
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceEvenly
                             ) {
-                                Button(onClick = { /* Guardar cambios */ }) {
+                                Button(
+                                    onClick = {
+                                        usuario?.apply {
+                                            setAliasPrivado(aliasPrivado)
+                                            setAlias(aliasPublico)
+                                            setDescripcion(descripcion)
+                                            setNombreCompleto(nombre)
+                                            setCorreo(email)
+                                        }
+                                        navController.popBackStack()
+                                    }
+                                ) {
                                     Text("Aplicar")
                                 }
                                 Button(onClick = { navController.popBackStack() }) {
@@ -1517,32 +1012,72 @@ fun mostrarPerfil(navController: NavHostController, userId: String?) {
             }
         }
     }
+    if (showDialogEmail) {
+        AlertDialog(
+            onDismissRequest = { showDialogEmail = false },
+            title = { Text("Modificar Email") },
+            text = {
+                OutlinedTextField(
+                    value = nuevoEmail,
+                    onValueChange = { nuevoEmail = it },
+                    label = { Text("Nuevo email") }
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        email = nuevoEmail
+                        showDialogEmail = false
+                    }
+                ) {
+                    Text("Guardar")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showDialogEmail = false }
+                ) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
+    // Cambiar a cotraseña
+    if (showDialogNombre) {
+        AlertDialog(
+            onDismissRequest = { showDialogNombre = false },
+            title = { Text("Modificar Nombre") },
+            text = {
+                OutlinedTextField(
+                    value = nuevoNombre,
+                    onValueChange = { nuevoNombre = it },
+                    label = { Text("Nuevo nombre") }
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        nombre = nuevoNombre  // Actualiza el campo nombre
+                        showDialogNombre = false
+                    }
+                ) {
+                    Text("Guardar")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showDialogNombre = false }
+                ) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
 }
 
-// Ejemplo de función que "busca" un usuario de prueba
-fun getUsuarioDummyPorId(userId: String?): Usuario? {
-    if (userId == null) return null
-    // Normalmente buscarías en tu DB o ViewModel, pero aquí devolvemos dummy:
-    return Usuario(
-        nombre = "Isabel Fuentes",
-        edad = 26,
-        correo = "isabel.fuentes@example.com",
-        aliasPublico = "isabelf26",
-        activo = true,
-        contactos = emptyList(),
-        chatUser = ConversacionesUsuario(
-            id = "dummyChatsUser",
-            idUser = "dummyUser",
-            conversacion = Conversacion(
-                id = "dummyChatRoom",
-                participants = listOf("dummyUser"),
-                messages = emptyList()
-            )
-        )
-    ).apply {
-        setIdUnico(userId) // Forzamos que su idUnico sea el userId que nos pasaron
-    }
-}
+
 
 
 
@@ -1550,11 +1085,11 @@ fun getUsuarioDummyPorId(userId: String?): Usuario? {
 //Mostrar chat entre dos personas, se podria mejorar pasandole una conversacion en vez de id del chat
 @Composable
 fun mostrarChat(navController: NavHostController, chatId : String?) {
-    // Recorrer la lista de chats y buscar el chat cuya conversación tenga el id pasado
-    val listaChats = generaConversacionesUsuarios()
-    val chat = listaChats.find { it.conversacion.id == chatId } ?: return
+    // Obtienes la lista de conversaciones y buscas la conversacion que tenga el id pasado
+    val listaChats = UsuarioPrincipal.getChatUser().conversaciones
+    val chat = listaChats.find { it.id == chatId } ?: return
     // Obtener el nombre del primer participante
-    val participant1Name = chat.conversacion.participants[0]
+    val participant1Name = chat.participants[1]
 
     // Estado para el mensaje que se está escribiendo
     var mensajeNuevo by remember { mutableStateOf("") }
@@ -1581,7 +1116,7 @@ fun mostrarChat(navController: NavHostController, chatId : String?) {
                     .weight(1f)
                     .padding(8.dp)
             ) {
-                items(chat.conversacion.messages) { mensaje ->
+                items(chat.messages) { mensaje ->
                     // Dependiendo del senderId, izquierda o derecha
                     val isParticipant1 = mensaje.senderId == participant1Name
                     val alignment = if (isParticipant1) Alignment.CenterStart else Alignment.CenterEnd
@@ -1640,10 +1175,10 @@ fun mostrarChat(navController: NavHostController, chatId : String?) {
 @Composable
 fun mostrarChatGrupo(navController: NavHostController, chatId: String?) {
     // Recorrer la lista de chats y buscar el chat cuya conversación tenga el id pasado
-    val listaChats = generaConversacionesUsuarios()
-    val chat = listaChats.find { it.conversacion.id == chatId } ?: return
+    val listaChats = UsuarioPrincipal.getChatUser().conversaciones
+    val chat = listaChats.find { it.id == chatId } ?: return
     // Definir un título para el grupo (puedes modificarlo según tus necesidades)
-    val groupTitle = "Grupo: ${chat.conversacion.id}"
+    val groupTitle = "Grupo: ${chat.id}"
 
     // Estado para el mensaje que se está escribiendo
     var mensajeNuevo by remember { mutableStateOf("") }
@@ -1670,7 +1205,7 @@ fun mostrarChatGrupo(navController: NavHostController, chatId: String?) {
                     .weight(1f)
                     .padding(8.dp)
             ) {
-                items(chat.conversacion.messages) { mensaje ->
+                items(chat.messages) { mensaje ->
                     // En un chat de grupo se muestra el nombre del emisor junto al mensaje
                     Column(
                         modifier = Modifier
