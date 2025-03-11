@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.Button
 import androidx.compose.material.Scaffold
@@ -19,10 +20,13 @@ import org.connexuss.project.interfaces.sistema.DefaultTopBar
 
 @Composable
 fun PantallaIdiomas(navController: NavHostController) {
+    // Obtén el estado global del idioma desde el CompositionLocal
+    val idiomaState = LocalIdiomaState.current
+
     Scaffold(
         topBar = {
             DefaultTopBar(
-                title = "Idiomas",
+                title = traducir("idiomas"),
                 navController = navController,
                 showBackButton = true,
                 muestraEngranaje = false,
@@ -42,53 +46,22 @@ fun PantallaIdiomas(navController: NavHostController) {
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // Botones para cambiar el idioma
-                    Button(
-                        onClick = { /* Cambiar idioma a españon */ }
-                    ) {
-                        Text(
-                            text = "Español"
-                        )
-                    }
-                    Spacer(modifier = Modifier.padding(8.dp))
-                    Button(
-                        onClick = { /* Cambiar idioma a inglés */ }
-                    ) {
-                        Text(
-                            text = "Inglés"
-                        )
-                    }
-                    Spacer(modifier = Modifier.padding(8.dp))
-                    Button(
-                        onClick = { /* Cambiar idioma a portugués */ }
-                    ) {
-                        Text(
-                            text = "Portugués"
-                        )
-                    }
-                    Spacer(modifier = Modifier.padding(8.dp))
-                    Button(
-                        onClick = { /* Cambiar idioma a francés */ }
-                    ) {
-                        Text(
-                            text = "Francés"
-                        )
-                    }
-                    Spacer(modifier = Modifier.padding(8.dp))
-                    Button(
-                        onClick = { /* Cambiar idioma a alemán */ }
-                    ) {
-                        Text(
-                            text = "Alemán"
-                        )
-                    }
-                    Spacer(modifier = Modifier.padding(8.dp))
-                    Button(
-                        onClick = { /* Cambiar idioma a italiano */ }
-                    ) {
-                        Text(
-                            text = "Italiano"
-                        )
+                    val idiomas = listOf(
+                        "espanol" to espannol,
+                        "ingles" to ingles,
+                        "portugues" to portugues,
+                        "frances" to frances,
+                        "aleman" to aleman,
+                        "italiano" to italiano
+                    )
+
+                    idiomas.forEach { (clave, idioma) ->
+                        Button(
+                            onClick = { cambiarIdioma(idiomaState, idioma) },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(text = traducir(clave))
+                        }
                     }
                 }
             }
