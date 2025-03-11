@@ -1,58 +1,53 @@
 package org.connexuss.project
 
+import androidx.compose.material.Colors
 import androidx.compose.material.MaterialTheme
-import androidx.compose.material.darkColors
-import androidx.compose.material.lightColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.graphics.Color
+import org.connexuss.project.interfaces.fuente.AppTheme
+import org.connexuss.project.interfaces.fuente.ProveedorDeFuente
+import org.connexuss.project.interfaces.idiomas.ProveedorDeIdioma
 import org.connexuss.project.navegacion.Navegacion
-import org.jetbrains.compose.ui.tooling.preview.Preview
+
+data class TemaConfig(
+    val temaClaro: Boolean = true,
+    val colores: Colors = coloresClaros
+)
+
+val TemaConfigSaver: Saver<TemaConfig, *> = listSaver(
+    save = { listOf(it.temaClaro) },  // Guarda solo el booleano
+    restore = { TemaConfig(it[0] as Boolean, if (it[0] as Boolean) coloresClaros else coloresOscuros) }
+)
 
 @Composable
-@Preview
 fun App() {
-    var temaClaro by rememberSaveable { mutableStateOf(true) }
+    // Estado para la configuración del tema
+    var temaConfig by rememberSaveable(stateSaver = TemaConfigSaver) { mutableStateOf(TemaConfig()) }
 
-    // Define las paletas de colores
-    val coloresClaros = lightColors(
-        primary = Color(0xFF6200EE),
-        primaryVariant = Color(0xFF3700B3),
-        secondary = Color(0xFF03DAC6),
-        background = Color(0xFFFFFFFF),
-        surface = Color(0xFFFFFFFF),
-        error = Color(0xFFB00020),
-        onPrimary = Color(0xFFFFFFFF),
-        onSecondary = Color(0xFF000000),
-        onBackground = Color(0xFF000000),
-        onSurface = Color(0xFF000000),
-        onError = Color(0xFFFFFFFF)
-    )
-
-    val coloresOscuros = darkColors(
-        primary = Color(0xFFBB86FC),
-        primaryVariant = Color(0xFF3700B3),
-        secondary = Color(0xFF03DAC6),
-        background = Color(0xFF121212),
-        surface = Color(0xFF121212),
-        error = Color(0xFFCF6679),
-        onPrimary = Color(0xFF000000),
-        onSecondary = Color(0xFF000000),
-        onBackground = Color(0xFFFFFFFF),
-        onSurface = Color(0xFFFFFFFF),
-        onError = Color(0xFF000000)
-    )
-
-    val colores = if (temaClaro) coloresClaros else coloresOscuros
-
-    MaterialTheme(colors = colores) {
-        // Aquí usas tu NavHost para la navegación
-        Navegacion(
-            temaClaro = temaClaro,
-            onToggleTheme = { temaClaro = !temaClaro }
-        )
+    // Envuelve la app en el proveedor de idioma para que el idioma se comparta globalmente
+    ProveedorDeIdioma {
+        ProveedorDeFuente {
+            AppTheme {
+                MaterialTheme(colors = temaConfig.colores) {
+                    Navegacion(
+                        temaConfig = temaConfig,
+                        onToggleTheme = {
+                            temaConfig = temaConfig.copy(
+                                temaClaro = !temaConfig.temaClaro,
+                                colores = if (temaConfig.temaClaro) coloresOscuros else coloresClaros
+                            )
+                        },
+                        onColorChange = { nuevoColor ->
+                            temaConfig = temaConfig.copy(colores = nuevoColor)
+                        }
+                    )
+                }
+            }
+        }
     }
 }

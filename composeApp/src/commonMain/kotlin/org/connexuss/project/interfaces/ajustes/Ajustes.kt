@@ -15,13 +15,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.Button
 import androidx.compose.material.Card
+import androidx.compose.material.Colors
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Scaffold
+import androidx.compose.material.Switch
 import androidx.compose.material.Text
-import androidx.compose.material.darkColors
-import androidx.compose.material.lightColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -30,10 +30,22 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import connexus_serverless.composeapp.generated.resources.Res
-import connexus_serverless.composeapp.generated.resources.*
+import connexus_serverless.composeapp.generated.resources.avatar
+import connexus_serverless.composeapp.generated.resources.ic_email
+import connexus_serverless.composeapp.generated.resources.unblock
+import org.connexuss.project.TemaConfig
+import org.connexuss.project.coloresAmarillo
+import org.connexuss.project.coloresAzul
+import org.connexuss.project.coloresGris
+import org.connexuss.project.coloresMorado
+import org.connexuss.project.coloresNaranja
+import org.connexuss.project.coloresRojo
+import org.connexuss.project.coloresVerde
+import org.connexuss.project.interfaces.idiomas.traducir
 import org.connexuss.project.interfaces.modificadorTamannio.LimitaTamanioAncho
 import org.connexuss.project.interfaces.sistema.DefaultTopBar
 import org.jetbrains.compose.resources.painterResource
@@ -47,9 +59,8 @@ fun PantallaAjustesControlCuentas(navController: NavHostController) {
     MaterialTheme {
         Scaffold(
             topBar = {
-                // Ajustes / Control cuentas
                 DefaultTopBar(
-                    title = "Ajustes / Control cuentas",
+                    title = traducir("ajustes_control_cuentas"),
                     navController = navController,
                     showBackButton = true,
                     muestraEngranaje = true,
@@ -57,30 +68,24 @@ fun PantallaAjustesControlCuentas(navController: NavHostController) {
                 )
             }
         ) { padding ->
-            // Centra el contenido en Desktop/Web
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                // Limita el ancho en pantallas grandes
                 LimitaTamanioAncho { modifier ->
                     Column(
                         modifier = modifier
                             .padding(padding)
                             .padding(16.dp)
                     ) {
-                        // Título o descripción adicional (opcional)
-                        // Text("Lista de Cuentas", style = MaterialTheme.typography.h6)
-
-                        // Lista con LazyColumn
+                        Text(traducir("lista_de_cuentas"), style = MaterialTheme.typography.h6)
                         LazyColumn(
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             items(cuentas) { cuenta ->
-                                // Cada ítem con fondo lila y un avatar a la izquierda + nombre + ícono a la derecha
                                 Card(
-                                    backgroundColor = Color(0xFFE1BEE7), // Lila claro
+                                    backgroundColor = Color(0xFFE1BEE7),
                                     elevation = 2.dp,
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
@@ -91,21 +96,18 @@ fun PantallaAjustesControlCuentas(navController: NavHostController) {
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.SpaceBetween
                                     ) {
-                                        // Avatar a la izquierda
                                         Row(verticalAlignment = Alignment.CenterVertically) {
-                                            // Ícono de avatar (reemplaza con tu recurso)
                                             Icon(
                                                 painter = painterResource(Res.drawable.avatar),
-                                                contentDescription = "Avatar",
+                                                contentDescription = traducir("avatar"),
                                                 modifier = Modifier.size(40.dp)
                                             )
                                             Spacer(modifier = Modifier.width(8.dp))
                                             Text(cuenta)
                                         }
-                                        // Ícono de desbloqueo a la derecha
                                         Icon(
                                             painter = painterResource(Res.drawable.unblock),
-                                            contentDescription = "Persona",
+                                            contentDescription = traducir("persona"),
                                             modifier = Modifier.size(32.dp)
                                         )
                                     }
@@ -122,7 +124,6 @@ fun PantallaAjustesControlCuentas(navController: NavHostController) {
 // Pantalla de Ajustes / Ayuda
 @Composable
 fun PantallaAjustesAyuda(navController: NavHostController) {
-    // Lista de Preguntas y Respuestas de ejemplo
     val faqs = listOf(
         "No puedo agregar a alguien\n\rRE: Haber estudiado",
         "Me han silenciado\n\rRE: Por algo será",
@@ -131,16 +132,16 @@ fun PantallaAjustesAyuda(navController: NavHostController) {
         "Vendeis mis datos\n\rRE: No, bueno, un poco",
     )
 
-    // Estado para el reporte que el usuario escriba
     var reporte by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
+    val reporteVacio = traducir("reporte_vacio")
+    val reporteEnviado = traducir("reporte_enviado")
 
     MaterialTheme {
         Scaffold(
             topBar = {
-                // Ajustes / Ayuda
                 DefaultTopBar(
-                    title = "Ajustes / Ayuda",
+                    title = traducir("ajustes_ayuda"),
                     navController = navController,
                     showBackButton = true,
                     muestraEngranaje = true,
@@ -158,16 +159,15 @@ fun PantallaAjustesAyuda(navController: NavHostController) {
                             .padding(padding)
                             .padding(16.dp)
                     ) {
-                        // Lista de Preguntas frecuentes
                         LazyColumn(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .weight(1f), // Para que ocupe el espacio disponible
+                                .weight(1f),
                             verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             items(faqs) { pregunta ->
                                 Card(
-                                    backgroundColor = Color(0xFFD1C4E9), // Lila suave
+                                    backgroundColor = Color(0xFFD1C4E9),
                                     elevation = 2.dp,
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
@@ -179,8 +179,7 @@ fun PantallaAjustesAyuda(navController: NavHostController) {
                             }
                         }
                         Spacer(modifier = Modifier.height(16.dp))
-                        // Sección para escribir un reporte
-                        Text("Envíe un reporte", style = MaterialTheme.typography.subtitle1)
+                        Text(traducir("envia_un_reporte"), style = MaterialTheme.typography.subtitle1)
                         Spacer(modifier = Modifier.height(8.dp))
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -190,30 +189,29 @@ fun PantallaAjustesAyuda(navController: NavHostController) {
                             OutlinedTextField(
                                 value = reporte,
                                 onValueChange = { reporte = it },
-                                label = { Text("Escribe tu reporte") },
+                                label = { Text(traducir("escribe_tu_reporte")) },
                                 modifier = Modifier.weight(1f)
                             )
                             Button(onClick = {
                                 errorMessage = if (reporte.isBlank()) {
-                                    "Por favor, escribe algo"
+                                    reporteVacio
                                 } else {
-                                    "Reporte enviado"
+                                    reporteEnviado
                                 }
                             }) {
-                                // Ícono de sobre con un tamaño reducido de 24dp
                                 Icon(
                                     painter = painterResource(Res.drawable.ic_email),
-                                    contentDescription = "Enviar reporte",
+                                    contentDescription = traducir("enviar_reporte"),
                                     modifier = Modifier.size(24.dp)
                                 )
                             }
                         }
                         Spacer(modifier = Modifier.height(8.dp))
-                        // Mensaje de error o confirmación
-                        if (errorMessage.equals("Por favor, escribe algo")) {
-                            Text(errorMessage, color = Color.Red)
-                        } else if (errorMessage.equals("Reporte enviado")) {
-                            Text(errorMessage, color = Color.Green)
+                        if (errorMessage.isNotEmpty()) {
+                            Text(
+                                errorMessage,
+                                color = if (errorMessage == traducir("reporte_vacio")) Color.Red else Color.Green
+                            )
                         }
                     }
                 }
@@ -225,14 +223,14 @@ fun PantallaAjustesAyuda(navController: NavHostController) {
 @Composable
 fun PantallaCambiarTema(
     navController: NavHostController,
-    temaClaro: Boolean,
-    onToggleTheme: () -> Unit
+    temaConfig: TemaConfig,
+    onToggleTheme: () -> Unit,
+    onColorChange: (Colors) -> Unit
 ) {
-    // La paleta de colores ya se aplica a nivel de MaterialTheme en AppContent
     Scaffold(
         topBar = {
             DefaultTopBar(
-                title = "Cambiar Tema",
+                title = traducir("ajustes_tema"),
                 navController = navController,
                 showBackButton = true,
                 muestraEngranaje = false,
@@ -249,15 +247,71 @@ fun PantallaCambiarTema(
                     modifier = modifier
                         .padding(padding)
                         .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text("Cambiar Tema", style = MaterialTheme.typography.h6)
+                    Text(
+                        traducir("modo"),
+                        style = MaterialTheme.typography.h6.copy(textAlign = TextAlign.Center),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(traducir("modo_oscuro"), style = MaterialTheme.typography.body1)
+                        val isDarkMode = !temaConfig.temaClaro
+                        Switch(checked = isDarkMode, onCheckedChange = { onToggleTheme() })
+                        Text(traducir("modo_claro"), style = MaterialTheme.typography.body1)
+                    }
                     Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        traducir("colores"),
+                        style = MaterialTheme.typography.h6.copy(textAlign = TextAlign.Center),
+                        modifier = Modifier.fillMaxWidth()
+                    )
                     Button(
-                        onClick = onToggleTheme,
+                        onClick = { onColorChange(coloresAzul) },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Cambiar a tema ${if (temaClaro) "oscuro" else "claro"}")
+                        Text(traducir("cambiar_a_tema_azul"))
+                    }
+                    Button(
+                        onClick = { onColorChange(coloresAmarillo) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(traducir("cambiar_a_tema_amarillo"))
+                    }
+                    Button(
+                        onClick = { onColorChange(coloresVerde) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(traducir("cambiar_a_tema_verde"))
+                    }
+                    Button(
+                        onClick = { onColorChange(coloresRojo) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(traducir("cambiar_a_tema_rojo"))
+                    }
+                    Button(
+                        onClick = { onColorChange(coloresMorado) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(traducir("cambiar_a_tema_morado"))
+                    }
+                    Button(
+                        onClick = { onColorChange(coloresGris) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(traducir("cambiar_a_tema_gris"))
+                    }
+                    Button(
+                        onClick = { onColorChange(coloresNaranja) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(traducir("cambiar_a_tema_naranja"))
                     }
                 }
             }

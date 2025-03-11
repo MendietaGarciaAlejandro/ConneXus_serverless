@@ -32,57 +32,71 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
+import org.connexuss.project.interfaces.idiomas.traducir
+import org.connexuss.project.interfaces.modificadorTamannio.LimitaTamanioAncho
+import org.connexuss.project.interfaces.sistema.DefaultTopBar
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 // --- Foro ---
 @Composable
 @Preview
-fun muestraForo() {
+fun muestraForo(navController: NavHostController) {
     val temas = remember { mutableStateListOf<String>() }
     var nuevoTema by remember { mutableStateOf("") }
 
     MaterialTheme {
         Scaffold(
-            topBar = { TopAppBar(title = { Text("Foro") }) }
-        ) { padding ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .padding(16.dp)
-            ) {
-                OutlinedTextField(
-                    value = nuevoTema,
-                    onValueChange = { nuevoTema = it },
-                    label = { Text("Nuevo Tema") },
-                    modifier = Modifier.fillMaxWidth()
+            topBar = {
+                DefaultTopBar(
+                    title = traducir("foro"),
+                    navController = navController,
+                    showBackButton = true,
+                    irParaAtras = true,
+                    muestraEngranaje = true
                 )
-                Spacer(modifier = Modifier.height(8.dp))
-                Button(
-                    onClick = {
-                        if (nuevoTema.isNotEmpty()) {
-                            temas.add(nuevoTema)
-                            nuevoTema = ""
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth()
+            }
+        ) { padding ->
+            LimitaTamanioAncho { modifier ->
+                Column(
+                    modifier = modifier
+                        .fillMaxSize()
+                        .padding(padding)
+                        .padding(16.dp)
                 ) {
-                    Text("Agregar Tema")
-                }
-                Spacer(modifier = Modifier.height(16.dp))
-                LazyColumn {
-                    items(temas) { tema ->
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp),
-                            elevation = 4.dp
-                        ) {
-                            Text(
-                                tema,
-                                modifier = Modifier.padding(16.dp),
-                                style = MaterialTheme.typography.body1
-                            )
+                    OutlinedTextField(
+                        value = nuevoTema,
+                        onValueChange = { nuevoTema = it },
+                        label = { Text(traducir("nuevo_tema")) },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Button(
+                        onClick = {
+                            if (nuevoTema.isNotEmpty()) {
+                                temas.add(nuevoTema)
+                                nuevoTema = ""
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(traducir("agregar_tema"))
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    LazyColumn {
+                        items(temas) { tema ->
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                elevation = 4.dp
+                            ) {
+                                Text(
+                                    tema,
+                                    modifier = Modifier.padding(16.dp),
+                                    style = MaterialTheme.typography.body1
+                                )
+                            }
                         }
                     }
                 }
@@ -94,65 +108,66 @@ fun muestraForo() {
 // --- Tema del Foro ---
 @Composable
 @Preview
-fun muestraTemaForo() {
+fun muestraTemaForo(navController: NavHostController) {
     val mensajes = remember { mutableStateListOf<String>() }
     var nuevoMensaje by remember { mutableStateOf("") }
 
     MaterialTheme {
         Scaffold(
             topBar = {
-                TopAppBar(
-                    title = { Text("Tema del Foro") },
-                    navigationIcon = {
-                        IconButton(onClick = { /* Navegar atrás */ }) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás")
-                        }
-                    }
+                DefaultTopBar(
+                    title = traducir("tema_del_foro"),
+                    navController = navController,
+                    showBackButton = true,
+                    irParaAtras = true,
+                    muestraEngranaje = true
                 )
             }
         ) { padding ->
-            Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-                LazyColumn(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(16.dp)
-                ) {
-                    items(mensajes) { mensaje ->
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp),
-                            elevation = 4.dp
-                        ) {
-                            Text(
-                                text = mensaje,
-                                modifier = Modifier.padding(16.dp),
-                                style = MaterialTheme.typography.body1
-                            )
+            LimitaTamanioAncho { modifier ->
+                Column(modifier = modifier.fillMaxSize().padding(padding)) {
+                    LazyColumn(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(16.dp)
+                    ) {
+                        items(mensajes) { mensaje ->
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                elevation = 4.dp
+                            ) {
+                                Text(
+                                    text = mensaje,
+                                    modifier = Modifier.padding(16.dp),
+                                    style = MaterialTheme.typography.body1
+                                )
+                            }
                         }
                     }
-                }
-                Divider()
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    OutlinedTextField(
-                        value = nuevoMensaje,
-                        onValueChange = { nuevoMensaje = it },
-                        label = { Text("Nuevo Mensaje") },
-                        modifier = Modifier.weight(1f)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Button(onClick = {
-                        if (nuevoMensaje.isNotEmpty()) {
-                            mensajes.add(nuevoMensaje)
-                            nuevoMensaje = ""
+                    Divider()
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        OutlinedTextField(
+                            value = nuevoMensaje,
+                            onValueChange = { nuevoMensaje = it },
+                            label = { Text(traducir("nuevo_mensaje")) },
+                            modifier = Modifier.weight(1f)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Button(onClick = {
+                            if (nuevoMensaje.isNotEmpty()) {
+                                mensajes.add(nuevoMensaje)
+                                nuevoMensaje = ""
+                            }
+                        }) {
+                            Text(traducir("enviar"))
                         }
-                    }) {
-                        Text("Enviar")
                     }
                 }
             }

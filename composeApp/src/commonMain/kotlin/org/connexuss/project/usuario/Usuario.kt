@@ -16,10 +16,24 @@ class Usuario {
     private var activo: Boolean = false
     private lateinit var contactos: List<String>
     private lateinit var chatUser: ConversacionesUsuario
+    private var descripcion: String = ""
+    private var contrasennia: String = ""
 
     // Constructor completo
     constructor(nombre: String, edad: Int, correo: String, aliasPublico: String, activo: Boolean, contactos: List<String>, chatUser: ConversacionesUsuario) {
         this.idUnico = UtilidadesUsuario().generarIdUnico()
+        this.nombre = nombre
+        this.edad = edad
+        this.correo = correo
+        this.aliasPublico = aliasPublico
+        this.aliasPrivado = hash(aliasPublico)
+        this.activo = activo
+        this.contactos = contactos
+        this.chatUser = chatUser
+    }
+    //Debug: Contructor con idUnico
+    constructor(idUnico: String, nombre: String, edad: Int, correo: String, aliasPublico: String, activo: Boolean, contactos: List<String>, chatUser: ConversacionesUsuario) {
+        this.idUnico = idUnico
         this.nombre = nombre
         this.edad = edad
         this.correo = correo
@@ -109,6 +123,23 @@ class Usuario {
     fun setChatUser(chatUser: ConversacionesUsuario) {
         this.chatUser = chatUser
     }
+
+    fun getDescripcion(): String {
+        return descripcion
+    }
+
+    fun setDescripcion(descripcion: String) {
+        this.descripcion = descripcion
+    }
+
+    fun getContrasennia(): String {
+        return contrasennia
+    }
+
+    fun setContrasennia(contrasennia: String) {
+        this.contrasennia = contrasennia
+    }
+
 
     // Metodo para imprimir los datos públicos del usuario
     @Composable
