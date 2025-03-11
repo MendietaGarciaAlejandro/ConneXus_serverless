@@ -38,4 +38,17 @@ class UtilidadesUsuario {
         }
         return Usuario(nombre, edad, correo, aliasPublico, activo, emptyList(), ConversacionesUsuario(generarIdUnico(), generarIdUnico(), listOf( Conversacion( generarIdUnico(), emptyList() ) ) ) )
     }
+
+    //Debug: Contructor con idUnico
+    fun instanciaUsuario(idUnico: String, nombre: String, edad: Int, correo: String, aliasPublico: String, activo: Boolean): Usuario {
+        val idUnico = idUnico
+        val correoValido = validarCorreo(correo)
+        val edadValida = validarEdad(edad)
+        val nombreValido = validarNombre(nombre)
+        val aliasPublicoValido = validarNombre(aliasPublico)
+        if (!correoValido || !edadValida || !nombreValido || !aliasPublicoValido) {
+            throw IllegalArgumentException("Datos de usuario no validos")
+        }
+        return Usuario(idUnico, nombre, edad, correo, aliasPublico, activo, emptyList(), ConversacionesUsuario(generarIdUnico(), generarIdUnico(), listOf( Conversacion( generarIdUnico(), emptyList() ) ) ) )
+    }
 }
