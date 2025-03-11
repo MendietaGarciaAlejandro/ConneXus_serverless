@@ -36,6 +36,8 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.connexuss.project.comunicacion.Mensaje
 import org.connexuss.project.comunicacion.Conversacion
+import org.connexuss.project.interfaces.idiomas.traducir
+import org.connexuss.project.interfaces.sistema.DefaultTopBar
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 // --- Nuevo Chat ---
@@ -48,7 +50,15 @@ fun muestraNuevoChat() {
 
     MaterialTheme {
         Scaffold(
-            topBar = { TopAppBar(title = { Text("Nuevo Chat") }) }
+            topBar = {
+                DefaultTopBar(
+                    title = traducir("nombre_del_chat"),
+                    navController = null,
+                    showBackButton = true,
+                    irParaAtras = true,
+                    muestraEngranaje = false
+                )
+            }
         ) { padding ->
             Column(
                 modifier = Modifier
@@ -59,7 +69,7 @@ fun muestraNuevoChat() {
                 OutlinedTextField(
                     value = nombreChat,
                     onValueChange = { nombreChat = it },
-                    label = { Text("Nombre del Chat") },
+                    label = { Text(traducir("nombre_del_chat")) },
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(8.dp))
@@ -67,7 +77,7 @@ fun muestraNuevoChat() {
                     OutlinedTextField(
                         value = nuevoParticipante,
                         onValueChange = { nuevoParticipante = it },
-                        label = { Text("Agregar Participante") },
+                        label = { Text(traducir("agregar_participante")) },
                         modifier = Modifier.weight(1f)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
@@ -77,11 +87,11 @@ fun muestraNuevoChat() {
                             nuevoParticipante = ""
                         }
                     }) {
-                        Text("Agregar")
+                        Text(traducir("agregar"))
                     }
                 }
                 Spacer(modifier = Modifier.height(16.dp))
-                Text("Participantes:", style = MaterialTheme.typography.subtitle1)
+                Text(traducir("participantes"), style = MaterialTheme.typography.subtitle1)
                 LazyColumn {
                     items(participantes) { participante ->
                         Text(participante, modifier = Modifier.padding(4.dp))
@@ -92,7 +102,7 @@ fun muestraNuevoChat() {
                     onClick = { /* Lógica para crear el chat con 'nombreChat' y 'participantes' */ },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Crear Chat")
+                    Text(traducir("crear_chat"))
                 }
             }
         }
@@ -109,13 +119,12 @@ fun muestraChatRoom() {
     MaterialTheme {
         Scaffold(
             topBar = {
-                TopAppBar(
-                    title = { Text("Chat Room") },
-                    navigationIcon = {
-                        IconButton(onClick = { /* Navegar atrás */ }) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás")
-                        }
-                    }
+                DefaultTopBar(
+                    title = traducir("chat_room"),
+                    navController = null,
+                    showBackButton = true,
+                    irParaAtras = true,
+                    muestraEngranaje = false
                 )
             }
         ) { padding ->
@@ -154,7 +163,7 @@ fun muestraChatRoom() {
                     OutlinedTextField(
                         value = nuevoMensaje,
                         onValueChange = { nuevoMensaje = it },
-                        label = { Text("Nuevo Mensaje") },
+                        label = { Text(traducir("nuevo_mensaje")) },
                         modifier = Modifier.weight(1f)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
@@ -172,7 +181,7 @@ fun muestraChatRoom() {
                             nuevoMensaje = ""
                         }
                     }) {
-                        Text("Enviar")
+                        Text(traducir("enviar"))
                     }
                 }
             }
@@ -189,7 +198,15 @@ fun muestraChats() {
 
     MaterialTheme {
         Scaffold(
-            topBar = { TopAppBar(title = { Text("Chats") }) }
+            topBar = {
+                DefaultTopBar(
+                    title = traducir("chats"),
+                    navController = null,
+                    showBackButton = true,
+                    irParaAtras = true,
+                    muestraEngranaje = false
+                )
+            }
         ) { padding ->
             Column(
                 modifier = Modifier
@@ -200,7 +217,7 @@ fun muestraChats() {
                 OutlinedTextField(
                     value = nuevoChat,
                     onValueChange = { nuevoChat = it },
-                    label = { Text("Nuevo Chat") },
+                    label = { Text(traducir("nuevo_chat")) },
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(8.dp))
@@ -213,7 +230,7 @@ fun muestraChats() {
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Agregar Chat")
+                    Text(traducir("agregar_chat"))
                 }
                 Spacer(modifier = Modifier.height(16.dp))
                 LazyColumn {
@@ -225,8 +242,8 @@ fun muestraChats() {
                             elevation = 4.dp
                         ) {
                             Column(modifier = Modifier.padding(16.dp)) {
-                                Text("Chat: ${chat.id}", style = MaterialTheme.typography.subtitle1)
-                                Text("Participantes: ${chat.participants.joinToString(", ")}", style = MaterialTheme.typography.body2)
+                                Text(traducir("chat") + ": ${chat.id}", style = MaterialTheme.typography.subtitle1)
+                                Text(traducir("participantes_chat") + "${chat.participants.joinToString(", ")}", style = MaterialTheme.typography.body2)
                             }
                         }
                     }
