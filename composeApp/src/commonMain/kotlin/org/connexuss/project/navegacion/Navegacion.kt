@@ -5,27 +5,30 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-
+import org.connexuss.project.TemaConfig
 import org.connexuss.project.datos.UsuarioPrincipal
 import org.connexuss.project.datos.UsuariosPreCreados
-
-import org.connexuss.project.ListaCompletaColores
-import org.connexuss.project.TemaConfig
-
-
-import org.connexuss.project.interfaces.sistema.SplashScreen
-import org.connexuss.project.interfaces.sistema.muestraAjustes
-import org.connexuss.project.interfaces.sistema.muestraChats
-import org.connexuss.project.interfaces.sistema.muestraHomePage
-import org.connexuss.project.interfaces.sistema.muestraUsuarios
-
 import org.connexuss.project.interfaces.ajustes.PantallaAjustesAyuda
 import org.connexuss.project.interfaces.ajustes.PantallaAjustesControlCuentas
 import org.connexuss.project.interfaces.ajustes.PantallaCambiarTema
 import org.connexuss.project.interfaces.foro.muestraForo
 import org.connexuss.project.interfaces.foro.muestraTemaForo
+import org.connexuss.project.interfaces.fuente.PantallaCambiarFuente
 import org.connexuss.project.interfaces.idiomas.PantallaIdiomas
-import org.connexuss.project.interfaces.sistema.*
+import org.connexuss.project.interfaces.sistema.PantallaEmailEnElSistema
+import org.connexuss.project.interfaces.sistema.PantallaEmailNoEnElSistema
+import org.connexuss.project.interfaces.sistema.PantallaLogin
+import org.connexuss.project.interfaces.sistema.PantallaRegistro
+import org.connexuss.project.interfaces.sistema.PantallaRestablecer
+import org.connexuss.project.interfaces.sistema.SplashScreen
+import org.connexuss.project.interfaces.sistema.mostrarChat
+import org.connexuss.project.interfaces.sistema.mostrarChatGrupo
+import org.connexuss.project.interfaces.sistema.mostrarPerfil
+import org.connexuss.project.interfaces.sistema.muestraAjustes
+import org.connexuss.project.interfaces.sistema.muestraChats
+import org.connexuss.project.interfaces.sistema.muestraContactos
+import org.connexuss.project.interfaces.sistema.muestraHomePage
+import org.connexuss.project.interfaces.sistema.muestraUsuarios
 
 @Composable
 fun Navegacion(
@@ -100,6 +103,9 @@ fun Navegacion(
         }
         composable("idiomas") {
             PantallaIdiomas(navController)
+        }
+        composable("cambiaFuente") {
+            PantallaCambiarFuente(navController)
         }
     }
 }

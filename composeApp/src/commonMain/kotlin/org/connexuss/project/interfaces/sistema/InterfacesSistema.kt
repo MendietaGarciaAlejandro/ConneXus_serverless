@@ -871,7 +871,7 @@ fun muestraAjustes(navController: NavHostController = rememberNavController()) {
                             Text(text = traducir("cambiar_modo_oscuro_tema"))
                         }
                         Button(
-                            onClick = { /* Cambiar Fuente */ },
+                            onClick = { navController.navigate("cambiaFuente") },
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text(text = traducir("cambiar_fuente"))

@@ -1,15 +1,80 @@
 package org.connexuss.project.interfaces.idiomas
 
-import androidx.compose.runtime.staticCompositionLocalOf
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.Button
+import androidx.compose.material.Scaffold
+import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.SaverScope
-import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
+import org.connexuss.project.interfaces.modificadorTamannio.LimitaTamanioAncho
+import org.connexuss.project.interfaces.sistema.DefaultTopBar
+
+@Composable
+fun PantallaIdiomas(navController: NavHostController) {
+    // Obtén el estado global del idioma desde el CompositionLocal
+    val idiomaState = LocalIdiomaState.current
+
+    Scaffold(
+        topBar = {
+            DefaultTopBar(
+                title = traducir("idiomas"),
+                navController = navController,
+                showBackButton = true,
+                muestraEngranaje = false,
+                irParaAtras = true
+            )
+        }
+    ) { padding ->
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            LimitaTamanioAncho { modifier ->
+                Column(
+                    modifier = modifier
+                        .padding(padding)
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    val idiomas = listOf(
+                        "espanol" to espannol,
+                        "ingles" to ingles,
+                        "portugues" to portugues,
+                        "frances" to frances,
+                        "aleman" to aleman,
+                        "italiano" to italiano
+                    )
+
+                    idiomas.forEach { (clave, idioma) ->
+                        Button(
+                            onClick = { cambiarIdioma(idiomaState, idioma) },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(text = traducir(clave))
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
 
 data class Idioma(val palabras: Map<String, String>)
 
@@ -58,6 +123,8 @@ fun traducir(key: String): String {
 
 val espannol = Idioma(
     palabras = mapOf(
+        "cambiar_idioma" to "Cambiar Idioma",
+
         // Pantalla de Contactos
         "nuevo_contacto" to "Nuevo Contacto",
         "nuevo_chat" to "Nuevo Chat",
@@ -247,7 +314,17 @@ val espannol = Idioma(
         "cambiar_a_tema_rojo" to "Cambiar a tema rojo",
         "cambiar_a_tema_morado" to "Cambiar a tema morado",
         "cambiar_a_tema_gris" to "Cambiar a tema gris",
-        "cambiar_a_tema_naranja" to "Cambiar a tema naranja"
+        "cambiar_a_tema_naranja" to "Cambiar a tema naranja",
+
+    // Nuevos strings para la interfaz de Tipos de Fuente
+    "ajustes_fuente" to "Ajustes de Fuente",
+    "fuente" to "Fuente",
+    "cambiar_fuente" to "Cambiar Fuente",
+    "default_font" to "Predeterminado",
+    "serif_font" to "Serif",
+    "monospace_font" to "Monoespaciada",
+    "cursive_font" to "Cursiva",
+    "sans_serif_font" to "Sans Serif"
     )
 )
 
@@ -255,6 +332,7 @@ val espannol = Idioma(
 
 val ingles = Idioma(
     palabras = mapOf(
+    "cambiar_idioma" to "Change Language",
     "nuevo_contacto" to "New Contact",
     "nuevo_chat" to "New Chat",
     "contactos" to "Contacts",
@@ -375,7 +453,17 @@ val ingles = Idioma(
     "agregar_chat" to "Add Chat",
     "chat" to "Chat:",
     "participantes_chat" to "Participants: ",
-    "escribe_tu_reporte" to "Write your report"
+    "escribe_tu_reporte" to "Write your report",
+
+    // Nuevos strings para la interfaz de Tipos de Fuente
+    "ajustes_fuente" to "Font Settings",
+    "fuente" to "Font",
+    "cambiar_fuente" to "Change Font",
+    "default_font" to "Default",
+    "serif_font" to "Serif",
+    "monospace_font" to "Monospace",
+    "cursive_font" to "Cursive",
+    "sans_serif_font" to "Sans Serif"
     )
 )
 
@@ -384,6 +472,7 @@ val ingles = Idioma(
 val portugues = Idioma(
     palabras = mapOf(
         // Pantalla de Contactos
+        "cambiar_idioma" to "Mudar Idioma",
         "nuevo_contacto" to "Novo Contato",
         "nuevo_chat" to "Novo Chat",
         "contactos" to "Contatos",
@@ -572,7 +661,17 @@ val portugues = Idioma(
         "cambiar_a_tema_rojo" to "Mudar para tema vermelho",
         "cambiar_a_tema_morado" to "Mudar para tema roxo",
         "cambiar_a_tema_gris" to "Mudar para tema cinza",
-        "cambiar_a_tema_naranja" to "Mudar para tema laranja"
+        "cambiar_a_tema_naranja" to "Mudar para tema laranja",
+
+        // Nuevos strings para la interfaz de Tipos de Fuente
+        "ajustes_fuente" to "Configurações de fonte",
+        "fuente" to "Fonte",
+        "cambiar_fuente" to "Alterar Fonte",
+        "default_font" to "Padrão",
+        "serif_font" to "Serif",
+        "monospace_font" to "Monoespaçada",
+        "cursive_font" to "Cursiva",
+        "sans_serif_font" to "Sem Serif"
     )
 )
 
@@ -581,6 +680,7 @@ val portugues = Idioma(
 val frances = Idioma(
     palabras = mapOf(
         // Écran des Contacts
+        "cambiar_idioma" to "Changer de Langue",
         "nuevo_contacto" to "Nouveau Contact",
         "nuevo_chat" to "Nouveau Chat",
         "contactos" to "Contacts",
@@ -769,7 +869,16 @@ val frances = Idioma(
         "cambiar_a_tema_rojo" to "Changer vers le thème rouge",
         "cambiar_a_tema_morado" to "Changer vers le thème violet",
         "cambiar_a_tema_gris" to "Changer vers le thème gris",
-        "cambiar_a_tema_naranja" to "Changer vers le thème orange"
+        "cambiar_a_tema_naranja" to "Changer vers le thème orange",
+
+        // Nouveaux textes pour l'interface des Types de Police
+        "ajustes_fuente" to "Paramètres de police",
+        "fuente" to "Police",
+        "cambiar_fuente" to "Changer la police",
+        "default_font" to "Par défaut",
+        "serif_font" to "Serif", // Vous pouvez aussi utiliser « Avec empattement » si vous préférez\n    "monospace_font" to "Monospace",
+        "cursive_font" to "Cursive",
+        "sans_serif_font" to "Sans empattement"
     )
 )
 
@@ -778,6 +887,7 @@ val frances = Idioma(
 val aleman = Idioma(
     palabras = mapOf(
         // Kontakte-Bildschirm
+        "cambiar_idioma" to "Sprache ändern",
         "nuevo_contacto" to "Neuer Kontakt",
         "nuevo_chat" to "Neuer Chat",
         "contactos" to "Kontakte",
@@ -966,7 +1076,17 @@ val aleman = Idioma(
         "cambiar_a_tema_rojo" to "Wechsel zu rotem Thema",
         "cambiar_a_tema_morado" to "Wechsel zu lila Thema",
         "cambiar_a_tema_gris" to "Wechsel zu grauem Thema",
-        "cambiar_a_tema_naranja" to "Wechsel zu orangem Thema"
+        "cambiar_a_tema_naranja" to "Wechsel zu orangem Thema",
+
+        // Neue Texte für die Schriftarten-Schnittstelle
+        "ajustes_fuente" to "Schrifteinstellungen",
+        "fuente" to "Schriftart",
+        "cambiar_fuente" to "Schriftart ändern",
+        "default_font" to "Standard",
+        "serif_font" to "Serifenschrift",
+        "monospace_font" to "Monospace",
+        "cursive_font" to "Kursiv",
+        "sans_serif_font" to "Serifenlos"
     )
 )
 
@@ -975,6 +1095,7 @@ val aleman = Idioma(
 val italiano = Idioma(
     palabras = mapOf(
         // Schermata Contatti
+        "cambiar_idioma" to "Cambia Lingua",
         "nuevo_contacto" to "Nuovo Contatto",
         "nuevo_chat" to "Nuovo Chat",
         "contactos" to "Contatti",
@@ -1163,6 +1284,16 @@ val italiano = Idioma(
         "cambiar_a_tema_rojo" to "Cambia al tema rosso",
         "cambiar_a_tema_morado" to "Cambia al tema viola",
         "cambiar_a_tema_gris" to "Cambia al tema grigio",
-        "cambiar_a_tema_naranja" to "Cambia al tema arancione"
+        "cambiar_a_tema_naranja" to "Cambia al tema arancione",
+
+        // Nuovi testi per l'interfaccia dei Tipi di Carattere
+        "ajustes_fuente" to "Impostazioni del font",
+        "fuente" to "Font",
+        "cambiar_fuente" to "Cambia font",
+        "default_font" to "Predefinito",
+        "serif_font" to "Serif",
+        "monospace_font" to "Monospaziato",
+        "cursive_font" to "Corsivo",
+        "sans_serif_font" to "Senza grazie"
     )
 )
