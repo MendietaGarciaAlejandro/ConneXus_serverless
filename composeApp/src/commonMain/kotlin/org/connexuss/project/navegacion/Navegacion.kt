@@ -5,8 +5,13 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+
+import org.connexuss.project.datos.UsuarioPrincipal
+import org.connexuss.project.datos.UsuariosPreCreados
+
 import org.connexuss.project.ListaCompletaColores
 import org.connexuss.project.TemaConfig
+
 
 import org.connexuss.project.interfaces.sistema.SplashScreen
 import org.connexuss.project.interfaces.sistema.muestraAjustes
@@ -50,7 +55,7 @@ fun Navegacion(
             muestraChats(navController)
         }
         composable("nuevo") {
-            muestraContactos(navController, GeneraUsuarios())
+            muestraContactos(navController, UsuariosPreCreados)
         }
         composable("restablecer") {
             PantallaRestablecer(navController)
@@ -73,11 +78,8 @@ fun Navegacion(
         composable("cambiarTema") {
             PantallaCambiarTema(navController = navController, temaConfig = temaConfig, onToggleTheme = onToggleTheme, onColorChange = onColorChange)
         }
-        composable("mostrarPerfil/{userId}") {
-            backStackEntry ->
-            // Obtener userId de los argumentos
-            val userId = backStackEntry.arguments?.getString("userId")
-            mostrarPerfil(navController, userId)
+        composable("mostrarPerfilPrincipal") {
+            mostrarPerfil(navController, UsuarioPrincipal)
         }
         composable("mostrarChat/{chatId}") {
             backStackEntry ->

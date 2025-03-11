@@ -24,6 +24,6 @@ data class Conversacion(
 data class ConversacionesUsuario(
     val id: String,
     val idUser: String,
-    val conversacion: Conversacion,
+    val conversaciones: List<Conversacion> = emptyList(),
 )
 
