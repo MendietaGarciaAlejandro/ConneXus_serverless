@@ -60,6 +60,8 @@ import androidx.navigation.compose.rememberNavController
 import connexus_serverless.composeapp.generated.resources.*
 import kotlinx.coroutines.delay
 import org.connexuss.project.comunicacion.Conversacion
+import org.connexuss.project.comunicacion.ConversacionesUsuario
+import org.connexuss.project.comunicacion.Mensaje
 import org.connexuss.project.datos.UsuarioPrincipal
 
 import org.connexuss.project.datos.UsuariosPreCreados
