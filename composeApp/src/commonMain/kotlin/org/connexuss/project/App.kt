@@ -5,29 +5,43 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import org.connexuss.project.interfaces.idiomas.ProveedorDeIdioma
 import org.connexuss.project.navegacion.Navegacion
-import org.jetbrains.compose.ui.tooling.preview.Preview
+
+data class TemaConfig(
+    val temaClaro: Boolean = true,
+    val colores: Colors = coloresClaros
+)
+
+val TemaConfigSaver: Saver<TemaConfig, *> = listSaver(
+    save = { listOf(it.temaClaro) },  // Guarda solo el booleano
+    restore = { TemaConfig(it[0] as Boolean, if (it[0] as Boolean) coloresClaros else coloresOscuros) }
+)
 
 @Composable
-@Preview
 fun App() {
-    val todosLosColores = ListaCompletaColores
-    var temaClaro by rememberSaveable { mutableStateOf(true) }
-    // Define los colores que se usarán en la aplicación
-    var colores = if (temaClaro) coloresClaros else coloresOscuros
-    var colorPillado: Any? = null
-    if (colorPillado != null) {
-        colores = ListaCompletaColores[colorPillado as Int] as Colors
-    }
-    MaterialTheme(colors = colores) {
-        // Aquí usas tu NavHost para la navegación
-        colorPillado =
-        Navegacion(
-            temaClaro = temaClaro,
-            onToggleTheme = { temaClaro = !temaClaro },
-            colores = todosLosColores,
-        )
+    // Estado para la configuración del tema
+    var temaConfig by rememberSaveable(stateSaver = TemaConfigSaver) { mutableStateOf(TemaConfig()) }
+
+    // Envuelve la app en el proveedor de idioma para que el idioma se comparta globalmente
+    ProveedorDeIdioma {
+        MaterialTheme(colors = temaConfig.colores) {
+            Navegacion(
+                temaConfig = temaConfig,
+                onToggleTheme = {
+                    temaConfig = temaConfig.copy(
+                        temaClaro = !temaConfig.temaClaro,
+                        colores = if (temaConfig.temaClaro) coloresOscuros else coloresClaros
+                    )
+                },
+                onColorChange = { nuevoColor ->
+                    temaConfig = temaConfig.copy(colores = nuevoColor)
+                }
+            )
+        }
     }
 }

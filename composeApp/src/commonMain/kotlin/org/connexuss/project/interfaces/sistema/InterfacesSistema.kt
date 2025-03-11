@@ -772,7 +772,6 @@ fun UsuCard(usuario: Usuario, onClick: () -> Unit) {
     }
 }
 
-
 // --- Ajustes ---
 @Composable
 @Preview()
@@ -814,13 +813,19 @@ fun muestraAjustes(navController: NavHostController = rememberNavController()) {
                             onClick = { navController.navigate("cambiarTema") },
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("Cambiar Modo Oscuro / Tea")
+                            Text("Cambiar Modo Oscuro / Tema")
                         }
                         Button(
-                            onClick = { /* Cambiar Idioma */ },
+                            onClick = { /* Cambiar Fuente */ },
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text("Cambiar Fuente")
+                        }
+                        Button(
+                            onClick = { navController.navigate("idiomas") },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Cambiar Idioma")
                         }
                         Button(
                             onClick = { /* Eliminar Chats */ },
