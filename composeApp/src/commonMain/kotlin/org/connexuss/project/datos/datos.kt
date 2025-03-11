@@ -17,6 +17,7 @@ val UsuariosPreCreados: SnapshotStateList<Usuario> = run {
     try {
         // Usuarios iniciales
         val user1 = UtilidadesUsuario().instanciaUsuario(
+            "JP",
             "Juan Perez",
             25,
             "paco@jerte.org",
@@ -24,6 +25,7 @@ val UsuariosPreCreados: SnapshotStateList<Usuario> = run {
             true
         )
         val user2 = UtilidadesUsuario().instanciaUsuario(
+            "ML",
             "Maria Lopez",
             30,
             "marii@si.se",
@@ -31,6 +33,7 @@ val UsuariosPreCreados: SnapshotStateList<Usuario> = run {
             true
         )
         val user3 = UtilidadesUsuario().instanciaUsuario(
+            "PS",
             "Pedro Sanchez",
             40,
             "roba@espannoles.es",
@@ -591,7 +594,7 @@ val UsuarioPrincipal: Usuario = UtilidadesUsuario().instanciaUsuario(
     activo = true
 ).apply {
     // Asigna algunos contactos de ejemplo (puedes modificar según tus necesidades)
-    setContactos(listOf("Contacto1", "Contacto2", "Contacto3"))
+    setContactos(listOf("JP", "ML"))
     // Define un chat de ejemplo para este usuario
     setChatUser(
         ConversacionesUsuario(

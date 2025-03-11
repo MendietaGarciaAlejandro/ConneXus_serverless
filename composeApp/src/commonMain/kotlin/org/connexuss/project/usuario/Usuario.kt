@@ -31,6 +31,18 @@ class Usuario {
         this.contactos = contactos
         this.chatUser = chatUser
     }
+    //Debug: Contructor con idUnico
+    constructor(idUnico: String, nombre: String, edad: Int, correo: String, aliasPublico: String, activo: Boolean, contactos: List<String>, chatUser: ConversacionesUsuario) {
+        this.idUnico = idUnico
+        this.nombre = nombre
+        this.edad = edad
+        this.correo = correo
+        this.aliasPublico = aliasPublico
+        this.aliasPrivado = hash(aliasPublico)
+        this.activo = activo
+        this.contactos = contactos
+        this.chatUser = chatUser
+    }
 
     // Constructor vacio
     constructor() {

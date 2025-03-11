@@ -60,8 +60,14 @@ import androidx.navigation.compose.rememberNavController
 import connexus_serverless.composeapp.generated.resources.*
 import kotlinx.coroutines.delay
 import org.connexuss.project.comunicacion.Conversacion
+import org.connexuss.project.comunicacion.ConversacionesUsuario
+import org.connexuss.project.comunicacion.Mensaje
 import org.connexuss.project.datos.UsuarioPrincipal
+
+import org.connexuss.project.datos.UsuariosPreCreados
+
 import org.connexuss.project.interfaces.idiomas.traducir
+
 import org.connexuss.project.interfaces.modificadorTamannio.LimitaTamanioAncho
 import org.connexuss.project.usuario.AlmacenamientoUsuario
 import org.connexuss.project.usuario.Usuario
@@ -474,17 +480,22 @@ fun restableceContrasenna(navController: NavHostController) {
     }
 }
 // --- elemento chat ---
+//Muestra el id del usuarioPrincipal ya que no esta incluido en la lista de usuarios precreados
 @Composable
-fun ChatCard(conversacion:Conversacion, navController: NavHostController) {
+fun ChatCard(conversacion: Conversacion, navController: NavHostController) {
+    // Mapea cada idUnico al alias público, o muestra el id si no se encuentra
+    val aliasParticipantes = conversacion.participants.map { id ->
+        UsuariosPreCreados.find { it.getIdUnico() == id }?.getNombreCompleto() ?: id
+    }
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
-            .clickable{
-                if(conversacion.grupo){
+            .clickable {
+                if (conversacion.grupo) {
                     // Navegar a la pantalla de chat de grupo
                     navController.navigate("mostrarChatGrupo/${conversacion.id}")
-                }else {
+                } else {
                     // Navegar a la pantalla de chat individual
                     navController.navigate("mostrarChat/${conversacion.id}")
                 }
@@ -493,11 +504,12 @@ fun ChatCard(conversacion:Conversacion, navController: NavHostController) {
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(text = "ID Chat: ${conversacion.id}")
-            Text(text = "Participantes: ${conversacion.participants.joinToString()}")
+            Text(text = "Participantes: ${aliasParticipantes.joinToString()}")
             Text(text = "Número de mensajes: ${conversacion.messages.size}")
         }
     }
 }
+
 
 
 
@@ -558,11 +570,18 @@ fun muestraChats(navController: NavHostController) {
 // --- Contactos ---
 @Composable
 @Preview
-fun muestraContactos(navController: NavHostController, contactos: List<Usuario>) {
-    val usuarios = contactos
+fun muestraContactos(navController: NavHostController, contactos: List<Usuario> = emptyList()) {
+    // Creamos un estado para la lista de IDs de contactos basándonos en UsuarioPrincipal.
+    // Se inicializa con la lista actual y se actualizará cuando se modifique.
+    val contactosState = remember { mutableStateListOf<String>().apply {
+        addAll(UsuarioPrincipal.getContactos())
+    } }
+    // Lista completa de usuarios precreados
+    val todosLosUsuarios = UsuariosPreCreados
+    // Filtramos los usuarios usando el estado
+    val usuarios = todosLosUsuarios.filter { it.getIdUnico() in contactosState }
 
     var showContactoDialog by remember { mutableStateOf(false) }
-    var idContacto by remember { mutableStateOf("") }
     var inputText by remember { mutableStateOf("") }
 
     var showChatDialog by remember { mutableStateOf(false) }
@@ -647,20 +666,36 @@ fun muestraContactos(navController: NavHostController, contactos: List<Usuario>)
                         title = { Text(text = traducir("nuevo_contacto")) },
                         text = {
                             Column {
-                                Text(text = traducir("introduce_idContacto"))
+
+                                Text("Introduce el idUnico del usuario:")
                                 OutlinedTextField(
                                     value = inputText,
                                     onValueChange = { inputText = it },
-                                    label = { Text(traducir("id_contacto")) }
+                                    label = { Text("idUnico") }
+
                                 )
                             }
                         },
                         confirmButton = {
                             TextButton(
                                 onClick = {
-                                    idContacto = inputText
+                                    val nuevoContactoId = inputText.trim()
+                                    // Busca en UsuariosPreCreados si existe un usuario con ese idUnico
+                                    val userFound = UsuariosPreCreados.find { it.getIdUnico() == nuevoContactoId }
+                                    if (userFound != null) {
+                                        // Actualiza los contactos en el UsuarioPrincipal...
+                                        val updatedContacts = UsuarioPrincipal.getContactos().toMutableList()
+                                        if (nuevoContactoId !in updatedContacts) {
+                                            updatedContacts.add(nuevoContactoId)
+                                            UsuarioPrincipal.setContactos(updatedContacts)
+                                            // Además, actualizamos el estado local para forzar la recomposición
+                                            contactosState.clear()
+                                            contactosState.addAll(updatedContacts)
+                                        }
+                                    }
+                                    inputText = ""
                                     showContactoDialog = false
-                                    // Lógica adicional para procesar idContacto
+
                                 }
                             ) {
                                 Text(text = traducir("guardar"))
@@ -668,14 +703,17 @@ fun muestraContactos(navController: NavHostController, contactos: List<Usuario>)
                         },
                         dismissButton = {
                             TextButton(
-                                onClick = { showContactoDialog = false }
+                                onClick = {
+                                    inputText = ""
+                                    showContactoDialog = false
+                                }
                             ) {
                                 Text(text = traducir("cancelar"))
                             }
                         }
                     )
                 }
-                // AlertDialog para "Nuevo Chat" con selección múltiple de contactos
+                // AlertDialog para "Nuevo Chat" (se mantiene sin cambios)
                 if (showChatDialog) {
                     AlertDialog(
                         onDismissRequest = {
@@ -714,8 +752,40 @@ fun muestraContactos(navController: NavHostController, contactos: List<Usuario>)
                         confirmButton = {
                             TextButton(
                                 onClick = {
-                                    val participantIds = selectedContacts.map { it.getIdUnico() }
-                                    // Aquí puedes incluir la lógica para crear la conversación.
+
+                                    // Si hay contactos seleccionados, se crea la nueva conversación
+                                    if (selectedContacts.isNotEmpty()) {
+                                        // Los participantes incluyen el UsuarioPrincipal y los contactos seleccionados
+                                        val participantes = listOf(UsuarioPrincipal.getIdUnico()) + selectedContacts.map { it.getIdUnico() }
+                                        // Crea la nueva conversación con un id aleatorio
+                                        val nuevaConversacion = Conversacion(
+                                            participants = participantes,
+                                            messages = emptyList()
+                                        )
+                                        // Actualiza el UsuarioPrincipal: agrega la nueva conversación a su lista
+                                        val convActualesPrincipal = UsuarioPrincipal.getChatUser().conversaciones.toMutableList()
+                                        convActualesPrincipal.add(nuevaConversacion)
+                                        UsuarioPrincipal.setChatUser(
+                                            ConversacionesUsuario(
+                                                id = UsuarioPrincipal.getChatUser().id,  // Mantenemos el id existente
+                                                idUser = UsuarioPrincipal.getIdUnico(),
+                                                conversaciones = convActualesPrincipal
+                                            )
+                                        )
+                                        // Actualiza cada usuario seleccionado: agrega la conversación a sus chats
+                                        selectedContacts.forEach { usuario ->
+                                            val convActuales = usuario.getChatUser().conversaciones.toMutableList()
+                                            convActuales.add(nuevaConversacion)
+                                            usuario.setChatUser(
+                                                ConversacionesUsuario(
+                                                    id = usuario.getChatUser().id,
+                                                    idUser = usuario.getIdUnico(),
+                                                    conversaciones = convActuales
+                                                )
+                                            )
+                                        }
+                                    }
+
                                     showChatDialog = false
                                     selectedContacts.clear()
                                 }
@@ -1076,20 +1146,27 @@ fun mostrarPerfil(navController: NavHostController, usuario: Usuario?) {
 
 //Mostrar chat entre dos personas, se podria mejorar pasandole una conversacion en vez de id del chat
 @Composable
-fun mostrarChat(navController: NavHostController, chatId: String?) {
-    // Obtienes la lista de conversaciones y buscas la conversación que tenga el id pasado
+
+fun mostrarChat(navController: NavHostController, chatId : String?) {
+    // Obtiene la lista de conversaciones y busca la que tenga el id pasado
+
     val listaChats = UsuarioPrincipal.getChatUser().conversaciones
     val chat = listaChats.find { it.id == chatId } ?: return
-    // Obtener el nombre del primer participante
-    val participant1Name = chat.participants[1]
 
-    // Estado para el mensaje que se está escribiendo
+    val otherParticipantId = chat.participants.firstOrNull { it != UsuarioPrincipal.getIdUnico() }
+        ?: chat.participants.getOrNull(1) ?: ""
+    // nombre del otro participante en UsuariosPreCreados:
+    val otherParticipantName = UsuariosPreCreados.find { it.getIdUnico() == otherParticipantId }?.getNombreCompleto() ?: otherParticipantId
+
     var mensajeNuevo by remember { mutableStateOf("") }
+    val messagesState = remember { mutableStateListOf<Mensaje>().apply { addAll(chat.messages) } }
 
     Scaffold(
         topBar = {
             DefaultTopBar(
-                title = participant1Name, // Nombre dinámico, se deja tal cual
+
+                title = otherParticipantName, // Mostramos el nombre del participante1
+
                 navController = navController,
                 showBackButton = true,
                 irParaAtras = true,
@@ -1108,9 +1185,9 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
                     .weight(1f)
                     .padding(8.dp)
             ) {
-                items(chat.messages) { mensaje ->
+                items(messagesState) { mensaje ->
                     // Dependiendo del senderId, izquierda o derecha
-                    val isParticipant1 = mensaje.senderId == participant1Name
+                    val isParticipant1 = mensaje.senderId == otherParticipantId
                     val alignment = if (isParticipant1) Alignment.CenterStart else Alignment.CenterEnd
 
                     Box(
@@ -1145,8 +1222,48 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
                 )
                 IconButton(
                     onClick = {
-                        // Lógica para enviar el mensaje
-                        mensajeNuevo = ""
+
+                        if (mensajeNuevo.isNotBlank()) {
+                            val newMessage = Mensaje(
+                                senderId = UsuarioPrincipal.getIdUnico(),
+                                receiverId = otherParticipantId,
+                                content = mensajeNuevo,
+                            )
+                            messagesState.add(newMessage)
+
+                            // Actualiza la conversación
+                            val updatedConversation = chat.copy(messages = messagesState.toList())
+
+                            // Actualiza la conversación en UsuarioPrincipal
+                            val convsPrincipal =
+                                UsuarioPrincipal.getChatUser().conversaciones.toMutableList()
+                            val indexPrincipal = convsPrincipal.indexOfFirst { it.id == chat.id }
+                            if (indexPrincipal != -1) {
+                                convsPrincipal[indexPrincipal] = updatedConversation
+                                UsuarioPrincipal.setChatUser(
+                                    UsuarioPrincipal.getChatUser()
+                                        .copy(conversaciones = convsPrincipal)
+                                )
+                            }
+
+                            // Actualiza la conversación en el otro usuario, si lo encuentra
+                            UsuariosPreCreados.find { it.getIdUnico() == otherParticipantId }
+                                ?.let { otherUser ->
+                                    val convsOther =
+                                        otherUser.getChatUser().conversaciones.toMutableList()
+                                    val indexOther = convsOther.indexOfFirst { it.id == chat.id }
+                                    if (indexOther != -1) {
+                                        convsOther[indexOther] = updatedConversation
+                                        otherUser.setChatUser(
+                                            otherUser.getChatUser()
+                                                .copy(conversaciones = convsOther)
+                                        )
+                                    }
+                                }
+
+                            mensajeNuevo = ""
+                        }
+
                     }
                 ) {
                     Icon(
@@ -1162,14 +1279,16 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
 //Mostrar chatGrupo
 @Composable
 fun mostrarChatGrupo(navController: NavHostController, chatId: String?) {
-    // Buscar el chat según el id
+
+    // Obtiene la lista de conversaciones del UsuarioPrincipal y busca la conversación por su id
     val listaChats = UsuarioPrincipal.getChatUser().conversaciones
     val chat = listaChats.find { it.id == chatId } ?: return
-    // Definir un título para el grupo usando la clave "grupo"
-    val groupTitle = "${traducir("grupo")}: ${chat.id}"
 
-    // Estado para el mensaje que se está escribiendo
+    val groupTitle = "Grupo: ${chat.id}"
+
+
     var mensajeNuevo by remember { mutableStateOf("") }
+    val messagesState = remember { mutableStateListOf<Mensaje>().apply { addAll(chat.messages) } }
 
     Scaffold(
         topBar = {
@@ -1193,15 +1312,19 @@ fun mostrarChatGrupo(navController: NavHostController, chatId: String?) {
                     .weight(1f)
                     .padding(8.dp)
             ) {
-                items(chat.messages) { mensaje ->
-                    // En chat de grupo se muestra el nombre del emisor junto al mensaje
+
+                items(messagesState) { mensaje ->
+                    //
+                    val senderAlias = UsuariosPreCreados.find { it.getIdUnico() == mensaje.senderId }?.getAlias()
+                        ?: mensaje.senderId
+
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 4.dp)
                     ) {
                         Text(
-                            text = mensaje.senderId,
+                            text = senderAlias,
                             style = MaterialTheme.typography.caption
                         )
                         Text(
@@ -1227,8 +1350,45 @@ fun mostrarChatGrupo(navController: NavHostController, chatId: String?) {
                 )
                 IconButton(
                     onClick = {
-                        // Lógica para enviar el mensaje al grupo
-                        mensajeNuevo = ""
+
+                        if (mensajeNuevo.isNotBlank()) {
+                            // Crea el nuevo mensaje
+                            val newMessage = Mensaje(
+                                senderId = UsuarioPrincipal.getIdUnico(),
+                                receiverId = "", // En grupo no se usa
+                                content = mensajeNuevo,
+                            )
+                            messagesState.add(newMessage)
+
+                            val updatedConversation = chat.copy(messages = messagesState.toList())
+
+                            // Actualiza la conversación en UsuarioPrincipal
+                            val convsPrincipal = UsuarioPrincipal.getChatUser().conversaciones.toMutableList()
+                            val indexPrincipal = convsPrincipal.indexOfFirst { it.id == chat.id }
+                            if (indexPrincipal != -1) {
+                                convsPrincipal[indexPrincipal] = updatedConversation
+                                UsuarioPrincipal.setChatUser(
+                                    UsuarioPrincipal.getChatUser().copy(conversaciones = convsPrincipal)
+                                )
+                            }
+
+                            // Actualiza la conversación para cada participante del grupo
+                            chat.participants.forEach { participantId ->
+                                UsuariosPreCreados.find { it.getIdUnico() == participantId }
+                                    ?.let { otherUser ->
+                                        val convsOther = otherUser.getChatUser().conversaciones.toMutableList()
+                                        val indexOther = convsOther.indexOfFirst { it.id == chat.id }
+                                        if (indexOther != -1) {
+                                            convsOther[indexOther] = updatedConversation
+                                            otherUser.setChatUser(
+                                                otherUser.getChatUser().copy(conversaciones = convsOther)
+                                            )
+                                        }
+                                    }
+                            }
+                            mensajeNuevo = ""
+                        }
+
                     }
                 ) {
                     Icon(
@@ -1240,6 +1400,7 @@ fun mostrarChatGrupo(navController: NavHostController, chatId: String?) {
         }
     }
 }
+
 
 // --- Home Page ---
 // En la HomePage NO se muestra el botón de retroceso.
