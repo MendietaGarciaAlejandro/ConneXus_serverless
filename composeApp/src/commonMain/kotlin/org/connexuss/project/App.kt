@@ -9,6 +9,8 @@ import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import org.connexuss.project.interfaces.fuente.AppTheme
+import org.connexuss.project.interfaces.fuente.ProveedorDeFuente
 import org.connexuss.project.interfaces.idiomas.ProveedorDeIdioma
 import org.connexuss.project.navegacion.Navegacion
 
@@ -29,19 +31,23 @@ fun App() {
 
     // Envuelve la app en el proveedor de idioma para que el idioma se comparta globalmente
     ProveedorDeIdioma {
-        MaterialTheme(colors = temaConfig.colores) {
-            Navegacion(
-                temaConfig = temaConfig,
-                onToggleTheme = {
-                    temaConfig = temaConfig.copy(
-                        temaClaro = !temaConfig.temaClaro,
-                        colores = if (temaConfig.temaClaro) coloresOscuros else coloresClaros
+        ProveedorDeFuente {
+            AppTheme {
+                MaterialTheme(colors = temaConfig.colores) {
+                    Navegacion(
+                        temaConfig = temaConfig,
+                        onToggleTheme = {
+                            temaConfig = temaConfig.copy(
+                                temaClaro = !temaConfig.temaClaro,
+                                colores = if (temaConfig.temaClaro) coloresOscuros else coloresClaros
+                            )
+                        },
+                        onColorChange = { nuevoColor ->
+                            temaConfig = temaConfig.copy(colores = nuevoColor)
+                        }
                     )
-                },
-                onColorChange = { nuevoColor ->
-                    temaConfig = temaConfig.copy(colores = nuevoColor)
                 }
-            )
+            }
         }
     }
 }
