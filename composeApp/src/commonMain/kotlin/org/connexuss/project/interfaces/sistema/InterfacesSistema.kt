@@ -1198,12 +1198,13 @@ fun mostrarChat(navController: NavHostController, chatId : String?) {
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 4.dp),
-                        contentAlignment = alignment
+                        contentAlignment = if (isParticipant1) Alignment.CenterStart else Alignment.CenterEnd
                     ) {
                         Box(
                             modifier = Modifier
                                 .padding(8.dp)
                                 .widthIn(max = 250.dp)
+                                .background(if (isParticipant1) Color(0xFFC8E6C9) else Color(0xFFB2EBF2))
                         ) {
                             Text(text = mensaje.content)
                         }
@@ -1280,153 +1281,6 @@ fun mostrarChat(navController: NavHostController, chatId : String?) {
     }
 }
 
-/*
-//Mostrar chatGrupo
-@Composable
-fun mostrarChatGrupo(navController: NavHostController, chatId: String?) {
-
-    // Obtiene la lista de conversaciones del UsuarioPrincipal y busca la conversación por su id
-    val listaChats = UsuarioPrincipal.getChatUser().conversaciones
-    val chat = listaChats.find { it.id == chatId } ?: return
-    val idUsuario = UsuarioPrincipal.getIdUnico()
-    var vaDerecha : Boolean = false
-    val groupTitle = "Grupo: ${chat.id}"
-
-
-    var mensajeNuevo by remember { mutableStateOf("") }
-    val messagesState = remember { mutableStateListOf<Mensaje>().apply { addAll(chat.messages) } }
-
-    Scaffold(
-        topBar = {
-            DefaultTopBar(
-                title = groupTitle,
-                navController = navController,
-                showBackButton = true,
-                irParaAtras = true,
-                muestraEngranaje = false
-            )
-        }
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
-            // Sección de mensajes
-            LazyColumn(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(8.dp)
-            ) {
-
-                items(messagesState) { mensaje ->
-                    //
-                    val senderAlias = UsuariosPreCreados.find { it.getIdUnico() == mensaje.senderId }?.getAlias()
-                        ?: mensaje.senderId
-
-                    // Comprobación de si va a la derecha o izquierda el mensaje contrastando el id
-                    if ( idUsuario == mensaje.senderId) {
-                        vaDerecha = true
-                    }
-                    val alignment = if (vaDerecha) Alignment.CenterEnd else Alignment.CenterStart
-
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp),
-                        contentAlignment = alignment
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .padding(8.dp)
-                                .widthIn(max = 250.dp)
-                                // le ponemos un color al recuadro del mensaje verde claro y a la letra que sea blanco
-                                .background(Color(0xFFC8E6C9))
-                                .border(1.dp, Color(0xFFC8E6C9), RoundedCornerShape(8.dp))
-
-                        ) {
-                            Text(
-                                // le metemos un margen por abajo para que se vea separado
-                                modifier = Modifier.padding(bottom = 10.dp),
-                                text = senderAlias,
-                                style = MaterialTheme.typography.caption
-                            )
-                            Spacer(modifier = Modifier.height(20.dp))
-                            Text(
-                                text = mensaje.content,
-                                style = MaterialTheme.typography.body1,
-                            )
-                        }
-                    }
-                }
-            }
-
-            // Barra de escritura
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                OutlinedTextField(
-                    value = mensajeNuevo,
-                    onValueChange = { mensajeNuevo = it },
-                    modifier = Modifier.weight(1f),
-                    placeholder = { Text(text = traducir("escribe_mensaje")) }
-                )
-                IconButton(
-                    onClick = {
-
-                        if (mensajeNuevo.isNotBlank()) {
-                            // Crea el nuevo mensaje
-                            val newMessage = Mensaje(
-                                senderId = UsuarioPrincipal.getIdUnico(),
-                                receiverId = "", // En grupo no se usa
-                                content = mensajeNuevo,
-                            )
-                            messagesState.add(newMessage)
-
-                            val updatedConversation = chat.copy(messages = messagesState.toList())
-
-                            // Actualiza la conversación en UsuarioPrincipal
-                            val convsPrincipal = UsuarioPrincipal.getChatUser().conversaciones.toMutableList()
-                            val indexPrincipal = convsPrincipal.indexOfFirst { it.id == chat.id }
-                            if (indexPrincipal != -1) {
-                                convsPrincipal[indexPrincipal] = updatedConversation
-                                UsuarioPrincipal.setChatUser(
-                                    UsuarioPrincipal.getChatUser().copy(conversaciones = convsPrincipal)
-                                )
-                            }
-
-                            // Actualiza la conversación para cada participante del grupo
-                            chat.participants.forEach { participantId ->
-                                UsuariosPreCreados.find { it.getIdUnico() == participantId }
-                                    ?.let { otherUser ->
-                                        val convsOther = otherUser.getChatUser().conversaciones.toMutableList()
-                                        val indexOther = convsOther.indexOfFirst { it.id == chat.id }
-                                        if (indexOther != -1) {
-                                            convsOther[indexOther] = updatedConversation
-                                            otherUser.setChatUser(
-                                                otherUser.getChatUser().copy(conversaciones = convsOther)
-                                            )
-                                        }
-                                    }
-                            }
-                            mensajeNuevo = ""
-                        }
-
-                    }
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.Send,
-                        contentDescription = traducir("enviar")
-                    )
-                }
-            }
-        }
-    }
-}
- */
 @Composable
 fun mostrarChatGrupo(navController: NavHostController, chatId: String?) {
     // Obtiene la lista de conversaciones del UsuarioPrincipal y busca la conversación por su id
@@ -1465,7 +1319,7 @@ fun mostrarChatGrupo(navController: NavHostController, chatId: String?) {
                         ?: mensaje.senderId
 
                     val vaDerecha = idUsuario == mensaje.senderId
-                    val alignment = if (vaDerecha) Alignment.End else Alignment.Start
+                    if (vaDerecha) Alignment.End else Alignment.Start
 
                     Row(
                         horizontalArrangement = if (vaDerecha) Arrangement.End else Arrangement.Start,
@@ -1479,7 +1333,7 @@ fun mostrarChatGrupo(navController: NavHostController, chatId: String?) {
                             modifier = Modifier
                                 .padding(start = if (vaDerecha) 0.dp else 8.dp, end = if (vaDerecha) 8.dp else 0.dp)
                                 .widthIn(max = 250.dp)
-                                .background(Color(0xFFC8E6C9))
+                                .background(color = if (vaDerecha) Color(0xFFC8E6C9) else Color(0xFFE0E0E0))
                                 .border(1.dp, Color(0xFFC8E6C9), RoundedCornerShape(8.dp))
                         ) {
                             Column(
