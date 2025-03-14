@@ -1196,7 +1196,7 @@ fun mostrarChat(navController: NavHostController, chatId : String?) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 4.dp),
+                            .padding(8.dp),
                         contentAlignment = if (isParticipant1) Alignment.CenterStart else Alignment.CenterEnd
                     ) {
                         Box(
@@ -1205,7 +1205,14 @@ fun mostrarChat(navController: NavHostController, chatId : String?) {
                                 .widthIn(max = 250.dp)
                                 .background(if (isParticipant1) Color(0xFFB2EBF2) else Color(0xFFC8E6C9))
                         ) {
-                            Text(text = mensaje.content)
+                            Column(
+                                modifier = Modifier
+                                    .padding(8.dp)
+                            ) {
+                                Text(text = mensaje.content,
+                                    modifier = Modifier.padding(bottom = 4.dp),
+                                    style = MaterialTheme.typography.body1)
+                            }
                         }
                     }
                 }
