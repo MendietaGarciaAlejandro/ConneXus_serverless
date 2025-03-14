@@ -1,4 +1,4 @@
-package org.connexuss.project.interfaces.sistema
+package org.connexuss.project.interfaces
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
@@ -70,9 +70,6 @@ import org.connexuss.project.datos.UsuarioPrincipal
 
 import org.connexuss.project.datos.UsuariosPreCreados
 
-import org.connexuss.project.interfaces.idiomas.traducir
-
-import org.connexuss.project.interfaces.modificadorTamannio.LimitaTamanioAncho
 import org.connexuss.project.usuario.AlmacenamientoUsuario
 import org.connexuss.project.usuario.Usuario
 import org.connexuss.project.usuario.UtilidadesUsuario
@@ -200,9 +197,9 @@ fun muestraUsuarios(navController: NavHostController) {
 
     LaunchedEffect(Unit) {
         try {
-            val user1 = UtilidadesUsuario().instanciaUsuario("Juan Perez", 25, "paco@jerte.org", "pakito58", true)
-            val user2 = UtilidadesUsuario().instanciaUsuario("Maria Lopez", 30, "marii@si.se", "marii", true)
-            val user3 = UtilidadesUsuario().instanciaUsuario("Pedro Sanchez", 40, "roba@espannoles.es", "roba", true)
+            val user1 = UtilidadesUsuario().instanciaUsuario("Juan Perez", "paco@jerte.org", "pakito58", true)
+            val user2 = UtilidadesUsuario().instanciaUsuario("Maria Lopez", "marii@si.se", "marii", true)
+            val user3 = UtilidadesUsuario().instanciaUsuario("Pedro Sanchez", "roba@espannoles.es", "roba", true)
             almacenamientoUsuario.agregarUsuario(user1)
             almacenamientoUsuario.agregarUsuario(user2)
             almacenamientoUsuario.agregarUsuario(user3)

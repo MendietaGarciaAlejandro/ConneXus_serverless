@@ -1,4 +1,4 @@
-package org.connexuss.project.interfaces.idiomas
+package org.connexuss.project.interfaces
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,8 +22,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import org.connexuss.project.interfaces.modificadorTamannio.LimitaTamanioAncho
-import org.connexuss.project.interfaces.sistema.DefaultTopBar
 
 @Composable
 fun PantallaIdiomas(navController: NavHostController) {

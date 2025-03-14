@@ -6,3 +6,8 @@ fun generarClaves(): Pair<String, String> {
     val clavePrivada = "clavePrivada".hashCode().toString()
     return Pair(clavePublica, clavePrivada)
 }
+
+// funciones de encriptacion hash (Resumen)
+fun hash(texto: String): String {
+    return texto.hashCode().toString()
+}

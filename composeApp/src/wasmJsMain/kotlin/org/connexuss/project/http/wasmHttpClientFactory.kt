@@ -1,4 +1,4 @@
-package org.connexuss.project
+package org.connexuss.project.http
 /*
 import io.ktor.client.*
 import io.ktor.client.engine.js.*

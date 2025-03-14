@@ -1,4 +1,4 @@
-package org.connexuss.project.interfaces.fuente
+package org.connexuss.project.interfaces
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,9 +25,6 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import org.connexuss.project.interfaces.idiomas.traducir
-import org.connexuss.project.interfaces.modificadorTamannio.LimitaTamanioAncho
-import org.connexuss.project.interfaces.sistema.DefaultTopBar
 
 val LocalFontState = staticCompositionLocalOf<MutableState<FontFamily>> {
     error("No se ha proporcionado un estado de fuente")

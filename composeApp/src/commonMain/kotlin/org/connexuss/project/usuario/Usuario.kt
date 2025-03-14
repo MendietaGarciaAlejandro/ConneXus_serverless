@@ -2,13 +2,14 @@ package org.connexuss.project.usuario
 
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import org.connexuss.project.comunicacion.Conversacion
 import org.connexuss.project.comunicacion.ConversacionesUsuario
 import org.connexuss.project.encriptacion.hash
+import kotlin.random.Random
 
 // Clase usuario con sus atributos y metodos
 class Usuario {
     private var nombre: String = ""
-    private var edad: Int = 0
     private var correo: String = ""
     private var aliasPublico: String = ""
     private var aliasPrivado: String = ""
@@ -20,10 +21,9 @@ class Usuario {
     private var contrasennia: String = ""
 
     // Constructor completo
-    constructor(nombre: String, edad: Int, correo: String, aliasPublico: String, activo: Boolean, contactos: List<String>, chatUser: ConversacionesUsuario) {
+    constructor(nombre: String, correo: String, aliasPublico: String, activo: Boolean, contactos: List<String>, chatUser: ConversacionesUsuario) {
         this.idUnico = UtilidadesUsuario().generarIdUnico()
         this.nombre = nombre
-        this.edad = edad
         this.correo = correo
         this.aliasPublico = aliasPublico
         this.aliasPrivado = hash(aliasPublico)
@@ -32,10 +32,9 @@ class Usuario {
         this.chatUser = chatUser
     }
     //Debug: Contructor con idUnico
-    constructor(idUnico: String, nombre: String, edad: Int, correo: String, aliasPublico: String, activo: Boolean, contactos: List<String>, chatUser: ConversacionesUsuario) {
+    constructor(idUnico: String, nombre: String, correo: String, aliasPublico: String, activo: Boolean, contactos: List<String>, chatUser: ConversacionesUsuario) {
         this.idUnico = idUnico
         this.nombre = nombre
-        this.edad = edad
         this.correo = correo
         this.aliasPublico = aliasPublico
         this.aliasPrivado = hash(aliasPublico)
@@ -52,7 +51,6 @@ class Usuario {
     constructor(usuario: Usuario) {
         this.idUnico = usuario.idUnico
         this.nombre = usuario.nombre
-        this.edad = usuario.edad
         this.correo = usuario.correo
         this.aliasPublico = usuario.aliasPublico
         this.activo = usuario.activo
@@ -64,13 +62,6 @@ class Usuario {
     }
     fun setNombreCompleto(nombreCompleto: String) {
         this.nombre = nombreCompleto
-    }
-
-    fun getEdad(): Int {
-        return edad
-    }
-    fun setEdad(edad: Int) {
-        this.edad = edad
     }
 
     fun getCorreo(): String {
@@ -147,7 +138,6 @@ class Usuario {
         Text("Nombre: $nombre")
         Text("Alias: $aliasPublico")
         Text("Activo: $activo")
-        Text("Edad: $edad")
     }
 
     // Metodo para imprimir los datos privados del usuario
@@ -156,5 +146,82 @@ class Usuario {
         Text("Correo: $correo")
         Text("Id Unico: $idUnico")
         Text("Alias Privado: $aliasPrivado")
+    }
+}
+
+// Clase que almacena los usuarios
+class AlmacenamientoUsuario {
+    private var usuarios: ArrayList<Usuario> = ArrayList()
+
+    fun agregarUsuario(usuario: Usuario) {
+        usuarios.add(usuario)
+    }
+
+    fun eliminarUsuario(usuario: Usuario) {
+        usuarios.remove(usuario)
+    }
+
+    fun obtenerUsuarios(): ArrayList<Usuario> {
+        return usuarios
+    }
+
+    fun obtenerUsuarioPorId(id: String): Usuario {
+        return usuarios.find { it.getIdUnico() == id }!!
+    }
+
+    fun obtenerUsuarioPorAlias(alias: String): Usuario {
+        return usuarios.find { it.getAlias() == alias }!!
+    }
+
+    fun obtenerUsuarioPorCorreo(correo: String): Usuario {
+        return usuarios.find { it.getCorreo() == correo }!!
+    }
+
+    fun obtenerUsuarioPorNombre(nombre: String): Usuario {
+        return usuarios.find { it.getNombreCompleto() == nombre }!!
+    }
+}
+
+// Clase que contiene metodos de utilidades para el usuario
+class UtilidadesUsuario {
+
+    fun generarIdUnico(): String {
+        val idUnico = Random.nextInt(0, Int.MAX_VALUE)
+        return idUnico.toString()
+    }
+
+    private fun validarCorreo(correo: String): Boolean {
+        return correo.contains("@")
+    }
+
+    fun validarNombre(nombre: String): Boolean {
+        return nombre.isNotEmpty()
+    }
+
+    fun generarAlias(nombre: String): String {
+        val alias = nombre.map { it.code }.joinToString("")
+        return alias
+    }
+
+    fun instanciaUsuario(nombre: String,  correo: String, aliasPublico: String, activo: Boolean): Usuario {
+        val correoValido = validarCorreo(correo)
+        val nombreValido = validarNombre(nombre)
+        val aliasPublicoValido = validarNombre(aliasPublico)
+        if (!correoValido || !nombreValido || !aliasPublicoValido) {
+            throw IllegalArgumentException("Datos de usuario no validos")
+        }
+        return Usuario(nombre, correo, aliasPublico, activo, emptyList(), ConversacionesUsuario(generarIdUnico(), generarIdUnico(), listOf( Conversacion( generarIdUnico(), emptyList() ) ) ) )
+    }
+
+    //Debug: Contructor con idUnico
+    fun instanciaUsuario(idUnico: String, nombre: String, edad: Int, correo: String, aliasPublico: String, activo: Boolean): Usuario {
+        val idUnico = idUnico
+        val correoValido = validarCorreo(correo)
+        val nombreValido = validarNombre(nombre)
+        val aliasPublicoValido = validarNombre(aliasPublico)
+        if (!correoValido || !nombreValido || !aliasPublicoValido) {
+            throw IllegalArgumentException("Datos de usuario no validos")
+        }
+        return Usuario(idUnico, nombre, correo, aliasPublico, activo, emptyList(), ConversacionesUsuario(generarIdUnico(), generarIdUnico(), listOf( Conversacion( generarIdUnico(), emptyList() ) ) ) )
     }
 }

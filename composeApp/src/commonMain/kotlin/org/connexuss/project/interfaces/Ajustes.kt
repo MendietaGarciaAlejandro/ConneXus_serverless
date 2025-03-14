@@ -1,4 +1,4 @@
-package org.connexuss.project.interfaces.ajustes
+package org.connexuss.project.interfaces
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -34,9 +34,6 @@ import connexus_serverless.composeapp.generated.resources.Res
 import connexus_serverless.composeapp.generated.resources.avatar
 import connexus_serverless.composeapp.generated.resources.ic_email
 import connexus_serverless.composeapp.generated.resources.unblock
-import org.connexuss.project.interfaces.idiomas.traducir
-import org.connexuss.project.interfaces.modificadorTamannio.LimitaTamanioAncho
-import org.connexuss.project.interfaces.sistema.DefaultTopBar
 import org.jetbrains.compose.resources.painterResource
 
 // Pantalla de Ajustes / Control de Cuentas
