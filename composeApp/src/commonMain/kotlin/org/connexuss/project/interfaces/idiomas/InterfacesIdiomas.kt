@@ -103,12 +103,13 @@ fun ProveedorDeIdioma(content: @Composable () -> Unit) {
 // Estado del idioma
 @Composable
 fun IdiomaState(): MutableState<Idioma> {
+    // Idioma por defecto
     return remember { mutableStateOf(espannol) }
 }
 
 // Cambia el idioma global
 fun cambiarIdioma(idiomaState: MutableState<Idioma>, nuevoIdioma: Idioma) {
-    idiomaState.value = nuevoIdioma  // ✅ Correcto
+    idiomaState.value = nuevoIdioma
 }
 
 // Función para obtener la traducción de una clave, según el idioma actual
@@ -124,6 +125,7 @@ fun traducir(key: String): String {
 val espannol = Idioma(
     palabras = mapOf(
         "cambiar_idioma" to "Cambiar Idioma",
+        "escribe_mensaje" to "Escribe un mensaje",
 
         // Pantalla de Contactos
         "nuevo_contacto" to "Nuevo Contacto",
@@ -224,7 +226,10 @@ val espannol = Idioma(
         "ir_a_registro" to "Ir a Registro",
 
         // Pantalla Email en el Sistema
-        "email_en_sistema" to "Email en el Sistema",
+        "email_en_sistema_titulo" to "Email en el Sistema",
+        "email_en_sistema_mensaje" to "Email en el Sistema",
+        "email_no_existe_titulo" to "Email no existe",
+        "email_no_existe_mensaje" to "Email no existe en el Sistema",
         "codigo_verificacion" to "Código de Verificación",
         "restablecer_contrasena" to "Restablecer Contraseña",
         "cancelar" to "Cancelar",
@@ -332,6 +337,7 @@ val espannol = Idioma(
 
 val ingles = Idioma(
     palabras = mapOf(
+    "escribe_mensaje" to "Write a message",
     "cambiar_idioma" to "Change Language",
     "nuevo_contacto" to "New Contact",
     "nuevo_chat" to "New Chat",
@@ -390,7 +396,10 @@ val ingles = Idioma(
     "ajustes_ayuda" to "Settings / Help",
     "escribe_reporte" to "Write your report",
     "reporte_vacio" to "Please, write something",
-    "email_no_existe" to "Email does not exist",
+    "email_en_sistema_mensaje" to "Email exists",
+    "email_no_existe_titulo" to "Email does not exist",
+    "email_no_existe_mensaje" to "Email does not exist",
+    "email_en_sistema_titulo" to "Email in System",
     "correo_no_registrado" to "Email address is not registered.",
     "verifica_correo_registro" to "Check if your email is correct or register.",
     "ir_a_registro" to "Go to Register",
@@ -472,6 +481,7 @@ val ingles = Idioma(
 val portugues = Idioma(
     palabras = mapOf(
         // Pantalla de Contactos
+        "escribe_mensaje" to "Escreva uma mensagem",
         "cambiar_idioma" to "Mudar Idioma",
         "nuevo_contacto" to "Novo Contato",
         "nuevo_chat" to "Novo Chat",
@@ -564,14 +574,13 @@ val portugues = Idioma(
         "escribe_reporte" to "Escreva seu relatório",
         "reporte_vacio" to "Por favor, escreva algo",
 
-        // Pantalla Email no existe
-        "email_no_existe" to "Email não existe",
-        "correo_no_registrado" to "O endereço de email não está registrado.",
+        // Pantalla Email
+        "email_no_existe_mensaje" to "Email não existe",
+        "email_no_existe_titulo" to "O endereço de email não está registrado.",
         "verifica_correo_registro" to "Verifique se você digitou seu email corretamente ou cadastre-se.",
         "ir_a_registro" to "Ir para Cadastro",
-
-        // Pantalla Email en el Sistema
-        "email_en_sistema" to "Email no Sistema",
+        "email_en_sistema_titulo" to "Email no Sistema",
+        "email_en_sistema_mensaje" to "Email no Sistema",
         "codigo_verificacion" to "Código de Verificação",
         "restablecer_contrasena" to "Redefinir Senha",
         "cancelar" to "Cancelar",
@@ -680,6 +689,7 @@ val portugues = Idioma(
 val frances = Idioma(
     palabras = mapOf(
         // Écran des Contacts
+        "escribe_mensaje" to "Écrire un message",
         "cambiar_idioma" to "Changer de Langue",
         "nuevo_contacto" to "Nouveau Contact",
         "nuevo_chat" to "Nouveau Chat",
@@ -773,8 +783,10 @@ val frances = Idioma(
         "reporte_vacio" to "Veuillez écrire quelque chose",
 
         // Écran Email Inexistant
-        "email_no_existe" to "L'email n'existe pas",
-        "correo_no_registrado" to "L'adresse email n'est pas enregistrée.",
+        "email_en_sistema_titulo" to "Email dans le Système",
+        "email_en_sistema_mensaje" to "Email dans le Système",
+        "email_no_existe_titulo" to "Email n'existe pas",
+        "email_no_existe_mensaje" to "Email n'existe pas",
         "verifica_correo_registro" to "Vérifiez que vous avez correctement saisi votre email ou inscrivez-vous.",
         "ir_a_registro" to "Aller à l'inscription",
 
@@ -887,6 +899,7 @@ val frances = Idioma(
 val aleman = Idioma(
     palabras = mapOf(
         // Kontakte-Bildschirm
+        "escribe_mensaje" to "Nachricht schreiben",
         "cambiar_idioma" to "Sprache ändern",
         "nuevo_contacto" to "Neuer Kontakt",
         "nuevo_chat" to "Neuer Chat",
@@ -980,8 +993,10 @@ val aleman = Idioma(
         "reporte_vacio" to "Bitte schreiben Sie etwas",
 
         // E-Mail existiert nicht
-        "email_no_existe" to "Email existiert nicht",
-        "correo_no_registrado" to "Die E-Mail-Adresse ist nicht registriert.",
+        "email_en_sistema_titulo" to "Email im System",
+        "email_en_sistema_mensaje" to "Email im System",
+        "email_no_existe_titulo" to "Email existiert nicht",
+        "email_no_existe_mensaje" to "Email existiert nicht",
         "verifica_correo_registro" to "Überprüfen Sie, ob Sie Ihre E-Mail richtig eingegeben haben oder registrieren Sie sich.",
         "ir_a_registro" to "Zur Registrierung gehen",
 
@@ -1095,6 +1110,7 @@ val aleman = Idioma(
 val italiano = Idioma(
     palabras = mapOf(
         // Schermata Contatti
+        "escribe_mensaje" to "Scrivi un messaggio",
         "cambiar_idioma" to "Cambia Lingua",
         "nuevo_contacto" to "Nuovo Contatto",
         "nuevo_chat" to "Nuovo Chat",
@@ -1188,8 +1204,10 @@ val italiano = Idioma(
         "reporte_vacio" to "Per favore, scrivi qualcosa",
 
         // Schermata Email inesistente
-        "email_no_existe" to "Email inesistente",
-        "correo_no_registrado" to "L'indirizzo email non è registrato.",
+        "email_en_sistema_titulo" to "Email nel Sistema",
+        "email_en_sistema_mensaje" to "Email nel Sistema",
+        "email_no_existe_titulo" to "Email non esiste",
+        "email_no_existe_mensaje" to "Email non esiste",
         "verifica_correo_registro" to "Verifica di aver scritto correttamente la tua email o registrati.",
         "ir_a_registro" to "Vai alla Registrazione",
 

@@ -1,16 +1,15 @@
 package org.connexuss.project.navegacion
 
-import androidx.compose.material.Colors
 import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import org.connexuss.project.TemaConfig
 import org.connexuss.project.datos.UsuarioPrincipal
 import org.connexuss.project.datos.UsuariosPreCreados
 import org.connexuss.project.interfaces.ajustes.PantallaAjustesAyuda
 import org.connexuss.project.interfaces.ajustes.PantallaAjustesControlCuentas
-import org.connexuss.project.interfaces.ajustes.PantallaCambiarTema
+import org.connexuss.project.interfaces.colores.PantallaCambiarTema
+import org.connexuss.project.interfaces.colores.TemaConfig
 import org.connexuss.project.interfaces.foro.muestraForo
 import org.connexuss.project.interfaces.foro.muestraTemaForo
 import org.connexuss.project.interfaces.fuente.PantallaCambiarFuente
@@ -34,7 +33,7 @@ import org.connexuss.project.interfaces.sistema.muestraUsuarios
 fun Navegacion(
     temaConfig: TemaConfig,
     onToggleTheme: () -> Unit,
-    onColorChange: (Colors) -> Unit
+    onColorChange: (String) -> Unit
 ) {
     val navController = rememberNavController()
     var posicionColorPillado = 0
@@ -79,7 +78,12 @@ fun Navegacion(
             PantallaAjustesAyuda(navController)
         }
         composable("cambiarTema") {
-            PantallaCambiarTema(navController = navController, temaConfig = temaConfig, onToggleTheme = onToggleTheme, onColorChange = onColorChange)
+            PantallaCambiarTema(
+                navController = navController,
+                temaConfig = temaConfig,
+                onToggleTheme = onToggleTheme,
+                onColorChange = onColorChange // Pasa la función directamente
+            )
         }
         composable("mostrarPerfilPrincipal") {
             mostrarPerfil(navController, UsuarioPrincipal)

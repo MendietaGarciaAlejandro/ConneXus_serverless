@@ -27,11 +27,14 @@ decompose = "2.2.0-alpha03"
 ktorClientContentNegotiation = "2.3.8"
 ktorClientCore = "2.3.8"
 ktorSerializationKotlinxJson = "2.3.8"
+multiplatformSettings = "1.0.0"
 navigation-compose = "2.8.0-alpha10"
 extensionsComposeJetbrains = "2.2.0-alpha03"
 kotlinxSerialization = "1.7.0"
+
+# Para guardar los datos cerrando la app
 foundationAndroid = "1.7.8"
-animationCoreLint = "1.8.0-beta03"
+animationCoreLint = "1.8.0-rc01"
 
 # Ktor
 ktor = "2.3.8"
@@ -64,6 +67,10 @@ decompose-compose = { module = "com.arkivanov.decompose:extensions-compose-jetpa
 ktor-client-content-negotiation-v238 = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktorClientContentNegotiation" }
 ktor-client-core-v238 = { module = "io.ktor:ktor-client-core", version.ref = "ktorClientCore" }
 ktor-serialization-kotlinx-json-v238 = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktorSerializationKotlinxJson" }
+multiplatform-settings = { module = "com.russhwolf:multiplatform-settings", version.ref = "multiplatformSettings" }
+multiplatform-settings-datastore = { module = "com.russhwolf:multiplatform-settings-datastore", version.ref = "multiplatformSettings" }
+multiplatform-settings-datastore-android = { module = "com.russhwolf:multiplatform-settings-datastore-android", version.ref = "multiplatformSettings" }
+multiplatform-settings-no-arg = { module = "com.russhwolf:multiplatform-settings-no-arg", version.ref = "multiplatformSettings" }
 navigation-compose = { module = "org.jetbrains.androidx.navigation:navigation-compose", version.ref = "navigation-compose" }
 #decompose-jetbrains = { module = "com.arkivanov.decompose:extensions-jetbrains-compose", version.ref = "extensionsComposeJetbrains" }
 decompose-jetbrains = { module = "com.arkivanov.decompose:extensions-compose-jetbrains", version.ref = "extensionsComposeJetbrains" }
