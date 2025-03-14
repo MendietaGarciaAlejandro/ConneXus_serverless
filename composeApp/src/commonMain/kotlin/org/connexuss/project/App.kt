@@ -6,12 +6,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import org.connexuss.project.interfaces.colores.TemaConfig
-import org.connexuss.project.interfaces.colores.TemaConfigSaver
-import org.connexuss.project.interfaces.colores.getColorsForTheme
-import org.connexuss.project.interfaces.fuente.AppTheme
-import org.connexuss.project.interfaces.fuente.ProveedorDeFuente
-import org.connexuss.project.interfaces.idiomas.ProveedorDeIdioma
+import org.connexuss.project.interfaces.TemaConfig
+import org.connexuss.project.interfaces.TemaConfigSaver
+import org.connexuss.project.interfaces.getColorsForTheme
+import org.connexuss.project.interfaces.AppTheme
+import org.connexuss.project.interfaces.ProveedorDeFuente
+import org.connexuss.project.interfaces.ProveedorDeIdioma
 import org.connexuss.project.navegacion.Navegacion
 
 @Composable

@@ -1,4 +1,4 @@
-package org.connexuss.project.interfaces.modificadorTamannio
+package org.connexuss.project.interfaces
 
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
