@@ -1150,7 +1150,6 @@ fun mostrarPerfil(navController: NavHostController, usuario: Usuario?) {
 
 //Mostrar chat entre dos personas, se podria mejorar pasandole una conversacion en vez de id del chat
 @Composable
-
 fun mostrarChat(navController: NavHostController, chatId : String?) {
     // Obtiene la lista de conversaciones y busca la que tenga el id pasado
 
@@ -1204,7 +1203,7 @@ fun mostrarChat(navController: NavHostController, chatId : String?) {
                             modifier = Modifier
                                 .padding(8.dp)
                                 .widthIn(max = 250.dp)
-                                .background(if (isParticipant1) Color(0xFFC8E6C9) else Color(0xFFB2EBF2))
+                                .background(if (isParticipant1) Color(0xFFB2EBF2) else Color(0xFFC8E6C9))
                         ) {
                             Text(text = mensaje.content)
                         }
@@ -1333,7 +1332,7 @@ fun mostrarChatGrupo(navController: NavHostController, chatId: String?) {
                             modifier = Modifier
                                 .padding(start = if (vaDerecha) 0.dp else 8.dp, end = if (vaDerecha) 8.dp else 0.dp)
                                 .widthIn(max = 250.dp)
-                                .background(color = if (vaDerecha) Color(0xFFC8E6C9) else Color(0xFFE0E0E0))
+                                .background(color = if (vaDerecha) Color(0xFFC8E6C9) else Color(0xFFB2EBF2))
                                 .border(1.dp, Color(0xFFC8E6C9), RoundedCornerShape(8.dp))
                         ) {
                             Column(
