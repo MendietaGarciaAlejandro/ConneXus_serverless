@@ -15,12 +15,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.Button
 import androidx.compose.material.Card
-import androidx.compose.material.Colors
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Scaffold
-import androidx.compose.material.Switch
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -30,21 +28,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import connexus_serverless.composeapp.generated.resources.Res
 import connexus_serverless.composeapp.generated.resources.avatar
 import connexus_serverless.composeapp.generated.resources.ic_email
 import connexus_serverless.composeapp.generated.resources.unblock
-import org.connexuss.project.TemaConfig
-import org.connexuss.project.coloresAmarillo
-import org.connexuss.project.coloresAzul
-import org.connexuss.project.coloresGris
-import org.connexuss.project.coloresMorado
-import org.connexuss.project.coloresNaranja
-import org.connexuss.project.coloresRojo
-import org.connexuss.project.coloresVerde
 import org.connexuss.project.interfaces.idiomas.traducir
 import org.connexuss.project.interfaces.modificadorTamannio.LimitaTamanioAncho
 import org.connexuss.project.interfaces.sistema.DefaultTopBar
@@ -213,105 +202,6 @@ fun PantallaAjustesAyuda(navController: NavHostController) {
                                 color = if (errorMessage == traducir("reporte_vacio")) Color.Red else Color.Green
                             )
                         }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun PantallaCambiarTema(
-    navController: NavHostController,
-    temaConfig: TemaConfig,
-    onToggleTheme: () -> Unit,
-    onColorChange: (Colors) -> Unit
-) {
-    Scaffold(
-        topBar = {
-            DefaultTopBar(
-                title = traducir("ajustes_tema"),
-                navController = navController,
-                showBackButton = true,
-                muestraEngranaje = false,
-                irParaAtras = true
-            )
-        }
-    ) { padding ->
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            LimitaTamanioAncho { modifier ->
-                Column(
-                    modifier = modifier
-                        .padding(padding)
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        traducir("modo"),
-                        style = MaterialTheme.typography.h6.copy(textAlign = TextAlign.Center),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(traducir("modo_oscuro"), style = MaterialTheme.typography.body1)
-                        val isDarkMode = !temaConfig.temaClaro
-                        Switch(checked = isDarkMode, onCheckedChange = { onToggleTheme() })
-                        Text(traducir("modo_claro"), style = MaterialTheme.typography.body1)
-                    }
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        traducir("colores"),
-                        style = MaterialTheme.typography.h6.copy(textAlign = TextAlign.Center),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Button(
-                        onClick = { onColorChange(coloresAzul) },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(traducir("cambiar_a_tema_azul"))
-                    }
-                    Button(
-                        onClick = { onColorChange(coloresAmarillo) },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(traducir("cambiar_a_tema_amarillo"))
-                    }
-                    Button(
-                        onClick = { onColorChange(coloresVerde) },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(traducir("cambiar_a_tema_verde"))
-                    }
-                    Button(
-                        onClick = { onColorChange(coloresRojo) },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(traducir("cambiar_a_tema_rojo"))
-                    }
-                    Button(
-                        onClick = { onColorChange(coloresMorado) },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(traducir("cambiar_a_tema_morado"))
-                    }
-                    Button(
-                        onClick = { onColorChange(coloresGris) },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(traducir("cambiar_a_tema_gris"))
-                    }
-                    Button(
-                        onClick = { onColorChange(coloresNaranja) },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(traducir("cambiar_a_tema_naranja"))
                     }
                 }
             }

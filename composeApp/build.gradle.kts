@@ -1,9 +1,7 @@
-import com.android.kotlin.multiplatform.ide.models.serialization.androidTargetKey
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
 
 plugins {
@@ -76,6 +74,9 @@ kotlin {
             //implementation(libs.decompose)
             implementation(libs.kotlinx.serialization)
 
+            // Solo para android
+            // implementation(libs.multiplatform.settings.datastore.android)
+
             // Ktor
             //implementation(libs.ktor.client.okhttp)
         }
@@ -95,6 +96,11 @@ kotlin {
             //implementation(libs.decompose)
             implementation(libs.kotlinx.serialization)
 
+            // Usar multplatform-settings en todas las plataformas
+            // implementation(libs.multiplatform.settings)
+            //implementation(libs.multiplatform.settings.no.arg)
+            // implementation(libs.multiplatform.settings.datastore) // Opcional: Versión con DataStore
+
             // Ktor
             //implementation(libs.ktor.client.core)
             //implementation(libs.ktor.client.content.negotiation)
@@ -109,6 +115,9 @@ kotlin {
             implementation(libs.arkivanov.decompose.v080)
             //implementation(libs.decompose.extensions.compose.jetpack.v080)
             implementation(libs.decompose.jetbrains)
+
+            // Solo para Desktop (JVM)
+            // implementation(libs.multiplatform.settings.datastore)
 
             // Ktor
             //implementation(libs.ktor.client.cio.jvm)
