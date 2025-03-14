@@ -180,6 +180,7 @@ dependencies {
     implementation(libs.androidx.foundation.android)
     implementation(libs.androidx.animation.core.lint)
     implementation(libs.androidx.material3.android)
+    implementation(libs.androidx.ui.graphics.android)
     debugImplementation(compose.uiTooling)
 }
 
