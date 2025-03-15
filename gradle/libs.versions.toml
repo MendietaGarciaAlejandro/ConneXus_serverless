@@ -22,7 +22,7 @@ kotlinx-coroutines = "1.10.1"
 identityJvm = "202411.1"
 kotlinxCrypto = "0.1.0"
 firebaseFirestoreKtx = "25.1.2"
-kotlinxDatetime = "0.6.0"
+kotlinxDatetime = "0.6.1"
 decompose = "2.2.0-alpha03"
 ktorClientContentNegotiation = "2.3.8"
 ktorClientCore = "2.3.8"
@@ -30,7 +30,7 @@ ktorSerializationKotlinxJson = "2.3.8"
 multiplatformSettings = "1.0.0"
 navigation-compose = "2.8.0-alpha10"
 extensionsComposeJetbrains = "2.2.0-alpha03"
-kotlinxSerialization = "1.7.0"
+kotlinxSerialization = "1.7.1"
 
 # Para guardar los datos cerrando la app
 foundationAndroid = "1.7.8"
@@ -42,10 +42,33 @@ material3Android = "1.3.1"
 identityJvmVersion = "202411.1"
 uiGraphicsAndroid = "1.7.8"
 
+#Firebase android
+firebase-android-bom = "33.10.0"
+
+#Gradle
+gradlePlugins-crashlytics = "3.0.3"
+gradlePlugins-google-services = "4.4.2"
+
+#Gitlive
+firebase-gitlive-sdk = "2.1.0"
+firebaseCrashlytics = "2.1.0"
+firebaseDatabase = "2.1.0"
+
 [libraries]
 arkivanov-decompose-v080 = { module = "com.arkivanov.decompose:decompose", version.ref = "arkivanovDecompose" }
 core = { module = "kotlinx.io.core:core", version.ref = "core" }
 decompose-extensions-compose-jetpack-v080 = { module = "com.arkivanov.decompose:extensions-compose-jetpack", version.ref = "extensionsComposeJetpackVersion" }
+firebase-analytics = { module = "dev.gitlive:firebase-analytics", version.ref = "firebaseDatabase" }
+firebase-auth = { module = "dev.gitlive:firebase-auth", version.ref = "firebaseDatabase" }
+firebase-config = { module = "dev.gitlive:firebase-config", version.ref = "firebaseCrashlytics" }
+firebase-crashlytics-v210 = { module = "dev.gitlive:firebase-crashlytics", version.ref = "firebaseCrashlytics" }
+firebase-database = { module = "dev.gitlive:firebase-database", version.ref = "firebaseDatabase" }
+firebase-firestore = { module = "dev.gitlive:firebase-firestore", version.ref = "firebaseDatabase" }
+firebase-functions = { module = "dev.gitlive:firebase-functions", version.ref = "firebaseCrashlytics" }
+firebase-installations = { module = "dev.gitlive:firebase-installations", version.ref = "firebaseCrashlytics" }
+firebase-messaging = { module = "dev.gitlive:firebase-messaging", version.ref = "firebaseDatabase" }
+firebase-perf = { module = "dev.gitlive:firebase-perf", version.ref = "firebaseCrashlytics" }
+firebase-storage = { module = "dev.gitlive:firebase-storage", version.ref = "firebaseDatabase" }
 identity-crypto = { module = "com.android.identity:identity-crypto", version.ref = "identityCrypto" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
@@ -90,6 +113,12 @@ androidx-material3-android = { group = "androidx.compose.material3", name = "mat
 identity-jvm = { group = "com.android.identity", name = "identity-jvm", version.ref = "identityJvmVersion" }
 androidx-ui-graphics-android = { group = "androidx.compose.ui", name = "ui-graphics-android", version.ref = "uiGraphicsAndroid" }
 
+#Firebase
+firebase-android-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebase-android-bom" }
+firebase-android-crashlytics-ktx = { module = "com.google.firebase:firebase-crashlytics" }
+#Gitlive
+gitlive-firebase-kotlin-crashlytics = { module = "dev.gitlive:firebase-crashlytics", version.ref = "firebase-gitlive-sdk" }
+
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
 androidLibrary = { id = "com.android.library", version.ref = "agp" }
@@ -99,3 +128,7 @@ kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref =
 
 # plugin de serializadcion de kotlin
 kotlinxSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+
+# Cosas de Google (Firebase)
+crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "gradlePlugins-crashlytics" }
+google-services = { id = "com.google.gms.google-services", version.ref = "gradlePlugins-google-services" }

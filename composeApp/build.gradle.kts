@@ -79,6 +79,18 @@ kotlin {
 
             // Ktor
             //implementation(libs.ktor.client.okhttp)
+
+            // Firebase Kotlin SDK
+            implementation(libs.firebase.database)
+            implementation(libs.firebase.firestore)
+            //implementation(libs.firebase.analytics)
+            implementation(libs.firebase.auth)
+            implementation(libs.firebase.functions)
+            implementation(libs.firebase.messaging)
+            implementation(libs.firebase.storage)
+            //implementation(libs.firebase.installations)
+            //implementation(libs.firebase.config)
+            //implementation(libs.firebase.perf)
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -108,6 +120,23 @@ kotlin {
 
             // Ktor for JS
             //implementation(libs.ktor.client.js)
+
+            // Firebase
+            //implementation(libs.gitlive.firebase.kotlin.crashlytics)
+            //implementation(libs.plugins.crashlytics)
+            //implementation(libs.plugins.google.services)
+
+            // Firebase Kotlin SDK
+            //mplementation(libs.firebase.database)
+            //implementation(libs.firebase.firestore)
+            //implementation(libs.firebase.analytics)
+            //implementation(libs.firebase.auth)
+            //implementation(libs.firebase.functions)
+            //implementation(libs.firebase.messaging)
+            //implementation(libs.firebase.storage)
+            //implementation(libs.firebase.installations)
+            //implementation(libs.firebase.config)
+            //implementation(libs.firebase.perf)
         }
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
@@ -122,6 +151,18 @@ kotlin {
             // Ktor
             //implementation(libs.ktor.client.cio.jvm)
             //implementation(libs.ktor.client.cio)
+
+            // Firebase Kotlin SDK
+            //implementation(libs.firebase.database)
+            //implementation(libs.firebase.firestore)
+            //implementation(libs.firebase.analytics)
+            //implementation(libs.firebase.auth)
+            //implementation(libs.firebase.functions)
+            //implementation(libs.firebase.messaging)
+            //implementation(libs.firebase.storage)
+            //implementation(libs.firebase.installations)
+            //implementation(libs.firebase.config)
+            //implementation(libs.firebase.perf)
         }
         /*
         val jvmMain by getting {
@@ -142,6 +183,18 @@ kotlin {
                 //implementation(libs.ktor.client.core.v238) // ¡Versión 2.3.8+!
                 //implementation(libs.ktor.serialization.kotlinx.json) // Faltaba
                 //implementation(libs.ktor.serialization.kotlinx.json.v238) // Requerido
+
+                // Firebase Kotlin SDK
+                //implementation(libs.firebase.database)
+                //implementation(libs.firebase.firestore)
+                //implementation(libs.firebase.analytics)
+                //implementation(libs.firebase.auth)
+                //implementation(libs.firebase.functions)
+                //implementation(libs.firebase.messaging)
+                //implementation(libs.firebase.storage)
+                //implementation(libs.firebase.installations)
+                //implementation(libs.firebase.config)
+                //implementation(libs.firebase.perf)
             }
         }
         /*
