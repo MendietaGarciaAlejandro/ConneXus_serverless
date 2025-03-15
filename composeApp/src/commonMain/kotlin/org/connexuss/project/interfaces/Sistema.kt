@@ -262,32 +262,29 @@ fun muestraUsuarios(navController: NavHostController) {
 //Muestra el id del usuarioPrincipal ya que no esta incluido en la lista de usuarios precreados
 @Composable
 fun ChatCard(conversacion: Conversacion, navController: NavHostController) {
-    // Mapea cada idUnico al alias público, o muestra el id si no se encuentra
-    val aliasParticipantes = conversacion.participants.map { id ->
-        UsuariosPreCreados.find { it.getIdUnico() == id }?.getNombreCompleto() ?: id
-    }
+    val displayName = if (!conversacion.nombre.isNullOrBlank()) conversacion.nombre else conversacion.id
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
             .clickable {
                 if (conversacion.grupo) {
-                    // Navegar a la pantalla de chat de grupo
                     navController.navigate("mostrarChatGrupo/${conversacion.id}")
                 } else {
-                    // Navegar a la pantalla de chat individual
                     navController.navigate("mostrarChat/${conversacion.id}")
                 }
             },
         elevation = 4.dp
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = "ID Chat: ${conversacion.id}")
-            Text(text = "Participantes: ${aliasParticipantes.joinToString()}")
+            Text(text = "Chat: $displayName")
+            Text(text = "Participantes: ${conversacion.participants.joinToString()}")
             Text(text = "Número de mensajes: ${conversacion.messages.size}")
         }
     }
 }
+
 
 
 
@@ -350,8 +347,7 @@ fun muestraChats(navController: NavHostController) {
 @Composable
 @Preview
 fun muestraContactos(navController: NavHostController) {
-    // Creamos un estado para la lista de IDs de contactos basándonos en UsuarioPrincipal.
-    // Se inicializa con la lista actual y se actualizará cuando se modifique.
+    // Creamos un estado para la lista de IDs de contactos basado en UsuarioPrincipal.
     val contactosState = remember { mutableStateListOf<String>().apply {
         addAll(UsuarioPrincipal.getContactos())
     } }
@@ -364,14 +360,16 @@ fun muestraContactos(navController: NavHostController) {
     var inputText by remember { mutableStateOf("") }
 
     var showChatDialog by remember { mutableStateOf(false) }
-    // Lista mutable para los contactos seleccionados para el chat.
+    // Estado para los contactos seleccionados para el chat.
     val selectedContacts = remember { mutableStateListOf<Usuario>() }
+    // Estado para el nombre del chat de grupo (se mostrará si se selecciona más de 1 contacto)
+    var groupChatName by remember { mutableStateOf("") }
 
     MaterialTheme {
         Scaffold(
             topBar = {
                 DefaultTopBar(
-                    title = "contactos", // Usa la clave "contactos" en lugar del literal
+                    title = traducir("contactos"),
                     navController = navController,
                     showBackButton = true,
                     irParaAtras = true,
@@ -445,13 +443,11 @@ fun muestraContactos(navController: NavHostController) {
                         title = { Text(text = traducir("nuevo_contacto")) },
                         text = {
                             Column {
-
                                 Text("Introduce el idUnico del usuario:")
                                 OutlinedTextField(
                                     value = inputText,
                                     onValueChange = { inputText = it },
                                     label = { Text("idUnico") }
-
                                 )
                             }
                         },
@@ -462,19 +458,17 @@ fun muestraContactos(navController: NavHostController) {
                                     // Busca en UsuariosPreCreados si existe un usuario con ese idUnico
                                     val userFound = UsuariosPreCreados.find { it.getIdUnico() == nuevoContactoId }
                                     if (userFound != null) {
-                                        // Actualiza los contactos en el UsuarioPrincipal...
                                         val updatedContacts = UsuarioPrincipal.getContactos().toMutableList()
                                         if (nuevoContactoId !in updatedContacts) {
                                             updatedContacts.add(nuevoContactoId)
                                             UsuarioPrincipal.setContactos(updatedContacts)
-                                            // Además, actualizamos el estado local para forzar la recomposición
+                                            // Actualiza el estado local para recomponer la UI
                                             contactosState.clear()
                                             contactosState.addAll(updatedContacts)
                                         }
                                     }
                                     inputText = ""
                                     showContactoDialog = false
-
                                 }
                             ) {
                                 Text(text = traducir("guardar"))
@@ -492,12 +486,13 @@ fun muestraContactos(navController: NavHostController) {
                         }
                     )
                 }
-                // AlertDialog para "Nuevo Chat" (se mantiene sin cambios)
+                // AlertDialog para "Nuevo Chat"
                 if (showChatDialog) {
                     AlertDialog(
                         onDismissRequest = {
                             showChatDialog = false
                             selectedContacts.clear()
+                            groupChatName = ""
                         },
                         title = { Text(text = traducir("nuevo_chat")) },
                         text = {
@@ -526,27 +521,37 @@ fun muestraContactos(navController: NavHostController) {
                                         }
                                     }
                                 }
+                                // Si se han seleccionado más de un contacto (grupo), solicita el nombre del grupo
+                                if (selectedContacts.size > 1) {
+                                    OutlinedTextField(
+                                        value = groupChatName,
+                                        onValueChange = { groupChatName = it },
+                                        label = { Text("Nombre del grupo") },
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
                             }
                         },
                         confirmButton = {
                             TextButton(
                                 onClick = {
-
-                                    // Si hay contactos seleccionados, se crea la nueva conversación
                                     if (selectedContacts.isNotEmpty()) {
                                         // Los participantes incluyen el UsuarioPrincipal y los contactos seleccionados
-                                        val participantes = listOf(UsuarioPrincipal.getIdUnico()) + selectedContacts.map { it.getIdUnico() }
-                                        // Crea la nueva conversación con un id aleatorio
+                                        val participantes = listOf(UsuarioPrincipal.getIdUnico()) +
+                                                selectedContacts.map { it.getIdUnico() }
+                                        // Crea la nueva conversación con un id aleatorio;
+                                        // Si es un grupo (más de un contacto seleccionado), se asigna el nombre proporcionado.
                                         val nuevaConversacion = Conversacion(
                                             participants = participantes,
-                                            messages = emptyList()
+                                            messages = emptyList(),
+                                            nombre = if (selectedContacts.size > 1) groupChatName else null
                                         )
                                         // Actualiza el UsuarioPrincipal: agrega la nueva conversación a su lista
                                         val convActualesPrincipal = UsuarioPrincipal.getChatUser().conversaciones.toMutableList()
                                         convActualesPrincipal.add(nuevaConversacion)
                                         UsuarioPrincipal.setChatUser(
                                             ConversacionesUsuario(
-                                                id = UsuarioPrincipal.getChatUser().id,  // Mantenemos el id existente
+                                                id = UsuarioPrincipal.getChatUser().id, // Mantenemos el id existente
                                                 idUser = UsuarioPrincipal.getIdUnico(),
                                                 conversaciones = convActualesPrincipal
                                             )
@@ -564,9 +569,9 @@ fun muestraContactos(navController: NavHostController) {
                                             )
                                         }
                                     }
-
                                     showChatDialog = false
                                     selectedContacts.clear()
+                                    groupChatName = ""
                                 }
                             ) {
                                 Text(text = traducir("crear_chat"))
@@ -577,6 +582,7 @@ fun muestraContactos(navController: NavHostController) {
                                 onClick = {
                                     showChatDialog = false
                                     selectedContacts.clear()
+                                    groupChatName = ""
                                 }
                             ) {
                                 Text(text = traducir("cancelar"))
@@ -588,6 +594,7 @@ fun muestraContactos(navController: NavHostController) {
         }
     }
 }
+
 
 // --- elemento usuario ---
 @Composable
