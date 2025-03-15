@@ -7,4 +7,9 @@ plugins {
     alias(libs.plugins.composeCompiler) apply false
     alias(libs.plugins.kotlinMultiplatform) apply false
     alias(libs.plugins.kotlinxSerialization) // Aplicar plugin de serialización
+
+    // Alias de los plugins de Firebase
+    alias(libs.plugins.google.services) apply false
+    alias(libs.plugins.crashlytics) apply false
+
 }
