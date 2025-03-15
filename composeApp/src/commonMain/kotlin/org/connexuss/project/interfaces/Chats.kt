@@ -1,5 +1,333 @@
 package org.connexuss.project.interfaces
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.OutlinedTextField
+import androidx.compose.material.Scaffold
+import androidx.compose.material.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
+import org.connexuss.project.comunicacion.Mensaje
+import org.connexuss.project.datos.UsuarioPrincipal
+import org.connexuss.project.datos.UsuariosPreCreados
+
+//Mostrar chat entre dos personas, se podria mejorar pasandole una conversacion en vez de id del chat
+@Composable
+fun mostrarChat(navController: NavHostController, chatId : String?) {
+    // Obtiene la lista de conversaciones y busca la que tenga el id pasado
+
+    val listaChats = UsuarioPrincipal.getChatUser().conversaciones
+    val chat = listaChats.find { it.id == chatId } ?: return
+
+    val otherParticipantId = chat.participants.firstOrNull { it != UsuarioPrincipal.getIdUnico() }
+        ?: chat.participants.getOrNull(1) ?: ""
+    // nombre del otro participante en UsuariosPreCreados:
+    val otherParticipantName = UsuariosPreCreados.find { it.getIdUnico() == otherParticipantId }?.getNombreCompleto() ?: otherParticipantId
+
+    var mensajeNuevo by remember { mutableStateOf("") }
+    val messagesState = remember { mutableStateListOf<Mensaje>().apply { addAll(chat.messages) } }
+
+    Scaffold(
+        topBar = {
+            DefaultTopBar(
+
+                title = otherParticipantName, // Mostramos el nombre del participante1
+
+                navController = navController,
+                showBackButton = true,
+                irParaAtras = true,
+                muestraEngranaje = false
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
+            // Sección de mensajes
+            LazyColumn(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(8.dp)
+            ) {
+                items(messagesState) { mensaje ->
+                    // Dependiendo del senderId, izquierda o derecha
+                    val isParticipant1 = mensaje.senderId == otherParticipantId
+                    if (isParticipant1) Alignment.CenterStart else Alignment.CenterEnd
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp),
+                        contentAlignment = if (isParticipant1) Alignment.CenterStart else Alignment.CenterEnd
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .padding(8.dp)
+                                .widthIn(max = 250.dp)
+                                .background(if (isParticipant1) Color(0xFFB2EBF2) else Color(0xFFC8E6C9))
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .padding(8.dp)
+                            ) {
+                                Text(text = mensaje.content,
+                                    modifier = Modifier.padding(bottom = 4.dp),
+                                    style = MaterialTheme.typography.body1)
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Barra de escritura
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedTextField(
+                    value = mensajeNuevo,
+                    onValueChange = { mensajeNuevo = it },
+                    modifier = Modifier.weight(1f),
+                    placeholder = { Text(text = traducir("escribe_mensaje")) }
+                )
+                IconButton(
+                    onClick = {
+
+                        if (mensajeNuevo.isNotBlank()) {
+                            val newMessage = Mensaje(
+                                senderId = UsuarioPrincipal.getIdUnico(),
+                                receiverId = otherParticipantId,
+                                content = mensajeNuevo,
+                            )
+                            messagesState.add(newMessage)
+
+                            // Actualiza la conversación
+                            val updatedConversation = chat.copy(messages = messagesState.toList())
+
+                            // Actualiza la conversación en UsuarioPrincipal
+                            val convsPrincipal =
+                                UsuarioPrincipal.getChatUser().conversaciones.toMutableList()
+                            val indexPrincipal = convsPrincipal.indexOfFirst { it.id == chat.id }
+                            if (indexPrincipal != -1) {
+                                convsPrincipal[indexPrincipal] = updatedConversation
+                                UsuarioPrincipal.setChatUser(
+                                    UsuarioPrincipal.getChatUser()
+                                        .copy(conversaciones = convsPrincipal)
+                                )
+                            }
+
+                            // Actualiza la conversación en el otro usuario, si lo encuentra
+                            UsuariosPreCreados.find { it.getIdUnico() == otherParticipantId }
+                                ?.let { otherUser ->
+                                    val convsOther =
+                                        otherUser.getChatUser().conversaciones.toMutableList()
+                                    val indexOther = convsOther.indexOfFirst { it.id == chat.id }
+                                    if (indexOther != -1) {
+                                        convsOther[indexOther] = updatedConversation
+                                        otherUser.setChatUser(
+                                            otherUser.getChatUser()
+                                                .copy(conversaciones = convsOther)
+                                        )
+                                    }
+                                }
+
+                            mensajeNuevo = ""
+                        }
+
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.Send,
+                        contentDescription = traducir("enviar")
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun mostrarChatGrupo(navController: NavHostController, chatId: String?) {
+    // Obtiene la lista de conversaciones del UsuarioPrincipal y busca la conversación por su id
+    val listaChats = UsuarioPrincipal.getChatUser().conversaciones
+    val chat = listaChats.find { it.id == chatId } ?: return
+    val idUsuario = UsuarioPrincipal.getIdUnico()
+    val groupTitle = "Grupo: ${chat.id}"
+
+    var mensajeNuevo by remember { mutableStateOf("") }
+    val messagesState = remember { mutableStateListOf<Mensaje>().apply { addAll(chat.messages) } }
+
+    Scaffold(
+        topBar = {
+            DefaultTopBar(
+                title = groupTitle,
+                navController = navController,
+                showBackButton = true,
+                irParaAtras = true,
+                muestraEngranaje = false
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
+            // Sección de mensajes
+            LazyColumn(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(8.dp)
+            ) {
+                items(messagesState) { mensaje ->
+                    val senderAlias = UsuariosPreCreados.find { it.getIdUnico() == mensaje.senderId }?.getAlias()
+                        ?: mensaje.senderId
+
+                    val vaDerecha = idUsuario == mensaje.senderId
+                    if (vaDerecha) Alignment.End else Alignment.Start
+
+                    Row(
+                        horizontalArrangement = if (vaDerecha) Arrangement.End else Arrangement.Start,
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp)
+                    ) {
+                        // Caja de mensaje
+                        Box(
+                            modifier = Modifier
+                                .padding(start = if (vaDerecha) 0.dp else 8.dp, end = if (vaDerecha) 8.dp else 0.dp)
+                                .widthIn(max = 250.dp)
+                                .background(color = if (vaDerecha) Color(0xFFC8E6C9) else Color(0xFFB2EBF2))
+                                .border(1.dp, Color(0xFFC8E6C9), RoundedCornerShape(8.dp))
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .padding(8.dp)
+                            ) {
+                                // Alias del remitente
+                                Text(
+                                    modifier = Modifier.padding(bottom = 4.dp),
+                                    text = senderAlias,
+                                    style = MaterialTheme.typography.caption
+                                )
+                                // Contenido del mensaje
+                                Text(
+                                    text = mensaje.content,
+                                    style = MaterialTheme.typography.body1,
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Barra de escritura
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedTextField(
+                    value = mensajeNuevo,
+                    onValueChange = { mensajeNuevo = it },
+                    modifier = Modifier.weight(1f),
+                    placeholder = { Text(text = traducir("escribe_mensaje")) }
+                )
+                IconButton(
+                    onClick = {
+                        if (mensajeNuevo.isNotBlank()) {
+                            // Crea el nuevo mensaje
+                            val newMessage = Mensaje(
+                                senderId = UsuarioPrincipal.getIdUnico(),
+                                receiverId = "", // En grupo no se usa
+                                content = mensajeNuevo,
+                            )
+                            messagesState.add(newMessage)
+
+                            val updatedConversation = chat.copy(messages = messagesState.toList())
+
+                            // Actualiza la conversación en UsuarioPrincipal
+                            val convsPrincipal = UsuarioPrincipal.getChatUser().conversaciones.toMutableList()
+                            val indexPrincipal = convsPrincipal.indexOfFirst { it.id == chat.id }
+                            if (indexPrincipal != -1) {
+                                convsPrincipal[indexPrincipal] = updatedConversation
+                                UsuarioPrincipal.setChatUser(
+                                    UsuarioPrincipal.getChatUser().copy(conversaciones = convsPrincipal)
+                                )
+                            }
+
+                            // Actualiza la conversación para cada participante del grupo
+                            chat.participants.forEach { participantId ->
+                                UsuariosPreCreados.find { it.getIdUnico() == participantId }
+                                    ?.let { otherUser ->
+                                        val convsOther = otherUser.getChatUser().conversaciones.toMutableList()
+                                        val indexOther = convsOther.indexOfFirst { it.id == chat.id }
+                                        if (indexOther != -1) {
+                                            convsOther[indexOther] = updatedConversation
+                                            otherUser.setChatUser(
+                                                otherUser.getChatUser().copy(conversaciones = convsOther)
+                                            )
+                                        }
+                                    }
+                            }
+                            mensajeNuevo = ""
+                        }
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.Send,
+                        contentDescription = traducir("enviar")
+                    )
+                }
+            }
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /*
 // --- Nuevo Chat ---
 @Composable
