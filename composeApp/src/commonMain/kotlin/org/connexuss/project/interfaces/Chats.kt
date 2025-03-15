@@ -181,7 +181,7 @@ fun mostrarChatGrupo(navController: NavHostController, chatId: String?) {
     val listaChats = UsuarioPrincipal.getChatUser().conversaciones
     val chat = listaChats.find { it.id == chatId } ?: return
     val idUsuario = UsuarioPrincipal.getIdUnico()
-    val groupTitle = "Grupo: ${chat.id}"
+    val groupTitle = if (!chat.nombre.isNullOrBlank()) chat.nombre else chat.id
 
     var mensajeNuevo by remember { mutableStateOf("") }
     val messagesState = remember { mutableStateListOf<Mensaje>().apply { addAll(chat.messages) } }
