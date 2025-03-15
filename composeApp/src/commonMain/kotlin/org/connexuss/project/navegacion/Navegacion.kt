@@ -5,7 +5,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import org.connexuss.project.datos.UsuarioPrincipal
-import org.connexuss.project.datos.UsuariosPreCreados
 import org.connexuss.project.interfaces.PantallaAjustesAyuda
 import org.connexuss.project.interfaces.PantallaAjustesControlCuentas
 import org.connexuss.project.interfaces.PantallaCambiarTema
@@ -27,6 +26,7 @@ import org.connexuss.project.interfaces.muestraAjustes
 import org.connexuss.project.interfaces.muestraChats
 import org.connexuss.project.interfaces.muestraContactos
 import org.connexuss.project.interfaces.muestraHomePage
+import org.connexuss.project.interfaces.muestraRestablecimientoContasenna
 import org.connexuss.project.interfaces.muestraUsuarios
 
 @Composable
@@ -57,7 +57,7 @@ fun Navegacion(
             muestraChats(navController)
         }
         composable("nuevo") {
-            muestraContactos(navController, UsuariosPreCreados)
+            muestraContactos(navController)
         }
         composable("restablecer") {
             PantallaRestablecer(navController)
@@ -70,6 +70,9 @@ fun Navegacion(
         }
         composable("emailNoEnSistema") {
             PantallaEmailNoEnElSistema(navController)
+        }
+        composable("restableceContrasenna") {
+            muestraRestablecimientoContasenna(navController)
         }
         composable("ajustesControlCuentas") {
             PantallaAjustesControlCuentas(navController)

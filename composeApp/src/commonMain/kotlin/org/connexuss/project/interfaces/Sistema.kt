@@ -2,8 +2,6 @@ package org.connexuss.project.interfaces
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,7 +18,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.AlertDialog
@@ -40,7 +37,6 @@ import androidx.compose.material.TextButton
 import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
@@ -52,7 +48,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -61,15 +56,17 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import connexus_serverless.composeapp.generated.resources.*
+import connexus_serverless.composeapp.generated.resources.Res
+import connexus_serverless.composeapp.generated.resources.connexus
+import connexus_serverless.composeapp.generated.resources.ic_chats
+import connexus_serverless.composeapp.generated.resources.ic_foros
+import connexus_serverless.composeapp.generated.resources.visibilidadOff
+import connexus_serverless.composeapp.generated.resources.visibilidadOn
 import kotlinx.coroutines.delay
 import org.connexuss.project.comunicacion.Conversacion
 import org.connexuss.project.comunicacion.ConversacionesUsuario
-import org.connexuss.project.comunicacion.Mensaje
 import org.connexuss.project.datos.UsuarioPrincipal
-
 import org.connexuss.project.datos.UsuariosPreCreados
-
 import org.connexuss.project.usuario.AlmacenamientoUsuario
 import org.connexuss.project.usuario.Usuario
 import org.connexuss.project.usuario.UtilidadesUsuario
@@ -125,13 +122,6 @@ fun DefaultTopBar(
     )
 }
 
-
-//TopBar para conversaciones y grupos
-
-
-
-
-
 //BottomBar
 @Composable
 fun MiBottomBar(navController: NavHostController) {
@@ -184,8 +174,6 @@ fun MiBottomBar(navController: NavHostController) {
         )
     }
 }
-
-
 
 // --- Muestra Usuarios ---
 @Composable
@@ -270,216 +258,6 @@ fun muestraUsuarios(navController: NavHostController) {
     }
 }
 
-
-// --- Pantalla Registro ---
-@Composable
-@Preview
-fun pantallaRegistro(navController: NavHostController) {
-    var nombre by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var confirmPassword by remember { mutableStateOf("") }
-    var errorMessage by remember { mutableStateOf("") }
-
-    MaterialTheme {
-        Scaffold(
-            topBar = {
-                // Aquí se muestra el botón de retroceso
-                DefaultTopBar(title = "Registro", navController = navController, showBackButton = true, muestraEngranaje = false)
-            }
-        ) { padding ->
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center // Centrar contenido en pantallas grandes
-            ) {
-                LimitaTamanioAncho { modifier ->
-                    Column(
-                        modifier = modifier
-                            .fillMaxSize()
-                            .padding(padding)
-                            .padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        OutlinedTextField(
-                            value = nombre,
-                            onValueChange = { nombre = it },
-                            label = { Text("Nombre") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        OutlinedTextField(
-                            value = email,
-                            onValueChange = { email = it },
-                            label = { Text("Email") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        OutlinedTextField(
-                            value = password,
-                            onValueChange = { password = it },
-                            label = { Text("Contraseña") },
-                            visualTransformation = PasswordVisualTransformation(),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        OutlinedTextField(
-                            value = confirmPassword,
-                            onValueChange = { confirmPassword = it },
-                            label = { Text("Confirmar Contraseña") },
-                            visualTransformation = PasswordVisualTransformation(),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Button(
-                            onClick = {
-                                errorMessage =
-                                    if (password == confirmPassword && password.isNotBlank()) {
-                                        // Lógica real de registro
-                                        ""
-                                    } else {
-                                        "Las contraseñas no coinciden o están vacías"
-                                    }
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text("Registrar")
-                        }
-                        if (errorMessage.isNotEmpty()) {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                errorMessage,
-                                color = MaterialTheme.colors.error,
-                                textAlign = TextAlign.Center
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-// --- Pantalla Login ---
-@Composable
-@Preview
-fun pantallaLogin(navController: NavHostController) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    val errorMessage by remember { mutableStateOf("") }
-
-    MaterialTheme {
-        Scaffold(
-            topBar = {
-                DefaultTopBar(title = "Iniciar Sesión", navController = navController, showBackButton = true, muestraEngranaje = false)
-            }
-        ) { padding ->
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center // Centrar contenido en pantallas grandes
-            ) {
-                LimitaTamanioAncho { modifier ->
-                    Column(
-                        modifier = modifier
-                            .fillMaxSize()
-                            .padding(padding)
-                            .padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        OutlinedTextField(
-                            value = email,
-                            onValueChange = { email = it },
-                            label = { Text("Email") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        OutlinedTextField(
-                            value = password,
-                            onValueChange = { password = it },
-                            label = { Text("Contraseña") },
-                            visualTransformation = PasswordVisualTransformation(),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Button(
-                            onClick = {
-                                // Lógica de autenticación...
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text("Iniciar Sesión")
-                        }
-                        if (errorMessage.isNotEmpty()) {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                errorMessage,
-                                color = MaterialTheme.colors.error,
-                                textAlign = TextAlign.Center
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-// --- Restablecer Contraseña ---
-@Composable
-@Preview
-fun restableceContrasenna(navController: NavHostController) {
-    var email by remember { mutableStateOf("") }
-    val errorMessage by remember { mutableStateOf("") }
-
-    MaterialTheme {
-        Scaffold(
-            topBar = {
-                DefaultTopBar(title = "Restablecer Contraseña", navController = navController, showBackButton = true, muestraEngranaje = false)
-            }
-        ) { padding ->
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center // Centrar contenido en pantallas grandes
-            ) {
-                LimitaTamanioAncho { modifier ->
-                    Column(
-                        modifier = modifier
-                            .fillMaxSize()
-                            .padding(padding)
-                            .padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        OutlinedTextField(
-                            value = email,
-                            onValueChange = { email = it },
-                            label = { Text("Email") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Button(
-                            onClick = {
-                                // Lógica para enviar el correo de restablecimiento
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text("Enviar Correo")
-                        }
-                        if (errorMessage.isNotEmpty()) {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                errorMessage,
-                                color = MaterialTheme.colors.error,
-                                textAlign = TextAlign.Center
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
 // --- elemento chat ---
 //Muestra el id del usuarioPrincipal ya que no esta incluido en la lista de usuarios precreados
 @Composable
@@ -571,7 +349,7 @@ fun muestraChats(navController: NavHostController) {
 // --- Contactos ---
 @Composable
 @Preview
-fun muestraContactos(navController: NavHostController, contactos: List<Usuario> = emptyList()) {
+fun muestraContactos(navController: NavHostController) {
     // Creamos un estado para la lista de IDs de contactos basándonos en UsuarioPrincipal.
     // Se inicializa con la lista actual y se actualizará cuando se modifique.
     val contactosState = remember { mutableStateListOf<String>().apply {
@@ -916,9 +694,9 @@ fun muestraAjustes(navController: NavHostController = rememberNavController()) {
 
 // --- Mostrar Perdil ---
 @Composable
-fun mostrarPerfil(navController: NavHostController, usuario: Usuario?) {
+fun mostrarPerfil(navController: NavHostController, usuarioU: Usuario?) {
     // Se recibe el usuario
-    val usuario = usuario
+    val usuario = usuarioU
 
     // Dialogs
     var showDialogNombre by remember { mutableStateOf(false) }
@@ -1057,7 +835,7 @@ fun mostrarPerfil(navController: NavHostController, usuario: Usuario?) {
                             ) {
                                 Button(
                                     onClick = {
-                                        usuario?.apply {
+                                        usuario.apply {
                                             setAliasPrivado(aliasPrivado)
                                             setAlias(aliasPublico)
                                             setDescripcion(descripcion)
@@ -1142,285 +920,6 @@ fun mostrarPerfil(navController: NavHostController, usuario: Usuario?) {
                 }
             }
         )
-    }
-}
-
-//Mostrar chat entre dos personas, se podria mejorar pasandole una conversacion en vez de id del chat
-@Composable
-fun mostrarChat(navController: NavHostController, chatId : String?) {
-    // Obtiene la lista de conversaciones y busca la que tenga el id pasado
-
-    val listaChats = UsuarioPrincipal.getChatUser().conversaciones
-    val chat = listaChats.find { it.id == chatId } ?: return
-
-    val otherParticipantId = chat.participants.firstOrNull { it != UsuarioPrincipal.getIdUnico() }
-        ?: chat.participants.getOrNull(1) ?: ""
-    // nombre del otro participante en UsuariosPreCreados:
-    val otherParticipantName = UsuariosPreCreados.find { it.getIdUnico() == otherParticipantId }?.getNombreCompleto() ?: otherParticipantId
-
-    var mensajeNuevo by remember { mutableStateOf("") }
-    val messagesState = remember { mutableStateListOf<Mensaje>().apply { addAll(chat.messages) } }
-
-    Scaffold(
-        topBar = {
-            DefaultTopBar(
-
-                title = otherParticipantName, // Mostramos el nombre del participante1
-
-                navController = navController,
-                showBackButton = true,
-                irParaAtras = true,
-                muestraEngranaje = false
-            )
-        }
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
-            // Sección de mensajes
-            LazyColumn(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(8.dp)
-            ) {
-                items(messagesState) { mensaje ->
-                    // Dependiendo del senderId, izquierda o derecha
-                    val isParticipant1 = mensaje.senderId == otherParticipantId
-                    val alignment = if (isParticipant1) Alignment.CenterStart else Alignment.CenterEnd
-
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(8.dp),
-                        contentAlignment = if (isParticipant1) Alignment.CenterStart else Alignment.CenterEnd
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .padding(8.dp)
-                                .widthIn(max = 250.dp)
-                                .background(if (isParticipant1) Color(0xFFB2EBF2) else Color(0xFFC8E6C9))
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .padding(8.dp)
-                            ) {
-                                Text(text = mensaje.content,
-                                    modifier = Modifier.padding(bottom = 4.dp),
-                                    style = MaterialTheme.typography.body1)
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Barra de escritura
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                OutlinedTextField(
-                    value = mensajeNuevo,
-                    onValueChange = { mensajeNuevo = it },
-                    modifier = Modifier.weight(1f),
-                    placeholder = { Text(text = traducir("escribe_mensaje")) }
-                )
-                IconButton(
-                    onClick = {
-
-                        if (mensajeNuevo.isNotBlank()) {
-                            val newMessage = Mensaje(
-                                senderId = UsuarioPrincipal.getIdUnico(),
-                                receiverId = otherParticipantId,
-                                content = mensajeNuevo,
-                            )
-                            messagesState.add(newMessage)
-
-                            // Actualiza la conversación
-                            val updatedConversation = chat.copy(messages = messagesState.toList())
-
-                            // Actualiza la conversación en UsuarioPrincipal
-                            val convsPrincipal =
-                                UsuarioPrincipal.getChatUser().conversaciones.toMutableList()
-                            val indexPrincipal = convsPrincipal.indexOfFirst { it.id == chat.id }
-                            if (indexPrincipal != -1) {
-                                convsPrincipal[indexPrincipal] = updatedConversation
-                                UsuarioPrincipal.setChatUser(
-                                    UsuarioPrincipal.getChatUser()
-                                        .copy(conversaciones = convsPrincipal)
-                                )
-                            }
-
-                            // Actualiza la conversación en el otro usuario, si lo encuentra
-                            UsuariosPreCreados.find { it.getIdUnico() == otherParticipantId }
-                                ?.let { otherUser ->
-                                    val convsOther =
-                                        otherUser.getChatUser().conversaciones.toMutableList()
-                                    val indexOther = convsOther.indexOfFirst { it.id == chat.id }
-                                    if (indexOther != -1) {
-                                        convsOther[indexOther] = updatedConversation
-                                        otherUser.setChatUser(
-                                            otherUser.getChatUser()
-                                                .copy(conversaciones = convsOther)
-                                        )
-                                    }
-                                }
-
-                            mensajeNuevo = ""
-                        }
-
-                    }
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.Send,
-                        contentDescription = traducir("enviar")
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun mostrarChatGrupo(navController: NavHostController, chatId: String?) {
-    // Obtiene la lista de conversaciones del UsuarioPrincipal y busca la conversación por su id
-    val listaChats = UsuarioPrincipal.getChatUser().conversaciones
-    val chat = listaChats.find { it.id == chatId } ?: return
-    val idUsuario = UsuarioPrincipal.getIdUnico()
-    val groupTitle = "Grupo: ${chat.id}"
-
-    var mensajeNuevo by remember { mutableStateOf("") }
-    val messagesState = remember { mutableStateListOf<Mensaje>().apply { addAll(chat.messages) } }
-
-    Scaffold(
-        topBar = {
-            DefaultTopBar(
-                title = groupTitle,
-                navController = navController,
-                showBackButton = true,
-                irParaAtras = true,
-                muestraEngranaje = false
-            )
-        }
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
-            // Sección de mensajes
-            LazyColumn(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(8.dp)
-            ) {
-                items(messagesState) { mensaje ->
-                    val senderAlias = UsuariosPreCreados.find { it.getIdUnico() == mensaje.senderId }?.getAlias()
-                        ?: mensaje.senderId
-
-                    val vaDerecha = idUsuario == mensaje.senderId
-                    if (vaDerecha) Alignment.End else Alignment.Start
-
-                    Row(
-                        horizontalArrangement = if (vaDerecha) Arrangement.End else Arrangement.Start,
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp)
-                    ) {
-                        // Caja de mensaje
-                        Box(
-                            modifier = Modifier
-                                .padding(start = if (vaDerecha) 0.dp else 8.dp, end = if (vaDerecha) 8.dp else 0.dp)
-                                .widthIn(max = 250.dp)
-                                .background(color = if (vaDerecha) Color(0xFFC8E6C9) else Color(0xFFB2EBF2))
-                                .border(1.dp, Color(0xFFC8E6C9), RoundedCornerShape(8.dp))
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .padding(8.dp)
-                            ) {
-                                // Alias del remitente
-                                Text(
-                                    modifier = Modifier.padding(bottom = 4.dp),
-                                    text = senderAlias,
-                                    style = MaterialTheme.typography.caption
-                                )
-                                // Contenido del mensaje
-                                Text(
-                                    text = mensaje.content,
-                                    style = MaterialTheme.typography.body1,
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Barra de escritura
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                OutlinedTextField(
-                    value = mensajeNuevo,
-                    onValueChange = { mensajeNuevo = it },
-                    modifier = Modifier.weight(1f),
-                    placeholder = { Text(text = traducir("escribe_mensaje")) }
-                )
-                IconButton(
-                    onClick = {
-                        if (mensajeNuevo.isNotBlank()) {
-                            // Crea el nuevo mensaje
-                            val newMessage = Mensaje(
-                                senderId = UsuarioPrincipal.getIdUnico(),
-                                receiverId = "", // En grupo no se usa
-                                content = mensajeNuevo,
-                            )
-                            messagesState.add(newMessage)
-
-                            val updatedConversation = chat.copy(messages = messagesState.toList())
-
-                            // Actualiza la conversación en UsuarioPrincipal
-                            val convsPrincipal = UsuarioPrincipal.getChatUser().conversaciones.toMutableList()
-                            val indexPrincipal = convsPrincipal.indexOfFirst { it.id == chat.id }
-                            if (indexPrincipal != -1) {
-                                convsPrincipal[indexPrincipal] = updatedConversation
-                                UsuarioPrincipal.setChatUser(
-                                    UsuarioPrincipal.getChatUser().copy(conversaciones = convsPrincipal)
-                                )
-                            }
-
-                            // Actualiza la conversación para cada participante del grupo
-                            chat.participants.forEach { participantId ->
-                                UsuariosPreCreados.find { it.getIdUnico() == participantId }
-                                    ?.let { otherUser ->
-                                        val convsOther = otherUser.getChatUser().conversaciones.toMutableList()
-                                        val indexOther = convsOther.indexOfFirst { it.id == chat.id }
-                                        if (indexOther != -1) {
-                                            convsOther[indexOther] = updatedConversation
-                                            otherUser.setChatUser(
-                                                otherUser.getChatUser().copy(conversaciones = convsOther)
-                                            )
-                                        }
-                                    }
-                            }
-                            mensajeNuevo = ""
-                        }
-                    }
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.Send,
-                        contentDescription = traducir("enviar")
-                    )
-                }
-            }
-        }
     }
 }
 
@@ -1623,7 +1122,7 @@ fun PantallaEmailEnElSistema(navController: NavHostController) {
         mensajeKey = "email_en_sistema_mensaje",
         mostrarCampoCodigo = true,
         textoBotonPrincipalKey = "restablecer_contrasena",
-        rutaBotonPrincipal = "restablecer",
+        rutaBotonPrincipal = "restableceContrasenna",
         textoBotonSecundarioKey = "cancelar",
         rutaBotonSecundario = "login"
     )
@@ -1713,6 +1212,101 @@ fun PantallaRestablecer(navController: NavHostController) {
                                 modifier = Modifier.weight(1f)
                             ) {
                                 Text(traducir("degug_restablecer_fail"))
+                            }
+                        }
+                        if (errorMessage.isNotEmpty()) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                errorMessage,
+                                color = MaterialTheme.colors.error,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Pantalla de de restablecer contraseña ingresando la nueva contraseña
+@Composable
+fun muestraRestablecimientoContasenna(navController: NavHostController) {
+    var contrasenna by remember { mutableStateOf("") }
+    var confirmarContrasenna by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf("") }
+
+    // Realiza la traducción fuera del bloque onClick
+    val errorContrasenas = traducir("error_contrasenas")
+
+    MaterialTheme {
+        Scaffold(
+            topBar = {
+                DefaultTopBar(
+                    title = traducir("restablecer_contrasena"),
+                    navController = navController,
+                    showBackButton = true,
+                    muestraEngranaje = true,
+                    irParaAtras = true
+                )
+            }
+        ) { padding ->
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                LimitaTamanioAncho { modifier ->
+                    Column(
+                        modifier = modifier
+                            .padding(padding)
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Image(
+                            painter = painterResource(Res.drawable.connexus),
+                            contentDescription = traducir("icono_app"),
+                            modifier = Modifier.size(100.dp)
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        OutlinedTextField(
+                            value = contrasenna,
+                            onValueChange = { contrasenna = it },
+                            label = { Text(traducir("contrasena")) },
+                            visualTransformation = PasswordVisualTransformation(),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = confirmarContrasenna,
+                            onValueChange = { confirmarContrasenna = it },
+                            label = { Text(traducir("confirmar_contrasena")) },
+                            visualTransformation = PasswordVisualTransformation(),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Button(
+                                onClick = {
+                                    errorMessage =
+                                        if (contrasenna == confirmarContrasenna && contrasenna.isNotBlank()) {
+                                            ""
+                                        } else {
+                                            errorContrasenas
+                                        }
+                                },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text(traducir("restablecer"))
+                            }
+                            Button(
+                                onClick = { navController.navigate("login") },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text(traducir("cancelar"))
                             }
                         }
                         if (errorMessage.isNotEmpty()) {
@@ -1913,10 +1507,10 @@ fun PantallaLogin(navController: NavHostController) {
                         Spacer(modifier = Modifier.height(16.dp))
                         Button(
                             onClick = {
-                                if (email.isNotBlank() && password.isNotBlank()) {
-                                    errorMessage = ""
+                                errorMessage = if (email.isNotBlank() && password.isNotBlank()) {
+                                    ""
                                 } else {
-                                    errorMessage = porFavorCompleta
+                                    porFavorCompleta
                                 }
                             },
                             modifier = Modifier.fillMaxWidth()
