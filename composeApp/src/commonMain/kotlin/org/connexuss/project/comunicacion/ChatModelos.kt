@@ -45,7 +45,8 @@ data class Mensaje(
 data class Conversacion(
     val id: String = generateRandomId(), // Valor por defecto: aleatorio
     val participants: List<String>, // IDs de los usuarios
-    val messages: List<Mensaje> = emptyList()
+    val messages: List<Mensaje> = emptyList(),
+    val nombre: String? = null           // Nombre del chat (solo para grupos)
 ) {
     val grupo: Boolean
         get() = participants.size > 2

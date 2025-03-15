@@ -20,6 +20,8 @@ class Usuario {
     private var descripcion: String = ""
     private var contrasennia: String = ""
 
+    private var usuariosBloqueados: List<String> = emptyList()
+
     // Constructor completo
     constructor(nombre: String, correo: String, aliasPublico: String, activo: Boolean, contactos: List<String>, chatUser: ConversacionesUsuario) {
         this.idUnico = UtilidadesUsuario().generarIdUnico()
@@ -131,6 +133,14 @@ class Usuario {
         this.contrasennia = contrasennia
     }
 
+    fun getUsuariosBloqueados(): List<String> {
+        return usuariosBloqueados
+    }
+
+    fun setUsuariosBloqueados(usuariosBloqueados: List<String>) {
+        this.usuariosBloqueados = usuariosBloqueados
+    }
+
 
     // Metodo para imprimir los datos públicos del usuario
     @Composable
@@ -185,9 +195,11 @@ class AlmacenamientoUsuario {
 // Clase que contiene metodos de utilidades para el usuario
 class UtilidadesUsuario {
 
-    fun generarIdUnico(): String {
-        val idUnico = Random.nextInt(0, Int.MAX_VALUE)
-        return idUnico.toString()
+    fun generarIdUnico(length: Int = 10): String {
+        val charset = ('A'..'Z') + ('0'..'9')
+        return (1..length)
+            .map { charset.random() }
+            .joinToString("")
     }
 
     private fun validarCorreo(correo: String): Boolean {
