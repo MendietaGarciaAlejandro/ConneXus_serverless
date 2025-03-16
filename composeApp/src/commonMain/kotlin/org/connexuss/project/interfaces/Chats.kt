@@ -1,7 +1,9 @@
 package org.connexuss.project.interfaces
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -30,11 +33,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role.Companion.Image
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import connexus_serverless.composeapp.generated.resources.Res
+import connexus_serverless.composeapp.generated.resources.connexus
 import org.connexuss.project.comunicacion.Mensaje
 import org.connexuss.project.datos.UsuarioPrincipal
 import org.connexuss.project.datos.UsuariosPreCreados
+import org.jetbrains.compose.resources.painterResource
 
 //Mostrar chat entre dos personas, se podria mejorar pasandole una conversacion en vez de id del chat
 @Composable
@@ -54,14 +61,18 @@ fun mostrarChat(navController: NavHostController, chatId : String?) {
 
     Scaffold(
         topBar = {
-            DefaultTopBar(
+            TopBarUsuario(
 
                 title = otherParticipantName, // Mostramos el nombre del participante1
 
                 navController = navController,
                 showBackButton = true,
                 irParaAtras = true,
-                muestraEngranaje = false
+                muestraEngranaje = false,
+                onTitleClick = {
+                    // Por ejemplo, navegar al perfil del otro participante:
+                    navController.navigate("mostrarPerfilUsuario/$otherParticipantId")
+                }
             )
         }
     ) { padding ->
@@ -209,43 +220,83 @@ fun mostrarChatGrupo(navController: NavHostController, chatId: String?) {
                     .padding(8.dp)
             ) {
                 items(messagesState) { mensaje ->
-                    val senderAlias = UsuariosPreCreados.find { it.getIdUnico() == mensaje.senderId }?.getAlias()
-                        ?: mensaje.senderId
+                    // Buscamos el usuario emisor en UsuariosPreCreados
+                    val senderUser = UsuariosPreCreados.find { it.getIdUnico() == mensaje.senderId }
+                    val senderAlias = senderUser?.getAlias() ?: mensaje.senderId
+                    // Obtenemos la imagen de perfil, o usamos la imagen por defecto
+                    val senderImageRes = senderUser?.getImagenPerfil() ?: Res.drawable.connexus
+                    val imagePainter = painterResource(senderImageRes)
 
+                    // Determinamos si el mensaje es del UsuarioPrincipal
                     val vaDerecha = idUsuario == mensaje.senderId
-                    if (vaDerecha) Alignment.End else Alignment.Start
 
                     Row(
-                        horizontalArrangement = if (vaDerecha) Arrangement.End else Arrangement.Start,
-                        verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 4.dp)
+                            .padding(vertical = 4.dp),
+                        horizontalArrangement = if (vaDerecha) Arrangement.End else Arrangement.Start,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
+                        if (!vaDerecha) {
+                            // Imagen del emisor a la izquierda: la envolvemos en clickable para navegar a su perfil
+                            Image(
+                                painter = imagePainter,
+                                contentDescription = "Imagen de perfil",
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .padding(end = 8.dp)
+                                    .clickable {
+                                        // Navega al perfil del emisor
+                                        navController.navigate("mostrarPerfilUsuario/${senderUser?.getIdUnico() ?: mensaje.senderId}")
+                                    }
+                            )
+                        }
+
                         // Caja de mensaje
                         Box(
                             modifier = Modifier
-                                .padding(start = if (vaDerecha) 0.dp else 8.dp, end = if (vaDerecha) 8.dp else 0.dp)
+                                .padding(
+                                    start = if (vaDerecha) 0.dp else 8.dp,
+                                    end = if (vaDerecha) 8.dp else 0.dp
+                                )
                                 .widthIn(max = 250.dp)
-                                .background(color = if (vaDerecha) Color(0xFFC8E6C9) else Color(0xFFB2EBF2))
-                                .border(1.dp, Color(0xFFC8E6C9), RoundedCornerShape(8.dp))
+                                .background(
+                                    color = if (vaDerecha) Color(0xFFC8E6C9) else Color(0xFFB2EBF2),
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                                .border(
+                                    width = 1.dp,
+                                    color = if (vaDerecha) Color(0xFFC8E6C9) else Color(0xFFB2EBF2),
+                                    shape = RoundedCornerShape(8.dp)
+                                )
                         ) {
                             Column(
-                                modifier = Modifier
-                                    .padding(8.dp)
+                                modifier = Modifier.padding(8.dp)
                             ) {
-                                // Alias del remitente
                                 Text(
-                                    modifier = Modifier.padding(bottom = 4.dp),
                                     text = senderAlias,
+                                    modifier = Modifier.padding(bottom = 4.dp),
                                     style = MaterialTheme.typography.caption
                                 )
-                                // Contenido del mensaje
                                 Text(
                                     text = mensaje.content,
-                                    style = MaterialTheme.typography.body1,
+                                    style = MaterialTheme.typography.body1
                                 )
                             }
+                        }
+
+                        if (vaDerecha) {
+                            // Imagen del emisor a la derecha (generalmente el UsuarioPrincipal, pero la hacemos clickable igual)
+                            Image(
+                                painter = imagePainter,
+                                contentDescription = "Imagen de perfil",
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .padding(start = 8.dp)
+                                    .clickable {
+                                        navController.navigate("mostrarPerfilUsuario/${senderUser?.getIdUnico() ?: mensaje.senderId}")
+                                    }
+                            )
                         }
                     }
                 }
@@ -267,10 +318,9 @@ fun mostrarChatGrupo(navController: NavHostController, chatId: String?) {
                 IconButton(
                     onClick = {
                         if (mensajeNuevo.isNotBlank()) {
-                            // Crea el nuevo mensaje
                             val newMessage = Mensaje(
                                 senderId = UsuarioPrincipal.getIdUnico(),
-                                receiverId = "", // En grupo no se usa
+                                receiverId = "", // En grupo no se usa este campo
                                 content = mensajeNuevo,
                             )
                             messagesState.add(newMessage)
@@ -289,17 +339,16 @@ fun mostrarChatGrupo(navController: NavHostController, chatId: String?) {
 
                             // Actualiza la conversación para cada participante del grupo
                             chat.participants.forEach { participantId ->
-                                UsuariosPreCreados.find { it.getIdUnico() == participantId }
-                                    ?.let { otherUser ->
-                                        val convsOther = otherUser.getChatUser().conversaciones.toMutableList()
-                                        val indexOther = convsOther.indexOfFirst { it.id == chat.id }
-                                        if (indexOther != -1) {
-                                            convsOther[indexOther] = updatedConversation
-                                            otherUser.setChatUser(
-                                                otherUser.getChatUser().copy(conversaciones = convsOther)
-                                            )
-                                        }
+                                UsuariosPreCreados.find { it.getIdUnico() == participantId }?.let { otherUser ->
+                                    val convsOther = otherUser.getChatUser().conversaciones.toMutableList()
+                                    val indexOther = convsOther.indexOfFirst { it.id == chat.id }
+                                    if (indexOther != -1) {
+                                        convsOther[indexOther] = updatedConversation
+                                        otherUser.setChatUser(
+                                            otherUser.getChatUser().copy(conversaciones = convsOther)
+                                        )
                                     }
+                                }
                             }
                             mensajeNuevo = ""
                         }
@@ -314,16 +363,6 @@ fun mostrarChatGrupo(navController: NavHostController, chatId: String?) {
         }
     }
 }
-
-
-
-
-
-
-
-
-
-
 
 
 
