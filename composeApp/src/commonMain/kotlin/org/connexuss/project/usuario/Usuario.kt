@@ -2,9 +2,14 @@ package org.connexuss.project.usuario
 
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import connexus_serverless.composeapp.generated.resources.Res
+import connexus_serverless.composeapp.generated.resources.connexus
+import connexus_serverless.composeapp.generated.resources.ic_foros
 import org.connexuss.project.comunicacion.Conversacion
 import org.connexuss.project.comunicacion.ConversacionesUsuario
+import org.connexuss.project.datos.UsuariosPreCreados
 import org.connexuss.project.encriptacion.hash
+import org.jetbrains.compose.resources.DrawableResource
 import kotlin.random.Random
 
 // Clase usuario con sus atributos y metodos
@@ -21,6 +26,7 @@ class Usuario {
     private var contrasennia: String = ""
 
     private var usuariosBloqueados: List<String> = emptyList()
+    private lateinit var imagenPerfil: DrawableResource
 
     // Constructor completo
     constructor(nombre: String, correo: String, aliasPublico: String, activo: Boolean, contactos: List<String>, chatUser: ConversacionesUsuario) {
@@ -32,7 +38,14 @@ class Usuario {
         this.activo = activo
         this.contactos = contactos
         this.chatUser = chatUser
+        this.imagenPerfil = generarImagenRandom()
     }
+
+    private fun generarImagenRandom(): DrawableResource {
+        //Se deberia implementar la logica para generar una imagen random, por ahora se pone la imagen predeterminada de la aplicacion
+        return Res.drawable.connexus
+    }
+
     //Debug: Contructor con idUnico
     constructor(idUnico: String, nombre: String, correo: String, aliasPublico: String, activo: Boolean, contactos: List<String>, chatUser: ConversacionesUsuario) {
         this.idUnico = idUnico
@@ -43,6 +56,7 @@ class Usuario {
         this.activo = activo
         this.contactos = contactos
         this.chatUser = chatUser
+        this.imagenPerfil = generarImagenRandom()
     }
 
     // Constructor vacio
@@ -141,6 +155,14 @@ class Usuario {
         this.usuariosBloqueados = usuariosBloqueados
     }
 
+    fun getImagenPerfil(): DrawableResource {
+        return imagenPerfil
+    }
+
+    fun setImagenPerfil(imagenPerfil: DrawableResource) {
+        this.imagenPerfil = imagenPerfil
+    }
+
 
     // Metodo para imprimir los datos públicos del usuario
     @Composable
@@ -215,6 +237,13 @@ class UtilidadesUsuario {
         return alias
     }
 
+    fun bloquearContacto(idUsuario: String): Boolean {
+        //Se debe implementar la lógica para bloquear un contacto
+        //pienso que se le debe pasar el id del usuario a bloquear, comprobar si lo tiene en la lista de contactos...
+        // si es asi, lo elimina y lo añade a la lista de bloqueados
+        return true
+    }
+
     fun instanciaUsuario(nombre: String,  correo: String, aliasPublico: String, activo: Boolean): Usuario {
         val correoValido = validarCorreo(correo)
         val nombreValido = validarNombre(nombre)
@@ -236,4 +265,52 @@ class UtilidadesUsuario {
         }
         return Usuario(idUnico, nombre, correo, aliasPublico, activo, emptyList(), ConversacionesUsuario(generarIdUnico(), generarIdUnico(), listOf( Conversacion( generarIdUnico(), emptyList() ) ) ) )
     }
+
+
+    // Genera un alias Publico aleatorio para un usuario
+    companion object {
+        private val aliasGenerados = mutableSetOf<String>()
+
+        private val primeraParte = listOf(
+            "Alpha", "Bravo", "Charlie", "Delta", "Echo", "Foxtrot", "Golf", "Hotel", "India", "Juliet",
+            "Kilo", "Lima", "Mike", "November", "Oscar", "Papa", "Quebec", "Romeo", "Sierra", "Tango",
+            "Uniform", "Victor", "Whiskey", "Xray", "Yankee", "Zulu", "Aurora", "Blaze", "Cobalt", "Dynamo",
+            "Eclipse", "Falcon", "Galaxy", "Horizon", "Inferno", "Jade", "Knight", "Legend", "Mystic", "Nova",
+            "Orion", "Phoenix", "Quantum", "Raven", "Solar", "Titan", "Umbra", "Vortex", "Warden", "Zenith"
+        )
+
+        // Lista de 50 palabras para la segunda parte
+        private val segundaParte = listOf(
+            "Archer", "Beacon", "Cipher", "Drift", "Ember", "Flux", "Glimmer", "Halo", "Ion", "Jolt",
+            "Karma", "Lumen", "Mirage", "Nimbus", "Oasis", "Pulse", "Quasar", "Ripple", "Surge", "Tempest",
+            "Ultraviolet", "Vigor", "Whirl", "Xenon", "Yield", "Zephyr", "Apex", "Bolt", "Crest", "Dusk",
+            "Emberlight", "Frost", "Gale", "Haze", "Ice", "Jinx", "Knell", "Loom", "Mist", "Nexus",
+            "Orb", "Prism", "Quiver", "Riddle", "Shard", "Torrent", "Umber", "Veil", "Wisp"
+        )
+
+        // Lista de 50 palabras para la tercera parte
+        private val terceraParte = listOf(
+            "Amber", "Brisk", "Crux", "Dawn", "Edge", "Fable", "Glade", "Hearth", "Isle", "Jadeite",
+            "Keen", "Lush", "Muse", "Nook", "Omen", "Pledge", "Quill", "Rove", "Spry", "Thorne",
+            "Unity", "Verge", "Wild", "Xylem", "Yarn", "Zeal", "Arc", "Breeze", "Core", "Driftwood",
+            "Eon", "Fervor", "Grit", "Hearthstone", "Ignite", "Jumble", "Knack", "Luster", "Motif", "Nurture",
+            "Orbit", "Pulse", "Quest", "Roam", "Solace", "Thrive", "Untamed", "Valor", "Whim", "Zest"
+        )
+    }
+
+    // Función que obtiene los alias existentes en UsuariosPreCreados
+    fun obtenerAliasExistentes(): Set<String> {
+        return UsuariosPreCreados.map { it.getAlias() }.toSet()
+    }
+
+    fun generarAliasPublico(): String {
+        val aliasExistentes = obtenerAliasExistentes() + aliasGenerados
+        var alias: String
+        do {
+            alias = "${primeraParte.random()} ${segundaParte.random()} ${terceraParte.random()}"
+        } while (alias in aliasExistentes)
+        aliasGenerados.add(alias)
+        return alias
+    }
+
 }

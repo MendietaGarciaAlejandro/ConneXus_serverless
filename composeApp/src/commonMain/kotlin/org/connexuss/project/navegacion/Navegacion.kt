@@ -22,6 +22,7 @@ import org.connexuss.project.interfaces.SplashScreen
 import org.connexuss.project.interfaces.mostrarChat
 import org.connexuss.project.interfaces.mostrarChatGrupo
 import org.connexuss.project.interfaces.mostrarPerfil
+import org.connexuss.project.interfaces.mostrarPerfilUsuario
 import org.connexuss.project.interfaces.muestraAjustes
 import org.connexuss.project.interfaces.muestraChats
 import org.connexuss.project.interfaces.muestraContactos
@@ -114,5 +115,10 @@ fun Navegacion(
         composable("cambiaFuente") {
             PantallaCambiarFuente(navController)
         }
+        composable("mostrarPerfilUsuario/{userId}") { backStackEntry ->
+            val userId = backStackEntry.arguments?.getString("userId")
+            mostrarPerfilUsuario(navController, userId)
+        }
+
     }
 }

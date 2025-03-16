@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -48,6 +49,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -121,6 +123,73 @@ fun DefaultTopBar(
         }
     )
 }
+
+//TopBar para mostrar el usuario con el que se esta chateando
+@Composable
+fun TopBarUsuario(
+    title: String, // Clave para el título (se usará traducir(title))
+    navController: NavHostController?,
+    showBackButton: Boolean = false,
+    irParaAtras: Boolean = false,
+    muestraEngranaje: Boolean = true,
+    onTitleClick: () -> Unit = {} // Acción al pulsar sobre el título
+) {
+    TopAppBar(
+        title = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onTitleClick() }
+            ) {
+                // Imagen a la izquierda: puedes usar generarImagenRandom() o un recurso fijo
+                Icon(
+                    painter = painterResource(Res.drawable.connexus),
+                    contentDescription = traducir("imagen_perfil"),
+                    modifier = Modifier.size(40.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                // Título traducido; se muestra centrado en la parte izquierda (puedes ajustar según convenga)
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    Text(text = traducir(title))
+                }
+            }
+        },
+        navigationIcon = if (showBackButton) {
+            {
+                IconButton(onClick = {
+                    if (navController != null && irParaAtras) {
+                        navController.popBackStack()
+                    }
+                }) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = traducir("atras")
+                    )
+                }
+            }
+        } else null,
+        actions = {
+            if (muestraEngranaje) {
+                IconButton(onClick = {
+                    navController?.navigate("ajustes")
+                }) {
+                    Icon(
+                        imageVector = Icons.Default.Settings,
+                        contentDescription = traducir("ajustes")
+                    )
+                }
+            }
+        }
+    )
+}
+
+
+
+
 
 //BottomBar
 @Composable
@@ -534,17 +603,32 @@ fun muestraContactos(navController: NavHostController) {
                         },
                         confirmButton = {
                             TextButton(
-                                onClick = {
+                                onClick = onClick@{
+                                    // Dentro del AlertDialog para "Nuevo Chat" en la confirmButton:
                                     if (selectedContacts.isNotEmpty()) {
-                                        // Los participantes incluyen el UsuarioPrincipal y los contactos seleccionados
-                                        val participantes = listOf(UsuarioPrincipal.getIdUnico()) +
-                                                selectedContacts.map { it.getIdUnico() }
-                                        // Crea la nueva conversación con un id aleatorio;
-                                        // Si es un grupo (más de un contacto seleccionado), se asigna el nombre proporcionado.
+                                        // Construimos el conjunto de participantes: el UsuarioPrincipal y los contactos seleccionados.
+                                        val participantesSet = (listOf(UsuarioPrincipal.getIdUnico()) + selectedContacts.map { it.getIdUnico() }).toSet()
+
+                                        // Si sólo se ha seleccionado un contacto (chat individual), comprobamos si ya existe una conversación con ese par.
+                                        if (selectedContacts.size == 1) {
+                                            val existingChat = UsuarioPrincipal.getChatUser().conversaciones.find {
+                                                it.participants.toSet() == participantesSet
+                                            }
+                                            if (existingChat != null) {
+                                                // Por ejemplo, podrías mostrar un mensaje Toast o Snackbar indicando que ya existe.
+                                                // Aquí simplemente salimos sin crear una nueva conversación:
+                                                showChatDialog = false
+                                                selectedContacts.clear()
+                                                groupChatName = ""
+                                                return@onClick
+                                            }
+                                        }
+
+                                        // Crea la nueva conversación:
                                         val nuevaConversacion = Conversacion(
-                                            participants = participantes,
+                                            participants = participantesSet.toList(),  // Conservamos la lista, el orden puede no ser relevante
                                             messages = emptyList(),
-                                            nombre = if (selectedContacts.size > 1) groupChatName else null
+                                            nombre = if (selectedContacts.size > 1 && groupChatName.isNotBlank()) groupChatName else null
                                         )
                                         // Actualiza el UsuarioPrincipal: agrega la nueva conversación a su lista
                                         val convActualesPrincipal = UsuarioPrincipal.getChatUser().conversaciones.toMutableList()
@@ -929,6 +1013,115 @@ fun mostrarPerfil(navController: NavHostController, usuarioU: Usuario?) {
         )
     }
 }
+
+//Mostrar perfil usuario chat, por ahora no muestra la imagen del usuario, solo muestra negro
+@Composable
+fun mostrarPerfilUsuario(navController: NavHostController, userId: String?) {
+    // Busca el usuario en tu lista de usuarios (UsuariosPreCreados) según el userId
+    val usuario = UsuariosPreCreados.find { it.getIdUnico() == userId }
+
+    Scaffold(
+        topBar = {
+            DefaultTopBar(
+                title = usuario?.getNombreCompleto() ?: "Perfil",
+                navController = navController,
+                showBackButton = true,
+                irParaAtras = true,
+                muestraEngranaje = false
+            )
+        }
+    ) { padding ->
+        if (usuario == null) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("Usuario no encontrado")
+            }
+        } else {
+            var aliasPrivado by remember { mutableStateOf(usuario.getAliasPrivado()) }
+            var aliasPublico by remember { mutableStateOf(usuario.getAlias()) }
+            var descripcion by remember { mutableStateOf(usuario.getDescripcion()) }
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Imagen de perfil
+                Icon(
+                    painter = painterResource(usuario.getImagenPerfil()),
+                    contentDescription = "Foto de perfil",
+                    modifier = Modifier.size(100.dp)
+                )
+
+                // Alias Privado
+                OutlinedTextField(
+                    value = aliasPrivado,
+                    onValueChange = { aliasPrivado = it },
+                    readOnly = true,
+                    label = { Text("Alias Privado") },
+                    modifier = Modifier.fillMaxWidth()
+
+                )
+
+                // Alias Público
+                OutlinedTextField(
+                    value = aliasPublico,
+                    readOnly = true,
+                    onValueChange = { aliasPublico = it },
+                    label = { Text("Alias Público") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                // Descripción
+                OutlinedTextField(
+                    value = descripcion,
+                    readOnly = true,
+                    onValueChange = { descripcion = it },
+                    label = { Text("Descripción") },
+                    modifier = Modifier.fillMaxWidth(),
+                    maxLines = 3
+                )
+
+                // Botones
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Botón para eliminar contacto
+                TextButton(
+                    onClick = {
+                        // Lógica para eliminar contacto
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "Eliminar Contacto",
+                        color = Color.Red
+                    )
+                }
+
+                // Botón para bloquear
+                TextButton(
+                    onClick = {
+                        // Lógica para bloquear
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "Bloquear",
+                        color = Color.Red
+                    )
+                }
+            }
+        }
+    }
+}
+
 
 // --- Home Page ---
 // En la HomePage NO se muestra el botón de retroceso.
