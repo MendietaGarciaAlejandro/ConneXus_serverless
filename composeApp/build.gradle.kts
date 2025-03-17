@@ -9,6 +9,9 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+
+    id("com.google.gms.google-services")
+    kotlin("plugin.serialization") version "2.1.0"  // Adjust version as needed
 }
 
 kotlin {
@@ -81,6 +84,9 @@ kotlin {
             //implementation(libs.ktor.client.okhttp)
 
             // Firebase Kotlin SDK
+            implementation(project.dependencies.platform(libs.firebase.android.bom))
+
+            // Firebase Kotlin SDK
             implementation(libs.firebase.database)
             implementation(libs.firebase.firestore)
             //implementation(libs.firebase.analytics)
@@ -97,6 +103,7 @@ kotlin {
             implementation(compose.foundation)
             implementation(compose.material)
             implementation(compose.ui)
+            implementation(compose.material3) // Compose Material 3 (Nuevo)
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodel)
@@ -127,13 +134,13 @@ kotlin {
             //implementation(libs.plugins.google.services)
 
             // Firebase Kotlin SDK
-            //mplementation(libs.firebase.database)
-            //implementation(libs.firebase.firestore)
+            implementation(libs.firebase.database)
+            implementation(libs.firebase.firestore)
             //implementation(libs.firebase.analytics)
-            //implementation(libs.firebase.auth)
+            implementation(libs.firebase.auth)
             //implementation(libs.firebase.functions)
             //implementation(libs.firebase.messaging)
-            //implementation(libs.firebase.storage)
+            implementation(libs.firebase.storage)
             //implementation(libs.firebase.installations)
             //implementation(libs.firebase.config)
             //implementation(libs.firebase.perf)
@@ -243,6 +250,7 @@ dependencies {
     implementation(libs.androidx.animation.core.lint)
     implementation(libs.androidx.material3.android)
     implementation(libs.androidx.ui.graphics.android)
+    implementation(libs.kotlinx.serialization.json.v151)
     debugImplementation(compose.uiTooling)
 }
 

@@ -1734,6 +1734,14 @@ fun PantallaLogin(navController: NavHostController) {
                                 Text(traducir("debug_ajustes_control_cuentas"))
                             }
                         }
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(
+                            onClick = { navController.navigate("appFirebase") },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            //Text(traducir("debug_ir_a_home"))
+                            Text("Debug: Ir a las pruebas con Firebase")
+                        }
                         if (errorMessage.isNotEmpty()) {
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(

@@ -5,6 +5,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import org.connexuss.project.datos.UsuarioPrincipal
+import org.connexuss.project.firebase.pruebas.AppFirebase
 import org.connexuss.project.interfaces.PantallaAjustesAyuda
 import org.connexuss.project.interfaces.PantallaAjustesControlCuentas
 import org.connexuss.project.interfaces.PantallaCambiarTema
@@ -119,6 +120,8 @@ fun Navegacion(
             val userId = backStackEntry.arguments?.getString("userId")
             mostrarPerfilUsuario(navController, userId)
         }
-
+        composable("appFirebase") {
+            AppFirebase(navController)
+        }
     }
 }

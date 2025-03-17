@@ -12,4 +12,7 @@ plugins {
     alias(libs.plugins.google.services) apply false
     alias(libs.plugins.crashlytics) apply false
 
+    // Alias de los plugins de Firebase (Kotlin SDK)
+    //id("com.google.gms.google-services") version "4.4.2" apply false
+
 }
