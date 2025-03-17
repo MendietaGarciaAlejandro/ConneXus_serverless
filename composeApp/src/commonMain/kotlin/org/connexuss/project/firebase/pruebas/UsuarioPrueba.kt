@@ -3,7 +3,7 @@ package org.connexuss.project.firebase.pruebas
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class User(
+data class UsuarioPrueba(
     val id: String,
     val name: String,
     val title: String,

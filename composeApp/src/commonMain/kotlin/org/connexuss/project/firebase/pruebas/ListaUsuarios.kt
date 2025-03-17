@@ -11,14 +11,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun UserList(users: List<User>, modifier: Modifier = Modifier, userClicked: (User) -> Unit) {
+fun ListaUsuarios(usuarioPruebas: List<UsuarioPrueba>, modifier: Modifier = Modifier, userClicked: (UsuarioPrueba) -> Unit) {
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        items(users, key = { it.id }) { user ->
-            UserItem(user = user) {
+        items(usuarioPruebas, key = { it.id }) { user ->
+            ItemUsuario(usuarioPrueba = user) {
                 userClicked(user)
             }
             Spacer(modifier = Modifier.height(8.dp))

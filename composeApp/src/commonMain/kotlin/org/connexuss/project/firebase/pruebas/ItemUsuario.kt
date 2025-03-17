@@ -9,7 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun UserItem(user: User, clicked: () -> Unit) {
+fun ItemUsuario(usuarioPrueba: UsuarioPrueba, clicked: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -22,11 +22,11 @@ fun UserItem(user: User, clicked: () -> Unit) {
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
-            Text(text = user.name, style = MaterialTheme.typography.titleMedium)
+            Text(text = usuarioPrueba.name, style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(4.dp))
-            Text(text = user.title, style = MaterialTheme.typography.bodyMedium)
+            Text(text = usuarioPrueba.title, style = MaterialTheme.typography.bodyMedium)
             Spacer(modifier = Modifier.height(2.dp))
-            Text(text = user.company, style = MaterialTheme.typography.bodySmall)
+            Text(text = usuarioPrueba.company, style = MaterialTheme.typography.bodySmall)
         }
     }
 }
