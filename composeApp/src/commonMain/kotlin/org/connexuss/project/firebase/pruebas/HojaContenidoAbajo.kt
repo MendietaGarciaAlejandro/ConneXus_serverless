@@ -13,14 +13,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun BottomSheetContent(
-    user: User? = null,
-    onSave: (User) -> Unit,
-    onDelete: (User?) -> Unit
+fun HojaContenidoAbajo(
+    usuarioPrueba: UsuarioPrueba? = null,
+    onSave: (UsuarioPrueba) -> Unit,
+    onDelete: (UsuarioPrueba?) -> Unit
 ) {
-    var name by remember { mutableStateOf(user?.name ?: "") }
-    var title by remember { mutableStateOf(user?.title ?: "") }
-    var company by remember { mutableStateOf(user?.company ?: "") }
+    var nombre by remember { mutableStateOf(usuarioPrueba?.name ?: "") }
+    var titulo by remember { mutableStateOf(usuarioPrueba?.title ?: "") }
+    var compannia by remember { mutableStateOf(usuarioPrueba?.company ?: "") }
 
     Column(
         modifier = Modifier
@@ -29,37 +29,37 @@ fun BottomSheetContent(
     ) {
         TextField(
             modifier = Modifier.fillMaxWidth(),
-            value = name,
-            onValueChange = { name = it },
+            value = nombre,
+            onValueChange = { nombre = it },
             singleLine = true,
-            label = { Text("Name") }
+            label = { Text("Nombre") }
         )
         Spacer(modifier = Modifier.height(8.dp))
         TextField(
             modifier = Modifier.fillMaxWidth(),
-            value = title,
-            onValueChange = { title = it },
+            value = titulo,
+            onValueChange = { titulo = it },
             singleLine = true,
-            label = { Text("Title") }
+            label = { Text("Título") }
         )
         Spacer(modifier = Modifier.height(8.dp))
         TextField(
             modifier = Modifier.fillMaxWidth(),
-            value = company,
-            onValueChange = { company = it },
+            value = compannia,
+            onValueChange = { compannia = it },
             singleLine = true,
-            label = { Text("Company") }
+            label = { Text("Compañía") }
         )
         Spacer(modifier = Modifier.height(16.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            Button(onClick = { onSave(User(user?.id ?: "", name, title, company)) }) {
-                Text(text = if (user == null) "Save" else "Update")
+            Button(onClick = { onSave(UsuarioPrueba(usuarioPrueba?.id ?: "", nombre, titulo, compannia)) }) {
+                Text(text = if (usuarioPrueba == null) "Guardar" else "Actualizar")
             }
-            Button(onClick = { onDelete(user) }) {
-                Text("Delete")
+            Button(onClick = { onDelete(usuarioPrueba) }) {
+                Text("Borrar")
             }
         }
     }

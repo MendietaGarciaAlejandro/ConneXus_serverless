@@ -13,28 +13,28 @@ import androidx.compose.ui.Modifier
 import kotlinx.coroutines.launch
 
 @Composable
-fun UserScreen(repository: UserRepository) {
+fun PantallaUsuario(repository: UsuariosRepositorio) {
     val scope = rememberCoroutineScope()
-    val users by repository.getUsers().collectAsState(emptyList())
-    UserScreenContent(
-        users = users,
-        addUser = { scope.launch { repository.addUser(it) } },
-        updateUser = { scope.launch { repository.updateUser(it) } },
-        deleteUser = { scope.launch { repository.deleteUser(it) } },
+    val users by repository.getUsuario().collectAsState(emptyList())
+    PantallaUsuarioContenido(
+        usuarioPruebas = users,
+        addUser = { scope.launch { repository.addUsuario(it) } },
+        updateUser = { scope.launch { repository.updateUsuario(it) } },
+        deleteUser = { scope.launch { repository.deleteUsuario(it) } },
     )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun UserScreenContent(
-    users: List<User>,
-    addUser: (User) -> Unit,
-    updateUser: (User) -> Unit,
-    deleteUser: (User) -> Unit,
+fun PantallaUsuarioContenido(
+    usuarioPruebas: List<UsuarioPrueba>,
+    addUser: (UsuarioPrueba) -> Unit,
+    updateUser: (UsuarioPrueba) -> Unit,
+    deleteUser: (UsuarioPrueba) -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
-    var selectedUser by remember { mutableStateOf<User?>(null) }
+    var selectedUsuarioPrueba by remember { mutableStateOf<UsuarioPrueba?>(null) }
     var showBottomSheet by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -53,8 +53,8 @@ fun UserScreenContent(
         },
         floatingActionButtonPosition = FabPosition.End
     ) { innerPadding ->
-        UserList(users = users, modifier = Modifier.padding(innerPadding)) { user ->
-            selectedUser = user
+        ListaUsuarios(usuarioPruebas = usuarioPruebas, modifier = Modifier.padding(innerPadding)) { user ->
+            selectedUsuarioPrueba = user
             showBottomSheet = true
         }
 
@@ -65,11 +65,11 @@ fun UserScreenContent(
                 },
                 sheetState = sheetState
             ) {
-                BottomSheetContent(
-                    user = selectedUser,
+                HojaContenidoAbajo(
+                    usuarioPrueba = selectedUsuarioPrueba,
                     onSave = { user ->
                         scope.launch {
-                            if (selectedUser == null) {
+                            if (selectedUsuarioPrueba == null) {
                                 addUser(user)
                             } else {
                                 updateUser(user)
@@ -77,7 +77,7 @@ fun UserScreenContent(
                             sheetState.hide()
                         }.invokeOnCompletion {
                             showBottomSheet = false
-                            selectedUser = null
+                            selectedUsuarioPrueba = null
                         }
                     },
                     onDelete = { user ->
@@ -86,7 +86,7 @@ fun UserScreenContent(
                             sheetState.hide()
                         }.invokeOnCompletion {
                             showBottomSheet = false
-                            selectedUser = null
+                            selectedUsuarioPrueba = null
                         }
                     }
                 )

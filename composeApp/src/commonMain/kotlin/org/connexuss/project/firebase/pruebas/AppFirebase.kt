@@ -6,6 +6,6 @@ import androidx.navigation.NavHostController
 
 @Composable
 fun AppFirebase(navHostController: NavHostController) {
-    val userRepository = remember { FirestoreUserRepository() }
-    UserScreen(userRepository)
+    val repositorioUsuarios = remember { FirestoreUsuariosRepositorio() }
+    PantallaUsuario(repositorioUsuarios)
 }

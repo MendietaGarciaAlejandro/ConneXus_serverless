@@ -5,6 +5,7 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import kotlinx.serialization.Serializable
 
 interface ChatRepository {
     suspend fun sendMessage(roomId: String, message: Mensaje): Boolean
@@ -33,6 +34,7 @@ class ChatService(private val chatRepository: ChatRepository) {
     }
 }
 
+@Serializable
 data class Mensaje(
     val id: String = generateRandomId(),
     val senderId: String,
@@ -42,6 +44,7 @@ data class Mensaje(
     val fechaMensaje: LocalDateTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
 )//la fecha no se si funciona...
 
+@Serializable
 data class Conversacion(
     val id: String = generateRandomId(), // Valor por defecto: aleatorio
     val participants: List<String>, // IDs de los usuarios
@@ -52,6 +55,7 @@ data class Conversacion(
         get() = participants.size > 2
 }
 
+@Serializable
 data class ConversacionesUsuario(
     val id: String,
     val idUser: String,

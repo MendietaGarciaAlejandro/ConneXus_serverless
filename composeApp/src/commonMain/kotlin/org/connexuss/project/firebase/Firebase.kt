@@ -32,6 +32,8 @@ object FirebaseConfig {
 object FirebaseConstants {
     const val COLLECTION_USUARIOS = "usuarios"
     const val COLLECTION_CHAT = "chat"
+    const val COLLECTION_MENSAJE = "mensaje"
+    const val COLLECTION_HILO_FORO = "hilo_foro"
     const val COLLECTION_FORO = "foro"
     // Otras constantes necesarias...
 }
