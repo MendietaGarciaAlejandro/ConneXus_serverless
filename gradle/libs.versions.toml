@@ -24,6 +24,7 @@ kotlinxCrypto = "0.1.0"
 firebaseFirestoreKtx = "25.1.2"
 kotlinxDatetime = "0.6.1"
 decompose = "2.2.0-alpha03"
+kotlinxSerializationJson = "1.7.1"
 ktorClientContentNegotiation = "2.3.8"
 ktorClientCore = "2.3.8"
 ktorSerializationKotlinxJson = "2.3.8"
@@ -87,6 +88,7 @@ firebase-firestore-ktx = { group = "com.google.firebase", name = "firebase-fires
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinxDatetime" }
 decompose = { module = "com.arkivanov.decompose:decompose", version.ref = "decompose" }
 decompose-compose = { module = "com.arkivanov.decompose:extensions-compose-jetpack", version.ref = "decompose" }
+kotlinx-serialization-json-v151 = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
 ktor-client-content-negotiation-v238 = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktorClientContentNegotiation" }
 ktor-client-core-v238 = { module = "io.ktor:ktor-client-core", version.ref = "ktorClientCore" }
 ktor-serialization-kotlinx-json-v238 = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktorSerializationKotlinxJson" }
@@ -116,6 +118,7 @@ androidx-ui-graphics-android = { group = "androidx.compose.ui", name = "ui-graph
 #Firebase
 firebase-android-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebase-android-bom" }
 firebase-android-crashlytics-ktx = { module = "com.google.firebase:firebase-crashlytics" }
+
 #Gitlive
 gitlive-firebase-kotlin-crashlytics = { module = "dev.gitlive:firebase-crashlytics", version.ref = "firebase-gitlive-sdk" }
 
