@@ -9,13 +9,19 @@ fun AppFirebase(navHostController: NavHostController) {
 
     // Repositorios
     val repositorioUsuarios = remember { FirestoreUsuariosRepositorio() }
-    val repositorioMensajes = remember { FirestoreMensajesRepositorio() }
-    val repositorioConversaciones = remember { FirestoreConversacionesRepositorio() }
-    val repositorioConversacionesUsuarios = remember { FirestoreConversacionesUsuariosRepositorio() }
-    val repositorioPosts = remember { FirestorePostsRepositorio() }
-    val repositorioHilos = remember { FirestoreHilosRepositorio() }
-    val repositorioTemas = remember { FirestoreTemasRepositorio() }
+    //val repositorioMensajes = remember { FirestoreMensajesRepositorio() }
+    //val repositorioConversaciones = remember { FirestoreConversacionesRepositorio() }
+    //val repositorioConversacionesUsuarios = remember { FirestoreConversacionesUsuariosRepositorio() }
+    //val repositorioPosts = remember { FirestorePostsRepositorio() }
+    //val repositorioHilos = remember { FirestoreHilosRepositorio() }
+    //val repositorioTemas = remember { FirestoreTemasRepositorio() }
 
     // Pantallas
     PantallaUsuario(repositorioUsuarios, navHostController)
+    //PantallaMensaje(repositorioMensajes, navHostController)
+    //PantallaConversacion(repositorioConversaciones, navHostController)
+    //PantallaConversacionUsuario(repositorioConversacionesUsuarios, navHostController)
+    //PantallaPost(repositorioPosts, navHostController)
+    //PantallaHilo(repositorioHilos, navHostController)
+    //PantallaTema(repositorioTemas, navHostController)
 }
