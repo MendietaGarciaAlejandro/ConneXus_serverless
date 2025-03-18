@@ -7,6 +7,7 @@ import androidx.compose.material3.Card
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import org.connexuss.project.interfaces.LimitaTamanioAncho
 
 @Composable
 fun ItemUsuario(usuarioPrueba: UsuarioPrueba, clicked: () -> Unit) {
@@ -22,11 +23,11 @@ fun ItemUsuario(usuarioPrueba: UsuarioPrueba, clicked: () -> Unit) {
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
-            Text(text = usuarioPrueba.name, style = MaterialTheme.typography.titleMedium)
+            Text(text = usuarioPrueba.nombre, style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(4.dp))
-            Text(text = usuarioPrueba.title, style = MaterialTheme.typography.bodyMedium)
+            Text(text = usuarioPrueba.titulo, style = MaterialTheme.typography.bodyMedium)
             Spacer(modifier = Modifier.height(2.dp))
-            Text(text = usuarioPrueba.company, style = MaterialTheme.typography.bodySmall)
+            Text(text = usuarioPrueba.compannia, style = MaterialTheme.typography.bodySmall)
         }
     }
 }

@@ -4,8 +4,8 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class UsuarioPrueba(
-    val id: String,
-    val name: String,
-    val title: String,
-    val company: String
+    val idUsuarioPrueba: String,
+    val nombre: String,
+    val titulo: String,
+    val compannia: String
 )

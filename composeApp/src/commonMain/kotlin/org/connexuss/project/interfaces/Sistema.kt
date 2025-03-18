@@ -1736,7 +1736,7 @@ fun PantallaLogin(navController: NavHostController) {
                         }
                         Spacer(modifier = Modifier.height(16.dp))
                         Button(
-                            onClick = { navController.navigate("appFirebase") },
+                            onClick = { navController.navigate("appFirebase") /*navController.navigate("pruebasObjetosFIrebase")*/ },
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             //Text(traducir("debug_ir_a_home"))
