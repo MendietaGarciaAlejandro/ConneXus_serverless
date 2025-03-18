@@ -24,6 +24,7 @@ kotlin {
 
     jvm("desktop")
 
+    /*
     @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
         moduleName = "composeApp"
@@ -43,8 +44,8 @@ kotlin {
         }
         binaries.executable()
     }
+     */
 
-    /*
     js(IR) {
         moduleName = "composeApp"
         browser {
@@ -54,7 +55,6 @@ kotlin {
                 outputFileName = "composeApp.js"
                 devServer = (devServer ?: KotlinWebpackConfig.DevServer()).apply {
                     static = (static ?: mutableListOf()).apply {
-                        // Serve sources to debug inside browser
                         add(rootDirPath)
                         add(projectDirPath)
                     }
@@ -63,7 +63,6 @@ kotlin {
         }
         binaries.executable()
     }
-     */
 
     sourceSets {
         val desktopMain by getting
@@ -179,6 +178,7 @@ kotlin {
             }
         }
          */
+        /*
         val wasmJsMain by getting {
             dependencies {
                 //implementation("org.jetbrains.compose.web:compose-web-router:1.0.0-beta6")
@@ -204,15 +204,30 @@ kotlin {
                 //implementation(libs.firebase.perf)
             }
         }
-        /*
+         */
+
         val jsMain by getting {
             dependencies {
-                implementation(libs.ktor.client.js) // Usa el cliente JS
-                implementation(libs.ktor.client.content.negotiation.v238)
-                implementation(libs.ktor.serialization.kotlinx.json.v238)
+                implementation(compose.html.core)
+                //implementation(libs.ktor.client.js) // Usa el cliente JS
+                //implementation(libs.ktor.client.content.negotiation.v238)
+                //implementation(libs.ktor.serialization.kotlinx.json.v238)
+                implementation(npm("libphonenumber-js", "1.10.13"))
+
+                // Firebase Kotlin SDK
+                implementation(libs.firebase.database)
+                implementation(libs.firebase.firestore)
+                //implementation(libs.firebase.analytics)
+                implementation(libs.firebase.auth)
+                //implementation(libs.firebase.functions)
+                //implementation(libs.firebase.messaging)
+                implementation(libs.firebase.storage)
+                //implementation(libs.firebase.installations)
+                //implementation(libs.firebase.config)
+                //implementation(libs.firebase.perf)
             }
         }
-         */
+
     }
 }
 
