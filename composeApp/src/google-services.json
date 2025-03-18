@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "401361889791",
+    "project_id": "connexus-dam",
+    "storage_bucket": "connexus-dam.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:401361889791:android:2f6776ad6d9d24514fdfca",
+        "android_client_info": {
+          "package_name": "org.connexuss.project"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCR7IAAQpyanoEPf0tjAm_KTnuwLUQN_No"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

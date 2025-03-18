@@ -26,12 +26,13 @@ fun main() = application {
     })
 
     val options = FirebaseOptions(
-        projectId = "connexus-serverless",
-        applicationId = "1:1060908289340:web:f2f45f66720d0114c02239",
-        apiKey = "AIzaSyBUhPRsx7QaYJJ62Cq7zHsIIkroqe375jM"
+        projectId = "connexus-dam",
+        applicationId = "1:401361889791:web:2e118f9c222e80f04fdfca",
+        apiKey = "AIzaSyBryvu63OkbvUWPic59iJY-AtrFpACBjhk"
     )
 
     /*
+    // Firebase configuracion (Cuenta alexmengar)
     const firebaseConfig = {
         apiKey: "AIzaSyBUhPRsx7QaYJJ62Cq7zHsIIkroqe375jM",
         authDomain: "connexus-serverless.firebaseapp.com",
@@ -40,6 +41,19 @@ fun main() = application {
         messagingSenderId: "1060908289340",
         appId: "1:1060908289340:web:f2f45f66720d0114c02239",
         measurementId: "G-QQTKPDXZP5"
+    };
+     */
+
+    // Firebase configuracion (Cuenta ConneXus)
+    /*
+    const firebaseConfig = {
+        apiKey: "AIzaSyBryvu63OkbvUWPic59iJY-AtrFpACBjhk",
+        authDomain: "connexus-dam.firebaseapp.com",
+        projectId: "connexus-dam",
+        storageBucket: "connexus-dam.firebasestorage.app",
+        messagingSenderId: "401361889791",
+        appId: "1:401361889791:web:2e118f9c222e80f04fdfca",
+        measurementId: "G-7L6GHVH04W"
     };
      */
 
