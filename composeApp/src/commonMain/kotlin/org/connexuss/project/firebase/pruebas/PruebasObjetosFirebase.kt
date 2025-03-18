@@ -1,33 +1,24 @@
 package org.connexuss.project.firebase.pruebas
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.Button
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import org.connexuss.project.interfaces.DefaultTopBar
+import org.connexuss.project.interfaces.LimitaTamanioAncho
 
 @Composable
 fun MuestraObjetosPruebasFriebase(navHostController: NavHostController) {
-
-    /*
-    // Repositorios
-    val repositorioUsuarios = remember { FirestoreUsuariosRepositorio() }
-    val repositorioMensajes = remember { FirestoreMensajesRepositorio() }
-    val repositorioConversaciones = remember { FirestoreConversacionesRepositorio() }
-    val repositorioConversacionesUsuarios = remember { FirestoreConversacionesUsuariosRepositorio() }
-    val repositorioPosts = remember { FirestorePostsRepositorio() }
-    val repositorioHilos = remember { FirestoreHilosRepositorio() }
-    val repositorioTemas = remember { FirestoreTemasRepositorio() }
-
-    // Pantallas
-    PantallaUsuario(repositorioUsuarios, navHostController)
-     */
 
     Scaffold(
         topBar = {
@@ -39,25 +30,43 @@ fun MuestraObjetosPruebasFriebase(navHostController: NavHostController) {
                 muestraEngranaje = true
             )
         }
-    ) {
-        val tiposObjetos = listOf(
-            "UsuarioPrueba",
-            "Mensaje",
-            "Conversacion",
-            "ConversacionUsuario",
-            "Post",
-            "Hilo",
-            "Tema"
-        )
+    ) { padding ->
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            LimitaTamanioAncho { modifier ->
+                Column(
+                    modifier = modifier
+                        .padding(padding)
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    val tiposObjetos = listOf(
+                        "UsuarioPrueba",
+                        "Mensaje",
+                        "Conversacion",
+                        "ConversacionUsuario",
+                        "Post",
+                        "Hilo",
+                        "Tema"
+                    )
 
-        tiposObjetos.forEach { objeto ->
-            Button(
-                onClick = {
-                    navHostController.navigate("pruebas/$objeto")
-                },
-                modifier = Modifier.padding(16.dp)
-            ) {
-                Text(text = objeto, style = MaterialTheme.typography.bodyMedium)
+                    tiposObjetos.forEach {
+                        Button(
+                            onClick = {
+                                navHostController.navigate(it)
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = it,
+                                color = androidx.compose.ui.graphics.Color.White
+                            )
+                        }
+                    }
+                }
             }
         }
     }

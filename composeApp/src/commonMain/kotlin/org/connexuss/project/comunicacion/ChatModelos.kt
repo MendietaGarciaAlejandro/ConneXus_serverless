@@ -7,6 +7,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.Serializable
 
+/*
 interface ChatRepository {
     suspend fun sendMessage(roomId: String, message: Mensaje): Boolean
     suspend fun getChatRoom(roomId: String): Conversacion?
@@ -33,6 +34,7 @@ class ChatService(private val chatRepository: ChatRepository) {
         TODO("Implementar la escucha de mensajes en tiempo real")
     }
 }
+ */
 
 @Serializable
 data class Mensaje(
