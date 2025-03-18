@@ -1,11 +1,28 @@
 package org.connexuss.project.navegacion
 
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import org.connexuss.project.datos.UsuarioPrincipal
 import org.connexuss.project.firebase.pruebas.AppFirebase
+import org.connexuss.project.firebase.pruebas.FirestoreConversacionesRepositorio
+import org.connexuss.project.firebase.pruebas.FirestoreConversacionesUsuariosRepositorio
+import org.connexuss.project.firebase.pruebas.FirestoreHilosRepositorio
+import org.connexuss.project.firebase.pruebas.FirestoreMensajesRepositorio
+import org.connexuss.project.firebase.pruebas.FirestorePostsRepositorio
+import org.connexuss.project.firebase.pruebas.FirestoreTemasRepositorio
+import org.connexuss.project.firebase.pruebas.FirestoreUsuariosRepositorio
+import org.connexuss.project.firebase.pruebas.MuestraObjetosPruebasFriebase
+import org.connexuss.project.firebase.pruebas.PantallaConversacion
+import org.connexuss.project.firebase.pruebas.PantallaConversacionUsuario
+import org.connexuss.project.firebase.pruebas.PantallaHilo
+import org.connexuss.project.firebase.pruebas.PantallaMensaje
+import org.connexuss.project.firebase.pruebas.PantallaPost
+import org.connexuss.project.firebase.pruebas.PantallaTema
+import org.connexuss.project.firebase.pruebas.PantallaUsuario
 import org.connexuss.project.interfaces.PantallaAjustesAyuda
 import org.connexuss.project.interfaces.PantallaAjustesControlCuentas
 import org.connexuss.project.interfaces.PantallaCambiarTema
@@ -38,7 +55,15 @@ fun Navegacion(
     onColorChange: (String) -> Unit
 ) {
     val navController = rememberNavController()
-    var posicionColorPillado = 0
+
+    val repositorioUsuarios = remember { FirestoreUsuariosRepositorio() }
+    val repositorioMensajes = remember { FirestoreMensajesRepositorio() }
+    val repositorioConversaciones = remember { FirestoreConversacionesRepositorio() }
+    val repositorioConversacionesUsuarios = remember { FirestoreConversacionesUsuariosRepositorio() }
+    val repositorioPosts = remember { FirestorePostsRepositorio() }
+    val repositorioHilos = remember { FirestoreHilosRepositorio() }
+    val repositorioTemas = remember { FirestoreTemasRepositorio() }
+
     NavHost(navController = navController, startDestination = "splash") {
         composable("splash") {
             SplashScreen(navController)
@@ -122,6 +147,36 @@ fun Navegacion(
         }
         composable("appFirebase") {
             AppFirebase(navController)
+        }
+        composable("pruebasObjetosFIrebase") {
+            MuestraObjetosPruebasFriebase(navController)
+        }
+        /*
+        composable("pruebas/{objeto}") { backStackEntry ->
+            val objeto = backStackEntry.arguments?.getString("objeto")
+            Text("Objeto: $objeto")
+        }
+        */
+        composable("UsuarioPrueba") {
+            PantallaUsuario(repositorioUsuarios, navController)
+        }
+        composable("Mensaje") {
+            PantallaMensaje(repositorioMensajes, navController)
+        }
+        composable("Conversacion") {
+            PantallaConversacion(repositorioConversaciones, navController)
+        }
+        composable("ConversacionUsuario") {
+            PantallaConversacionUsuario(repositorioConversacionesUsuarios, navController)
+        }
+        composable("Post") {
+            PantallaPost(repositorioPosts, navController)
+        }
+        composable("Hilo") {
+            PantallaHilo(repositorioHilos, navController)
+        }
+        composable("Tema") {
+            PantallaTema(repositorioTemas, navController)
         }
     }
 }
