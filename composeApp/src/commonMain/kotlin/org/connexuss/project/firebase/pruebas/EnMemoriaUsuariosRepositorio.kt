@@ -12,10 +12,10 @@ class EnMemoriaUsuariosRepositorio : UsuariosRepositorio {
     init {
         usuarios.value = List(15) {
             UsuarioPrueba(
-                id = "ID: $it",
-                name = "User $it",
-                title = "Title $it",
-                company = "Company $it"
+                idUsuarioPrueba = "ID: $it",
+                nombre = "User $it",
+                titulo = "Title $it",
+                compannia = "Company $it"
             )
         }
     }
@@ -25,20 +25,20 @@ class EnMemoriaUsuariosRepositorio : UsuariosRepositorio {
     }
 
     override fun getUsuarioPorId(id: String): Flow<UsuarioPrueba?> {
-        return usuarios.map { userList -> userList.find { it.id == id } }
+        return usuarios.map { userList -> userList.find { it.idUsuarioPrueba == id } }
     }
 
     override suspend fun addUsuario(usuarioPrueba: UsuarioPrueba) {
-        usuarios.value += usuarioPrueba.copy(id = (id++).toString())
+        usuarios.value += usuarioPrueba.copy(idUsuarioPrueba = (id++).toString())
     }
 
     override suspend fun updateUsuario(usuarioPrueba: UsuarioPrueba) {
         usuarios.value = usuarios.value.map {
-            if (it.id == usuarioPrueba.id) usuarioPrueba else it
+            if (it.idUsuarioPrueba == usuarioPrueba.idUsuarioPrueba) usuarioPrueba else it
         }
     }
 
     override suspend fun deleteUsuario(usuarioPrueba: UsuarioPrueba) {
-        usuarios.value = usuarios.value.filter { it.id != usuarioPrueba.id }
+        usuarios.value = usuarios.value.filter { it.idUsuarioPrueba != usuarioPrueba.idUsuarioPrueba }
     }
 }

@@ -17,7 +17,7 @@ fun ListaUsuarios(usuarioPruebas: List<UsuarioPrueba>, modifier: Modifier = Modi
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        items(usuarioPruebas, key = { it.id }) { user ->
+        items(usuarioPruebas, key = { it.idUsuarioPrueba }) { user ->
             ItemUsuario(usuarioPrueba = user) {
                 userClicked(user)
             }

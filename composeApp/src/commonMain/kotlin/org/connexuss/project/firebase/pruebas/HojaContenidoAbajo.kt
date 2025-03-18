@@ -18,9 +18,9 @@ fun HojaContenidoAbajo(
     onSave: (UsuarioPrueba) -> Unit,
     onDelete: (UsuarioPrueba?) -> Unit
 ) {
-    var nombre by remember { mutableStateOf(usuarioPrueba?.name ?: "") }
-    var titulo by remember { mutableStateOf(usuarioPrueba?.title ?: "") }
-    var compannia by remember { mutableStateOf(usuarioPrueba?.company ?: "") }
+    var nombre by remember { mutableStateOf(usuarioPrueba?.nombre ?: "") }
+    var titulo by remember { mutableStateOf(usuarioPrueba?.titulo ?: "") }
+    var compannia by remember { mutableStateOf(usuarioPrueba?.compannia ?: "") }
 
     Column(
         modifier = Modifier
@@ -55,7 +55,7 @@ fun HojaContenidoAbajo(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            Button(onClick = { onSave(UsuarioPrueba(usuarioPrueba?.id ?: "", nombre, titulo, compannia)) }) {
+            Button(onClick = { onSave(UsuarioPrueba(usuarioPrueba?.idUsuarioPrueba ?: "", nombre, titulo, compannia)) }) {
                 Text(text = if (usuarioPrueba == null) "Guardar" else "Actualizar")
             }
             Button(onClick = { onDelete(usuarioPrueba) }) {

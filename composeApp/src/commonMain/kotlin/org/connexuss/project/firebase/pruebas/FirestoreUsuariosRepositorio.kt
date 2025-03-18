@@ -28,15 +28,15 @@ class FirestoreUsuariosRepositorio : UsuariosRepositorio {
         val userId = generateRandomStringId()
         firestore.collection(nombreColeccion)
             .document(userId)
-            .set(usuarioPrueba.copy(id = userId))
+            .set(usuarioPrueba.copy(idUsuarioPrueba = userId))
     }
 
     override suspend fun updateUsuario(usuarioPrueba: UsuarioPrueba) {
-        firestore.collection(nombreColeccion).document(usuarioPrueba.id).set(usuarioPrueba)
+        firestore.collection(nombreColeccion).document(usuarioPrueba.idUsuarioPrueba).set(usuarioPrueba)
     }
 
     override suspend fun deleteUsuario(usuarioPrueba: UsuarioPrueba) {
-        firestore.collection(nombreColeccion).document(usuarioPrueba.id).delete()
+        firestore.collection(nombreColeccion).document(usuarioPrueba.idUsuarioPrueba).delete()
     }
 
     private fun generateRandomStringId(length: Int = 20): String {
