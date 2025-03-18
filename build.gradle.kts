@@ -7,4 +7,12 @@ plugins {
     alias(libs.plugins.composeCompiler) apply false
     alias(libs.plugins.kotlinMultiplatform) apply false
     alias(libs.plugins.kotlinxSerialization) // Aplicar plugin de serialización
+
+    // Alias de los plugins de Firebase
+    alias(libs.plugins.google.services) apply false
+    alias(libs.plugins.crashlytics) apply false
+
+    // Alias de los plugins de Firebase (Kotlin SDK)
+    //id("com.google.gms.google-services") version "4.4.2" apply false
+
 }

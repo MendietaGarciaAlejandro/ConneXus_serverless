@@ -2,13 +2,19 @@ package org.connexuss.project.usuario
 
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import connexus_serverless.composeapp.generated.resources.Res
+import connexus_serverless.composeapp.generated.resources.connexus
+import connexus_serverless.composeapp.generated.resources.ic_foros
+import org.connexuss.project.comunicacion.Conversacion
 import org.connexuss.project.comunicacion.ConversacionesUsuario
+import org.connexuss.project.datos.UsuariosPreCreados
 import org.connexuss.project.encriptacion.hash
+import org.jetbrains.compose.resources.DrawableResource
+import kotlin.random.Random
 
 // Clase usuario con sus atributos y metodos
 class Usuario {
     private var nombre: String = ""
-    private var edad: Int = 0
     private var correo: String = ""
     private var aliasPublico: String = ""
     private var aliasPrivado: String = ""
@@ -19,29 +25,38 @@ class Usuario {
     private var descripcion: String = ""
     private var contrasennia: String = ""
 
+    private var usuariosBloqueados: List<String> = emptyList()
+    private lateinit var imagenPerfil: DrawableResource
+
     // Constructor completo
-    constructor(nombre: String, edad: Int, correo: String, aliasPublico: String, activo: Boolean, contactos: List<String>, chatUser: ConversacionesUsuario) {
+    constructor(nombre: String, correo: String, aliasPublico: String, activo: Boolean, contactos: List<String>, chatUser: ConversacionesUsuario) {
         this.idUnico = UtilidadesUsuario().generarIdUnico()
         this.nombre = nombre
-        this.edad = edad
         this.correo = correo
         this.aliasPublico = aliasPublico
         this.aliasPrivado = hash(aliasPublico)
         this.activo = activo
         this.contactos = contactos
         this.chatUser = chatUser
+        this.imagenPerfil = generarImagenRandom()
     }
+
+    private fun generarImagenRandom(): DrawableResource {
+        //Se deberia implementar la logica para generar una imagen random, por ahora se pone la imagen predeterminada de la aplicacion
+        return Res.drawable.connexus
+    }
+
     //Debug: Contructor con idUnico
-    constructor(idUnico: String, nombre: String, edad: Int, correo: String, aliasPublico: String, activo: Boolean, contactos: List<String>, chatUser: ConversacionesUsuario) {
+    constructor(idUnico: String, nombre: String, correo: String, aliasPublico: String, activo: Boolean, contactos: List<String>, chatUser: ConversacionesUsuario) {
         this.idUnico = idUnico
         this.nombre = nombre
-        this.edad = edad
         this.correo = correo
         this.aliasPublico = aliasPublico
         this.aliasPrivado = hash(aliasPublico)
         this.activo = activo
         this.contactos = contactos
         this.chatUser = chatUser
+        this.imagenPerfil = generarImagenRandom()
     }
 
     // Constructor vacio
@@ -52,7 +67,6 @@ class Usuario {
     constructor(usuario: Usuario) {
         this.idUnico = usuario.idUnico
         this.nombre = usuario.nombre
-        this.edad = usuario.edad
         this.correo = usuario.correo
         this.aliasPublico = usuario.aliasPublico
         this.activo = usuario.activo
@@ -64,13 +78,6 @@ class Usuario {
     }
     fun setNombreCompleto(nombreCompleto: String) {
         this.nombre = nombreCompleto
-    }
-
-    fun getEdad(): Int {
-        return edad
-    }
-    fun setEdad(edad: Int) {
-        this.edad = edad
     }
 
     fun getCorreo(): String {
@@ -140,6 +147,22 @@ class Usuario {
         this.contrasennia = contrasennia
     }
 
+    fun getUsuariosBloqueados(): List<String> {
+        return usuariosBloqueados
+    }
+
+    fun setUsuariosBloqueados(usuariosBloqueados: List<String>) {
+        this.usuariosBloqueados = usuariosBloqueados
+    }
+
+    fun getImagenPerfil(): DrawableResource {
+        return imagenPerfil
+    }
+
+    fun setImagenPerfil(imagenPerfil: DrawableResource) {
+        this.imagenPerfil = imagenPerfil
+    }
+
 
     // Metodo para imprimir los datos públicos del usuario
     @Composable
@@ -147,7 +170,6 @@ class Usuario {
         Text("Nombre: $nombre")
         Text("Alias: $aliasPublico")
         Text("Activo: $activo")
-        Text("Edad: $edad")
     }
 
     // Metodo para imprimir los datos privados del usuario
@@ -157,4 +179,138 @@ class Usuario {
         Text("Id Unico: $idUnico")
         Text("Alias Privado: $aliasPrivado")
     }
+}
+
+// Clase que almacena los usuarios
+class AlmacenamientoUsuario {
+    private var usuarios: ArrayList<Usuario> = ArrayList()
+
+    fun agregarUsuario(usuario: Usuario) {
+        usuarios.add(usuario)
+    }
+
+    fun eliminarUsuario(usuario: Usuario) {
+        usuarios.remove(usuario)
+    }
+
+    fun obtenerUsuarios(): ArrayList<Usuario> {
+        return usuarios
+    }
+
+    fun obtenerUsuarioPorId(id: String): Usuario {
+        return usuarios.find { it.getIdUnico() == id }!!
+    }
+
+    fun obtenerUsuarioPorAlias(alias: String): Usuario {
+        return usuarios.find { it.getAlias() == alias }!!
+    }
+
+    fun obtenerUsuarioPorCorreo(correo: String): Usuario {
+        return usuarios.find { it.getCorreo() == correo }!!
+    }
+
+    fun obtenerUsuarioPorNombre(nombre: String): Usuario {
+        return usuarios.find { it.getNombreCompleto() == nombre }!!
+    }
+}
+
+// Clase que contiene metodos de utilidades para el usuario
+class UtilidadesUsuario {
+
+    fun generarIdUnico(length: Int = 10): String {
+        val charset = ('A'..'Z') + ('0'..'9')
+        return (1..length)
+            .map { charset.random() }
+            .joinToString("")
+    }
+
+    private fun validarCorreo(correo: String): Boolean {
+        return correo.contains("@")
+    }
+
+    fun validarNombre(nombre: String): Boolean {
+        return nombre.isNotEmpty()
+    }
+
+    fun generarAlias(nombre: String): String {
+        val alias = nombre.map { it.code }.joinToString("")
+        return alias
+    }
+
+    fun bloquearContacto(idUsuario: String): Boolean {
+        //Se debe implementar la lógica para bloquear un contacto
+        //pienso que se le debe pasar el id del usuario a bloquear, comprobar si lo tiene en la lista de contactos...
+        // si es asi, lo elimina y lo añade a la lista de bloqueados
+        return true
+    }
+
+    fun instanciaUsuario(nombre: String,  correo: String, aliasPublico: String, activo: Boolean): Usuario {
+        val correoValido = validarCorreo(correo)
+        val nombreValido = validarNombre(nombre)
+        val aliasPublicoValido = validarNombre(aliasPublico)
+        if (!correoValido || !nombreValido || !aliasPublicoValido) {
+            throw IllegalArgumentException("Datos de usuario no validos")
+        }
+        return Usuario(nombre, correo, aliasPublico, activo, emptyList(), ConversacionesUsuario(generarIdUnico(), generarIdUnico(), listOf( Conversacion( generarIdUnico(), emptyList() ) ) ) )
+    }
+
+    //Debug: Contructor con idUnico
+    fun instanciaUsuario(idUnico: String, nombre: String, edad: Int, correo: String, aliasPublico: String, activo: Boolean): Usuario {
+        val idUnico = idUnico
+        val correoValido = validarCorreo(correo)
+        val nombreValido = validarNombre(nombre)
+        val aliasPublicoValido = validarNombre(aliasPublico)
+        if (!correoValido || !nombreValido || !aliasPublicoValido) {
+            throw IllegalArgumentException("Datos de usuario no validos")
+        }
+        return Usuario(idUnico, nombre, correo, aliasPublico, activo, emptyList(), ConversacionesUsuario(generarIdUnico(), generarIdUnico(), listOf( Conversacion( generarIdUnico(), emptyList() ) ) ) )
+    }
+
+
+    // Genera un alias Publico aleatorio para un usuario
+    companion object {
+        private val aliasGenerados = mutableSetOf<String>()
+
+        private val primeraParte = listOf(
+            "Alpha", "Bravo", "Charlie", "Delta", "Echo", "Foxtrot", "Golf", "Hotel", "India", "Juliet",
+            "Kilo", "Lima", "Mike", "November", "Oscar", "Papa", "Quebec", "Romeo", "Sierra", "Tango",
+            "Uniform", "Victor", "Whiskey", "Xray", "Yankee", "Zulu", "Aurora", "Blaze", "Cobalt", "Dynamo",
+            "Eclipse", "Falcon", "Galaxy", "Horizon", "Inferno", "Jade", "Knight", "Legend", "Mystic", "Nova",
+            "Orion", "Phoenix", "Quantum", "Raven", "Solar", "Titan", "Umbra", "Vortex", "Warden", "Zenith"
+        )
+
+        // Lista de 50 palabras para la segunda parte
+        private val segundaParte = listOf(
+            "Archer", "Beacon", "Cipher", "Drift", "Ember", "Flux", "Glimmer", "Halo", "Ion", "Jolt",
+            "Karma", "Lumen", "Mirage", "Nimbus", "Oasis", "Pulse", "Quasar", "Ripple", "Surge", "Tempest",
+            "Ultraviolet", "Vigor", "Whirl", "Xenon", "Yield", "Zephyr", "Apex", "Bolt", "Crest", "Dusk",
+            "Emberlight", "Frost", "Gale", "Haze", "Ice", "Jinx", "Knell", "Loom", "Mist", "Nexus",
+            "Orb", "Prism", "Quiver", "Riddle", "Shard", "Torrent", "Umber", "Veil", "Wisp"
+        )
+
+        // Lista de 50 palabras para la tercera parte
+        private val terceraParte = listOf(
+            "Amber", "Brisk", "Crux", "Dawn", "Edge", "Fable", "Glade", "Hearth", "Isle", "Jadeite",
+            "Keen", "Lush", "Muse", "Nook", "Omen", "Pledge", "Quill", "Rove", "Spry", "Thorne",
+            "Unity", "Verge", "Wild", "Xylem", "Yarn", "Zeal", "Arc", "Breeze", "Core", "Driftwood",
+            "Eon", "Fervor", "Grit", "Hearthstone", "Ignite", "Jumble", "Knack", "Luster", "Motif", "Nurture",
+            "Orbit", "Pulse", "Quest", "Roam", "Solace", "Thrive", "Untamed", "Valor", "Whim", "Zest"
+        )
+    }
+
+    // Función que obtiene los alias existentes en UsuariosPreCreados
+    fun obtenerAliasExistentes(): Set<String> {
+        return UsuariosPreCreados.map { it.getAlias() }.toSet()
+    }
+
+    fun generarAliasPublico(): String {
+        val aliasExistentes = obtenerAliasExistentes() + aliasGenerados
+        var alias: String
+        do {
+            alias = "${primeraParte.random()} ${segundaParte.random()} ${terceraParte.random()}"
+        } while (alias in aliasExistentes)
+        aliasGenerados.add(alias)
+        return alias
+    }
+
 }

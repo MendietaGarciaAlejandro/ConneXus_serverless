@@ -1,40 +1,41 @@
 package org.connexuss.project.navegacion
 
-import androidx.compose.material.Colors
 import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import org.connexuss.project.TemaConfig
 import org.connexuss.project.datos.UsuarioPrincipal
-import org.connexuss.project.datos.UsuariosPreCreados
-import org.connexuss.project.interfaces.ajustes.PantallaAjustesAyuda
-import org.connexuss.project.interfaces.ajustes.PantallaAjustesControlCuentas
-import org.connexuss.project.interfaces.ajustes.PantallaCambiarTema
-import org.connexuss.project.interfaces.foro.muestraForo
-import org.connexuss.project.interfaces.foro.muestraTemaForo
-import org.connexuss.project.interfaces.fuente.PantallaCambiarFuente
-import org.connexuss.project.interfaces.idiomas.PantallaIdiomas
-import org.connexuss.project.interfaces.sistema.PantallaEmailEnElSistema
-import org.connexuss.project.interfaces.sistema.PantallaEmailNoEnElSistema
-import org.connexuss.project.interfaces.sistema.PantallaLogin
-import org.connexuss.project.interfaces.sistema.PantallaRegistro
-import org.connexuss.project.interfaces.sistema.PantallaRestablecer
-import org.connexuss.project.interfaces.sistema.SplashScreen
-import org.connexuss.project.interfaces.sistema.mostrarChat
-import org.connexuss.project.interfaces.sistema.mostrarChatGrupo
-import org.connexuss.project.interfaces.sistema.mostrarPerfil
-import org.connexuss.project.interfaces.sistema.muestraAjustes
-import org.connexuss.project.interfaces.sistema.muestraChats
-import org.connexuss.project.interfaces.sistema.muestraContactos
-import org.connexuss.project.interfaces.sistema.muestraHomePage
-import org.connexuss.project.interfaces.sistema.muestraUsuarios
+import org.connexuss.project.firebase.pruebas.AppFirebase
+import org.connexuss.project.interfaces.PantallaAjustesAyuda
+import org.connexuss.project.interfaces.PantallaAjustesControlCuentas
+import org.connexuss.project.interfaces.PantallaCambiarTema
+import org.connexuss.project.interfaces.TemaConfig
+import org.connexuss.project.interfaces.muestraForo
+import org.connexuss.project.interfaces.muestraTemaForo
+import org.connexuss.project.interfaces.PantallaCambiarFuente
+import org.connexuss.project.interfaces.PantallaIdiomas
+import org.connexuss.project.interfaces.PantallaEmailEnElSistema
+import org.connexuss.project.interfaces.PantallaEmailNoEnElSistema
+import org.connexuss.project.interfaces.PantallaLogin
+import org.connexuss.project.interfaces.PantallaRegistro
+import org.connexuss.project.interfaces.PantallaRestablecer
+import org.connexuss.project.interfaces.SplashScreen
+import org.connexuss.project.interfaces.mostrarChat
+import org.connexuss.project.interfaces.mostrarChatGrupo
+import org.connexuss.project.interfaces.mostrarPerfil
+import org.connexuss.project.interfaces.mostrarPerfilUsuario
+import org.connexuss.project.interfaces.muestraAjustes
+import org.connexuss.project.interfaces.muestraChats
+import org.connexuss.project.interfaces.muestraContactos
+import org.connexuss.project.interfaces.muestraHomePage
+import org.connexuss.project.interfaces.muestraRestablecimientoContasenna
+import org.connexuss.project.interfaces.muestraUsuarios
 
 @Composable
 fun Navegacion(
     temaConfig: TemaConfig,
     onToggleTheme: () -> Unit,
-    onColorChange: (Colors) -> Unit
+    onColorChange: (String) -> Unit
 ) {
     val navController = rememberNavController()
     var posicionColorPillado = 0
@@ -58,7 +59,7 @@ fun Navegacion(
             muestraChats(navController)
         }
         composable("nuevo") {
-            muestraContactos(navController, UsuariosPreCreados)
+            muestraContactos(navController)
         }
         composable("restablecer") {
             PantallaRestablecer(navController)
@@ -72,6 +73,9 @@ fun Navegacion(
         composable("emailNoEnSistema") {
             PantallaEmailNoEnElSistema(navController)
         }
+        composable("restableceContrasenna") {
+            muestraRestablecimientoContasenna(navController)
+        }
         composable("ajustesControlCuentas") {
             PantallaAjustesControlCuentas(navController)
         }
@@ -79,7 +83,12 @@ fun Navegacion(
             PantallaAjustesAyuda(navController)
         }
         composable("cambiarTema") {
-            PantallaCambiarTema(navController = navController, temaConfig = temaConfig, onToggleTheme = onToggleTheme, onColorChange = onColorChange)
+            PantallaCambiarTema(
+                navController = navController,
+                temaConfig = temaConfig,
+                onToggleTheme = onToggleTheme,
+                onColorChange = onColorChange // Pasa la función directamente
+            )
         }
         composable("mostrarPerfilPrincipal") {
             mostrarPerfil(navController, UsuarioPrincipal)
@@ -106,6 +115,13 @@ fun Navegacion(
         }
         composable("cambiaFuente") {
             PantallaCambiarFuente(navController)
+        }
+        composable("mostrarPerfilUsuario/{userId}") { backStackEntry ->
+            val userId = backStackEntry.arguments?.getString("userId")
+            mostrarPerfilUsuario(navController, userId)
+        }
+        composable("appFirebase") {
+            AppFirebase(navController)
         }
     }
 }
