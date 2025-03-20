@@ -19,6 +19,7 @@ import org.connexuss.project.comunicacion.Hilo
 import org.connexuss.project.comunicacion.Mensaje
 import org.connexuss.project.comunicacion.Post
 import org.connexuss.project.comunicacion.Tema
+import org.connexuss.project.usuario.Usuario
 
 @Composable
 fun ItemUsuario(usuarioPrueba: UsuarioPrueba, clicked: () -> Unit) {
@@ -39,6 +40,41 @@ fun ItemUsuario(usuarioPrueba: UsuarioPrueba, clicked: () -> Unit) {
             Text(text = usuarioPrueba.titulo, style = MaterialTheme.typography.bodyMedium)
             Spacer(modifier = Modifier.height(2.dp))
             Text(text = usuarioPrueba.compannia, style = MaterialTheme.typography.bodySmall)
+        }
+    }
+}
+
+@Composable
+fun ItemUsuarioNuestro(usuario: Usuario, clicked: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { clicked() }
+            .padding(8.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Text(text = usuario.getNombreCompleto(), style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(text = usuario.getCorreo(), style = MaterialTheme.typography.bodyMedium)
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(text = usuario.getAlias(), style = MaterialTheme.typography.bodySmall)
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(text = usuario.getAliasPrivado(), style = MaterialTheme.typography.bodySmall)
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(text = usuario.getIdUnico(), style = MaterialTheme.typography.bodySmall)
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(text = usuario.getDescripcion(), style = MaterialTheme.typography.bodySmall)
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(text = usuario.getContrasennia(), style = MaterialTheme.typography.bodySmall)
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(text = usuario.getUsuariosBloqueados().toString(), style = MaterialTheme.typography.bodySmall)
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(text = usuario.getImagenPerfil().toString(), style = MaterialTheme.typography.bodySmall)
         }
     }
 }

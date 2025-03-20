@@ -14,6 +14,7 @@ import org.connexuss.project.firebase.pruebas.FirestoreHilosRepositorio
 import org.connexuss.project.firebase.pruebas.FirestoreMensajesRepositorio
 import org.connexuss.project.firebase.pruebas.FirestorePostsRepositorio
 import org.connexuss.project.firebase.pruebas.FirestoreTemasRepositorio
+import org.connexuss.project.firebase.pruebas.FirestoreUsuariosNuestros
 import org.connexuss.project.firebase.pruebas.FirestoreUsuariosRepositorio
 import org.connexuss.project.firebase.pruebas.MuestraObjetosPruebasFriebase
 import org.connexuss.project.firebase.pruebas.PantallaConversacion
@@ -23,6 +24,7 @@ import org.connexuss.project.firebase.pruebas.PantallaMensaje
 import org.connexuss.project.firebase.pruebas.PantallaPost
 import org.connexuss.project.firebase.pruebas.PantallaTema
 import org.connexuss.project.firebase.pruebas.PantallaUsuario
+import org.connexuss.project.firebase.pruebas.PantallaUsuarioNuestro
 import org.connexuss.project.interfaces.PantallaAjustesAyuda
 import org.connexuss.project.interfaces.PantallaAjustesControlCuentas
 import org.connexuss.project.interfaces.PantallaCambiarTema
@@ -57,6 +59,7 @@ fun Navegacion(
     val navController = rememberNavController()
 
     val repositorioUsuarios = remember { FirestoreUsuariosRepositorio() }
+    val repositorioUsuariosNuestros = remember { FirestoreUsuariosNuestros() }
     val repositorioMensajes = remember { FirestoreMensajesRepositorio() }
     val repositorioConversaciones = remember { FirestoreConversacionesRepositorio() }
     val repositorioConversacionesUsuarios = remember { FirestoreConversacionesUsuariosRepositorio() }
@@ -159,6 +162,9 @@ fun Navegacion(
         */
         composable("UsuarioPrueba") {
             PantallaUsuario(repositorioUsuarios, navController)
+        }
+        composable("Usuario") {
+            PantallaUsuarioNuestro(repositorioUsuariosNuestros, navController)
         }
         composable("Mensaje") {
             PantallaMensaje(repositorioMensajes, navController)

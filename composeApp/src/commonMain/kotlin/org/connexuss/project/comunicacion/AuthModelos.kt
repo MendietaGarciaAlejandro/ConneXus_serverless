@@ -78,7 +78,7 @@ private val usuarios = mutableListOf<Usuario>()
  * Crea y almacena un nuevo usuario a partir de un RegistroRequest.
  * Se asume que UtilidadesUsuario.instanciaUsuario realiza las validaciones necesarias.
  */
-fun crearUsuario(registro: PeticionRegistro): Usuario {
+fun crearUsuario(registro: PeticionRegistro): Usuario? {
     val util = UtilidadesUsuario()
     val usuario = util.instanciaUsuario(
         nombre = registro.nombre,
@@ -86,7 +86,9 @@ fun crearUsuario(registro: PeticionRegistro): Usuario {
         aliasPublico = registro.aliasPublico,
         activo = registro.activo
     )
-    usuarios.add(usuario)
+    if (usuario != null) {
+        usuarios.add(usuario)
+    }
     return usuario
 }
 
@@ -122,7 +124,11 @@ fun registrarUsuario(peticion: PeticionRegistro, almacenamientoUsuario: Almacena
     val errores = AuthValidator.validarRegistro(peticion)
     if (errores.isNotEmpty()) return ResultadoAutorizacion(false, errores.joinToString("; "))
     val usuario = crearUsuario(peticion)
-    return ResultadoAutorizacion(true, "Registro exitoso", usuario.getIdUnico())
+    return if (usuario != null) {
+        ResultadoAutorizacion(true, "Registro exitoso", usuario.getIdUnico())
+    } else {
+        ResultadoAutorizacion(false, "Error al registrar usuario")
+    }
 }
 
 fun iniciarSesion(peticion: PeticionLogin, almacenamientoUsuario: AlmacenamientoUsuario = AlmacenamientoUsuario()): ResultadoAutorizacion {

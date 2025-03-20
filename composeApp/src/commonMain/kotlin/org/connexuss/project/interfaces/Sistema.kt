@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -257,9 +258,15 @@ fun muestraUsuarios(navController: NavHostController) {
             val user1 = UtilidadesUsuario().instanciaUsuario("Juan Perez", "paco@jerte.org", "pakito58", true)
             val user2 = UtilidadesUsuario().instanciaUsuario("Maria Lopez", "marii@si.se", "marii", true)
             val user3 = UtilidadesUsuario().instanciaUsuario("Pedro Sanchez", "roba@espannoles.es", "roba", true)
-            almacenamientoUsuario.agregarUsuario(user1)
-            almacenamientoUsuario.agregarUsuario(user2)
-            almacenamientoUsuario.agregarUsuario(user3)
+            if (user1 != null) {
+                almacenamientoUsuario.agregarUsuario(user1)
+            }
+            if (user2 != null) {
+                almacenamientoUsuario.agregarUsuario(user2)
+            }
+            if (user3 != null) {
+                almacenamientoUsuario.agregarUsuario(user3)
+            }
             usuarios.addAll(almacenamientoUsuario.obtenerUsuarios())
         } catch (e: IllegalArgumentException) {
             println(e.message)
@@ -361,7 +368,7 @@ fun ChatCard(conversacion: Conversacion, navController: NavHostController) {
 // --- Chats PorDefecto ---
 @Composable
 fun muestraChats(navController: NavHostController) {
-    val listaChats = UsuarioPrincipal.getChatUser().conversaciones
+    val listaChats = UsuarioPrincipal?.getChatUser()?.conversaciones
 
     MaterialTheme {
         Scaffold(
@@ -412,13 +419,23 @@ fun muestraChats(navController: NavHostController) {
     }
 }
 
+fun items(items: List<Conversacion>?, itemContent: @Composable LazyItemScope.(item: Conversacion) -> Unit) {
+    if (items != null) {
+        items(items) { item ->
+            itemContent(item)
+        }
+    }
+}
+
 // --- Contactos ---
 @Composable
 @Preview
 fun muestraContactos(navController: NavHostController) {
     // Creamos un estado para la lista de IDs de contactos basado en UsuarioPrincipal.
     val contactosState = remember { mutableStateListOf<String>().apply {
-        addAll(UsuarioPrincipal.getContactos())
+        if (UsuarioPrincipal != null) {
+            addAll(UsuarioPrincipal.getContactos())
+        }
     } }
     // Lista completa de usuarios precreados
     val todosLosUsuarios = UsuariosPreCreados
@@ -527,13 +544,16 @@ fun muestraContactos(navController: NavHostController) {
                                     // Busca en UsuariosPreCreados si existe un usuario con ese idUnico
                                     val userFound = UsuariosPreCreados.find { it.getIdUnico() == nuevoContactoId }
                                     if (userFound != null) {
-                                        val updatedContacts = UsuarioPrincipal.getContactos().toMutableList()
-                                        if (nuevoContactoId !in updatedContacts) {
-                                            updatedContacts.add(nuevoContactoId)
-                                            UsuarioPrincipal.setContactos(updatedContacts)
-                                            // Actualiza el estado local para recomponer la UI
-                                            contactosState.clear()
-                                            contactosState.addAll(updatedContacts)
+                                        val updatedContacts = UsuarioPrincipal?.getContactos()
+                                            ?.toMutableList()
+                                        if (updatedContacts != null) {
+                                            if (nuevoContactoId !in updatedContacts) {
+                                                updatedContacts.add(nuevoContactoId)
+                                                UsuarioPrincipal.setContactos(updatedContacts)
+                                                // Actualiza el estado local para recomponer la UI
+                                                contactosState.clear()
+                                                contactosState.addAll(updatedContacts)
+                                            }
                                         }
                                     }
                                     inputText = ""
@@ -607,11 +627,12 @@ fun muestraContactos(navController: NavHostController) {
                                     // Dentro del AlertDialog para "Nuevo Chat" en la confirmButton:
                                     if (selectedContacts.isNotEmpty()) {
                                         // Construimos el conjunto de participantes: el UsuarioPrincipal y los contactos seleccionados.
-                                        val participantesSet = (listOf(UsuarioPrincipal.getIdUnico()) + selectedContacts.map { it.getIdUnico() }).toSet()
+                                        val participantesSet = (UsuarioPrincipal?.let { listOf(it.getIdUnico()) }
+                                            ?.plus(selectedContacts.map { it.getIdUnico() }))?.toSet()
 
                                         // Si sólo se ha seleccionado un contacto (chat individual), comprobamos si ya existe una conversación con ese par.
                                         if (selectedContacts.size == 1) {
-                                            val existingChat = UsuarioPrincipal.getChatUser().conversaciones.find {
+                                            val existingChat = UsuarioPrincipal?.getChatUser()?.conversaciones?.find {
                                                 it.participants.toSet() == participantesSet
                                             }
                                             if (existingChat != null) {
@@ -625,25 +646,35 @@ fun muestraContactos(navController: NavHostController) {
                                         }
 
                                         // Crea la nueva conversación:
-                                        val nuevaConversacion = Conversacion(
-                                            participants = participantesSet.toList(),  // Conservamos la lista, el orden puede no ser relevante
-                                            messages = emptyList(),
-                                            nombre = if (selectedContacts.size > 1 && groupChatName.isNotBlank()) groupChatName else null
-                                        )
+                                        val nuevaConversacion = participantesSet?.let {
+                                            Conversacion(
+                                                participants = it.toList(),  // Conservamos la lista, el orden puede no ser relevante
+                                                messages = emptyList(),
+                                                nombre = if (selectedContacts.size > 1 && groupChatName.isNotBlank()) groupChatName else null
+                                            )
+                                        }
                                         // Actualiza el UsuarioPrincipal: agrega la nueva conversación a su lista
-                                        val convActualesPrincipal = UsuarioPrincipal.getChatUser().conversaciones.toMutableList()
-                                        convActualesPrincipal.add(nuevaConversacion)
-                                        UsuarioPrincipal.setChatUser(
+                                        val convActualesPrincipal = UsuarioPrincipal?.getChatUser()?.conversaciones?.toMutableList()
+                                        if (nuevaConversacion != null) {
+                                            convActualesPrincipal?.add(nuevaConversacion)
+                                        }
+                                        convActualesPrincipal?.let {
                                             ConversacionesUsuario(
                                                 id = UsuarioPrincipal.getChatUser().id, // Mantenemos el id existente
                                                 idUser = UsuarioPrincipal.getIdUnico(),
-                                                conversaciones = convActualesPrincipal
+                                                conversaciones = it
                                             )
-                                        )
+                                        }?.let {
+                                            UsuarioPrincipal.setChatUser(
+                                                it
+                                            )
+                                        }
                                         // Actualiza cada usuario seleccionado: agrega la conversación a sus chats
                                         selectedContacts.forEach { usuario ->
                                             val convActuales = usuario.getChatUser().conversaciones.toMutableList()
-                                            convActuales.add(nuevaConversacion)
+                                            if (nuevaConversacion != null) {
+                                                convActuales.add(nuevaConversacion)
+                                            }
                                             usuario.setChatUser(
                                                 ConversacionesUsuario(
                                                     id = usuario.getChatUser().id,
@@ -728,12 +759,14 @@ fun muestraAjustes(navController: NavHostController = rememberNavController()) {
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        UsuCard(
-                            usuario = user,
-                            onClick = {
-                                navController.navigate("mostrarPerfilPrincipal")
-                            }
-                        )
+                        if (user != null) {
+                            UsuCard(
+                                usuario = user,
+                                onClick = {
+                                    navController.navigate("mostrarPerfilPrincipal")
+                                }
+                            )
+                        }
                         Button(
                             onClick = { navController.navigate("cambiarTema") },
                             modifier = Modifier.fillMaxWidth()

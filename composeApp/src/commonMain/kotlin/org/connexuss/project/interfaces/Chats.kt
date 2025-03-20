@@ -48,8 +48,8 @@ import org.jetbrains.compose.resources.painterResource
 fun mostrarChat(navController: NavHostController, chatId : String?) {
     // Obtiene la lista de conversaciones y busca la que tenga el id pasado
 
-    val listaChats = UsuarioPrincipal.getChatUser().conversaciones
-    val chat = listaChats.find { it.id == chatId } ?: return
+    val listaChats = UsuarioPrincipal?.getChatUser()?.conversaciones
+    val chat = listaChats?.find { it.id == chatId } ?: return
 
     val otherParticipantId = chat.participants.firstOrNull { it != UsuarioPrincipal.getIdUnico() }
         ?: chat.participants.getOrNull(1) ?: ""
@@ -189,8 +189,8 @@ fun mostrarChat(navController: NavHostController, chatId : String?) {
 @Composable
 fun mostrarChatGrupo(navController: NavHostController, chatId: String?) {
     // Obtiene la lista de conversaciones del UsuarioPrincipal y busca la conversación por su id
-    val listaChats = UsuarioPrincipal.getChatUser().conversaciones
-    val chat = listaChats.find { it.id == chatId } ?: return
+    val listaChats = UsuarioPrincipal?.getChatUser()?.conversaciones
+    val chat = listaChats?.find { it.id == chatId } ?: return
     val idUsuario = UsuarioPrincipal.getIdUnico()
     val groupTitle = if (!chat.nombre.isNullOrBlank()) chat.nombre else chat.id
 

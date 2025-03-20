@@ -19,6 +19,7 @@ import org.connexuss.project.comunicacion.Mensaje
 import org.connexuss.project.comunicacion.Post
 import org.connexuss.project.comunicacion.Tema
 import org.connexuss.project.interfaces.DefaultTopBar
+import org.connexuss.project.usuario.Usuario
 
 @Composable
 fun PantallaUsuario(repository: UsuariosRepositorio, navHostController: NavHostController) {
@@ -101,6 +102,95 @@ fun PantallaUsuarioContenido(
                         }.invokeOnCompletion {
                             showBottomSheet = false
                             selectedUsuarioPrueba = null
+                        }
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun PantallaUsuarioNuestro(repository: FirestoreUsuariosNuestros, navHostController: NavHostController) {
+    val scope = rememberCoroutineScope()
+    val usuarios by repository.getUsuario().collectAsState(emptyList())
+    PantallaUsuarioNuestroContenido(
+        usuarios = usuarios,
+        addUsuario = { scope.launch { repository.addUsuario(it) } },
+        updateUsuario = { scope.launch { repository.updateUsuario(it) } },
+        deleteUsuario = { scope.launch { repository.deleteUsuario(it) } },
+        navHostController = navHostController
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PantallaUsuarioNuestroContenido(
+    usuarios: List<Usuario>,
+    addUsuario: (Usuario) -> Unit,
+    updateUsuario: (Usuario) -> Unit,
+    deleteUsuario: (Usuario) -> Unit,
+    navHostController: NavHostController
+) {
+    val sheetState = rememberModalBottomSheetState()
+    val scope = rememberCoroutineScope()
+    var selectedUsuario by remember { mutableStateOf<Usuario?>(null) }
+    var showBottomSheet by remember { mutableStateOf(false) }
+
+    Scaffold(
+        topBar = {
+            DefaultTopBar(
+                title = "Usuarios Nuestros",
+                navController = navHostController,
+                showBackButton = true,
+                irParaAtras = true,
+                muestraEngranaje = true
+            )
+        },
+        floatingActionButton = {
+            FloatingActionButton(onClick = { showBottomSheet = true }) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Add"
+                )
+            }
+        },
+        floatingActionButtonPosition = FabPosition.End
+    ) { innerPadding ->
+        ListaUsuariosNuestros(usuarios = usuarios, modifier = Modifier.padding(innerPadding)) { usuario ->
+            selectedUsuario = usuario
+            showBottomSheet = true
+        }
+
+        if (showBottomSheet) {
+            ModalBottomSheet(
+                onDismissRequest = {
+                    showBottomSheet = false
+                },
+                sheetState = sheetState
+            ) {
+                HojaContenidoAbajoUsuariosNuestros(
+                    usuario = selectedUsuario,
+                    onSave = { usuario ->
+                        scope.launch {
+                            if (selectedUsuario == null) {
+                                addUsuario(usuario)
+                            } else {
+                                updateUsuario(usuario)
+                            }
+                            sheetState.hide()
+                        }.invokeOnCompletion {
+                            showBottomSheet = false
+                            selectedUsuario = null
+                        }
+                    },
+                    onDelete = { usuario ->
+                        scope.launch {
+                            usuario?.let { deleteUsuario(it) }
+                            sheetState.hide()
+                        }.invokeOnCompletion {
+                            showBottomSheet = false
+                            selectedUsuario = null
                         }
                     }
                 )
