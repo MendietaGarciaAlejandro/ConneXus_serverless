@@ -4,15 +4,16 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import connexus_serverless.composeapp.generated.resources.Res
 import connexus_serverless.composeapp.generated.resources.connexus
-import connexus_serverless.composeapp.generated.resources.ic_foros
+import kotlinx.serialization.Contextual
+import kotlinx.serialization.Serializable
 import org.connexuss.project.comunicacion.Conversacion
 import org.connexuss.project.comunicacion.ConversacionesUsuario
 import org.connexuss.project.datos.UsuariosPreCreados
 import org.connexuss.project.encriptacion.hash
 import org.jetbrains.compose.resources.DrawableResource
-import kotlin.random.Random
 
 // Clase usuario con sus atributos y metodos
+@Serializable
 class Usuario {
     private var nombre: String = ""
     private var correo: String = ""
@@ -26,7 +27,7 @@ class Usuario {
     private var contrasennia: String = ""
 
     private var usuariosBloqueados: List<String> = emptyList()
-    private lateinit var imagenPerfil: DrawableResource
+    private lateinit var imagenPerfil: @Contextual DrawableResource
 
     // Constructor completo
     constructor(nombre: String, correo: String, aliasPublico: String, activo: Boolean, contactos: List<String>, chatUser: ConversacionesUsuario) {
@@ -47,7 +48,7 @@ class Usuario {
     }
 
     //Debug: Contructor con idUnico
-    constructor(idUnico: String, nombre: String, correo: String, aliasPublico: String, activo: Boolean, contactos: List<String>, chatUser: ConversacionesUsuario) {
+    constructor(idUnico: String, nombre: String, correo: String, aliasPublico: String, activo: Boolean, contactos: List<String>, chatUser: ConversacionesUsuario?) {
         this.idUnico = idUnico
         this.nombre = nombre
         this.correo = correo
@@ -55,7 +56,9 @@ class Usuario {
         this.aliasPrivado = hash(aliasPublico)
         this.activo = activo
         this.contactos = contactos
-        this.chatUser = chatUser
+        if (chatUser != null) {
+            this.chatUser = chatUser
+        }
         this.imagenPerfil = generarImagenRandom()
     }
 
@@ -228,7 +231,7 @@ class UtilidadesUsuario {
         return correo.contains("@")
     }
 
-    fun validarNombre(nombre: String): Boolean {
+    private fun validarNombre(nombre: String): Boolean {
         return nombre.isNotEmpty()
     }
 
@@ -244,14 +247,18 @@ class UtilidadesUsuario {
         return true
     }
 
-    fun instanciaUsuario(nombre: String,  correo: String, aliasPublico: String, activo: Boolean): Usuario {
-        val correoValido = validarCorreo(correo)
-        val nombreValido = validarNombre(nombre)
-        val aliasPublicoValido = validarNombre(aliasPublico)
+    fun instanciaUsuario(nombre: String?, correo: String?, aliasPublico: String?, activo: Boolean?): Usuario? {
+        val correoValido = correo?.let { validarCorreo(it) } ?: false
+        val nombreValido = nombre?.let { validarNombre(it) } ?: false
+        val aliasPublicoValido = aliasPublico?.let { validarNombre(it) } ?: false
         if (!correoValido || !nombreValido || !aliasPublicoValido) {
             throw IllegalArgumentException("Datos de usuario no validos")
         }
-        return Usuario(nombre, correo, aliasPublico, activo, emptyList(), ConversacionesUsuario(generarIdUnico(), generarIdUnico(), listOf( Conversacion( generarIdUnico(), emptyList() ) ) ) )
+        return if (activo != null) {
+            Usuario(nombre!!, correo!!, aliasPublico!!, activo, emptyList(), ConversacionesUsuario(generarIdUnico(), generarIdUnico(), listOf(Conversacion(generarIdUnico(), emptyList()))))
+        } else {
+            null
+        }
     }
 
     //Debug: Contructor con idUnico
@@ -299,7 +306,7 @@ class UtilidadesUsuario {
     }
 
     // Función que obtiene los alias existentes en UsuariosPreCreados
-    fun obtenerAliasExistentes(): Set<String> {
+    private fun obtenerAliasExistentes(): Set<String> {
         return UsuariosPreCreados.map { it.getAlias() }.toSet()
     }
 

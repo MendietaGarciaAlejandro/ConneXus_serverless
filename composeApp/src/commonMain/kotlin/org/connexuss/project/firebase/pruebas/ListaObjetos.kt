@@ -15,6 +15,7 @@ import org.connexuss.project.comunicacion.Hilo
 import org.connexuss.project.comunicacion.Mensaje
 import org.connexuss.project.comunicacion.Post
 import org.connexuss.project.comunicacion.Tema
+import org.connexuss.project.usuario.Usuario
 
 @Composable
 fun ListaUsuarios(usuarioPruebas: List<UsuarioPrueba>, modifier: Modifier = Modifier, userClicked: (UsuarioPrueba) -> Unit) {
@@ -25,6 +26,22 @@ fun ListaUsuarios(usuarioPruebas: List<UsuarioPrueba>, modifier: Modifier = Modi
     ) {
         items(usuarioPruebas, key = { it.idUsuarioPrueba }) { user ->
             ItemUsuario(usuarioPrueba = user) {
+                userClicked(user)
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+    }
+}
+
+@Composable
+fun ListaUsuariosNuestros(usuarios: List<Usuario>, modifier: Modifier = Modifier, userClicked: (Usuario) -> Unit) {
+    LazyColumn(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        items(usuarios, key = { it.getIdUnico() }) { user ->
+            ItemUsuarioNuestro(usuario = user) {
                 userClicked(user)
             }
             Spacer(modifier = Modifier.height(8.dp))

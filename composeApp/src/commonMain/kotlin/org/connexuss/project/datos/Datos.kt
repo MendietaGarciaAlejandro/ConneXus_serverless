@@ -330,53 +330,120 @@ val UsuariosPreCreados: SnapshotStateList<Usuario> = run {
         )
 
         // Agregamos los usuarios adicionales al almacenamiento
-        almacenamientoUsuario.agregarUsuario(user4)
-        almacenamientoUsuario.agregarUsuario(user5)
-        almacenamientoUsuario.agregarUsuario(user6)
-        almacenamientoUsuario.agregarUsuario(user7)
-        almacenamientoUsuario.agregarUsuario(user8)
-        almacenamientoUsuario.agregarUsuario(user9)
-        almacenamientoUsuario.agregarUsuario(user10)
-        almacenamientoUsuario.agregarUsuario(user11)
-        almacenamientoUsuario.agregarUsuario(user12)
-        almacenamientoUsuario.agregarUsuario(user13)
-        almacenamientoUsuario.agregarUsuario(user14)
-        almacenamientoUsuario.agregarUsuario(user15)
-        almacenamientoUsuario.agregarUsuario(user16)
-        almacenamientoUsuario.agregarUsuario(user17)
-        almacenamientoUsuario.agregarUsuario(user18)
-        almacenamientoUsuario.agregarUsuario(user19)
-        almacenamientoUsuario.agregarUsuario(user20)
-        almacenamientoUsuario.agregarUsuario(user21)
-        almacenamientoUsuario.agregarUsuario(user22)
-        almacenamientoUsuario.agregarUsuario(user23)
-        almacenamientoUsuario.agregarUsuario(user24)
-        almacenamientoUsuario.agregarUsuario(user25)
-        almacenamientoUsuario.agregarUsuario(user26)
-        almacenamientoUsuario.agregarUsuario(user27)
-        almacenamientoUsuario.agregarUsuario(user28)
-        almacenamientoUsuario.agregarUsuario(user29)
-        almacenamientoUsuario.agregarUsuario(user30)
-        almacenamientoUsuario.agregarUsuario(user31)
-        almacenamientoUsuario.agregarUsuario(user32)
-        almacenamientoUsuario.agregarUsuario(user33)
-        almacenamientoUsuario.agregarUsuario(user34)
-        almacenamientoUsuario.agregarUsuario(user35)
-        almacenamientoUsuario.agregarUsuario(user36)
-        almacenamientoUsuario.agregarUsuario(user37)
-        almacenamientoUsuario.agregarUsuario(user38)
-        almacenamientoUsuario.agregarUsuario(user39)
-        almacenamientoUsuario.agregarUsuario(user40)
-        almacenamientoUsuario.agregarUsuario(user41)
-        almacenamientoUsuario.agregarUsuario(user42)
-        almacenamientoUsuario.agregarUsuario(user43)
-        almacenamientoUsuario.agregarUsuario(user44)
-        almacenamientoUsuario.agregarUsuario(user45)
-        almacenamientoUsuario.agregarUsuario(user46)
-        almacenamientoUsuario.agregarUsuario(user47)
-        almacenamientoUsuario.agregarUsuario(user48)
-        almacenamientoUsuario.agregarUsuario(user49)
-        almacenamientoUsuario.agregarUsuario(user50)
+        if (user13 != null) {
+            almacenamientoUsuario.agregarUsuario(user13)
+        }
+        if (user14 != null) {
+            almacenamientoUsuario.agregarUsuario(user14)
+        }
+        if (user15 != null) {
+            almacenamientoUsuario.agregarUsuario(user15)
+        }
+        if (user16 != null) {
+            almacenamientoUsuario.agregarUsuario(user16)
+        }
+        if (user17 != null) {
+            almacenamientoUsuario.agregarUsuario(user17)
+        }
+        if (user18 != null) {
+            almacenamientoUsuario.agregarUsuario(user18)
+        }
+        if (user19 != null) {
+            almacenamientoUsuario.agregarUsuario(user19)
+        }
+        if (user20 != null) {
+            almacenamientoUsuario.agregarUsuario(user20)
+        }
+        if (user21 != null) {
+            almacenamientoUsuario.agregarUsuario(user21)
+        }
+        if (user22 != null) {
+            almacenamientoUsuario.agregarUsuario(user22)
+        }
+        if (user23 != null) {
+            almacenamientoUsuario.agregarUsuario(user23)
+        }
+        if (user24 != null) {
+            almacenamientoUsuario.agregarUsuario(user24)
+        }
+        if (user25 != null) {
+            almacenamientoUsuario.agregarUsuario(user25)
+        }
+        if (user26 != null) {
+            almacenamientoUsuario.agregarUsuario(user26)
+        }
+        if (user27 != null) {
+            almacenamientoUsuario.agregarUsuario(user27)
+        }
+        if (user28 != null) {
+            almacenamientoUsuario.agregarUsuario(user28)
+        }
+        if (user29 != null) {
+            almacenamientoUsuario.agregarUsuario(user29)
+        }
+        if (user30 != null) {
+            almacenamientoUsuario.agregarUsuario(user30)
+        }
+        if (user31 != null) {
+            almacenamientoUsuario.agregarUsuario(user31)
+        }
+        if (user32 != null) {
+            almacenamientoUsuario.agregarUsuario(user32)
+        }
+        if (user33 != null) {
+            almacenamientoUsuario.agregarUsuario(user33)
+        }
+        if (user34 != null) {
+            almacenamientoUsuario.agregarUsuario(user34)
+        }
+        if (user35 != null) {
+            almacenamientoUsuario.agregarUsuario(user35)
+        }
+        if (user36 != null) {
+            almacenamientoUsuario.agregarUsuario(user36)
+        }
+        if (user37 != null) {
+            almacenamientoUsuario.agregarUsuario(user37)
+        }
+        if (user38 != null) {
+            almacenamientoUsuario.agregarUsuario(user38)
+        }
+        if (user39 != null) {
+            almacenamientoUsuario.agregarUsuario(user39)
+        }
+        if (user40 != null) {
+            almacenamientoUsuario.agregarUsuario(user40)
+        }
+        if (user41 != null) {
+            almacenamientoUsuario.agregarUsuario(user41)
+        }
+        if (user42 != null) {
+            almacenamientoUsuario.agregarUsuario(user42)
+        }
+        if (user43 != null) {
+            almacenamientoUsuario.agregarUsuario(user43)
+        }
+        if (user44 != null) {
+            almacenamientoUsuario.agregarUsuario(user44)
+        }
+        if (user45 != null) {
+            almacenamientoUsuario.agregarUsuario(user45)
+        }
+        if (user46 != null) {
+            almacenamientoUsuario.agregarUsuario(user46)
+        }
+        if (user47 != null) {
+            almacenamientoUsuario.agregarUsuario(user47)
+        }
+        if (user48 != null) {
+            almacenamientoUsuario.agregarUsuario(user48)
+        }
+        if (user49 != null) {
+            almacenamientoUsuario.agregarUsuario(user49)
+        }
+        if (user50 != null) {
+            almacenamientoUsuario.agregarUsuario(user50)
+        }
 
         usuarios.addAll(almacenamientoUsuario.obtenerUsuarios())
     } catch (e: IllegalArgumentException) {
@@ -384,7 +451,6 @@ val UsuariosPreCreados: SnapshotStateList<Usuario> = run {
     }
     usuarios
 }
-
 //Conversaciones
 private val conversacionesIndividuales: List<Conversacion> = listOf(
     Conversacion(
@@ -536,12 +602,12 @@ private val conversacionesGrupo: List<Conversacion> = listOf(
 val conversacionesPreInicializadasUsuarioPrincipal: List<Conversacion> =
     conversacionesIndividuales + conversacionesGrupo
 
-val UsuarioPrincipal: Usuario = UtilidadesUsuario().instanciaUsuario(
+val UsuarioPrincipal: Usuario? = UtilidadesUsuario().instanciaUsuario(
     nombre = "Usuario Principal",
     correo = "principal@example.com",
     aliasPublico = "UsuarioPrincipal",
     activo = true
-).apply {
+)?.apply {
     // Asigna algunos contactos de ejemplo (puedes modificar según tus necesidades)
     setContactos(listOf("JP", "ML"))
     // Define un chat de ejemplo para este usuario
