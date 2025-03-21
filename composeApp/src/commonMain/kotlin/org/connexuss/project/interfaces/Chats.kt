@@ -32,6 +32,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
@@ -246,6 +247,8 @@ fun mostrarChatGrupo(navController: NavHostController, chatId: String?, imagenes
                                 modifier = Modifier
                                     .size(40.dp)
                                     .padding(end = 8.dp)
+                                    .clip(RoundedCornerShape(20.dp))
+                                    .border(1.dp, Color.Gray, RoundedCornerShape(20.dp))
                                     .clickable {
                                         // Navega al perfil del emisor
                                         navController.navigate("mostrarPerfilUsuario/${senderUser?.getIdUnico() ?: mensaje.senderId}")
