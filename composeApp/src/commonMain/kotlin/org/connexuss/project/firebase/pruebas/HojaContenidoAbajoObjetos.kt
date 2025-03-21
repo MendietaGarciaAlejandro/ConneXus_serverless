@@ -1,6 +1,3 @@
-@file:OptIn(ExperimentalMaterial3Api::class)
-
-
 package org.connexuss.project.firebase.pruebas
 
 import androidx.compose.foundation.layout.Arrangement
@@ -11,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -99,7 +95,8 @@ fun HojaContenidoAbajoUsuariosNuestros(
     var descripcion by remember { mutableStateOf(usuario?.getDescripcion() ?: "") }
     var contrasennia by remember { mutableStateOf(usuario?.getContrasennia() ?: "") }
     var usuariosBloqueados by remember { mutableStateOf(usuario?.getUsuariosBloqueados().toString() ?: "") }
-    var usuarioInterno = Usuario("", "", "", "", false, emptyList(), null)
+    val chatUserPrueba = ConversacionesUsuario("", "", emptyList())
+    var usuarioInterno = Usuario("", "", "", "", false, emptyList(), chatUserPrueba)
 
     Column(
         modifier = Modifier
@@ -175,17 +172,15 @@ fun HojaContenidoAbajoUsuariosNuestros(
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             Button(onClick = {
-                usuarioInterno?.setNombreCompleto(nombre)
-                usuarioInterno?.setCorreo(correo)
-                usuarioInterno?.setAlias(alias)
-                usuarioInterno?.setAliasPrivado(aliasPrivado)
-                usuarioInterno?.setIdUnico(idUnico)
-                usuarioInterno?.setDescripcion(descripcion)
-                usuarioInterno?.setContrasennia(contrasennia)
-                usuarioInterno?.setUsuariosBloqueados(usuariosBloqueados.split(", "))
-                if (usuarioInterno != null) {
-                    onSave(usuarioInterno)
-                }
+                usuarioInterno.setNombreCompleto(nombre)
+                usuarioInterno.setCorreo(correo)
+                usuarioInterno.setAlias(alias)
+                usuarioInterno.setAliasPrivado(aliasPrivado)
+                usuarioInterno.setIdUnico(idUnico)
+                usuarioInterno.setDescripcion(descripcion)
+                usuarioInterno.setContrasennia(contrasennia)
+                usuarioInterno.setUsuariosBloqueados(usuariosBloqueados.split(", "))
+                onSave(usuarioInterno)
             }) {
                 Text(text = if (usuario == null) "Guardar" else "Actualizar")
             }
@@ -205,7 +200,7 @@ fun HojaContenidoAbajoMensajes(
     var contenido by remember { mutableStateOf(mensaje?.content ?: "") }
     var usuarioEnvia by remember { mutableStateOf(mensaje?.senderId ?: "") }
     var usuarioRecibe by remember { mutableStateOf(mensaje?.receiverId ?: "") }
-    var fecha by remember { mutableStateOf(mensaje?.fechaMensaje.toString() ?: "") }
+    var fecha by remember { mutableStateOf(mensaje?.fechaMensaje.toString()) }
     val fechaHoy = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
 
     Column(
@@ -268,7 +263,7 @@ fun HojaContenidoAbajoConversaciones(
 ) {
     var nombre by remember { mutableStateOf(conversacion?.nombre ?: "") }
     var participantes by remember { mutableStateOf(conversacion?.participants?.joinToString(", ") ?: "") }
-    var mensajes by remember { mutableStateOf(conversacion?.messages.toString() ?: "") }
+    var mensajes by remember { mutableStateOf(conversacion?.messages.toString()) }
 
     Column(
         modifier = Modifier
@@ -321,7 +316,7 @@ fun HojaContenidoAbajoConversacionesUsuarios(
 ) {
     var id by remember { mutableStateOf(conversacionesUsuario?.id ?: "") }
     var idUser by remember { mutableStateOf(conversacionesUsuario?.idUser ?: "") }
-    var conversaciones by remember { mutableStateOf(conversacionesUsuario?.conversaciones.toString() ?: "") }
+    var conversaciones by remember { mutableStateOf(conversacionesUsuario?.conversaciones.toString()) }
 
     Column(
         modifier = Modifier
@@ -373,10 +368,10 @@ fun HojaContenidoAbajoPosts(
     onDelete: (Post?) -> Unit
 ) {
     var id by remember { mutableStateOf(post?.idPost ?: "") }
-    var usuarioEnvia by remember { mutableStateOf(post?.senderId ?: "") }
-    var usuarioRecibe by remember { mutableStateOf(post?.receiverId ?: "") }
+    val usuarioEnvia by remember { mutableStateOf(post?.senderId ?: "") }
+    val usuarioRecibe by remember { mutableStateOf(post?.receiverId ?: "") }
     var contenido by remember { mutableStateOf(post?.content ?: "") }
-    var fecha by remember { mutableStateOf(post?.fechaPost.toString() ?: "") }
+    var fecha by remember { mutableStateOf(post?.fechaPost.toString()) }
     val fechaHoy = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
 
     Column(
@@ -430,7 +425,7 @@ fun HojaContenidoAbajoHilos(
 ) {
     var id by remember { mutableStateOf(hilo?.idHilo ?: "") }
     var idForeros by remember { mutableStateOf(hilo?.idForeros?.joinToString(", ") ?: "") }
-    var posts by remember { mutableStateOf(hilo?.posts.toString() ?: "") }
+    var posts by remember { mutableStateOf(hilo?.posts.toString()) }
     var nombre by remember { mutableStateOf(hilo?.nombre ?: "") }
 
     Column(
@@ -492,7 +487,7 @@ fun HojaContenidoAbajoTemas(
 ) {
     var id by remember { mutableStateOf(tema?.idTema ?: "") }
     var idUsuario by remember { mutableStateOf(tema?.idUsuario ?: "") }
-    var hilos by remember { mutableStateOf(tema?.hilos.toString() ?: "") }
+    var hilos by remember { mutableStateOf(tema?.hilos.toString()) }
 
     Column(
         modifier = Modifier

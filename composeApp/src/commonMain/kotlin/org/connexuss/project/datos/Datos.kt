@@ -3,15 +3,38 @@ package org.connexuss.project.datos
 
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
+import connexus_serverless.composeapp.generated.resources.Res
+import connexus_serverless.composeapp.generated.resources.avatar
+import connexus_serverless.composeapp.generated.resources.connexus
+import connexus_serverless.composeapp.generated.resources.ic_chats
+import connexus_serverless.composeapp.generated.resources.ic_email
+import connexus_serverless.composeapp.generated.resources.ic_foros
+import connexus_serverless.composeapp.generated.resources.ic_person
+import connexus_serverless.composeapp.generated.resources.unblock
+import connexus_serverless.composeapp.generated.resources.visibilidadOff
+import connexus_serverless.composeapp.generated.resources.visibilidadOn
 import kotlinx.datetime.LocalDateTime
 import org.connexuss.project.comunicacion.Conversacion
 import org.connexuss.project.comunicacion.ConversacionesUsuario
 import org.connexuss.project.comunicacion.Mensaje
+import org.connexuss.project.misc.Imagen
 import org.connexuss.project.usuario.AlmacenamientoUsuario
 import org.connexuss.project.usuario.UtilidadesUsuario
 import org.connexuss.project.usuario.Usuario
 
 val UsuariosPreCreados: SnapshotStateList<Usuario> = run {
+
+    var imagenesApp = mutableListOf<Imagen>()
+    imagenesApp.add(Imagen("logo", Res.drawable.connexus))
+    imagenesApp.add(Imagen("avatar", Res.drawable.avatar))
+    imagenesApp.add(Imagen("unblock", Res.drawable.unblock))
+    imagenesApp.add(Imagen("ic_chats", Res.drawable.ic_chats))
+    imagenesApp.add(Imagen("ic_email", Res.drawable.ic_email))
+    imagenesApp.add(Imagen("ic_foros", Res.drawable.ic_foros))
+    imagenesApp.add(Imagen("ic_person", Res.drawable.ic_person))
+    imagenesApp.add(Imagen("visibilidadOn", Res.drawable.visibilidadOn))
+    imagenesApp.add(Imagen("visibilidadOff", Res.drawable.visibilidadOff))
+
     val almacenamientoUsuario = AlmacenamientoUsuario()
     val usuarios = mutableStateListOf<Usuario>()
     try {
