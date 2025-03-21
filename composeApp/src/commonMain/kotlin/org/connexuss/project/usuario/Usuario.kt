@@ -3,8 +3,8 @@ package org.connexuss.project.usuario
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import connexus_serverless.composeapp.generated.resources.Res
+import connexus_serverless.composeapp.generated.resources.avatar
 import connexus_serverless.composeapp.generated.resources.connexus
-import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import org.connexuss.project.comunicacion.Conversacion
 import org.connexuss.project.comunicacion.ConversacionesUsuario
@@ -27,7 +27,7 @@ class Usuario {
     private var contrasennia: String = ""
 
     private var usuariosBloqueados: List<String> = emptyList()
-    private lateinit var imagenPerfil: @Contextual DrawableResource
+    private lateinit var imagenPerfilId: String
 
     // Constructor completo
     constructor(nombre: String, correo: String, aliasPublico: String, activo: Boolean, contactos: List<String>, chatUser: ConversacionesUsuario) {
@@ -39,12 +39,16 @@ class Usuario {
         this.activo = activo
         this.contactos = contactos
         this.chatUser = chatUser
-        this.imagenPerfil = generarImagenRandom()
+        this.imagenPerfilId = generarIdImagenRandom()
     }
 
-    private fun generarImagenRandom(): DrawableResource {
-        //Se deberia implementar la logica para generar una imagen random, por ahora se pone la imagen predeterminada de la aplicacion
-        return Res.drawable.connexus
+    private fun generarIdImagenRandom(): String {
+        // Genero un string aleatorio de 50 caracteres
+        val idImagen = ('A'..'Z') + ('0'..'9')
+        val idImagenRandom = (1..50)
+            .map { idImagen.random() }
+            .joinToString("")
+        return idImagenRandom
     }
 
     //Debug: Contructor con idUnico
@@ -59,7 +63,7 @@ class Usuario {
         if (chatUser != null) {
             this.chatUser = chatUser
         }
-        this.imagenPerfil = generarImagenRandom()
+        this.imagenPerfilId = generarIdImagenRandom()
     }
 
     // Constructor vacio
@@ -158,14 +162,13 @@ class Usuario {
         this.usuariosBloqueados = usuariosBloqueados
     }
 
-    fun getImagenPerfil(): DrawableResource {
-        return imagenPerfil
+    fun getIdImagenPerfil(): String {
+        return imagenPerfilId
     }
 
-    fun setImagenPerfil(imagenPerfil: DrawableResource) {
-        this.imagenPerfil = imagenPerfil
+    fun setIdImagenPerfil(imagenPerfil: String) {
+        this.imagenPerfilId = imagenPerfil
     }
-
 
     // Metodo para imprimir los datos públicos del usuario
     @Composable

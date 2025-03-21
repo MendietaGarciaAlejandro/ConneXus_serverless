@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -70,6 +69,7 @@ import org.connexuss.project.comunicacion.Conversacion
 import org.connexuss.project.comunicacion.ConversacionesUsuario
 import org.connexuss.project.datos.UsuarioPrincipal
 import org.connexuss.project.datos.UsuariosPreCreados
+import org.connexuss.project.misc.Imagen
 import org.connexuss.project.usuario.AlmacenamientoUsuario
 import org.connexuss.project.usuario.Usuario
 import org.connexuss.project.usuario.UtilidadesUsuario
@@ -373,18 +373,15 @@ fun muestraChats(navController: NavHostController) {
     MaterialTheme {
         Scaffold(
             topBar = {
-                // Se pasa la clave "chats" en lugar del texto literal
                 DefaultTopBar(
-                    title = "chats",
+                    title = traducir("chats"),
                     navController = navController,
                     showBackButton = false,
                     irParaAtras = false,
                     muestraEngranaje = true
                 )
             },
-            bottomBar = {
-                MiBottomBar(navController)
-            }
+            bottomBar = { MiBottomBar(navController) }
         ) { padding ->
             LimitaTamanioAncho { modifier ->
                 LazyColumn(
@@ -393,8 +390,11 @@ fun muestraChats(navController: NavHostController) {
                         .padding(padding)
                         .padding(16.dp)
                 ) {
-                    items(listaChats) { conversacion ->
-                        ChatCard(conversacion = conversacion, navController = navController)
+                    // Usa items para iterar sobre la lista de chats
+                    listaChats?.let { chats ->
+                        items(chats) { conversacion ->
+                            ChatCard(conversacion = conversacion, navController = navController)
+                        }
                     }
                 }
                 Box(
@@ -409,20 +409,11 @@ fun muestraChats(navController: NavHostController) {
                     ) {
                         Icon(
                             imageVector = Icons.Default.Person,
-                            // Se usa traducir para obtener el texto desde el mapa (clave "nuevo_chat")
                             contentDescription = traducir("nuevo_chat")
                         )
                     }
                 }
             }
-        }
-    }
-}
-
-fun items(items: List<Conversacion>?, itemContent: @Composable LazyItemScope.(item: Conversacion) -> Unit) {
-    if (items != null) {
-        items(items) { item ->
-            itemContent(item)
         }
     }
 }
@@ -1049,7 +1040,7 @@ fun mostrarPerfil(navController: NavHostController, usuarioU: Usuario?) {
 
 //Mostrar perfil usuario chat, por ahora no muestra la imagen del usuario, solo muestra negro
 @Composable
-fun mostrarPerfilUsuario(navController: NavHostController, userId: String?) {
+fun mostrarPerfilUsuario(navController: NavHostController, userId: String?, imagenesApp: List<Imagen>) {
     // Busca el usuario en tu lista de usuarios (UsuariosPreCreados) según el userId
     val usuario = UsuariosPreCreados.find { it.getIdUnico() == userId }
 
@@ -1088,7 +1079,7 @@ fun mostrarPerfilUsuario(navController: NavHostController, userId: String?) {
             ) {
                 // Imagen de perfil
                 Icon(
-                    painter = painterResource(usuario.getImagenPerfil()),
+                    painter = painterResource(imagenesApp.random().imagen),
                     contentDescription = "Foto de perfil",
                     modifier = Modifier.size(100.dp)
                 )

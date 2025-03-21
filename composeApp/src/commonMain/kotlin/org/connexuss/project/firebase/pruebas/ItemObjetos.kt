@@ -74,7 +74,7 @@ fun ItemUsuarioNuestro(usuario: Usuario, clicked: () -> Unit) {
             Spacer(modifier = Modifier.height(2.dp))
             Text(text = usuario.getUsuariosBloqueados().toString(), style = MaterialTheme.typography.bodySmall)
             Spacer(modifier = Modifier.height(2.dp))
-            Text(text = usuario.getImagenPerfil().toString(), style = MaterialTheme.typography.bodySmall)
+            Text(text = usuario.getIdImagenPerfil().toString(), style = MaterialTheme.typography.bodySmall)
         }
     }
 }

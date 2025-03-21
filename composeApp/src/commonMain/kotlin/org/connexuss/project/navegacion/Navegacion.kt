@@ -1,11 +1,20 @@
 package org.connexuss.project.navegacion
 
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import connexus_serverless.composeapp.generated.resources.Res
+import connexus_serverless.composeapp.generated.resources.avatar
+import connexus_serverless.composeapp.generated.resources.connexus
+import connexus_serverless.composeapp.generated.resources.ic_chats
+import connexus_serverless.composeapp.generated.resources.ic_email
+import connexus_serverless.composeapp.generated.resources.ic_foros
+import connexus_serverless.composeapp.generated.resources.ic_person
+import connexus_serverless.composeapp.generated.resources.unblock
+import connexus_serverless.composeapp.generated.resources.visibilidadOff
+import connexus_serverless.composeapp.generated.resources.visibilidadOn
 import org.connexuss.project.datos.UsuarioPrincipal
 import org.connexuss.project.firebase.pruebas.AppFirebase
 import org.connexuss.project.firebase.pruebas.FirestoreConversacionesRepositorio
@@ -27,18 +36,16 @@ import org.connexuss.project.firebase.pruebas.PantallaUsuario
 import org.connexuss.project.firebase.pruebas.PantallaUsuarioNuestro
 import org.connexuss.project.interfaces.PantallaAjustesAyuda
 import org.connexuss.project.interfaces.PantallaAjustesControlCuentas
-import org.connexuss.project.interfaces.PantallaCambiarTema
-import org.connexuss.project.interfaces.TemaConfig
-import org.connexuss.project.interfaces.muestraForo
-import org.connexuss.project.interfaces.muestraTemaForo
 import org.connexuss.project.interfaces.PantallaCambiarFuente
-import org.connexuss.project.interfaces.PantallaIdiomas
+import org.connexuss.project.interfaces.PantallaCambiarTema
 import org.connexuss.project.interfaces.PantallaEmailEnElSistema
 import org.connexuss.project.interfaces.PantallaEmailNoEnElSistema
+import org.connexuss.project.interfaces.PantallaIdiomas
 import org.connexuss.project.interfaces.PantallaLogin
 import org.connexuss.project.interfaces.PantallaRegistro
 import org.connexuss.project.interfaces.PantallaRestablecer
 import org.connexuss.project.interfaces.SplashScreen
+import org.connexuss.project.interfaces.TemaConfig
 import org.connexuss.project.interfaces.mostrarChat
 import org.connexuss.project.interfaces.mostrarChatGrupo
 import org.connexuss.project.interfaces.mostrarPerfil
@@ -46,9 +53,12 @@ import org.connexuss.project.interfaces.mostrarPerfilUsuario
 import org.connexuss.project.interfaces.muestraAjustes
 import org.connexuss.project.interfaces.muestraChats
 import org.connexuss.project.interfaces.muestraContactos
+import org.connexuss.project.interfaces.muestraForo
 import org.connexuss.project.interfaces.muestraHomePage
 import org.connexuss.project.interfaces.muestraRestablecimientoContasenna
+import org.connexuss.project.interfaces.muestraTemaForo
 import org.connexuss.project.interfaces.muestraUsuarios
+import org.connexuss.project.misc.Imagen
 
 @Composable
 fun Navegacion(
@@ -66,6 +76,17 @@ fun Navegacion(
     val repositorioPosts = remember { FirestorePostsRepositorio() }
     val repositorioHilos = remember { FirestoreHilosRepositorio() }
     val repositorioTemas = remember { FirestoreTemasRepositorio() }
+
+    var imagenesApp = mutableListOf<Imagen>()
+    imagenesApp.add(Imagen("logo", Res.drawable.connexus))
+    imagenesApp.add(Imagen("avatar", Res.drawable.avatar))
+    imagenesApp.add(Imagen("unblock", Res.drawable.unblock))
+    imagenesApp.add(Imagen("ic_chats", Res.drawable.ic_chats))
+    imagenesApp.add(Imagen("ic_email", Res.drawable.ic_email))
+    imagenesApp.add(Imagen("ic_foros", Res.drawable.ic_foros))
+    imagenesApp.add(Imagen("ic_person", Res.drawable.ic_person))
+    imagenesApp.add(Imagen("visibilidadOn", Res.drawable.visibilidadOn))
+    imagenesApp.add(Imagen("visibilidadOff", Res.drawable.visibilidadOff))
 
     NavHost(navController = navController, startDestination = "splash") {
         composable("splash") {
@@ -130,7 +151,7 @@ fun Navegacion(
         composable("mostrarChatGrupo/{chatId}") {
             backStackEntry ->
             val chatId = backStackEntry.arguments?.getString("chatId")
-            mostrarChatGrupo(navController, chatId)
+            mostrarChatGrupo(navController, chatId, imagenesApp)
         }
         composable("foro") {
             muestraForo(navController)
@@ -146,7 +167,7 @@ fun Navegacion(
         }
         composable("mostrarPerfilUsuario/{userId}") { backStackEntry ->
             val userId = backStackEntry.arguments?.getString("userId")
-            mostrarPerfilUsuario(navController, userId)
+            mostrarPerfilUsuario(navController, userId, imagenesApp)
         }
         composable("appFirebase") {
             AppFirebase(navController)

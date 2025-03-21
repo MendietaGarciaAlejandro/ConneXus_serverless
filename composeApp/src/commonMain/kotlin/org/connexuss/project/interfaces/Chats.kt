@@ -33,7 +33,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.semantics.Role.Companion.Image
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import connexus_serverless.composeapp.generated.resources.Res
@@ -41,6 +40,7 @@ import connexus_serverless.composeapp.generated.resources.connexus
 import org.connexuss.project.comunicacion.Mensaje
 import org.connexuss.project.datos.UsuarioPrincipal
 import org.connexuss.project.datos.UsuariosPreCreados
+import org.connexuss.project.misc.Imagen
 import org.jetbrains.compose.resources.painterResource
 
 //Mostrar chat entre dos personas, se podria mejorar pasandole una conversacion en vez de id del chat
@@ -187,7 +187,7 @@ fun mostrarChat(navController: NavHostController, chatId : String?) {
 }
 
 @Composable
-fun mostrarChatGrupo(navController: NavHostController, chatId: String?) {
+fun mostrarChatGrupo(navController: NavHostController, chatId: String?, imagenesPerfil: List<Imagen>) {
     // Obtiene la lista de conversaciones del UsuarioPrincipal y busca la conversación por su id
     val listaChats = UsuarioPrincipal?.getChatUser()?.conversaciones
     val chat = listaChats?.find { it.id == chatId } ?: return
@@ -224,8 +224,9 @@ fun mostrarChatGrupo(navController: NavHostController, chatId: String?) {
                     val senderUser = UsuariosPreCreados.find { it.getIdUnico() == mensaje.senderId }
                     val senderAlias = senderUser?.getAlias() ?: mensaje.senderId
                     // Obtenemos la imagen de perfil, o usamos la imagen por defecto
-                    val senderImageRes = senderUser?.getImagenPerfil() ?: Res.drawable.connexus
-                    val imagePainter = painterResource(senderImageRes)
+                    val senderImageRes = senderUser?.getIdImagenPerfil() ?: Res.drawable.connexus
+                    val imagenAleatoria = imagenesPerfil.random().imagen
+                    val imagePainter = painterResource(imagenAleatoria)
 
                     // Determinamos si el mensaje es del UsuarioPrincipal
                     val vaDerecha = idUsuario == mensaje.senderId

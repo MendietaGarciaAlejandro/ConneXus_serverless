@@ -52,40 +52,42 @@ class FirestoreUsuariosRepositorio : UsuariosRepositorio {
 class FirestoreUsuariosNuestros : UsuariosNuestrosRepositorio {
 
     private val firestore = Firebase.firestore
-    private val nombreColeccion: String = "USUARIOS"
+    private val nombreColeccion = "USUARIOS"
 
-    override fun getUsuario(): Flow<List<Usuario>> {
-        return flow {
-            firestore.collection(nombreColeccion).snapshots.collect { querySnapshot ->
-                val usuarioPruebas = querySnapshot.documents.map { documentSnapshot ->
-                    documentSnapshot.data<Usuario>()
-                }
-                emit(usuarioPruebas)
+    override fun getUsuario(): Flow<List<Usuario>> = flow {
+        firestore.collection(nombreColeccion).snapshots.collect { querySnapshot ->
+            // Asegúrate de contar con una función de extensión o usar métodos de conversión apropiados
+            val usuarios = querySnapshot.documents.mapNotNull { documentSnapshot ->
+                documentSnapshot.data<Usuario>()
             }
+            emit(usuarios)
         }
     }
 
-    override fun getUsuarioPorId(id: String): Flow<Usuario?> {
-        return flow {
-            firestore.collection(nombreColeccion).document(id).snapshots.collect { documentSnapshot ->
-                emit(documentSnapshot.data<Usuario>())
-            }
+    override fun getUsuarioPorId(id: String): Flow<Usuario?> = flow {
+        firestore.collection(nombreColeccion).document(id).snapshots.collect { documentSnapshot ->
+            emit(documentSnapshot.data<Usuario>())
         }
     }
 
     override suspend fun addUsuario(usuario: Usuario) {
         val userId = generateRandomStringId()
+        usuario.setIdUnico(userId)
         firestore.collection(nombreColeccion)
             .document(userId)
-            usuario.setIdUnico(userId)
+            .set(usuario)
     }
 
     override suspend fun updateUsuario(usuario: Usuario) {
-        firestore.collection(nombreColeccion).document(usuario.getIdUnico()).set(usuario)
+        firestore.collection(nombreColeccion)
+            .document(usuario.getIdUnico())
+            .set(usuario)
     }
 
     override suspend fun deleteUsuario(usuario: Usuario) {
-        firestore.collection(nombreColeccion).document(usuario.getIdUnico()).delete()
+        firestore.collection(nombreColeccion)
+            .document(usuario.getIdUnico())
+            .delete()
     }
 
     private fun generateRandomStringId(length: Int = 20): String {
