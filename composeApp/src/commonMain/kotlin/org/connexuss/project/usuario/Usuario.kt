@@ -6,9 +6,13 @@ import connexus_serverless.composeapp.generated.resources.Res
 import connexus_serverless.composeapp.generated.resources.avatar
 import connexus_serverless.composeapp.generated.resources.connexus
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import org.connexuss.project.comunicacion.Conversacion
 import org.connexuss.project.comunicacion.ConversacionesUsuario
 import org.connexuss.project.datos.UsuariosPreCreados
+import org.connexuss.project.datos.imagenesPerfilAbstrasto
+import org.connexuss.project.datos.imagenesPerfilDibujo
+import org.connexuss.project.datos.imagenesPerfilPersona
 import org.connexuss.project.encriptacion.hash
 import org.jetbrains.compose.resources.DrawableResource
 
@@ -27,8 +31,8 @@ class Usuario {
     private var contrasennia: String = ""
 
     private var usuariosBloqueados: List<String> = emptyList()
-    private lateinit var imagenPerfilId: String
-
+    @Transient
+    private lateinit var imagenPerfil: DrawableResource
     // Constructor completo
     constructor(nombre: String, correo: String, aliasPublico: String, activo: Boolean, contactos: List<String>, chatUser: ConversacionesUsuario) {
         this.idUnico = UtilidadesUsuario().generarIdUnico()
@@ -39,16 +43,13 @@ class Usuario {
         this.activo = activo
         this.contactos = contactos
         this.chatUser = chatUser
-        this.imagenPerfilId = generarIdImagenRandom()
+        this.imagenPerfil = generarImagenPerfilRandom()
     }
 
-    private fun generarIdImagenRandom(): String {
-        // Genero un string aleatorio de 50 caracteres
-        val idImagen = ('A'..'Z') + ('0'..'9')
-        val idImagenRandom = (1..50)
-            .map { idImagen.random() }
-            .joinToString("")
-        return idImagenRandom
+    fun generarImagenPerfilRandom(): DrawableResource {
+        // Cojo todas las listas de imagenes de perfil para que seleccione una aleatoria
+        val todasImagenes = imagenesPerfilPersona + imagenesPerfilAbstrasto + imagenesPerfilDibujo
+        return todasImagenes.random().resource
     }
 
     //Debug: Contructor con idUnico
@@ -63,8 +64,7 @@ class Usuario {
         if (chatUser != null) {
             this.chatUser = chatUser
         }
-        this.imagenPerfilId = generarIdImagenRandom()
-    }
+        this.imagenPerfil = generarImagenPerfilRandom()}
 
     // Constructor vacio
     constructor() {
@@ -162,13 +162,14 @@ class Usuario {
         this.usuariosBloqueados = usuariosBloqueados
     }
 
-    fun getIdImagenPerfil(): String {
-        return imagenPerfilId
+    fun getImagenPerfil(): DrawableResource {
+        return imagenPerfil
     }
 
-    fun setIdImagenPerfil(imagenPerfil: String) {
-        this.imagenPerfilId = imagenPerfil
+    fun setImagenPerfil(imagenPerfil: DrawableResource) {
+        this.imagenPerfil = imagenPerfil
     }
+
 
     // Metodo para imprimir los datos públicos del usuario
     @Composable
@@ -185,6 +186,10 @@ class Usuario {
         Text("Id Unico: $idUnico")
         Text("Alias Privado: $aliasPrivado")
     }
+
+
+
+
 }
 
 // Clase que almacena los usuarios
@@ -313,6 +318,12 @@ class UtilidadesUsuario {
         return UsuariosPreCreados.map { it.getAlias() }.toSet()
     }
 
+    fun generarImagenPerfilRandom(): DrawableResource {
+        // Cojo todas las listas de imagenes de perfil para que seleccione una aleatoria
+        val todasImagenes = imagenesPerfilPersona + imagenesPerfilAbstrasto + imagenesPerfilDibujo
+        return todasImagenes.random().resource
+    }
+
     fun generarAliasPublico(): String {
         val aliasExistentes = obtenerAliasExistentes() + aliasGenerados
         var alias: String
@@ -322,5 +333,7 @@ class UtilidadesUsuario {
         aliasGenerados.add(alias)
         return alias
     }
+
+
 
 }

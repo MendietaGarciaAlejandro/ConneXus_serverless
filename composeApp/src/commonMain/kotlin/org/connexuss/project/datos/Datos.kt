@@ -10,6 +10,7 @@ import connexus_serverless.composeapp.generated.resources.ic_chats
 import connexus_serverless.composeapp.generated.resources.ic_email
 import connexus_serverless.composeapp.generated.resources.ic_foros
 import connexus_serverless.composeapp.generated.resources.ic_person
+import connexus_serverless.composeapp.generated.resources.*
 import connexus_serverless.composeapp.generated.resources.unblock
 import connexus_serverless.composeapp.generated.resources.visibilidadOff
 import connexus_serverless.composeapp.generated.resources.visibilidadOn
@@ -21,6 +22,131 @@ import org.connexuss.project.misc.Imagen
 import org.connexuss.project.usuario.AlmacenamientoUsuario
 import org.connexuss.project.usuario.UtilidadesUsuario
 import org.connexuss.project.usuario.Usuario
+
+val imagenesPerfilPersona = mutableListOf<Imagen>().apply {
+    add(Imagen("persona001", Res.drawable.persona001))
+    add(Imagen("persona002", Res.drawable.persona002))
+    add(Imagen("persona003", Res.drawable.persona003))
+    add(Imagen("persona004", Res.drawable.persona004))
+    add(Imagen("persona005", Res.drawable.persona005))
+    add(Imagen("persona006", Res.drawable.persona006))
+    add(Imagen("persona007", Res.drawable.persona007))
+    add(Imagen("persona008", Res.drawable.persona008))
+    add(Imagen("persona009", Res.drawable.persona009))
+    add(Imagen("persona010", Res.drawable.persona010))
+    add(Imagen("persona011", Res.drawable.persona011))
+    add(Imagen("persona012", Res.drawable.persona012))
+    add(Imagen("persona013", Res.drawable.persona013))
+    add(Imagen("persona014", Res.drawable.persona014))
+    add(Imagen("persona015", Res.drawable.persona015))
+    add(Imagen("persona016", Res.drawable.persona016))
+    add(Imagen("persona017", Res.drawable.persona017))
+    add(Imagen("persona018", Res.drawable.persona018))
+    add(Imagen("persona019", Res.drawable.persona019))
+    add(Imagen("persona020", Res.drawable.persona020))
+    add(Imagen("persona021", Res.drawable.persona021))
+    add(Imagen("persona022", Res.drawable.persona022))
+    add(Imagen("persona023", Res.drawable.persona023))
+    add(Imagen("persona024", Res.drawable.persona024))
+    add(Imagen("persona025", Res.drawable.persona025))
+    add(Imagen("persona026", Res.drawable.persona026))
+    add(Imagen("persona027", Res.drawable.persona027))
+    add(Imagen("persona028", Res.drawable.persona028))
+    add(Imagen("persona029", Res.drawable.persona029))
+    add(Imagen("persona030", Res.drawable.persona030))
+}
+
+val imagenesPerfilAbstrasto = mutableListOf<Imagen>().apply {
+    add(Imagen("abstracto001", Res.drawable.abstracto001))
+    add(Imagen("abstracto002", Res.drawable.abstracto002))
+    add(Imagen("abstracto003", Res.drawable.abstracto003))
+    add(Imagen("abstracto004", Res.drawable.abstracto004))
+    add(Imagen("abstracto005", Res.drawable.abstracto005))
+    add(Imagen("abstracto006", Res.drawable.abstracto006))
+    add(Imagen("abstracto007", Res.drawable.abstracto007))
+    add(Imagen("abstracto008", Res.drawable.abstracto008))
+    add(Imagen("abstracto009", Res.drawable.abstracto009))
+    add(Imagen("abstracto010", Res.drawable.abstracto010))
+    add(Imagen("abstracto011", Res.drawable.abstracto011))
+    add(Imagen("abstracto012", Res.drawable.abstracto012))
+    add(Imagen("abstracto013", Res.drawable.abstracto013))
+    add(Imagen("abstracto014", Res.drawable.abstracto014))
+    add(Imagen("abstracto015", Res.drawable.abstracto015))
+    add(Imagen("abstracto016", Res.drawable.abstracto016))
+    add(Imagen("abstracto017", Res.drawable.abstracto017))
+    add(Imagen("abstracto018", Res.drawable.abstracto018))
+    add(Imagen("abstracto019", Res.drawable.abstracto019))
+    add(Imagen("abstracto020", Res.drawable.abstracto020))
+    add(Imagen("abstracto021", Res.drawable.abstracto021))
+    add(Imagen("abstracto022", Res.drawable.abstracto022))
+    add(Imagen("abstracto023", Res.drawable.abstracto023))
+    add(Imagen("abstracto024", Res.drawable.abstracto024))
+    add(Imagen("abstracto025", Res.drawable.abstracto025))
+    add(Imagen("abstracto026", Res.drawable.abstracto026))
+    add(Imagen("abstracto027", Res.drawable.abstracto027))
+    add(Imagen("abstracto028", Res.drawable.abstracto028))
+    add(Imagen("abstracto029", Res.drawable.abstracto029))
+    add(Imagen("abstracto030", Res.drawable.abstracto030))
+    add(Imagen("abstracto031", Res.drawable.abstracto031))
+    add(Imagen("abstracto032", Res.drawable.abstracto032))
+    add(Imagen("abstracto033", Res.drawable.abstracto033))
+    add(Imagen("abstracto034", Res.drawable.abstracto034))
+    add(Imagen("abstracto035", Res.drawable.abstracto035))
+    add(Imagen("abstracto036", Res.drawable.abstracto036))
+    add(Imagen("abstracto037", Res.drawable.abstracto037))
+    add(Imagen("abstracto038", Res.drawable.abstracto038))
+    add(Imagen("abstracto039", Res.drawable.abstracto039))
+    add(Imagen("abstracto040", Res.drawable.abstracto040))
+    add(Imagen("abstracto041", Res.drawable.abstracto041))
+    add(Imagen("abstracto042", Res.drawable.abstracto042))
+    add(Imagen("abstracto043", Res.drawable.abstracto043))
+    add(Imagen("abstracto044", Res.drawable.abstracto044))
+    add(Imagen("abstracto045", Res.drawable.abstracto045))
+    add(Imagen("abstracto046", Res.drawable.abstracto046))
+    add(Imagen("abstracto047", Res.drawable.abstracto047))
+    add(Imagen("abstracto048", Res.drawable.abstracto048))
+    add(Imagen("abstracto049", Res.drawable.abstracto049))
+    add(Imagen("abstracto050", Res.drawable.abstracto050))
+    add(Imagen("abstracto051", Res.drawable.abstracto051))
+}
+
+
+val imagenesPerfilDibujo = mutableListOf<Imagen>().apply {
+    add(Imagen("dibujo001", Res.drawable.dibujo001))
+    add(Imagen("dibujo002", Res.drawable.dibujo002))
+    add(Imagen("dibujo003", Res.drawable.dibujo003))
+    add(Imagen("dibujo004", Res.drawable.dibujo004))
+    add(Imagen("dibujo005", Res.drawable.dibujo005))
+    add(Imagen("dibujo006", Res.drawable.dibujo006))
+    add(Imagen("dibujo007", Res.drawable.dibujo007))
+    add(Imagen("dibujo008", Res.drawable.dibujo008))
+    add(Imagen("dibujo009", Res.drawable.dibujo009))
+    add(Imagen("dibujo010", Res.drawable.dibujo010))
+    add(Imagen("dibujo011", Res.drawable.dibujo011))
+    add(Imagen("dibujo012", Res.drawable.dibujo012))
+    add(Imagen("dibujo013", Res.drawable.dibujo013))
+    add(Imagen("dibujo014", Res.drawable.dibujo014))
+    add(Imagen("dibujo015", Res.drawable.dibujo015))
+    add(Imagen("dibujo016", Res.drawable.dibujo016))
+    add(Imagen("dibujo017", Res.drawable.dibujo017))
+    add(Imagen("dibujo018", Res.drawable.dibujo018))
+    add(Imagen("dibujo019", Res.drawable.dibujo019))
+    add(Imagen("dibujo020", Res.drawable.dibujo020))
+    add(Imagen("dibujo021", Res.drawable.dibujo021))
+    add(Imagen("dibujo022", Res.drawable.dibujo022))
+    add(Imagen("dibujo023", Res.drawable.dibujo023))
+    add(Imagen("dibujo024", Res.drawable.dibujo024))
+    add(Imagen("dibujo025", Res.drawable.dibujo025))
+    add(Imagen("dibujo026", Res.drawable.dibujo026))
+    add(Imagen("dibujo027", Res.drawable.dibujo027))
+    add(Imagen("dibujo028", Res.drawable.dibujo028))
+    add(Imagen("dibujo029", Res.drawable.dibujo029))
+    add(Imagen("dibujo030", Res.drawable.dibujo030))
+    add(Imagen("dibujo031", Res.drawable.dibujo031))
+    add(Imagen("dibujo032", Res.drawable.dibujo032))
+}
+
+
 
 val UsuariosPreCreados: SnapshotStateList<Usuario> = run {
 
@@ -34,6 +160,8 @@ val UsuariosPreCreados: SnapshotStateList<Usuario> = run {
     imagenesApp.add(Imagen("ic_person", Res.drawable.ic_person))
     imagenesApp.add(Imagen("visibilidadOn", Res.drawable.visibilidadOn))
     imagenesApp.add(Imagen("visibilidadOff", Res.drawable.visibilidadOff))
+
+
 
     val almacenamientoUsuario = AlmacenamientoUsuario()
     val usuarios = mutableStateListOf<Usuario>()
