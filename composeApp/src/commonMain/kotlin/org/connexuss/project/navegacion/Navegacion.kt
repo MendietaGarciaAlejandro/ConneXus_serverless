@@ -317,5 +317,10 @@ fun Navegacion(
         composable("Tema") {
             PantallaTema(repositorioTemas, navController)
         }
+        composable("mostrarParticipantesGrupo/{chatId}" ) {
+            backStackEntry ->
+            val chatId = backStackEntry.arguments?.getString("chatId")
+            mostrarChatGrupo(navController, chatId, imagenesPerfilPersona)
+        }
     }
 }

@@ -202,12 +202,16 @@ fun mostrarChatGrupo(navController: NavHostController, chatId: String?, imagenes
 
     Scaffold(
         topBar = {
-            DefaultTopBar(
+            TopBarGrupo(
                 title = groupTitle,
                 navController = navController,
                 showBackButton = true,
                 irParaAtras = true,
-                muestraEngranaje = false
+                muestraEngranaje = true,
+                onUsuariosClick = {
+                    // Al pulsar, abre una pantalla con una lista de los participantes del grupo
+                    //navController.navigate("mostrarParticipantesGrupo/$chatId")
+                }
             )
         }
     ) { padding ->

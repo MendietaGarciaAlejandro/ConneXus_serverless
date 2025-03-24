@@ -66,6 +66,7 @@ import connexus_serverless.composeapp.generated.resources.avatar
 import connexus_serverless.composeapp.generated.resources.connexus
 import connexus_serverless.composeapp.generated.resources.ic_chats
 import connexus_serverless.composeapp.generated.resources.ic_foros
+import connexus_serverless.composeapp.generated.resources.usuarios
 import connexus_serverless.composeapp.generated.resources.visibilidadOff
 import connexus_serverless.composeapp.generated.resources.visibilidadOn
 import kotlinx.coroutines.delay
@@ -128,6 +129,113 @@ fun DefaultTopBar(
             }
         }
     )
+}
+
+// Topbar para el grupo en el que se esta chateando,mostrando a la derecha un icono de usuarios
+@Composable
+fun TopBarGrupo(
+    title: String, // Clave para el título (se usará traducir(title))
+    navController: NavHostController?,
+    showBackButton: Boolean = false,
+    irParaAtras: Boolean = false,
+    muestraEngranaje: Boolean = true,
+    onUsuariosClick: () -> Unit = {} // Acción al pulsar sobre el icono de usuarios
+) {
+    TopAppBar(
+        title = {
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                // Título traducido
+                Text(text = traducir(title))
+            }
+        },
+        navigationIcon = if (showBackButton) {
+            {
+                IconButton(onClick = {
+                    if (navController != null && irParaAtras) {
+                        navController.popBackStack()
+                    }
+                }) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = traducir("atras")
+                    )
+                }
+            }
+        } else null,
+        actions = {
+            if (muestraEngranaje) {
+                IconButton(onClick = onUsuariosClick) {
+                    Icon(
+                        painter = painterResource(Res.drawable.usuarios),
+                        contentDescription = traducir("usuarios"),
+                        // Hacemos que tenga un tamaño de 24dp
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
+        }
+    )
+}
+
+// Interfaz que muestra los usuarios del grupo, si se hace clic en un usuario, se muestra su perfil
+@Composable
+fun MuestraUsuariosGrupo(
+    usuarios: List<Usuario>,
+    navController: NavHostController
+) {
+    MaterialTheme {
+        Scaffold(
+            topBar = {
+                DefaultTopBar(
+                    title = "usuarios_grupo", // Se utiliza la clave "usuarios_grupo" definida en el mapa
+                    navController = navController,
+                    showBackButton = true,
+                    irParaAtras = true,
+                    muestraEngranaje = true
+                )
+            }
+        ) { padding ->
+            LimitaTamanioAncho { modifier ->
+                LazyColumn(
+                    modifier = modifier
+                        .fillMaxSize()
+                        .padding(padding)
+                        .padding(16.dp)
+                ) {
+                    items(usuarios) { usuario ->
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp)
+                                .clickable {
+                                    navController.navigate("mostrarPerfil/${usuario.getIdUnico()}")
+                                },
+                            elevation = 4.dp
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Text(
+                                    text = "${traducir("nombre_label")} ${usuario.getNombreCompleto()}",
+                                    style = MaterialTheme.typography.subtitle1
+                                )
+                                Text(
+                                    text = "${traducir("alias_label")} ${usuario.getAlias()}",
+                                    style = MaterialTheme.typography.body1
+                                )
+                                Text(
+                                    text = "${traducir("alias_privado_label")} ${usuario.getAliasPrivado()}",
+                                    style = MaterialTheme.typography.body2
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 //TopBar para mostrar el usuario con el que se esta chateando
