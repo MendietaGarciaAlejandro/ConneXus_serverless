@@ -27,5 +27,6 @@ data class Hilo(
 data class Tema(
     val idTema: String,
     val idUsuario: String,
+    val nombre: String,
     val hilos: List<Hilo> = emptyList(),
 )

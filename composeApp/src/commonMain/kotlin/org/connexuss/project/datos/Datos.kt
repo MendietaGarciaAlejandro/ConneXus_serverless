@@ -17,7 +17,10 @@ import connexus_serverless.composeapp.generated.resources.visibilidadOn
 import kotlinx.datetime.LocalDateTime
 import org.connexuss.project.comunicacion.Conversacion
 import org.connexuss.project.comunicacion.ConversacionesUsuario
+import org.connexuss.project.comunicacion.Hilo
 import org.connexuss.project.comunicacion.Mensaje
+import org.connexuss.project.comunicacion.Post
+import org.connexuss.project.comunicacion.Tema
 import org.connexuss.project.misc.Imagen
 import org.connexuss.project.usuario.AlmacenamientoUsuario
 import org.connexuss.project.usuario.UtilidadesUsuario
@@ -770,3 +773,162 @@ val UsuarioPrincipal: Usuario? = UtilidadesUsuario().instanciaUsuario(
         )
     )
 }
+
+// Datos foro
+
+val hilosForo: List<Hilo> = listOf(
+    Hilo(
+        idHilo = "hilo_1",
+        idForeros = listOf("UsuarioPrincipal", "Contacto1"),
+        posts = listOf(
+            Post(
+                senderId = "UsuarioPrincipal",
+                receiverId = "Contacto1",
+                content = "Hola, ¿cómo estás?",
+                fechaPost = LocalDateTime(2023, 1, 1, 12, 0)
+            ),
+            Post(
+                senderId = "Contacto1",
+                receiverId = "UsuarioPrincipal",
+                content = "Muy bien, ¿y tú?",
+                fechaPost = LocalDateTime(2023, 1, 1, 12, 5)
+            )
+        ),
+        nombre = "Hilo de conversación 1"
+    ),
+    Hilo(
+        idHilo = "hilo_2",
+        idForeros = listOf("UsuarioPrincipal", "Contacto2"),
+        posts = listOf(
+            Post(
+                senderId = "UsuarioPrincipal",
+                receiverId = "Contacto2",
+                content = "¿Nos vemos mañana?",
+                fechaPost = LocalDateTime(2023, 1, 2, 10, 0)
+            ),
+            Post(
+                senderId = "Contacto2",
+                receiverId = "UsuarioPrincipal",
+                content = "Claro, ¿a qué hora?",
+                fechaPost = LocalDateTime(2023, 1, 2, 10, 5)
+            )
+        ),
+        nombre = "Hilo de conversación 2"
+    ),
+    Hilo(
+        idHilo = "hilo_3",
+        idForeros = listOf("UsuarioPrincipal", "Contacto3"),
+        posts = listOf(
+            Post(
+                senderId = "Contacto3",
+                receiverId = "UsuarioPrincipal",
+                content = "¿Has visto la última película?",
+                fechaPost = LocalDateTime(2023, 1, 3, 15, 0)
+            ),
+            Post(
+                senderId = "UsuarioPrincipal",
+                receiverId = "Contacto3",
+                content = "Sí, estuvo genial.",
+                fechaPost = LocalDateTime(2023, 1, 3, 15, 10)
+            )
+        ),
+        nombre = "Hilo de conversación 3"
+    ),
+    Hilo(
+        idHilo = "hilo_4",
+        idForeros = listOf("UsuarioPrincipal", "Contacto4"),
+        posts = listOf(
+            Post(
+                senderId = "UsuarioPrincipal",
+                receiverId = "Contacto4",
+                content = "¿Quieres ir a cenar?",
+                fechaPost = LocalDateTime(2023, 1, 4, 18, 0)
+            ),
+            Post(
+                senderId = "Contacto4",
+                receiverId = "UsuarioPrincipal",
+                content = "¡Claro, suena perfecto!",
+                fechaPost = LocalDateTime(2023, 1, 4, 18, 15)
+            )
+        ),
+        nombre = "Hilo de conversación 4"
+    ),
+    Hilo(
+        idHilo = "hilo_5",
+        idForeros = listOf("UsuarioPrincipal", "Contacto5", "Contacto6"),
+        posts = listOf(
+            Post(
+                senderId = "Contacto5",
+                receiverId = "UsuarioPrincipal",
+                content = "Bienvenidos al grupo de estudio",
+                fechaPost = LocalDateTime(2023, 1, 5, 9, 0)
+            ),
+            Post(
+                senderId = "Contacto6",
+                receiverId = "UsuarioPrincipal",
+                content = "¿Quién trae los apuntes?",
+                fechaPost = LocalDateTime(2023, 1, 5, 9, 10)
+            )
+        ),
+        nombre = "Hilo de grupo 1"
+    ),
+    Hilo(
+        idHilo = "hilo_6",
+        idForeros = listOf("UsuarioPrincipal", "Contacto7", "Contacto8"),
+        posts = listOf(
+            Post(
+                senderId = "UsuarioPrincipal",
+                receiverId = "Contacto7",
+                content = "Reunión de trabajo a las 10",
+                fechaPost = LocalDateTime(2023, 1, 6, 8, 50)
+            ),
+            Post(
+                senderId = "Contacto8",
+                receiverId = "UsuarioPrincipal",
+                content = "Confirmado, allí estaré",
+                fechaPost = LocalDateTime(2023, 1, 6, 9, 0)
+            )
+        ),
+        nombre = "Hilo de grupo 2"
+    ),
+    Hilo(
+        idHilo = "hilo_7",
+        idForeros = listOf("UsuarioPrincipal", "Contacto9", "Contacto10"),
+        posts = listOf(
+            Post(
+                senderId = "Contacto9",
+                receiverId = "UsuarioPrincipal",
+                content = "Chicos, ¿organizamos un encuentro este fin de semana?",
+                fechaPost = LocalDateTime(2023, 1, 7, 16, 0)
+            ),
+            Post(
+                senderId = "Contacto10",
+                receiverId = "UsuarioPrincipal",
+                content = "Me apunto, cuenten conmigo.",
+                fechaPost = LocalDateTime(2023, 1, 7, 16, 10)
+            )
+        ),
+        nombre = "Hilo de grupo 3"
+    )
+)
+
+val temasForo: List<Tema> = listOf(
+    Tema(
+        idTema = "tema_1",
+        hilos = listOf(hilosForo[0], hilosForo[1]),
+        nombre = "Tema de Foro 1",
+        idUsuario = "UsuarioPrincipal"
+    ),
+    Tema(
+        idTema = "tema_2",
+        hilos = listOf(hilosForo[2], hilosForo[3]),
+        nombre = "Tema de Foro 2",
+        idUsuario = "UsuarioPrincipal"
+    ),
+    Tema(
+        idTema = "tema_3",
+        hilos = listOf(hilosForo[4], hilosForo[5]),
+        nombre = "Tema de Foro 3",
+        idUsuario = "UsuarioPrincipal"
+    )
+)
