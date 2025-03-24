@@ -6,4 +6,6 @@ import org.jetbrains.compose.resources.DrawableResource
 data class Imagen(
     val id: String,
     val imagen: DrawableResource
-)
+) {
+    val resource: DrawableResource = imagen
+}

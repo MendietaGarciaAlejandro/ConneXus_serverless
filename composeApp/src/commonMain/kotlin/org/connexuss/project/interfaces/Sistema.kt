@@ -2,6 +2,7 @@ package org.connexuss.project.interfaces
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,6 +20,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.AlertDialog
@@ -49,6 +51,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -59,9 +62,11 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import connexus_serverless.composeapp.generated.resources.Res
+import connexus_serverless.composeapp.generated.resources.avatar
 import connexus_serverless.composeapp.generated.resources.connexus
 import connexus_serverless.composeapp.generated.resources.ic_chats
 import connexus_serverless.composeapp.generated.resources.ic_foros
+import connexus_serverless.composeapp.generated.resources.usuarios
 import connexus_serverless.composeapp.generated.resources.visibilidadOff
 import connexus_serverless.composeapp.generated.resources.visibilidadOn
 import kotlinx.coroutines.delay
@@ -73,6 +78,7 @@ import org.connexuss.project.misc.Imagen
 import org.connexuss.project.usuario.AlmacenamientoUsuario
 import org.connexuss.project.usuario.Usuario
 import org.connexuss.project.usuario.UtilidadesUsuario
+import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
@@ -125,10 +131,118 @@ fun DefaultTopBar(
     )
 }
 
+// Topbar para el grupo en el que se esta chateando,mostrando a la derecha un icono de usuarios
+@Composable
+fun TopBarGrupo(
+    title: String, // Clave para el título (se usará traducir(title))
+    navController: NavHostController?,
+    showBackButton: Boolean = false,
+    irParaAtras: Boolean = false,
+    muestraEngranaje: Boolean = true,
+    onUsuariosClick: () -> Unit = {} // Acción al pulsar sobre el icono de usuarios
+) {
+    TopAppBar(
+        title = {
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                // Título traducido
+                Text(text = traducir(title))
+            }
+        },
+        navigationIcon = if (showBackButton) {
+            {
+                IconButton(onClick = {
+                    if (navController != null && irParaAtras) {
+                        navController.popBackStack()
+                    }
+                }) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = traducir("atras")
+                    )
+                }
+            }
+        } else null,
+        actions = {
+            if (muestraEngranaje) {
+                IconButton(onClick = onUsuariosClick) {
+                    Icon(
+                        painter = painterResource(Res.drawable.usuarios),
+                        contentDescription = traducir("usuarios"),
+                        // Hacemos que tenga un tamaño de 24dp
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
+        }
+    )
+}
+
+// Interfaz que muestra los usuarios del grupo, si se hace clic en un usuario, se muestra su perfil
+@Composable
+fun MuestraUsuariosGrupo(
+    usuarios: List<Usuario>,
+    navController: NavHostController
+) {
+    MaterialTheme {
+        Scaffold(
+            topBar = {
+                DefaultTopBar(
+                    title = "usuarios_grupo", // Se utiliza la clave "usuarios_grupo" definida en el mapa
+                    navController = navController,
+                    showBackButton = true,
+                    irParaAtras = true,
+                    muestraEngranaje = true
+                )
+            }
+        ) { padding ->
+            LimitaTamanioAncho { modifier ->
+                LazyColumn(
+                    modifier = modifier
+                        .fillMaxSize()
+                        .padding(padding)
+                        .padding(16.dp)
+                ) {
+                    items(usuarios) { usuario ->
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp)
+                                .clickable {
+                                    navController.navigate("mostrarPerfil/${usuario.getIdUnico()}")
+                                },
+                            elevation = 4.dp
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Text(
+                                    text = "${traducir("nombre_label")} ${usuario.getNombreCompleto()}",
+                                    style = MaterialTheme.typography.subtitle1
+                                )
+                                Text(
+                                    text = "${traducir("alias_label")} ${usuario.getAlias()}",
+                                    style = MaterialTheme.typography.body1
+                                )
+                                Text(
+                                    text = "${traducir("alias_privado_label")} ${usuario.getAliasPrivado()}",
+                                    style = MaterialTheme.typography.body2
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 //TopBar para mostrar el usuario con el que se esta chateando
 @Composable
 fun TopBarUsuario(
     title: String, // Clave para el título (se usará traducir(title))
+    profileImage: DrawableResource, // Imagen del usuario
     navController: NavHostController?,
     showBackButton: Boolean = false,
     irParaAtras: Boolean = false,
@@ -143,19 +257,21 @@ fun TopBarUsuario(
                     .fillMaxWidth()
                     .clickable { onTitleClick() }
             ) {
-                // Imagen a la izquierda: puedes usar generarImagenRandom() o un recurso fijo
-                Icon(
-                    painter = painterResource(Res.drawable.connexus),
+                // Muestra la imagen del usuario (puedes aplicarle clip circular si lo deseas)
+                Image(
+                    painter = painterResource(profileImage),
                     contentDescription = traducir("imagen_perfil"),
-                    modifier = Modifier.size(40.dp)
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(20.dp))
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                // Título traducido; se muestra centrado en la parte izquierda (puedes ajustar según convenga)
+                // Título traducido
                 Box(
                     modifier = Modifier.fillMaxWidth(),
                     contentAlignment = Alignment.CenterStart
                 ) {
-                    Text(text = traducir(title))
+                    Text(text = traducir(title), style = MaterialTheme.typography.h6)
                 }
             }
         },
@@ -712,13 +828,39 @@ fun UsuCard(usuario: Usuario, onClick: () -> Unit) {
             .clickable(onClick = onClick),
         elevation = 4.dp
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = "${traducir("nombre_label")} ${usuario.getNombreCompleto()}")
-            Text(text = "${traducir("alias_publico")} ${usuario.getAlias()}")
-            Text(text = "${traducir("alias_privado")} ${usuario.getAliasPrivado()}")
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Imagen cuadrada a la izquierda
+            Image(
+                painter = painterResource(usuario.getImagenPerfil()),
+                contentDescription = "Imagen de perfil",
+                modifier = Modifier
+                    .size(64.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .border(1.dp, Color.Gray, RoundedCornerShape(8.dp))
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            // Información del usuario en una columna
+            Column {
+                Text(
+                    text = "${traducir("nombre_label")} ${usuario.getNombreCompleto()}",
+                    style = MaterialTheme.typography.subtitle1
+                )
+                Text(
+                    text = "${traducir("alias_publico")} ${usuario.getAlias()}",
+                    style = MaterialTheme.typography.body1
+                )
+                Text(
+                    text = "${traducir("alias_privado")} ${usuario.getAliasPrivado()}",
+                    style = MaterialTheme.typography.body2
+                )
+            }
         }
     }
 }
+
 
 // --- Ajustes ---
 @Composable
@@ -823,9 +965,12 @@ fun mostrarPerfil(navController: NavHostController, usuarioU: Usuario?) {
     var aliasPrivado by remember { mutableStateOf(usuario?.getAliasPrivado() ?: "") }
     var aliasPublico by remember { mutableStateOf(usuario?.getAlias() ?: "") }
     var descripcion by remember { mutableStateOf(usuario?.getDescripcion() ?: "") }
-    var nombre by remember { mutableStateOf(usuario?.getNombreCompleto() ?: "") }
+    var contrasennia by remember { mutableStateOf(usuario?.getContrasennia() ?: "") }
     var email by remember { mutableStateOf(usuario?.getCorreo() ?: "") }
     var isNameVisible by remember { mutableStateOf(false) }
+
+    // Estado para la imagen de perfil (para refrescar la UI al cambiarla)
+    val imagenPerfilState = remember { mutableStateOf(usuario?.getImagenPerfil()) }
 
     MaterialTheme {
         Scaffold(
@@ -851,11 +996,42 @@ fun mostrarPerfil(navController: NavHostController, usuarioU: Usuario?) {
                             .fillMaxSize()
                             .padding(16.dp)
                             .verticalScroll(rememberScrollState()),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         if (usuario == null) {
                             Text(text = traducir("usuario_no_encontrado"))
                         } else {
+                            // Sección superior: Imagen de perfil y botón "Cambiar"
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                // Imagen de perfil en un cuadrado
+                                Image(
+                                    painter = imagenPerfilState.value?.let { painterResource(it) }
+                                        ?: painterResource(Res.drawable.avatar),
+                                    contentDescription = "Imagen de perfil",
+                                    modifier = Modifier
+                                        .size(100.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .border(1.dp, Color.Gray, RoundedCornerShape(8.dp))
+                                )
+                            }
+                            // Botón para cambiar la imagen
+                            Button(
+                                onClick = {
+                                    // Genera una nueva imagen aleatoria y actualiza tanto el usuario como el estado mutable
+                                    val nuevaImagen = usuario.generarImagenPerfilRandom()
+                                    usuario.setImagenPerfil(nuevaImagen)
+                                    imagenPerfilState.value = nuevaImagen
+                                },
+                                modifier = Modifier.align(Alignment.CenterHorizontally)
+                            ) {
+                                Text(text = traducir("cambiar"))
+                            }
+
                             // Alias
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -882,13 +1058,13 @@ fun mostrarPerfil(navController: NavHostController, usuarioU: Usuario?) {
                                 modifier = Modifier.fillMaxWidth(),
                                 maxLines = 3
                             )
-                            // Nombre: campo de solo lectura con opción para modificar mediante Dialog
+                            // Contraseña: campo de solo lectura, modificar mediante Dialog
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 OutlinedTextField(
-                                    value = nombre,
+                                    value = contrasennia,
                                     onValueChange = { /* No se edita directamente */ },
                                     label = { Text(text = traducir("nombre_label")) },
                                     modifier = Modifier.weight(1f),
@@ -915,7 +1091,7 @@ fun mostrarPerfil(navController: NavHostController, usuarioU: Usuario?) {
                                 }
                                 TextButton(
                                     onClick = {
-                                        nuevoNombre = nombre
+                                        nuevoNombre = contrasennia
                                         showDialogNombre = true
                                     }
                                 ) {
@@ -954,7 +1130,7 @@ fun mostrarPerfil(navController: NavHostController, usuarioU: Usuario?) {
                                             setAliasPrivado(aliasPrivado)
                                             setAlias(aliasPublico)
                                             setDescripcion(descripcion)
-                                            setNombreCompleto(nombre)
+                                            setContrasennia(contrasennia)
                                             setCorreo(email)
                                         }
                                         navController.popBackStack()
@@ -1020,7 +1196,7 @@ fun mostrarPerfil(navController: NavHostController, usuarioU: Usuario?) {
             confirmButton = {
                 TextButton(
                     onClick = {
-                        nombre = nuevoNombre
+                        contrasennia = nuevoNombre
                         showDialogNombre = false
                     }
                 ) {
@@ -1037,6 +1213,8 @@ fun mostrarPerfil(navController: NavHostController, usuarioU: Usuario?) {
         )
     }
 }
+
+
 
 //Mostrar perfil usuario chat, por ahora no muestra la imagen del usuario, solo muestra negro
 @Composable
@@ -1078,10 +1256,13 @@ fun mostrarPerfilUsuario(navController: NavHostController, userId: String?, imag
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 // Imagen de perfil
-                Icon(
-                    painter = painterResource(imagenesApp.random().imagen),
-                    contentDescription = "Foto de perfil",
-                    modifier = Modifier.size(100.dp)
+                Image(
+                    painter = painterResource(usuario.getImagenPerfil()),
+                    contentDescription = "Imagen de perfil de ${usuario.getNombreCompleto()}",
+                    modifier = Modifier
+                        .size(100.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .border(1.dp, Color.Gray, RoundedCornerShape(8.dp))
                 )
 
                 // Alias Privado

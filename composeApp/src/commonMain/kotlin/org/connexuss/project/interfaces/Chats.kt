@@ -55,7 +55,10 @@ fun mostrarChat(navController: NavHostController, chatId : String?) {
     val otherParticipantId = chat.participants.firstOrNull { it != UsuarioPrincipal.getIdUnico() }
         ?: chat.participants.getOrNull(1) ?: ""
     // nombre del otro participante en UsuariosPreCreados:
+    val otherParticipantUser = UsuariosPreCreados.find { it.getIdUnico() == otherParticipantId }
     val otherParticipantName = UsuariosPreCreados.find { it.getIdUnico() == otherParticipantId }?.getNombreCompleto() ?: otherParticipantId
+
+    val profileImage = otherParticipantUser?.getImagenPerfil() ?: Res.drawable.connexus
 
     var mensajeNuevo by remember { mutableStateOf("") }
     val messagesState = remember { mutableStateListOf<Mensaje>().apply { addAll(chat.messages) } }
@@ -63,15 +66,14 @@ fun mostrarChat(navController: NavHostController, chatId : String?) {
     Scaffold(
         topBar = {
             TopBarUsuario(
-
-                title = otherParticipantName, // Mostramos el nombre del participante1
-
+                title = otherParticipantName, // Muestra el nombre del otro participante
+                profileImage = profileImage,
                 navController = navController,
                 showBackButton = true,
                 irParaAtras = true,
                 muestraEngranaje = false,
                 onTitleClick = {
-                    // Por ejemplo, navegar al perfil del otro participante:
+                    // Navega al perfil del otro participante
                     navController.navigate("mostrarPerfilUsuario/$otherParticipantId")
                 }
             )
@@ -200,12 +202,16 @@ fun mostrarChatGrupo(navController: NavHostController, chatId: String?, imagenes
 
     Scaffold(
         topBar = {
-            DefaultTopBar(
+            TopBarGrupo(
                 title = groupTitle,
                 navController = navController,
                 showBackButton = true,
                 irParaAtras = true,
-                muestraEngranaje = false
+                muestraEngranaje = true,
+                onUsuariosClick = {
+                    // Al pulsar, abre una pantalla con una lista de los participantes del grupo
+                    //navController.navigate("mostrarParticipantesGrupo/$chatId")
+                }
             )
         }
     ) { padding ->
@@ -225,9 +231,8 @@ fun mostrarChatGrupo(navController: NavHostController, chatId: String?, imagenes
                     val senderUser = UsuariosPreCreados.find { it.getIdUnico() == mensaje.senderId }
                     val senderAlias = senderUser?.getAlias() ?: mensaje.senderId
                     // Obtenemos la imagen de perfil, o usamos la imagen por defecto
-                    val senderImageRes = senderUser?.getIdImagenPerfil() ?: Res.drawable.connexus
-                    val imagenAleatoria = imagenesPerfil.random().imagen
-                    val imagePainter = painterResource(imagenAleatoria)
+                    val senderImageRes = senderUser?.getImagenPerfil() ?: Res.drawable.connexus
+                    val imagePainter = painterResource(senderImageRes)
 
                     // Determinamos si el mensaje es del UsuarioPrincipal
                     val vaDerecha = idUsuario == mensaje.senderId
