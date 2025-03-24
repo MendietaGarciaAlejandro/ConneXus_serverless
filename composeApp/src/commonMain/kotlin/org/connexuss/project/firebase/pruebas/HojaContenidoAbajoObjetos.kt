@@ -487,6 +487,7 @@ fun HojaContenidoAbajoTemas(
 ) {
     var id by remember { mutableStateOf(tema?.idTema ?: "") }
     var idUsuario by remember { mutableStateOf(tema?.idUsuario ?: "") }
+    var nombre by remember { mutableStateOf(tema?.nombre ?: "") }
     var hilos by remember { mutableStateOf(tema?.hilos.toString()) }
 
     Column(
@@ -512,6 +513,14 @@ fun HojaContenidoAbajoTemas(
         Spacer(modifier = Modifier.height(16.dp))
         TextField(
             modifier = Modifier.fillMaxWidth(),
+            value = nombre,
+            onValueChange = { nombre = it },
+            singleLine = true,
+            label = { Text("Nombre") }
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        TextField(
+            modifier = Modifier.fillMaxWidth(),
             value = hilos,
             onValueChange = { hilos = it },
             singleLine = true,
@@ -522,7 +531,7 @@ fun HojaContenidoAbajoTemas(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            Button(onClick = { onSave(Tema(id, idUsuario, emptyList())) }) {
+            Button(onClick = { onSave(Tema(id, idUsuario, nombre, emptyList())) }) {
                 Text(text = if (tema == null) "Guardar" else "Actualizar")
             }
             Button(onClick = { onDelete(tema) }) {

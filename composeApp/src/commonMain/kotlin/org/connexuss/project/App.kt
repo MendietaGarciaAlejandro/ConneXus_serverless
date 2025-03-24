@@ -13,6 +13,17 @@ import org.connexuss.project.interfaces.AppTheme
 import org.connexuss.project.interfaces.ProveedorDeFuente
 import org.connexuss.project.interfaces.ProveedorDeIdioma
 import org.connexuss.project.navegacion.Navegacion
+import org.connexuss.project.usuario.Usuario
+
+// Declara la variable con setter privado si no quieres que se modifique desde fuera
+var usuariosGrupoGeneral: List<Usuario> = emptyList()
+    private set
+
+// Para actualizar la lista, simplemente asigna a la propiedad:
+fun actualizarUsuariosGrupoGeneral(nuevaLista: List<Usuario>) {
+    usuariosGrupoGeneral = nuevaLista
+}
+
 
 @Composable
 fun App() {
@@ -34,7 +45,8 @@ fun App() {
                         },
                         onColorChange = { nuevoKey ->
                             temaConfig = temaConfig.copy(colorTemaKey = nuevoKey)
-                        }
+                        },
+                        listaUsuariosGrupo = usuariosGrupoGeneral,
                     )
                 }
             }

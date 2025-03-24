@@ -26,16 +26,20 @@ import org.connexuss.project.firebase.pruebas.PantallaPost
 import org.connexuss.project.firebase.pruebas.PantallaTema
 import org.connexuss.project.firebase.pruebas.PantallaUsuario
 import org.connexuss.project.firebase.pruebas.PantallaUsuarioNuestro
+import org.connexuss.project.interfaces.MuestraUsuariosGrupo
 import org.connexuss.project.interfaces.PantallaAjustesAyuda
 import org.connexuss.project.interfaces.PantallaAjustesControlCuentas
 import org.connexuss.project.interfaces.PantallaCambiarFuente
 import org.connexuss.project.interfaces.PantallaCambiarTema
 import org.connexuss.project.interfaces.PantallaEmailEnElSistema
 import org.connexuss.project.interfaces.PantallaEmailNoEnElSistema
+import org.connexuss.project.interfaces.PantallaForoLocal
+import org.connexuss.project.interfaces.PantallaHiloLocal
 import org.connexuss.project.interfaces.PantallaIdiomas
 import org.connexuss.project.interfaces.PantallaLogin
 import org.connexuss.project.interfaces.PantallaRegistro
 import org.connexuss.project.interfaces.PantallaRestablecer
+import org.connexuss.project.interfaces.PantallaTemaLocal
 import org.connexuss.project.interfaces.SplashScreen
 import org.connexuss.project.interfaces.TemaConfig
 import org.connexuss.project.interfaces.mostrarChat
@@ -51,12 +55,14 @@ import org.connexuss.project.interfaces.muestraRestablecimientoContasenna
 import org.connexuss.project.interfaces.muestraTemaForo
 import org.connexuss.project.interfaces.muestraUsuarios
 import org.connexuss.project.misc.Imagen
+import org.connexuss.project.usuario.Usuario
 
 @Composable
 fun Navegacion(
     temaConfig: TemaConfig,
     onToggleTheme: () -> Unit,
-    onColorChange: (String) -> Unit
+    onColorChange: (String) -> Unit,
+    listaUsuariosGrupo: List<Usuario>
 ) {
     val navController = rememberNavController()
 
@@ -321,6 +327,23 @@ fun Navegacion(
             backStackEntry ->
             val chatId = backStackEntry.arguments?.getString("chatId")
             mostrarChatGrupo(navController, chatId, imagenesPerfilPersona)
+        }
+        composable("usuariosGrupo") {
+            MuestraUsuariosGrupo(usuarios = listaUsuariosGrupo, navController = navController)
+        }
+        composable("foroLocal") {
+            PantallaForoLocal(navController)
+        }
+        // Fíjate en la barra y en las llaves:
+        composable("tema/{tema}") { backStackEntry ->
+            // Recuperas el valor de "tema"
+            val temaParam = backStackEntry.arguments?.getString("tema") ?: ""
+            // Lo pasas a tu pantalla
+            PantallaTemaLocal(navController, temaParam)
+        }
+        composable("hilo/{mensaje}") { backStackEntry ->
+            val mensajeParam = backStackEntry.arguments?.getString("mensaje") ?: ""
+            PantallaHiloLocal(navController, mensajeParam)
         }
     }
 }

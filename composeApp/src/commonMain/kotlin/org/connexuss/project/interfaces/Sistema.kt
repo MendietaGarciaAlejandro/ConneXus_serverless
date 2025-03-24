@@ -70,6 +70,7 @@ import connexus_serverless.composeapp.generated.resources.usuarios
 import connexus_serverless.composeapp.generated.resources.visibilidadOff
 import connexus_serverless.composeapp.generated.resources.visibilidadOn
 import kotlinx.coroutines.delay
+import org.connexuss.project.actualizarUsuariosGrupoGeneral
 import org.connexuss.project.comunicacion.Conversacion
 import org.connexuss.project.comunicacion.ConversacionesUsuario
 import org.connexuss.project.datos.UsuarioPrincipal
@@ -155,7 +156,7 @@ fun TopBarGrupo(
             {
                 IconButton(onClick = {
                     if (navController != null && irParaAtras) {
-                        navController.popBackStack()
+                        navController.navigate("usuariosGrupo")
                     }
                 }) {
                     Icon(
@@ -190,7 +191,7 @@ fun MuestraUsuariosGrupo(
         Scaffold(
             topBar = {
                 DefaultTopBar(
-                    title = "usuarios_grupo", // Se utiliza la clave "usuarios_grupo" definida en el mapa
+                    title = traducir("usuarios_grupo"),
                     navController = navController,
                     showBackButton = true,
                     irParaAtras = true,
@@ -198,6 +199,7 @@ fun MuestraUsuariosGrupo(
                 )
             }
         ) { padding ->
+            // Usa LimitaTamanioAncho para restringir el ancho en pantallas grandes
             LimitaTamanioAncho { modifier ->
                 LazyColumn(
                     modifier = modifier
@@ -339,9 +341,9 @@ fun MiBottomBar(navController: NavHostController) {
 
         // Ítem de Foros
         BottomNavigationItem(
-            selected = currentRoute == "foro",
+            selected = currentRoute == "foroLocal"/*"foro"*/,
             onClick = {
-                navController.navigate("foro") {
+                navController.navigate("foroLocal"/*"foro"*/) {
                     navController.graph.startDestinationRoute?.let {
                         popUpTo(it) { saveState = true }
                     }
@@ -462,6 +464,12 @@ fun ChatCard(conversacion: Conversacion, navController: NavHostController) {
             .padding(vertical = 4.dp)
             .clickable {
                 if (conversacion.grupo) {
+                    // Buscamos los usuarios de esa conversación y llenamos una lista con sus idUnico
+                    val usuarios = UsuariosPreCreados.filter { it.getIdUnico() in conversacion.participants }
+
+                    // Actualizamos la lista de usuariosGrupoGeneral con los usuarios de la conversación
+                    // (excluyendo al UsuarioPrincipal)
+                    actualizarUsuariosGrupoGeneral(usuarios.filter { it.getIdUnico() != UsuarioPrincipal?.getIdUnico() })
                     navController.navigate("mostrarChatGrupo/${conversacion.id}")
                 } else {
                     navController.navigate("mostrarChat/${conversacion.id}")
