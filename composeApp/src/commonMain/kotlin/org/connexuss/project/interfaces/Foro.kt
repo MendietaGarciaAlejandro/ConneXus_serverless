@@ -240,13 +240,14 @@ fun PantallaForoLocal(
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun PantallaTemaLocal(
-    navController: NavHostController
+    navController: NavHostController,
+    temaParam: String
 ) {
     val mensajes = remember { mutableStateListOf<String>() }
     var nuevoMensaje by remember { mutableStateOf("") }
 
     Scaffold(
-        topBar = { DefaultTopBar(title = traducir("tema_del_foro"), navController = navController, showBackButton = true, irParaAtras = true) }
+        topBar = { DefaultTopBar(title = temaParam, navController = navController, showBackButton = true, irParaAtras = true) }
     ) { padding ->
         LimitaTamanioAncho { modifier ->
             Column(modifier = modifier.fillMaxSize().padding(padding)) {
@@ -304,13 +305,14 @@ fun PantallaTemaLocal(
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun PantallaHiloLocal(
-    navController: NavHostController
+    navController: NavHostController,
+    mensajeParam: String
 ) {
     val mensajes = remember { mutableStateListOf<String>() }
     var nuevoMensaje by remember { mutableStateOf("") }
 
     Scaffold(
-        topBar = { DefaultTopBar(title = traducir("tema_del_foro"), navController = navController, showBackButton = true, irParaAtras = true) }
+        topBar = { DefaultTopBar(title = mensajeParam, navController = navController, showBackButton = true, irParaAtras = true) }
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
             LazyColumn(

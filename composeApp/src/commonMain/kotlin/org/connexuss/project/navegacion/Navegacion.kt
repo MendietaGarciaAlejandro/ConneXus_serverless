@@ -334,11 +334,16 @@ fun Navegacion(
         composable("foroLocal") {
             PantallaForoLocal(navController)
         }
-        composable("tema/{tema}") {
-            PantallaTemaLocal(navController)
+        // Fíjate en la barra y en las llaves:
+        composable("tema/{tema}") { backStackEntry ->
+            // Recuperas el valor de "tema"
+            val temaParam = backStackEntry.arguments?.getString("tema") ?: ""
+            // Lo pasas a tu pantalla
+            PantallaTemaLocal(navController, temaParam)
         }
-        composable("hilo/{mensaje}") {
-            PantallaHiloLocal(navController)
+        composable("hilo/{mensaje}") { backStackEntry ->
+            val mensajeParam = backStackEntry.arguments?.getString("mensaje") ?: ""
+            PantallaHiloLocal(navController, mensajeParam)
         }
     }
 }
