@@ -6,7 +6,131 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import connexus_serverless.composeapp.generated.resources.Res
-import connexus_serverless.composeapp.generated.resources.*
+import connexus_serverless.composeapp.generated.resources.abstracto001
+import connexus_serverless.composeapp.generated.resources.abstracto002
+import connexus_serverless.composeapp.generated.resources.abstracto003
+import connexus_serverless.composeapp.generated.resources.abstracto004
+import connexus_serverless.composeapp.generated.resources.abstracto005
+import connexus_serverless.composeapp.generated.resources.abstracto006
+import connexus_serverless.composeapp.generated.resources.abstracto007
+import connexus_serverless.composeapp.generated.resources.abstracto008
+import connexus_serverless.composeapp.generated.resources.abstracto009
+import connexus_serverless.composeapp.generated.resources.abstracto010
+import connexus_serverless.composeapp.generated.resources.abstracto011
+import connexus_serverless.composeapp.generated.resources.abstracto012
+import connexus_serverless.composeapp.generated.resources.abstracto013
+import connexus_serverless.composeapp.generated.resources.abstracto014
+import connexus_serverless.composeapp.generated.resources.abstracto015
+import connexus_serverless.composeapp.generated.resources.abstracto016
+import connexus_serverless.composeapp.generated.resources.abstracto017
+import connexus_serverless.composeapp.generated.resources.abstracto018
+import connexus_serverless.composeapp.generated.resources.abstracto019
+import connexus_serverless.composeapp.generated.resources.abstracto020
+import connexus_serverless.composeapp.generated.resources.abstracto021
+import connexus_serverless.composeapp.generated.resources.abstracto022
+import connexus_serverless.composeapp.generated.resources.abstracto023
+import connexus_serverless.composeapp.generated.resources.abstracto024
+import connexus_serverless.composeapp.generated.resources.abstracto025
+import connexus_serverless.composeapp.generated.resources.abstracto026
+import connexus_serverless.composeapp.generated.resources.abstracto027
+import connexus_serverless.composeapp.generated.resources.abstracto028
+import connexus_serverless.composeapp.generated.resources.abstracto029
+import connexus_serverless.composeapp.generated.resources.abstracto030
+import connexus_serverless.composeapp.generated.resources.abstracto031
+import connexus_serverless.composeapp.generated.resources.abstracto032
+import connexus_serverless.composeapp.generated.resources.abstracto033
+import connexus_serverless.composeapp.generated.resources.abstracto034
+import connexus_serverless.composeapp.generated.resources.abstracto035
+import connexus_serverless.composeapp.generated.resources.abstracto036
+import connexus_serverless.composeapp.generated.resources.abstracto037
+import connexus_serverless.composeapp.generated.resources.abstracto038
+import connexus_serverless.composeapp.generated.resources.abstracto039
+import connexus_serverless.composeapp.generated.resources.abstracto040
+import connexus_serverless.composeapp.generated.resources.abstracto041
+import connexus_serverless.composeapp.generated.resources.abstracto042
+import connexus_serverless.composeapp.generated.resources.abstracto043
+import connexus_serverless.composeapp.generated.resources.abstracto044
+import connexus_serverless.composeapp.generated.resources.abstracto045
+import connexus_serverless.composeapp.generated.resources.abstracto046
+import connexus_serverless.composeapp.generated.resources.abstracto047
+import connexus_serverless.composeapp.generated.resources.abstracto048
+import connexus_serverless.composeapp.generated.resources.abstracto049
+import connexus_serverless.composeapp.generated.resources.abstracto050
+import connexus_serverless.composeapp.generated.resources.abstracto051
+import connexus_serverless.composeapp.generated.resources.avatar
+import connexus_serverless.composeapp.generated.resources.connexus
+import connexus_serverless.composeapp.generated.resources.dibujo001
+import connexus_serverless.composeapp.generated.resources.dibujo002
+import connexus_serverless.composeapp.generated.resources.dibujo003
+import connexus_serverless.composeapp.generated.resources.dibujo004
+import connexus_serverless.composeapp.generated.resources.dibujo005
+import connexus_serverless.composeapp.generated.resources.dibujo006
+import connexus_serverless.composeapp.generated.resources.dibujo007
+import connexus_serverless.composeapp.generated.resources.dibujo008
+import connexus_serverless.composeapp.generated.resources.dibujo009
+import connexus_serverless.composeapp.generated.resources.dibujo010
+import connexus_serverless.composeapp.generated.resources.dibujo011
+import connexus_serverless.composeapp.generated.resources.dibujo012
+import connexus_serverless.composeapp.generated.resources.dibujo013
+import connexus_serverless.composeapp.generated.resources.dibujo014
+import connexus_serverless.composeapp.generated.resources.dibujo015
+import connexus_serverless.composeapp.generated.resources.dibujo016
+import connexus_serverless.composeapp.generated.resources.dibujo017
+import connexus_serverless.composeapp.generated.resources.dibujo018
+import connexus_serverless.composeapp.generated.resources.dibujo019
+import connexus_serverless.composeapp.generated.resources.dibujo020
+import connexus_serverless.composeapp.generated.resources.dibujo021
+import connexus_serverless.composeapp.generated.resources.dibujo022
+import connexus_serverless.composeapp.generated.resources.dibujo023
+import connexus_serverless.composeapp.generated.resources.dibujo024
+import connexus_serverless.composeapp.generated.resources.dibujo025
+import connexus_serverless.composeapp.generated.resources.dibujo026
+import connexus_serverless.composeapp.generated.resources.dibujo027
+import connexus_serverless.composeapp.generated.resources.dibujo028
+import connexus_serverless.composeapp.generated.resources.dibujo029
+import connexus_serverless.composeapp.generated.resources.dibujo030
+import connexus_serverless.composeapp.generated.resources.dibujo031
+import connexus_serverless.composeapp.generated.resources.dibujo032
+import connexus_serverless.composeapp.generated.resources.ic_chats
+import connexus_serverless.composeapp.generated.resources.ic_email
+import connexus_serverless.composeapp.generated.resources.ic_foros
+import connexus_serverless.composeapp.generated.resources.ic_person
+import connexus_serverless.composeapp.generated.resources.persona001
+import connexus_serverless.composeapp.generated.resources.persona002
+import connexus_serverless.composeapp.generated.resources.persona003
+import connexus_serverless.composeapp.generated.resources.persona004
+import connexus_serverless.composeapp.generated.resources.persona005
+import connexus_serverless.composeapp.generated.resources.persona006
+import connexus_serverless.composeapp.generated.resources.persona007
+import connexus_serverless.composeapp.generated.resources.persona008
+import connexus_serverless.composeapp.generated.resources.persona009
+import connexus_serverless.composeapp.generated.resources.persona010
+import connexus_serverless.composeapp.generated.resources.persona011
+import connexus_serverless.composeapp.generated.resources.persona012
+import connexus_serverless.composeapp.generated.resources.persona013
+import connexus_serverless.composeapp.generated.resources.persona014
+import connexus_serverless.composeapp.generated.resources.persona015
+import connexus_serverless.composeapp.generated.resources.persona016
+import connexus_serverless.composeapp.generated.resources.persona017
+import connexus_serverless.composeapp.generated.resources.persona018
+import connexus_serverless.composeapp.generated.resources.persona019
+import connexus_serverless.composeapp.generated.resources.persona020
+import connexus_serverless.composeapp.generated.resources.persona021
+import connexus_serverless.composeapp.generated.resources.persona022
+import connexus_serverless.composeapp.generated.resources.persona023
+import connexus_serverless.composeapp.generated.resources.persona024
+import connexus_serverless.composeapp.generated.resources.persona025
+import connexus_serverless.composeapp.generated.resources.persona026
+import connexus_serverless.composeapp.generated.resources.persona027
+import connexus_serverless.composeapp.generated.resources.persona028
+import connexus_serverless.composeapp.generated.resources.persona029
+import connexus_serverless.composeapp.generated.resources.persona030
+import connexus_serverless.composeapp.generated.resources.unblock
+import connexus_serverless.composeapp.generated.resources.visibilidadOff
+import connexus_serverless.composeapp.generated.resources.visibilidadOn
+import org.connexuss.project.comunicacion.Hilo
+import org.connexuss.project.comunicacion.Post
+import org.connexuss.project.comunicacion.Tema
 import org.connexuss.project.datos.UsuarioPrincipal
 import org.connexuss.project.firebase.pruebas.AppFirebase
 import org.connexuss.project.firebase.pruebas.FirestoreConversacionesRepositorio
@@ -26,6 +150,7 @@ import org.connexuss.project.firebase.pruebas.PantallaPost
 import org.connexuss.project.firebase.pruebas.PantallaTema
 import org.connexuss.project.firebase.pruebas.PantallaUsuario
 import org.connexuss.project.firebase.pruebas.PantallaUsuarioNuestro
+import org.connexuss.project.interfaces.ForoScreen
 import org.connexuss.project.interfaces.MuestraUsuariosGrupo
 import org.connexuss.project.interfaces.PantallaAjustesAyuda
 import org.connexuss.project.interfaces.PantallaAjustesControlCuentas
@@ -49,10 +174,8 @@ import org.connexuss.project.interfaces.mostrarPerfilUsuario
 import org.connexuss.project.interfaces.muestraAjustes
 import org.connexuss.project.interfaces.muestraChats
 import org.connexuss.project.interfaces.muestraContactos
-import org.connexuss.project.interfaces.muestraForo
 import org.connexuss.project.interfaces.muestraHomePage
 import org.connexuss.project.interfaces.muestraRestablecimientoContasenna
-import org.connexuss.project.interfaces.muestraTemaForo
 import org.connexuss.project.interfaces.muestraUsuarios
 import org.connexuss.project.misc.Imagen
 import org.connexuss.project.usuario.Usuario
@@ -271,12 +394,12 @@ fun Navegacion(
             val chatId = backStackEntry.arguments?.getString("chatId")
             mostrarChatGrupo(navController, chatId, imagenesPerfilPersona)
         }
-        composable("foro") {
-            muestraForo(navController)
-        }
-        composable("temaForo") {
-            muestraTemaForo(navController)
-        }
+//        composable("foro") {
+//            muestraForo(navController)
+//        }
+//        composable("temaForo") {
+//            muestraTemaForo(navController)
+//        }
         composable("idiomas") {
             PantallaIdiomas(navController)
         }
@@ -331,9 +454,239 @@ fun Navegacion(
         composable("usuariosGrupo") {
             MuestraUsuariosGrupo(usuarios = listaUsuariosGrupo, navController = navController)
         }
+//        composable("foroLocal") {
+//            PantallaForoLocal(navController)
+//        }
+
+        // Lista temporal de Temas + Hilos + Posts
+        val temasHilosPosts = listOf(
+            Tema(
+                idTema = "Tema 1",
+                idUsuario = "usuario1", // ID de usuario (puedes generar o asignar un valor específico)
+                nombre = "Tema 1",
+                hilos = listOf(
+                    Hilo(
+                        idHilo = "Hilo 1",
+                        idForeros = listOf("usuario1", "usuario2"),
+                        posts = listOf(
+                            Post(
+                                senderId = "usuario1",
+                                receiverId = "usuario2",
+                                content = "Post 1 en Hilo 1"
+                            ),
+                            Post(
+                                senderId = "usuario2",
+                                receiverId = "usuario1",
+                                content = "Post 2 en Hilo 1"
+                            ),
+                            Post(
+                                senderId = "usuario1",
+                                receiverId = "usuario2",
+                                content = "Post 3 en Hilo 1"
+                            )
+                        ),
+                        nombre = "Hilo 1"
+                    ),
+                    Hilo(
+                        idHilo = "Hilo 2",
+                        idForeros = listOf("usuario1", "usuario3"),
+                        posts = listOf(
+                            Post(
+                                senderId = "usuario1",
+                                receiverId = "usuario3",
+                                content = "Post 1 en Hilo 2"
+                            ),
+                            Post(
+                                senderId = "usuario3",
+                                receiverId = "usuario1",
+                                content = "Post 2 en Hilo 2"
+                            ),
+                            Post(
+                                senderId = "usuario1",
+                                receiverId = "usuario3",
+                                content = "Post 3 en Hilo 2"
+                            )
+                        ),
+                        nombre = "Hilo 2"
+                    ),
+                    Hilo(
+                        idHilo = "Hilo 3",
+                        idForeros = listOf("usuario1", "usuario4"),
+                        posts = listOf(
+                            Post(
+                                senderId = "usuario1",
+                                receiverId = "usuario4",
+                                content = "Post 1 en Hilo 3"
+                            ),
+                            Post(
+                                senderId = "usuario4",
+                                receiverId = "usuario1",
+                                content = "Post 2 en Hilo 3"
+                            ),
+                            Post(
+                                senderId = "usuario1",
+                                receiverId = "usuario4",
+                                content = "Post 3 en Hilo 3"
+                            )
+                        ),
+                        nombre = "Hilo 3"
+                    )
+                )
+            ),
+            Tema(
+                idTema = "Tema 2",
+                idUsuario = "usuario2",
+                nombre = "Tema 2",
+                hilos = listOf(
+                    Hilo(
+                        idHilo = "Hilo 1",
+                        idForeros = listOf("usuario2", "usuario5"),
+                        posts = listOf(
+                            Post(
+                                senderId = "usuario2",
+                                receiverId = "usuario5",
+                                content = "Post 1 en Hilo 1"
+                            ),
+                            Post(
+                                senderId = "usuario5",
+                                receiverId = "usuario2",
+                                content = "Post 2 en Hilo 1"
+                            ),
+                            Post(
+                                senderId = "usuario2",
+                                receiverId = "usuario5",
+                                content = "Post 3 en Hilo 1"
+                            )
+                        ),
+                        nombre = "Hilo 1"
+                    ),
+                    Hilo(
+                        idHilo = "Hilo 2",
+                        idForeros = listOf("usuario2", "usuario6"),
+                        posts = listOf(
+                            Post(
+                                senderId = "usuario2",
+                                receiverId = "usuario6",
+                                content = "Post 1 en Hilo 2"
+                            ),
+                            Post(
+                                senderId = "usuario6",
+                                receiverId = "usuario2",
+                                content = "Post 2 en Hilo 2"
+                            ),
+                            Post(
+                                senderId = "usuario2",
+                                receiverId = "usuario6",
+                                content = "Post 3 en Hilo 2"
+                            )
+                        ),
+                        nombre = "Hilo 2"
+                    ),
+                    Hilo(
+                        idHilo = "Hilo 3",
+                        idForeros = listOf("usuario2", "usuario7"),
+                        posts = listOf(
+                            Post(
+                                senderId = "usuario2",
+                                receiverId = "usuario7",
+                                content = "Post 1 en Hilo 3"
+                            ),
+                            Post(
+                                senderId = "usuario7",
+                                receiverId = "usuario2",
+                                content = "Post 2 en Hilo 3"
+                            ),
+                            Post(
+                                senderId = "usuario2",
+                                receiverId = "usuario7",
+                                content = "Post 3 en Hilo 3"
+                            )
+                        ),
+                        nombre = "Hilo 3"
+                    )
+                )
+            ),
+            Tema(
+                idTema = "Tema 3",
+                idUsuario = "usuario3",
+                nombre = "Tema 3",
+                hilos = listOf(
+                    Hilo(
+                        idHilo = "Hilo 1",
+                        idForeros = listOf("usuario3", "usuario8"),
+                        posts = listOf(
+                            Post(
+                                senderId = "usuario3",
+                                receiverId = "usuario8",
+                                content = "Post 1 en Hilo 1"
+                            ),
+                            Post(
+                                senderId = "usuario8",
+                                receiverId = "usuario3",
+                                content = "Post 2 en Hilo 1"
+                            ),
+                            Post(
+                                senderId = "usuario3",
+                                receiverId = "usuario8",
+                                content = "Post 3 en Hilo 1"
+                            )
+                        ),
+                        nombre = "Hilo 1"
+                    ),
+                    Hilo(
+                        idHilo = "Hilo 2",
+                        idForeros = listOf("usuario3", "usuario9"),
+                        posts = listOf(
+                            Post(
+                                senderId = "usuario3",
+                                receiverId = "usuario9",
+                                content = "Post 1 en Hilo 2"
+                            ),
+                            Post(
+                                senderId = "usuario9",
+                                receiverId = "usuario3",
+                                content = "Post 2 en Hilo 2"
+                            ),
+                            Post(
+                                senderId = "usuario3",
+                                receiverId = "usuario9",
+                                content = "Post 3 en Hilo 2"
+                            )
+                        ),
+                        nombre = "Hilo 2"
+                    ),
+                    Hilo(
+                        idHilo = "Hilo 3",
+                        idForeros = listOf("usuario3", "usuario10"),
+                        posts = listOf(
+                            Post(
+                                senderId = "usuario3",
+                                receiverId = "usuario10",
+                                content = "Post 1 en Hilo 3"
+                            ),
+                            Post(
+                                senderId = "usuario10",
+                                receiverId = "usuario3",
+                                content = "Post 2 en Hilo 3"
+                            ),
+                            Post(
+                                senderId = "usuario3",
+                                receiverId = "usuario10",
+                                content = "Post 3 en Hilo 3"
+                            )
+                        ),
+                        nombre = "Hilo 3"
+                    )
+                )
+            )
+        )
+
+        // Pruebas interfaces foro ------
         composable("foroLocal") {
-            PantallaForoLocal(navController)
+            ForoScreen(navController, temasHilosPosts)
         }
+
+
         // Fíjate en la barra y en las llaves:
         composable("tema/{tema}") { backStackEntry ->
             // Recuperas el valor de "tema"
