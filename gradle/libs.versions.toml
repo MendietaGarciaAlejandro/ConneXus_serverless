@@ -54,6 +54,8 @@ gradlePlugins-google-services = "4.4.2"
 firebase-gitlive-sdk = "2.1.0"
 firebaseCrashlytics = "2.1.0"
 firebaseDatabase = "2.1.0"
+uiTextAndroid = "1.7.8"
+coreI18n = "1.0.0-beta01"
 
 [libraries]
 arkivanov-decompose-v080 = { module = "com.arkivanov.decompose:decompose", version.ref = "arkivanovDecompose" }
@@ -121,6 +123,8 @@ firebase-android-crashlytics-ktx = { module = "com.google.firebase:firebase-cras
 
 #Gitlive
 gitlive-firebase-kotlin-crashlytics = { module = "dev.gitlive:firebase-crashlytics", version.ref = "firebase-gitlive-sdk" }
+androidx-ui-text-android = { group = "androidx.compose.ui", name = "ui-text-android", version.ref = "uiTextAndroid" }
+androidx-core-i18n = { group = "androidx.core", name = "core-i18n", version.ref = "coreI18n" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

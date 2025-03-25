@@ -32,15 +32,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.semantics.Role.Companion.Image
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import connexus_serverless.composeapp.generated.resources.Res
 import connexus_serverless.composeapp.generated.resources.connexus
 import org.connexuss.project.comunicacion.Mensaje
-import org.connexuss.project.datos.UsuarioPrincipal
-import org.connexuss.project.datos.UsuariosPreCreados
+import org.connexuss.project.misc.UsuarioPrincipal
+import org.connexuss.project.misc.UsuariosPreCreados
+import org.connexuss.project.misc.Imagen
 import org.jetbrains.compose.resources.painterResource
 
 //Mostrar chat entre dos personas, se podria mejorar pasandole una conversacion en vez de id del chat
@@ -48,13 +49,16 @@ import org.jetbrains.compose.resources.painterResource
 fun mostrarChat(navController: NavHostController, chatId : String?) {
     // Obtiene la lista de conversaciones y busca la que tenga el id pasado
 
-    val listaChats = UsuarioPrincipal.getChatUser().conversaciones
-    val chat = listaChats.find { it.id == chatId } ?: return
+    val listaChats = UsuarioPrincipal?.getChatUser()?.conversaciones
+    val chat = listaChats?.find { it.id == chatId } ?: return
 
     val otherParticipantId = chat.participants.firstOrNull { it != UsuarioPrincipal.getIdUnico() }
         ?: chat.participants.getOrNull(1) ?: ""
     // nombre del otro participante en UsuariosPreCreados:
+    val otherParticipantUser = UsuariosPreCreados.find { it.getIdUnico() == otherParticipantId }
     val otherParticipantName = UsuariosPreCreados.find { it.getIdUnico() == otherParticipantId }?.getNombreCompleto() ?: otherParticipantId
+
+    val profileImage = otherParticipantUser?.getImagenPerfil() ?: Res.drawable.connexus
 
     var mensajeNuevo by remember { mutableStateOf("") }
     val messagesState = remember { mutableStateListOf<Mensaje>().apply { addAll(chat.messages) } }
@@ -62,15 +66,14 @@ fun mostrarChat(navController: NavHostController, chatId : String?) {
     Scaffold(
         topBar = {
             TopBarUsuario(
-
-                title = otherParticipantName, // Mostramos el nombre del participante1
-
+                title = otherParticipantName, // Muestra el nombre del otro participante
+                profileImage = profileImage,
                 navController = navController,
                 showBackButton = true,
                 irParaAtras = true,
                 muestraEngranaje = false,
                 onTitleClick = {
-                    // Por ejemplo, navegar al perfil del otro participante:
+                    // Navega al perfil del otro participante
                     navController.navigate("mostrarPerfilUsuario/$otherParticipantId")
                 }
             )
@@ -187,10 +190,10 @@ fun mostrarChat(navController: NavHostController, chatId : String?) {
 }
 
 @Composable
-fun mostrarChatGrupo(navController: NavHostController, chatId: String?) {
+fun mostrarChatGrupo(navController: NavHostController, chatId: String?, imagenesPerfil: List<Imagen>) {
     // Obtiene la lista de conversaciones del UsuarioPrincipal y busca la conversación por su id
-    val listaChats = UsuarioPrincipal.getChatUser().conversaciones
-    val chat = listaChats.find { it.id == chatId } ?: return
+    val listaChats = UsuarioPrincipal?.getChatUser()?.conversaciones
+    val chat = listaChats?.find { it.id == chatId } ?: return
     val idUsuario = UsuarioPrincipal.getIdUnico()
     val groupTitle = if (!chat.nombre.isNullOrBlank()) chat.nombre else chat.id
 
@@ -199,12 +202,16 @@ fun mostrarChatGrupo(navController: NavHostController, chatId: String?) {
 
     Scaffold(
         topBar = {
-            DefaultTopBar(
+            TopBarGrupo(
                 title = groupTitle,
                 navController = navController,
                 showBackButton = true,
                 irParaAtras = true,
-                muestraEngranaje = false
+                muestraEngranaje = true,
+                onUsuariosClick = {
+                    // Al pulsar, abre una pantalla con una lista de los participantes del grupo
+                    //navController.navigate("mostrarParticipantesGrupo/$chatId")
+                }
             )
         }
     ) { padding ->
@@ -245,6 +252,8 @@ fun mostrarChatGrupo(navController: NavHostController, chatId: String?) {
                                 modifier = Modifier
                                     .size(40.dp)
                                     .padding(end = 8.dp)
+                                    .clip(RoundedCornerShape(20.dp))
+                                    .border(1.dp, Color.Gray, RoundedCornerShape(20.dp))
                                     .clickable {
                                         // Navega al perfil del emisor
                                         navController.navigate("mostrarPerfilUsuario/${senderUser?.getIdUnico() ?: mensaje.senderId}")

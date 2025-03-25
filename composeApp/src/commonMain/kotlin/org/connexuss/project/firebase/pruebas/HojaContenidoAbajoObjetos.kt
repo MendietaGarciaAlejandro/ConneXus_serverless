@@ -1,6 +1,3 @@
-@file:OptIn(ExperimentalMaterial3Api::class)
-
-
 package org.connexuss.project.firebase.pruebas
 
 import androidx.compose.foundation.layout.Arrangement
@@ -11,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -22,7 +18,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.datetime.Clock
-import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.connexuss.project.comunicacion.Conversacion
@@ -31,6 +26,7 @@ import org.connexuss.project.comunicacion.Hilo
 import org.connexuss.project.comunicacion.Mensaje
 import org.connexuss.project.comunicacion.Post
 import org.connexuss.project.comunicacion.Tema
+import org.connexuss.project.usuario.Usuario
 
 @Composable
 fun HojaContenidoAbajoUsuarios(
@@ -86,6 +82,116 @@ fun HojaContenidoAbajoUsuarios(
 }
 
 @Composable
+fun HojaContenidoAbajoUsuariosNuestros(
+    usuario: Usuario? = null,
+    onSave: (Usuario) -> Unit,
+    onDelete: (Usuario?) -> Unit
+) {
+    var nombre by remember { mutableStateOf(usuario?.getNombreCompleto() ?: "") }
+    var correo by remember { mutableStateOf(usuario?.getCorreo() ?: "") }
+    var alias by remember { mutableStateOf(usuario?.getAlias() ?: "") }
+    var aliasPrivado by remember { mutableStateOf(usuario?.getAliasPrivado() ?: "") }
+    var idUnico by remember { mutableStateOf(usuario?.getIdUnico() ?: "") }
+    var descripcion by remember { mutableStateOf(usuario?.getDescripcion() ?: "") }
+    var contrasennia by remember { mutableStateOf(usuario?.getContrasennia() ?: "") }
+    var usuariosBloqueados by remember { mutableStateOf(usuario?.getUsuariosBloqueados().toString() ?: "") }
+    val chatUserPrueba = ConversacionesUsuario("", "", emptyList())
+    var usuarioInterno = Usuario("", "", "", "", false, emptyList(), chatUserPrueba)
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+    ) {
+        TextField(
+            modifier = Modifier.fillMaxWidth(),
+            value = nombre,
+            onValueChange = { nombre = it },
+            singleLine = true,
+            label = { Text("Nombre") }
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        TextField(
+            modifier = Modifier.fillMaxWidth(),
+            value = correo,
+            onValueChange = { correo = it },
+            singleLine = true,
+            label = { Text("Correo") }
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        TextField(
+            modifier = Modifier.fillMaxWidth(),
+            value = alias,
+            onValueChange = { alias = it },
+            singleLine = true,
+            label = { Text("Alias") }
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        TextField(
+            modifier = Modifier.fillMaxWidth(),
+            value = aliasPrivado,
+            onValueChange = { aliasPrivado = it },
+            singleLine = true,
+            label = { Text("Alias Privado") }
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        TextField(
+            modifier = Modifier.fillMaxWidth(),
+            value = idUnico,
+            onValueChange = { idUnico = it },
+            singleLine = true,
+            label = { Text("ID Único") }
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        TextField(
+            modifier = Modifier.fillMaxWidth(),
+            value = descripcion,
+            onValueChange = { descripcion = it },
+            singleLine = true,
+            label = { Text("Descripción") }
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        TextField(
+            modifier = Modifier.fillMaxWidth(),
+            value = contrasennia,
+            onValueChange = { contrasennia = it },
+            singleLine = true,
+            label = { Text("Contraseña") }
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        TextField(
+            modifier = Modifier.fillMaxWidth(),
+            value = usuariosBloqueados,
+            onValueChange = { usuariosBloqueados = it },
+            singleLine = true,
+            label = { Text("Usuarios Bloqueados") }
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            Button(onClick = {
+                usuarioInterno.setNombreCompleto(nombre)
+                usuarioInterno.setCorreo(correo)
+                usuarioInterno.setAlias(alias)
+                usuarioInterno.setAliasPrivado(aliasPrivado)
+                usuarioInterno.setIdUnico(idUnico)
+                usuarioInterno.setDescripcion(descripcion)
+                usuarioInterno.setContrasennia(contrasennia)
+                usuarioInterno.setUsuariosBloqueados(usuariosBloqueados.split(", "))
+                onSave(usuarioInterno)
+            }) {
+                Text(text = if (usuario == null) "Guardar" else "Actualizar")
+            }
+            Button(onClick = { onDelete(usuario) }) {
+                Text("Borrar")
+            }
+        }
+    }
+}
+
+@Composable
 fun HojaContenidoAbajoMensajes(
     mensaje: Mensaje? = null,
     onSave: (Mensaje) -> Unit,
@@ -94,7 +200,7 @@ fun HojaContenidoAbajoMensajes(
     var contenido by remember { mutableStateOf(mensaje?.content ?: "") }
     var usuarioEnvia by remember { mutableStateOf(mensaje?.senderId ?: "") }
     var usuarioRecibe by remember { mutableStateOf(mensaje?.receiverId ?: "") }
-    var fecha by remember { mutableStateOf(mensaje?.fechaMensaje.toString() ?: "") }
+    var fecha by remember { mutableStateOf(mensaje?.fechaMensaje.toString()) }
     val fechaHoy = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
 
     Column(
@@ -157,7 +263,7 @@ fun HojaContenidoAbajoConversaciones(
 ) {
     var nombre by remember { mutableStateOf(conversacion?.nombre ?: "") }
     var participantes by remember { mutableStateOf(conversacion?.participants?.joinToString(", ") ?: "") }
-    var mensajes by remember { mutableStateOf(conversacion?.messages.toString() ?: "") }
+    var mensajes by remember { mutableStateOf(conversacion?.messages.toString()) }
 
     Column(
         modifier = Modifier
@@ -210,7 +316,7 @@ fun HojaContenidoAbajoConversacionesUsuarios(
 ) {
     var id by remember { mutableStateOf(conversacionesUsuario?.id ?: "") }
     var idUser by remember { mutableStateOf(conversacionesUsuario?.idUser ?: "") }
-    var conversaciones by remember { mutableStateOf(conversacionesUsuario?.conversaciones.toString() ?: "") }
+    var conversaciones by remember { mutableStateOf(conversacionesUsuario?.conversaciones.toString()) }
 
     Column(
         modifier = Modifier
@@ -262,10 +368,10 @@ fun HojaContenidoAbajoPosts(
     onDelete: (Post?) -> Unit
 ) {
     var id by remember { mutableStateOf(post?.idPost ?: "") }
-    var usuarioEnvia by remember { mutableStateOf(post?.senderId ?: "") }
-    var usuarioRecibe by remember { mutableStateOf(post?.receiverId ?: "") }
+    val usuarioEnvia by remember { mutableStateOf(post?.senderId ?: "") }
+    val usuarioRecibe by remember { mutableStateOf(post?.receiverId ?: "") }
     var contenido by remember { mutableStateOf(post?.content ?: "") }
-    var fecha by remember { mutableStateOf(post?.fechaPost.toString() ?: "") }
+    var fecha by remember { mutableStateOf(post?.fechaPost.toString()) }
     val fechaHoy = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
 
     Column(
@@ -319,7 +425,7 @@ fun HojaContenidoAbajoHilos(
 ) {
     var id by remember { mutableStateOf(hilo?.idHilo ?: "") }
     var idForeros by remember { mutableStateOf(hilo?.idForeros?.joinToString(", ") ?: "") }
-    var posts by remember { mutableStateOf(hilo?.posts.toString() ?: "") }
+    var posts by remember { mutableStateOf(hilo?.posts.toString()) }
     var nombre by remember { mutableStateOf(hilo?.nombre ?: "") }
 
     Column(
@@ -381,7 +487,8 @@ fun HojaContenidoAbajoTemas(
 ) {
     var id by remember { mutableStateOf(tema?.idTema ?: "") }
     var idUsuario by remember { mutableStateOf(tema?.idUsuario ?: "") }
-    var hilos by remember { mutableStateOf(tema?.hilos.toString() ?: "") }
+    var nombre by remember { mutableStateOf(tema?.nombre ?: "") }
+    var hilos by remember { mutableStateOf(tema?.hilos.toString()) }
 
     Column(
         modifier = Modifier
@@ -406,6 +513,14 @@ fun HojaContenidoAbajoTemas(
         Spacer(modifier = Modifier.height(16.dp))
         TextField(
             modifier = Modifier.fillMaxWidth(),
+            value = nombre,
+            onValueChange = { nombre = it },
+            singleLine = true,
+            label = { Text("Nombre") }
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        TextField(
+            modifier = Modifier.fillMaxWidth(),
             value = hilos,
             onValueChange = { hilos = it },
             singleLine = true,
@@ -416,7 +531,7 @@ fun HojaContenidoAbajoTemas(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            Button(onClick = { onSave(Tema(id, idUsuario, emptyList())) }) {
+            Button(onClick = { onSave(Tema(id, idUsuario, nombre, emptyList())) }) {
                 Text(text = if (tema == null) "Guardar" else "Actualizar")
             }
             Button(onClick = { onDelete(tema) }) {

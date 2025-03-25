@@ -2,17 +2,19 @@ package org.connexuss.project.usuario
 
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import connexus_serverless.composeapp.generated.resources.Res
-import connexus_serverless.composeapp.generated.resources.connexus
-import connexus_serverless.composeapp.generated.resources.ic_foros
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import org.connexuss.project.comunicacion.Conversacion
 import org.connexuss.project.comunicacion.ConversacionesUsuario
-import org.connexuss.project.datos.UsuariosPreCreados
+import org.connexuss.project.misc.UsuariosPreCreados
+import org.connexuss.project.misc.imagenesPerfilAbstrasto
+import org.connexuss.project.misc.imagenesPerfilDibujo
+import org.connexuss.project.misc.imagenesPerfilPersona
 import org.connexuss.project.encriptacion.hash
 import org.jetbrains.compose.resources.DrawableResource
-import kotlin.random.Random
 
 // Clase usuario con sus atributos y metodos
+@Serializable
 class Usuario {
     private var nombre: String = ""
     private var correo: String = ""
@@ -26,8 +28,8 @@ class Usuario {
     private var contrasennia: String = ""
 
     private var usuariosBloqueados: List<String> = emptyList()
-    private lateinit var imagenPerfil: DrawableResource
-
+    @Transient
+    private var imagenPerfil: DrawableResource? = null
     // Constructor completo
     constructor(nombre: String, correo: String, aliasPublico: String, activo: Boolean, contactos: List<String>, chatUser: ConversacionesUsuario) {
         this.idUnico = UtilidadesUsuario().generarIdUnico()
@@ -38,16 +40,17 @@ class Usuario {
         this.activo = activo
         this.contactos = contactos
         this.chatUser = chatUser
-        this.imagenPerfil = generarImagenRandom()
+        this.imagenPerfil = generarImagenPerfilRandom()
     }
 
-    private fun generarImagenRandom(): DrawableResource {
-        //Se deberia implementar la logica para generar una imagen random, por ahora se pone la imagen predeterminada de la aplicacion
-        return Res.drawable.connexus
+    fun generarImagenPerfilRandom(): DrawableResource {
+        // Cojo todas las listas de imagenes de perfil para que seleccione una aleatoria
+        val todasImagenes = imagenesPerfilPersona + imagenesPerfilAbstrasto + imagenesPerfilDibujo
+        return todasImagenes.random().resource
     }
 
     //Debug: Contructor con idUnico
-    constructor(idUnico: String, nombre: String, correo: String, aliasPublico: String, activo: Boolean, contactos: List<String>, chatUser: ConversacionesUsuario) {
+    constructor(idUnico: String, nombre: String, correo: String, aliasPublico: String, activo: Boolean, contactos: List<String>, chatUser: ConversacionesUsuario?) {
         this.idUnico = idUnico
         this.nombre = nombre
         this.correo = correo
@@ -55,9 +58,10 @@ class Usuario {
         this.aliasPrivado = hash(aliasPublico)
         this.activo = activo
         this.contactos = contactos
-        this.chatUser = chatUser
-        this.imagenPerfil = generarImagenRandom()
-    }
+        if (chatUser != null) {
+            this.chatUser = chatUser
+        }
+        this.imagenPerfil = generarImagenPerfilRandom()}
 
     // Constructor vacio
     constructor() {
@@ -155,7 +159,7 @@ class Usuario {
         this.usuariosBloqueados = usuariosBloqueados
     }
 
-    fun getImagenPerfil(): DrawableResource {
+    fun getImagenPerfil(): DrawableResource? {
         return imagenPerfil
     }
 
@@ -179,6 +183,10 @@ class Usuario {
         Text("Id Unico: $idUnico")
         Text("Alias Privado: $aliasPrivado")
     }
+
+
+
+
 }
 
 // Clase que almacena los usuarios
@@ -228,7 +236,7 @@ class UtilidadesUsuario {
         return correo.contains("@")
     }
 
-    fun validarNombre(nombre: String): Boolean {
+    private fun validarNombre(nombre: String): Boolean {
         return nombre.isNotEmpty()
     }
 
@@ -244,14 +252,18 @@ class UtilidadesUsuario {
         return true
     }
 
-    fun instanciaUsuario(nombre: String,  correo: String, aliasPublico: String, activo: Boolean): Usuario {
-        val correoValido = validarCorreo(correo)
-        val nombreValido = validarNombre(nombre)
-        val aliasPublicoValido = validarNombre(aliasPublico)
+    fun instanciaUsuario(nombre: String?, correo: String?, aliasPublico: String?, activo: Boolean?): Usuario? {
+        val correoValido = correo?.let { validarCorreo(it) } ?: false
+        val nombreValido = nombre?.let { validarNombre(it) } ?: false
+        val aliasPublicoValido = aliasPublico?.let { validarNombre(it) } ?: false
         if (!correoValido || !nombreValido || !aliasPublicoValido) {
             throw IllegalArgumentException("Datos de usuario no validos")
         }
-        return Usuario(nombre, correo, aliasPublico, activo, emptyList(), ConversacionesUsuario(generarIdUnico(), generarIdUnico(), listOf( Conversacion( generarIdUnico(), emptyList() ) ) ) )
+        return if (activo != null) {
+            Usuario(nombre!!, correo!!, aliasPublico!!, activo, emptyList(), ConversacionesUsuario(generarIdUnico(), generarIdUnico(), listOf(Conversacion(generarIdUnico(), emptyList()))))
+        } else {
+            null
+        }
     }
 
     //Debug: Contructor con idUnico
@@ -299,8 +311,14 @@ class UtilidadesUsuario {
     }
 
     // Función que obtiene los alias existentes en UsuariosPreCreados
-    fun obtenerAliasExistentes(): Set<String> {
+    private fun obtenerAliasExistentes(): Set<String> {
         return UsuariosPreCreados.map { it.getAlias() }.toSet()
+    }
+
+    fun generarImagenPerfilRandom(): DrawableResource {
+        // Cojo todas las listas de imagenes de perfil para que seleccione una aleatoria
+        val todasImagenes = imagenesPerfilPersona + imagenesPerfilAbstrasto + imagenesPerfilDibujo
+        return todasImagenes.random().resource
     }
 
     fun generarAliasPublico(): String {
@@ -312,5 +330,7 @@ class UtilidadesUsuario {
         aliasGenerados.add(alias)
         return alias
     }
+
+
 
 }

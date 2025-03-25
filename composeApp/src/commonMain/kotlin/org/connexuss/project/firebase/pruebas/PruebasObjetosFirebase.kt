@@ -45,6 +45,7 @@ fun MuestraObjetosPruebasFriebase(navHostController: NavHostController) {
                 ) {
                     val tiposObjetos = listOf(
                         "UsuarioPrueba",
+                        "Usuario",
                         "Mensaje",
                         "Conversacion",
                         "ConversacionUsuario",

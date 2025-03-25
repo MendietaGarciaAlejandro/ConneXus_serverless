@@ -1,12 +1,13 @@
 package org.connexuss.project.navegacion
 
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import org.connexuss.project.datos.UsuarioPrincipal
+import org.connexuss.project.misc.UsuarioPrincipal
+import org.connexuss.project.misc.imagenesPerfilPersona
+import org.connexuss.project.misc.temasHilosPosts
 import org.connexuss.project.firebase.pruebas.AppFirebase
 import org.connexuss.project.firebase.pruebas.FirestoreConversacionesRepositorio
 import org.connexuss.project.firebase.pruebas.FirestoreConversacionesUsuariosRepositorio
@@ -14,6 +15,7 @@ import org.connexuss.project.firebase.pruebas.FirestoreHilosRepositorio
 import org.connexuss.project.firebase.pruebas.FirestoreMensajesRepositorio
 import org.connexuss.project.firebase.pruebas.FirestorePostsRepositorio
 import org.connexuss.project.firebase.pruebas.FirestoreTemasRepositorio
+import org.connexuss.project.firebase.pruebas.FirestoreUsuariosNuestros
 import org.connexuss.project.firebase.pruebas.FirestoreUsuariosRepositorio
 import org.connexuss.project.firebase.pruebas.MuestraObjetosPruebasFriebase
 import org.connexuss.project.firebase.pruebas.PantallaConversacion
@@ -23,20 +25,23 @@ import org.connexuss.project.firebase.pruebas.PantallaMensaje
 import org.connexuss.project.firebase.pruebas.PantallaPost
 import org.connexuss.project.firebase.pruebas.PantallaTema
 import org.connexuss.project.firebase.pruebas.PantallaUsuario
+import org.connexuss.project.firebase.pruebas.PantallaUsuarioNuestro
+import org.connexuss.project.interfaces.ForoScreen
+import org.connexuss.project.interfaces.HiloScreen
+import org.connexuss.project.interfaces.MuestraUsuariosGrupo
 import org.connexuss.project.interfaces.PantallaAjustesAyuda
 import org.connexuss.project.interfaces.PantallaAjustesControlCuentas
-import org.connexuss.project.interfaces.PantallaCambiarTema
-import org.connexuss.project.interfaces.TemaConfig
-import org.connexuss.project.interfaces.muestraForo
-import org.connexuss.project.interfaces.muestraTemaForo
 import org.connexuss.project.interfaces.PantallaCambiarFuente
-import org.connexuss.project.interfaces.PantallaIdiomas
+import org.connexuss.project.interfaces.PantallaCambiarTema
 import org.connexuss.project.interfaces.PantallaEmailEnElSistema
 import org.connexuss.project.interfaces.PantallaEmailNoEnElSistema
+import org.connexuss.project.interfaces.PantallaIdiomas
 import org.connexuss.project.interfaces.PantallaLogin
 import org.connexuss.project.interfaces.PantallaRegistro
 import org.connexuss.project.interfaces.PantallaRestablecer
 import org.connexuss.project.interfaces.SplashScreen
+import org.connexuss.project.interfaces.TemaConfig
+import org.connexuss.project.interfaces.TemaScreen
 import org.connexuss.project.interfaces.mostrarChat
 import org.connexuss.project.interfaces.mostrarChatGrupo
 import org.connexuss.project.interfaces.mostrarPerfil
@@ -47,22 +52,28 @@ import org.connexuss.project.interfaces.muestraContactos
 import org.connexuss.project.interfaces.muestraHomePage
 import org.connexuss.project.interfaces.muestraRestablecimientoContasenna
 import org.connexuss.project.interfaces.muestraUsuarios
+import org.connexuss.project.usuario.Usuario
 
 @Composable
 fun Navegacion(
     temaConfig: TemaConfig,
     onToggleTheme: () -> Unit,
-    onColorChange: (String) -> Unit
+    onColorChange: (String) -> Unit,
+    listaUsuariosGrupo: List<Usuario>
 ) {
     val navController = rememberNavController()
 
     val repositorioUsuarios = remember { FirestoreUsuariosRepositorio() }
+    val repositorioUsuariosNuestros = remember { FirestoreUsuariosNuestros() }
     val repositorioMensajes = remember { FirestoreMensajesRepositorio() }
     val repositorioConversaciones = remember { FirestoreConversacionesRepositorio() }
     val repositorioConversacionesUsuarios = remember { FirestoreConversacionesUsuariosRepositorio() }
     val repositorioPosts = remember { FirestorePostsRepositorio() }
     val repositorioHilos = remember { FirestoreHilosRepositorio() }
     val repositorioTemas = remember { FirestoreTemasRepositorio() }
+
+
+
 
     NavHost(navController = navController, startDestination = "splash") {
         composable("splash") {
@@ -127,13 +138,7 @@ fun Navegacion(
         composable("mostrarChatGrupo/{chatId}") {
             backStackEntry ->
             val chatId = backStackEntry.arguments?.getString("chatId")
-            mostrarChatGrupo(navController, chatId)
-        }
-        composable("foro") {
-            muestraForo(navController)
-        }
-        composable("temaForo") {
-            muestraTemaForo(navController)
+            mostrarChatGrupo(navController, chatId, imagenesPerfilPersona)
         }
         composable("idiomas") {
             PantallaIdiomas(navController)
@@ -143,7 +148,7 @@ fun Navegacion(
         }
         composable("mostrarPerfilUsuario/{userId}") { backStackEntry ->
             val userId = backStackEntry.arguments?.getString("userId")
-            mostrarPerfilUsuario(navController, userId)
+            mostrarPerfilUsuario(navController, userId, imagenesPerfilPersona)
         }
         composable("appFirebase") {
             AppFirebase(navController)
@@ -151,14 +156,11 @@ fun Navegacion(
         composable("pruebasObjetosFIrebase") {
             MuestraObjetosPruebasFriebase(navController)
         }
-        /*
-        composable("pruebas/{objeto}") { backStackEntry ->
-            val objeto = backStackEntry.arguments?.getString("objeto")
-            Text("Objeto: $objeto")
-        }
-        */
         composable("UsuarioPrueba") {
             PantallaUsuario(repositorioUsuarios, navController)
+        }
+        composable("Usuario") {
+            PantallaUsuarioNuestro(repositorioUsuariosNuestros, navController)
         }
         composable("Mensaje") {
             PantallaMensaje(repositorioMensajes, navController)
@@ -177,6 +179,29 @@ fun Navegacion(
         }
         composable("Tema") {
             PantallaTema(repositorioTemas, navController)
+        }
+        composable("mostrarParticipantesGrupo/{chatId}" ) {
+            backStackEntry ->
+            val chatId = backStackEntry.arguments?.getString("chatId")
+            mostrarChatGrupo(navController, chatId, imagenesPerfilPersona)
+        }
+        composable("usuariosGrupo") {
+            MuestraUsuariosGrupo(usuarios = listaUsuariosGrupo, navController = navController)
+        }
+        composable("foroLocal") {
+            ForoScreen(navController, temasHilosPosts)
+        }
+        composable("tema/{temaId}") { backStackEntry ->
+            val temaId = backStackEntry.arguments?.getString("temaId")
+            // Buscar el Tema en tu lista global o pasarlo como argumento
+            val temaEncontrado = temasHilosPosts.find { it.idTema == temaId } ?: return@composable
+            TemaScreen(navController, temaEncontrado)
+        }
+        composable("hilo/{hiloId}") { backStackEntry ->
+            val hiloId = backStackEntry.arguments?.getString("hiloId")
+            // Buscar el Hilo en tu estado global o pasarlo como argumento
+            val hiloEncontrado = temasHilosPosts.flatMap { it.hilos }.find { it.idHilo == hiloId } ?: return@composable
+            HiloScreen(navController, hiloEncontrado)
         }
     }
 }
