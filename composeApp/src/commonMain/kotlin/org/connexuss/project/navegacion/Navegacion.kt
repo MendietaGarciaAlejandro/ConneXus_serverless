@@ -151,6 +151,7 @@ import org.connexuss.project.firebase.pruebas.PantallaTema
 import org.connexuss.project.firebase.pruebas.PantallaUsuario
 import org.connexuss.project.firebase.pruebas.PantallaUsuarioNuestro
 import org.connexuss.project.interfaces.ForoScreen
+import org.connexuss.project.interfaces.HiloScreen
 import org.connexuss.project.interfaces.MuestraUsuariosGrupo
 import org.connexuss.project.interfaces.PantallaAjustesAyuda
 import org.connexuss.project.interfaces.PantallaAjustesControlCuentas
@@ -158,15 +159,13 @@ import org.connexuss.project.interfaces.PantallaCambiarFuente
 import org.connexuss.project.interfaces.PantallaCambiarTema
 import org.connexuss.project.interfaces.PantallaEmailEnElSistema
 import org.connexuss.project.interfaces.PantallaEmailNoEnElSistema
-import org.connexuss.project.interfaces.PantallaForoLocal
-import org.connexuss.project.interfaces.PantallaHiloLocal
 import org.connexuss.project.interfaces.PantallaIdiomas
 import org.connexuss.project.interfaces.PantallaLogin
 import org.connexuss.project.interfaces.PantallaRegistro
 import org.connexuss.project.interfaces.PantallaRestablecer
-import org.connexuss.project.interfaces.PantallaTemaLocal
 import org.connexuss.project.interfaces.SplashScreen
 import org.connexuss.project.interfaces.TemaConfig
+import org.connexuss.project.interfaces.TemaScreen
 import org.connexuss.project.interfaces.mostrarChat
 import org.connexuss.project.interfaces.mostrarChatGrupo
 import org.connexuss.project.interfaces.mostrarPerfil
@@ -691,12 +690,20 @@ fun Navegacion(
         composable("tema/{tema}") { backStackEntry ->
             // Recuperas el valor de "tema"
             val temaParam = backStackEntry.arguments?.getString("tema") ?: ""
+            val tema = temasHilosPosts.find { it.nombre == temaParam }
             // Lo pasas a tu pantalla
-            PantallaTemaLocal(navController, temaParam)
+            //PantallaTemaLocal(navController, temaParam)
+            if (tema != null) {
+                TemaScreen(navController, tema)
+            }
         }
         composable("hilo/{mensaje}") { backStackEntry ->
             val mensajeParam = backStackEntry.arguments?.getString("mensaje") ?: ""
-            PantallaHiloLocal(navController, mensajeParam)
-        }
+            val hilo = temasHilosPosts.flatMap { it.hilos }.find { it.nombre == mensajeParam }
+            //PantallaHiloLocal(navController, mensajeParam)
+            if (hilo != null) {
+                HiloScreen(navController, hilo)
+            }
+       }
     }
 }

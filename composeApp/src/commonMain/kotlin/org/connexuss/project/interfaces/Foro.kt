@@ -28,6 +28,7 @@ import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.runtime.Composable
@@ -185,7 +186,7 @@ fun muestraTemaForo(navController: NavHostController) {
     }
 }
  */
-
+/*
 // Nuevas interfaces -----
 
 
@@ -379,6 +380,7 @@ fun PantallaHiloLocal(
         }
     }
 }
+ */
 
 // A pulir --
 
@@ -387,12 +389,20 @@ fun ForoScreen(navController: NavHostController, temas: List<Tema>) {
     // Pantalla principal del foro, con un listado de Temas
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(text = "Foro General") },
-                backgroundColor = MaterialTheme.colors.primary,
-                contentColor = Color.White
+//            TopAppBar(
+//                title = { Text(text = "Foro General") },
+//                backgroundColor = MaterialTheme.colors.primary,
+//                contentColor = Color.White
+//            )
+            DefaultTopBar(
+                title = "Foro General",
+                navController = navController,
+                showBackButton = true,
+                muestraEngranaje = true,
+                irParaAtras = true
             )
-        }
+        },
+        bottomBar = { MiBottomBar(navController) }
     ) { padding ->
         Surface(
             modifier = Modifier
@@ -441,17 +451,25 @@ fun TemaScreen(navController: NavHostController, tema: Tema) {
     // Pantalla que muestra los hilos del tema seleccionado.
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(text = tema.nombre) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
-                    }
-                },
-                backgroundColor = MaterialTheme.colors.primary,
-                contentColor = Color.White
+//            TopAppBar(
+//                title = { Text(text = tema.nombre) },
+//                navigationIcon = {
+//                    IconButton(onClick = { navController.popBackStack() }) {
+//                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+//                    }
+//                },
+//                backgroundColor = MaterialTheme.colors.primary,
+//                contentColor = Color.White
+//            )
+            DefaultTopBar(
+                title = tema.nombre,
+                navController = navController,
+                showBackButton = true,
+                muestraEngranaje = true,
+                irParaAtras = true
             )
-        }
+        },
+        bottomBar = { MiBottomBar(navController) }
     ) { padding ->
         Column(
             modifier = Modifier
@@ -548,17 +566,25 @@ fun HiloScreen(navController: NavHostController, hilo: Hilo) {
     // Pantalla que muestra los posts de un hilo, estilo conversación
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(text = hilo.nombre ?: "Hilo") },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
-                    }
-                },
-                backgroundColor = MaterialTheme.colors.primary,
-                contentColor = Color.White
+//            TopAppBar(
+//                title = { Text(text = hilo.nombre ?: "Hilo") },
+//                navigationIcon = {
+//                    IconButton(onClick = { navController.popBackStack() }) {
+//                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+//                    }
+//                },
+//                backgroundColor = MaterialTheme.colors.primary,
+//                contentColor = Color.White
+//            )
+            DefaultTopBar(
+                title = hilo.nombre ?: "Hilo",
+                navController = navController,
+                showBackButton = true,
+                muestraEngranaje = true,
+                irParaAtras = true
             )
-        }
+        },
+        bottomBar = { MiBottomBar(navController) }
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
             LazyColumn(
@@ -646,7 +672,6 @@ fun NuevoPostSection(onNuevoPost: (String) -> Unit) {
         }
     }
 }
-
 
 // --- Foro con Firebase ---
 // para cuando se implemente el repositorio de Firebase
