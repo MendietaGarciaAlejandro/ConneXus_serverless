@@ -39,8 +39,8 @@ import androidx.navigation.NavHostController
 import connexus_serverless.composeapp.generated.resources.Res
 import connexus_serverless.composeapp.generated.resources.connexus
 import org.connexuss.project.comunicacion.Mensaje
-import org.connexuss.project.datos.UsuarioPrincipal
-import org.connexuss.project.datos.UsuariosPreCreados
+import org.connexuss.project.misc.UsuarioPrincipal
+import org.connexuss.project.misc.UsuariosPreCreados
 import org.connexuss.project.misc.Imagen
 import org.jetbrains.compose.resources.painterResource
 

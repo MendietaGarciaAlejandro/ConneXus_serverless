@@ -1,5 +1,5 @@
 // Datos.kt
-package org.connexuss.project.datos
+package org.connexuss.project.misc
 
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
@@ -21,10 +21,11 @@ import org.connexuss.project.comunicacion.Hilo
 import org.connexuss.project.comunicacion.Mensaje
 import org.connexuss.project.comunicacion.Post
 import org.connexuss.project.comunicacion.Tema
-import org.connexuss.project.misc.Imagen
 import org.connexuss.project.usuario.AlmacenamientoUsuario
 import org.connexuss.project.usuario.UtilidadesUsuario
 import org.connexuss.project.usuario.Usuario
+
+// Imagenes App -----------------------------------------------------
 
 val imagenesPerfilPersona = mutableListOf<Imagen>().apply {
     add(Imagen("persona001", Res.drawable.persona001))
@@ -148,8 +149,6 @@ val imagenesPerfilDibujo = mutableListOf<Imagen>().apply {
     add(Imagen("dibujo031", Res.drawable.dibujo031))
     add(Imagen("dibujo032", Res.drawable.dibujo032))
 }
-
-
 
 val UsuariosPreCreados: SnapshotStateList<Usuario> = run {
 
@@ -930,5 +929,230 @@ val temasForo: List<Tema> = listOf(
         hilos = listOf(hilosForo[4], hilosForo[5]),
         nombre = "Tema de Foro 3",
         idUsuario = "UsuarioPrincipal"
+    )
+)
+
+// Nuevos datos del foro --------------------------------------------
+
+// Lista temporal de Temas + Hilos + Posts
+val temasHilosPosts = listOf(
+    Tema(
+        idTema = "Tema 1",
+        idUsuario = "usuario1", // ID de usuario (puedes generar o asignar un valor específico)
+        nombre = "Tema 1",
+        hilos = listOf(
+            Hilo(
+                idHilo = "Hilo 1",
+                idForeros = listOf("usuario1", "usuario2"),
+                posts = listOf(
+                    Post(
+                        senderId = "usuario1",
+                        receiverId = "usuario2",
+                        content = "Post 1 en Hilo 1"
+                    ),
+                    Post(
+                        senderId = "usuario2",
+                        receiverId = "usuario1",
+                        content = "Post 2 en Hilo 1"
+                    ),
+                    Post(
+                        senderId = "usuario1",
+                        receiverId = "usuario2",
+                        content = "Post 3 en Hilo 1"
+                    )
+                ),
+                nombre = "Hilo 1"
+            ),
+            Hilo(
+                idHilo = "Hilo 2",
+                idForeros = listOf("usuario1", "usuario3"),
+                posts = listOf(
+                    Post(
+                        senderId = "usuario1",
+                        receiverId = "usuario3",
+                        content = "Post 1 en Hilo 2"
+                    ),
+                    Post(
+                        senderId = "usuario3",
+                        receiverId = "usuario1",
+                        content = "Post 2 en Hilo 2"
+                    ),
+                    Post(
+                        senderId = "usuario1",
+                        receiverId = "usuario3",
+                        content = "Post 3 en Hilo 2"
+                    )
+                ),
+                nombre = "Hilo 2"
+            ),
+            Hilo(
+                idHilo = "Hilo 3",
+                idForeros = listOf("usuario1", "usuario4"),
+                posts = listOf(
+                    Post(
+                        senderId = "usuario1",
+                        receiverId = "usuario4",
+                        content = "Post 1 en Hilo 3"
+                    ),
+                    Post(
+                        senderId = "usuario4",
+                        receiverId = "usuario1",
+                        content = "Post 2 en Hilo 3"
+                    ),
+                    Post(
+                        senderId = "usuario1",
+                        receiverId = "usuario4",
+                        content = "Post 3 en Hilo 3"
+                    )
+                ),
+                nombre = "Hilo 3"
+            )
+        )
+    ),
+    Tema(
+        idTema = "Tema 2",
+        idUsuario = "usuario2",
+        nombre = "Tema 2",
+        hilos = listOf(
+            Hilo(
+                idHilo = "Hilo 1",
+                idForeros = listOf("usuario2", "usuario5"),
+                posts = listOf(
+                    Post(
+                        senderId = "usuario2",
+                        receiverId = "usuario5",
+                        content = "Post 1 en Hilo 1"
+                    ),
+                    Post(
+                        senderId = "usuario5",
+                        receiverId = "usuario2",
+                        content = "Post 2 en Hilo 1"
+                    ),
+                    Post(
+                        senderId = "usuario2",
+                        receiverId = "usuario5",
+                        content = "Post 3 en Hilo 1"
+                    )
+                ),
+                nombre = "Hilo 1"
+            ),
+            Hilo(
+                idHilo = "Hilo 2",
+                idForeros = listOf("usuario2", "usuario6"),
+                posts = listOf(
+                    Post(
+                        senderId = "usuario2",
+                        receiverId = "usuario6",
+                        content = "Post 1 en Hilo 2"
+                    ),
+                    Post(
+                        senderId = "usuario6",
+                        receiverId = "usuario2",
+                        content = "Post 2 en Hilo 2"
+                    ),
+                    Post(
+                        senderId = "usuario2",
+                        receiverId = "usuario6",
+                        content = "Post 3 en Hilo 2"
+                    )
+                ),
+                nombre = "Hilo 2"
+            ),
+            Hilo(
+                idHilo = "Hilo 3",
+                idForeros = listOf("usuario2", "usuario7"),
+                posts = listOf(
+                    Post(
+                        senderId = "usuario2",
+                        receiverId = "usuario7",
+                        content = "Post 1 en Hilo 3"
+                    ),
+                    Post(
+                        senderId = "usuario7",
+                        receiverId = "usuario2",
+                        content = "Post 2 en Hilo 3"
+                    ),
+                    Post(
+                        senderId = "usuario2",
+                        receiverId = "usuario7",
+                        content = "Post 3 en Hilo 3"
+                    )
+                ),
+                nombre = "Hilo 3"
+            )
+        )
+    ),
+    Tema(
+        idTema = "Tema 3",
+        idUsuario = "usuario3",
+        nombre = "Tema 3",
+        hilos = listOf(
+            Hilo(
+                idHilo = "Hilo 1",
+                idForeros = listOf("usuario3", "usuario8"),
+                posts = listOf(
+                    Post(
+                        senderId = "usuario3",
+                        receiverId = "usuario8",
+                        content = "Post 1 en Hilo 1"
+                    ),
+                    Post(
+                        senderId = "usuario8",
+                        receiverId = "usuario3",
+                        content = "Post 2 en Hilo 1"
+                    ),
+                    Post(
+                        senderId = "usuario3",
+                        receiverId = "usuario8",
+                        content = "Post 3 en Hilo 1"
+                    )
+                ),
+                nombre = "Hilo 1"
+            ),
+            Hilo(
+                idHilo = "Hilo 2",
+                idForeros = listOf("usuario3", "usuario9"),
+                posts = listOf(
+                    Post(
+                        senderId = "usuario3",
+                        receiverId = "usuario9",
+                        content = "Post 1 en Hilo 2"
+                    ),
+                    Post(
+                        senderId = "usuario9",
+                        receiverId = "usuario3",
+                        content = "Post 2 en Hilo 2"
+                    ),
+                    Post(
+                        senderId = "usuario3",
+                        receiverId = "usuario9",
+                        content = "Post 3 en Hilo 2"
+                    )
+                ),
+                nombre = "Hilo 2"
+            ),
+            Hilo(
+                idHilo = "Hilo 3",
+                idForeros = listOf("usuario3", "usuario10"),
+                posts = listOf(
+                    Post(
+                        senderId = "usuario3",
+                        receiverId = "usuario10",
+                        content = "Post 1 en Hilo 3"
+                    ),
+                    Post(
+                        senderId = "usuario10",
+                        receiverId = "usuario3",
+                        content = "Post 2 en Hilo 3"
+                    ),
+                    Post(
+                        senderId = "usuario3",
+                        receiverId = "usuario10",
+                        content = "Post 3 en Hilo 3"
+                    )
+                ),
+                nombre = "Hilo 3"
+            )
+        )
     )
 )

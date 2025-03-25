@@ -73,8 +73,8 @@ import kotlinx.coroutines.delay
 import org.connexuss.project.actualizarUsuariosGrupoGeneral
 import org.connexuss.project.comunicacion.Conversacion
 import org.connexuss.project.comunicacion.ConversacionesUsuario
-import org.connexuss.project.datos.UsuarioPrincipal
-import org.connexuss.project.datos.UsuariosPreCreados
+import org.connexuss.project.misc.UsuarioPrincipal
+import org.connexuss.project.misc.UsuariosPreCreados
 import org.connexuss.project.misc.Imagen
 import org.connexuss.project.usuario.AlmacenamientoUsuario
 import org.connexuss.project.usuario.Usuario

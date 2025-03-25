@@ -2,17 +2,14 @@ package org.connexuss.project.usuario
 
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import connexus_serverless.composeapp.generated.resources.Res
-import connexus_serverless.composeapp.generated.resources.avatar
-import connexus_serverless.composeapp.generated.resources.connexus
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.connexuss.project.comunicacion.Conversacion
 import org.connexuss.project.comunicacion.ConversacionesUsuario
-import org.connexuss.project.datos.UsuariosPreCreados
-import org.connexuss.project.datos.imagenesPerfilAbstrasto
-import org.connexuss.project.datos.imagenesPerfilDibujo
-import org.connexuss.project.datos.imagenesPerfilPersona
+import org.connexuss.project.misc.UsuariosPreCreados
+import org.connexuss.project.misc.imagenesPerfilAbstrasto
+import org.connexuss.project.misc.imagenesPerfilDibujo
+import org.connexuss.project.misc.imagenesPerfilPersona
 import org.connexuss.project.encriptacion.hash
 import org.jetbrains.compose.resources.DrawableResource
 
