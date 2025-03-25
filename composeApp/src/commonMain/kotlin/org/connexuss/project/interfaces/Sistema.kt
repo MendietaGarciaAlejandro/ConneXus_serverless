@@ -841,14 +841,16 @@ fun UsuCard(usuario: Usuario, onClick: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Imagen cuadrada a la izquierda
-            Image(
-                painter = painterResource(usuario.getImagenPerfil()),
-                contentDescription = "Imagen de perfil",
-                modifier = Modifier
-                    .size(64.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .border(1.dp, Color.Gray, RoundedCornerShape(8.dp))
-            )
+            usuario.getImagenPerfil()?.let { painterResource(it as DrawableResource) }?.let {
+                Image(
+                    painter = it,
+                    contentDescription = "Imagen de perfil",
+                    modifier = Modifier
+                        .size(64.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .border(1.dp, Color.Gray, RoundedCornerShape(8.dp))
+                )
+            }
             Spacer(modifier = Modifier.width(16.dp))
             // Información del usuario en una columna
             Column {
@@ -1264,14 +1266,16 @@ fun mostrarPerfilUsuario(navController: NavHostController, userId: String?, imag
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 // Imagen de perfil
-                Image(
-                    painter = painterResource(usuario.getImagenPerfil()),
-                    contentDescription = "Imagen de perfil de ${usuario.getNombreCompleto()}",
-                    modifier = Modifier
-                        .size(100.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .border(1.dp, Color.Gray, RoundedCornerShape(8.dp))
-                )
+                usuario.getImagenPerfil()?.let { painterResource(it) }?.let {
+                    Image(
+                        painter = it,
+                        contentDescription = "Imagen de perfil de ${usuario.getNombreCompleto()}",
+                        modifier = Modifier
+                            .size(100.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .border(1.dp, Color.Gray, RoundedCornerShape(8.dp))
+                    )
+                }
 
                 // Alias Privado
                 OutlinedTextField(

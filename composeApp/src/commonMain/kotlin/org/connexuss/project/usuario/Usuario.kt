@@ -32,7 +32,7 @@ class Usuario {
 
     private var usuariosBloqueados: List<String> = emptyList()
     @Transient
-    private lateinit var imagenPerfil: DrawableResource
+    private var imagenPerfil: DrawableResource? = null
     // Constructor completo
     constructor(nombre: String, correo: String, aliasPublico: String, activo: Boolean, contactos: List<String>, chatUser: ConversacionesUsuario) {
         this.idUnico = UtilidadesUsuario().generarIdUnico()
@@ -162,7 +162,7 @@ class Usuario {
         this.usuariosBloqueados = usuariosBloqueados
     }
 
-    fun getImagenPerfil(): DrawableResource {
+    fun getImagenPerfil(): DrawableResource? {
         return imagenPerfil
     }
 

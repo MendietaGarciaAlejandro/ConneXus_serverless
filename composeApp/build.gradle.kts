@@ -266,6 +266,8 @@ dependencies {
     implementation(libs.androidx.material3.android)
     implementation(libs.androidx.ui.graphics.android)
     implementation(libs.kotlinx.serialization.json.v151)
+    implementation(libs.androidx.ui.text.android)
+    implementation(libs.androidx.core.i18n)
     debugImplementation(compose.uiTooling)
 }
 
