@@ -47,6 +47,7 @@ import androidx.navigation.NavHostController
 import org.connexuss.project.comunicacion.Hilo
 import org.connexuss.project.comunicacion.Post
 import org.connexuss.project.comunicacion.Tema
+import org.connexuss.project.comunicacion.generateRandomId
 
 /*
 // --- Interfaces antiguas del Foro ---
@@ -385,15 +386,12 @@ fun PantallaHiloLocal(
 // A pulir --
 
 @Composable
-fun ForoScreen(navController: NavHostController, temas: List<Tema>) {
-    // Pantalla principal del foro, con un listado de Temas
+fun ForoScreen(
+    navController: NavHostController,
+    temasIniciales: List<Tema>
+) {
     Scaffold(
         topBar = {
-//            TopAppBar(
-//                title = { Text(text = "Foro General") },
-//                backgroundColor = MaterialTheme.colors.primary,
-//                contentColor = Color.White
-//            )
             DefaultTopBar(
                 title = "Foro General",
                 navController = navController,
@@ -409,23 +407,29 @@ fun ForoScreen(navController: NavHostController, temas: List<Tema>) {
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            LazyColumn(
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(temas) { tema ->
-                    TemaCard(tema = tema, onClick = {
-                        navController.navigate("tema/${tema.idTema}")
-                    })
+            LimitaTamanioAncho { modifier ->
+                LazyColumn(
+                    modifier = modifier,
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(temasIniciales) { tema ->
+                        TemaCard(tema = tema) {
+                            navController.navigate("tema/${tema.idTema}")
+                        }
+                    }
                 }
             }
         }
     }
 }
 
+
 @Composable
-fun TemaCard(tema: Tema, onClick: () -> Unit) {
-    // Cada Card muestra el nombre del tema y opcionalmente otros detalles (último hilo, fecha, etc.)
+fun TemaCard(
+    tema: Tema,
+    onClick: () -> Unit
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -436,7 +440,6 @@ fun TemaCard(tema: Tema, onClick: () -> Unit) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(text = tema.nombre, style = MaterialTheme.typography.h6)
             Spacer(modifier = Modifier.height(4.dp))
-            // Aquí podrías agregar detalles extra: autor, fecha de creación, descripción, etc.
             Text(
                 text = "Creado por: ${tema.idUsuario}",
                 style = MaterialTheme.typography.body2,
@@ -446,21 +449,19 @@ fun TemaCard(tema: Tema, onClick: () -> Unit) {
     }
 }
 
+// ----------------------------------------------------------
+// PANTALLA DE TEMA
+// ----------------------------------------------------------
+
 @Composable
-fun TemaScreen(navController: NavHostController, tema: Tema) {
-    // Pantalla que muestra los hilos del tema seleccionado.
+fun TemaScreen(
+    navController: NavHostController,
+    temaInicial: Tema
+) {
+    var tema by remember { mutableStateOf(temaInicial) }
+
     Scaffold(
         topBar = {
-//            TopAppBar(
-//                title = { Text(text = tema.nombre) },
-//                navigationIcon = {
-//                    IconButton(onClick = { navController.popBackStack() }) {
-//                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
-//                    }
-//                },
-//                backgroundColor = MaterialTheme.colors.primary,
-//                contentColor = Color.White
-//            )
             DefaultTopBar(
                 title = tema.nombre,
                 navController = navController,
@@ -471,37 +472,48 @@ fun TemaScreen(navController: NavHostController, tema: Tema) {
         },
         bottomBar = { MiBottomBar(navController) }
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
-            // Lista de hilos
-            LazyColumn(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(horizontal = 16.dp),
-                contentPadding = PaddingValues(vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+        LimitaTamanioAncho { modifier ->
+            Column(
+                modifier = modifier
+                    .fillMaxSize()
+                    .padding(padding)
             ) {
-                items(tema.hilos) { hilo ->
-                    HiloCard(hilo = hilo, onClick = {
-                        navController.navigate("hilo/${hilo.idHilo}")
-                    })
+                LazyColumn(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 16.dp),
+                    contentPadding = PaddingValues(vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(tema.hilos) { hilo ->
+                        HiloCard(hilo = hilo) {
+                            navController.navigate("hilo/${hilo.idHilo}")
+                        }
+                    }
                 }
-            }
-            Divider()
-            // Sección para agregar un nuevo hilo (con título o mensaje inicial)
-            NuevoHiloSection { nuevoHiloTitulo ->
-                // Aquí gestionarías la creación de un nuevo hilo, actualizando el estado.
+
+                Divider()
+
+                NuevoHiloSection { nuevoHiloTitulo ->
+                    val nuevoHilo = Hilo(
+                        idHilo = generateRandomId(),
+                        idForeros = listOf(tema.idUsuario),
+                        posts = emptyList(),
+                        nombre = nuevoHiloTitulo
+                    )
+                    tema = tema.copy(hilos = tema.hilos + nuevoHilo)
+                }
             }
         }
     }
 }
 
+
 @Composable
-fun HiloCard(hilo: Hilo, onClick: () -> Unit) {
-    // Card para representar un hilo. Puedes incluir el título y una previsualización del último post.
+fun HiloCard(
+    hilo: Hilo,
+    onClick: () -> Unit
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -515,7 +527,7 @@ fun HiloCard(hilo: Hilo, onClick: () -> Unit) {
                 style = MaterialTheme.typography.subtitle1
             )
             Spacer(modifier = Modifier.height(4.dp))
-            // Ejemplo: previsualización del último post
+
             if (hilo.posts.isNotEmpty()) {
                 val ultimoPost = hilo.posts.last()
                 Text(
@@ -537,7 +549,7 @@ fun HiloCard(hilo: Hilo, onClick: () -> Unit) {
 }
 
 @Composable
-fun NuevoHiloSection(onNuevoHilo: (String) -> Unit) {
+fun NuevoHiloSection(onCrearHilo: (String) -> Unit) {
     var tituloHilo by remember { mutableStateOf("") }
     Column(modifier = Modifier.padding(16.dp)) {
         OutlinedTextField(
@@ -550,7 +562,7 @@ fun NuevoHiloSection(onNuevoHilo: (String) -> Unit) {
         Button(
             onClick = {
                 if (tituloHilo.isNotBlank()) {
-                    onNuevoHilo(tituloHilo)
+                    onCrearHilo(tituloHilo)
                     tituloHilo = ""
                 }
             },
@@ -561,21 +573,19 @@ fun NuevoHiloSection(onNuevoHilo: (String) -> Unit) {
     }
 }
 
+// ----------------------------------------------------------
+// PANTALLA DE HILO
+// ----------------------------------------------------------
+
 @Composable
-fun HiloScreen(navController: NavHostController, hilo: Hilo) {
-    // Pantalla que muestra los posts de un hilo, estilo conversación
+fun HiloScreen(
+    navController: NavHostController,
+    hiloInicial: Hilo
+) {
+    var hilo by remember { mutableStateOf(hiloInicial) }
+
     Scaffold(
         topBar = {
-//            TopAppBar(
-//                title = { Text(text = hilo.nombre ?: "Hilo") },
-//                navigationIcon = {
-//                    IconButton(onClick = { navController.popBackStack() }) {
-//                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
-//                    }
-//                },
-//                backgroundColor = MaterialTheme.colors.primary,
-//                contentColor = Color.White
-//            )
             DefaultTopBar(
                 title = hilo.nombre ?: "Hilo",
                 navController = navController,
@@ -586,39 +596,124 @@ fun HiloScreen(navController: NavHostController, hilo: Hilo) {
         },
         bottomBar = { MiBottomBar(navController) }
     ) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-            LazyColumn(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(16.dp),
-                contentPadding = PaddingValues(vertical = 8.dp)
+        LimitaTamanioAncho { modifier ->
+            Column(
+                modifier = modifier
+                    .fillMaxSize()
+                    .padding(padding)
             ) {
-                items(hilo.posts) { post ->
-                    PostItem(post = post)
-                    Spacer(modifier = Modifier.height(8.dp))
+                LazyColumn(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(16.dp),
+                    contentPadding = PaddingValues(vertical = 8.dp)
+                ) {
+                    items(hilo.posts) { post ->
+                        PostItem(post = post)
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
                 }
-            }
-            Divider()
-            NuevoPostSection { nuevoContenido ->
-                // Aquí se debe gestionar la creación de un nuevo post en el hilo
+
+                Divider()
+
+                NuevoPostSection { nuevoContenido ->
+                    val nuevoPost = Post(
+                        senderId = "UsuarioActual",
+                        receiverId = "",
+                        content = nuevoContenido
+                    )
+                    hilo = hilo.copy(posts = hilo.posts + nuevoPost)
+                }
             }
         }
     }
 }
 
+/*
+@Composable
+fun HiloScreen(
+    navController: NavHostController,
+    hiloInicial: Hilo
+) {
+    // Mantenemos el hilo en estado local para mutarlo al añadir posts
+    var hilo by remember { mutableStateOf(hiloInicial) }
+
+    Scaffold(
+        topBar = {
+            DefaultTopBar(
+                title = hilo.nombre ?: "Hilo",
+                navController = navController,
+                showBackButton = true,
+                muestraEngranaje = true,
+                irParaAtras = true
+            )
+        },
+        bottomBar = { MiBottomBar(navController) }
+    ) { padding ->
+        // Usamos Surface para definir un fondo que se adapte al tema
+        Surface(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+            color = MaterialTheme.colors.background
+        ) {
+            LimitaTamanioAncho { modifier ->
+                Column(modifier = Modifier.fillMaxSize()) {
+                    // Si no hay posts, mostramos un mensaje por defecto
+                    if (hilo.posts.isEmpty()) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .weight(1f),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "No hay mensajes. Escribe tu primer mensaje.",
+                                style = MaterialTheme.typography.body1
+                            )
+                        }
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(16.dp),
+                            contentPadding = PaddingValues(vertical = 8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(hilo.posts) { post ->
+                                PostItem(post = post)
+                                Spacer(modifier = Modifier.height(8.dp))
+                            }
+                        }
+                    }
+                    Divider()
+                    // Sección para agregar un nuevo post
+                    NuevoPostSection { nuevoContenido ->
+                        val nuevoPost = Post(
+                            senderId = "UsuarioActual", // Aquí deberías usar el ID del usuario actual
+                            receiverId = "",
+                            content = nuevoContenido
+                        )
+                        // Actualizamos el estado del hilo añadiendo el nuevo post
+                        hilo = hilo.copy(posts = hilo.posts + nuevoPost)
+                    }
+                }
+            }
+        }
+    }
+}
+*/
+
+
 @Composable
 fun PostItem(post: Post) {
-    // Representa un post en el hilo, con datos como el remitente, fecha y contenido.
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = 2.dp,
         shape = RoundedCornerShape(8.dp)
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Podrías agregar una imagen de avatar o icono
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     imageVector = Icons.Default.AccountCircle,
                     contentDescription = "Avatar",
@@ -631,14 +726,15 @@ fun PostItem(post: Post) {
                     fontWeight = FontWeight.Bold
                 )
                 Spacer(modifier = Modifier.weight(1f))
-                Text(
-                    text = "${post.fechaPost.dayOfMonth.toString().padStart(2, '0')}/" +
-                            "${post.fechaPost.monthNumber.toString().padStart(2, '0')}/" +
-                            "${post.fechaPost.year} " +
-                            "${post.fechaPost.hour.toString().padStart(2, '0')}:" +
-                            "${post.fechaPost.minute.toString().padStart(2, '0')}",
-                    style = MaterialTheme.typography.caption
-                )
+                // Mostramos la fecha en formato DD/MM/YYYY HH:MM
+                val fecha = with(post.fechaPost) {
+                    "${dayOfMonth.toString().padStart(2, '0')}/" +
+                            "${monthNumber.toString().padStart(2, '0')}/" +
+                            "$year " +
+                            "${hour.toString().padStart(2, '0')}:" +
+                            "${minute.toString().padStart(2, '0')}"
+                }
+                Text(text = fecha, style = MaterialTheme.typography.caption)
             }
             Spacer(modifier = Modifier.height(4.dp))
             Text(text = post.content, style = MaterialTheme.typography.body1)
