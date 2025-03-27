@@ -189,7 +189,7 @@ fun Navegacion(
             MuestraUsuariosGrupo(usuarios = listaUsuariosGrupo, navController = navController)
         }
         composable("foroLocal") {
-            ForoScreen(navController, temasHilosPosts)
+            ForoScreen(navController)
         }
         composable("tema/{temaId}") { backStackEntry ->
             val temaId = backStackEntry.arguments?.getString("temaId")

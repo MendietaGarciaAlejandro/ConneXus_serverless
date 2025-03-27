@@ -48,6 +48,8 @@ import org.connexuss.project.comunicacion.Hilo
 import org.connexuss.project.comunicacion.Post
 import org.connexuss.project.comunicacion.Tema
 import org.connexuss.project.comunicacion.generateRandomId
+import org.connexuss.project.misc.ForoRepository
+import org.connexuss.project.misc.temasHilosPosts
 
 /*
 // --- Interfaces antiguas del Foro ---
@@ -385,11 +387,15 @@ fun PantallaHiloLocal(
 
 // A pulir --
 
+
+
 @Composable
 fun ForoScreen(
-    navController: NavHostController,
-    temasIniciales: List<Tema>
+    navController: NavHostController
 ) {
+    // Usamos la lista persistente del repositorio
+    val temas = ForoRepository.temas
+
     Scaffold(
         topBar = {
             DefaultTopBar(
@@ -408,15 +414,32 @@ fun ForoScreen(
                 .padding(padding)
         ) {
             LimitaTamanioAncho { modifier ->
-                LazyColumn(
-                    modifier = modifier,
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                Column(
+                    modifier = modifier.fillMaxSize()
                 ) {
-                    items(temasIniciales) { tema ->
-                        TemaCard(tema = tema) {
-                            navController.navigate("tema/${tema.idTema}")
+                    LazyColumn(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(temas) { tema ->
+                            TemaCard(tema = tema) {
+                                navController.navigate("tema/${tema.idTema}")
+                            }
                         }
+                    }
+                    Divider()
+                    NuevoTemaSection { nombreTema ->
+                        val nuevoTema = Tema(
+                            idTema = generateRandomId(),
+                            idUsuario = "UsuarioActual", // Reemplaza con el ID real del usuario actual
+                            nombre = nombreTema,
+                            hilos = emptyList()
+                        )
+                        // Actualiza el estado persistente en el repositorio
+                        ForoRepository.agregarTema(nuevoTema)
                     }
                 }
             }
@@ -424,6 +447,30 @@ fun ForoScreen(
     }
 }
 
+@Composable
+fun NuevoTemaSection(onCrearTema: (String) -> Unit) {
+    var nombreTema by remember { mutableStateOf("") }
+    Column(modifier = Modifier.padding(16.dp)) {
+        OutlinedTextField(
+            value = nombreTema,
+            onValueChange = { nombreTema = it },
+            label = { Text("Nombre del nuevo tema") },
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Button(
+            onClick = {
+                if (nombreTema.isNotBlank()) {
+                    onCrearTema(nombreTema)
+                    nombreTema = ""
+                }
+            },
+            modifier = Modifier.align(Alignment.End)
+        ) {
+            Text("Crear Tema")
+        }
+    }
+}
 
 @Composable
 fun TemaCard(
@@ -458,6 +505,8 @@ fun TemaScreen(
     navController: NavHostController,
     temaInicial: Tema
 ) {
+    // Creamos un estado local para el tema que se inicializa con el tema recibido.
+    // Al actualizar, actualizamos también en el repositorio.
     var tema by remember { mutableStateOf(temaInicial) }
 
     Scaffold(
@@ -494,6 +543,7 @@ fun TemaScreen(
 
                 Divider()
 
+                // Sección para crear un nuevo hilo
                 NuevoHiloSection { nuevoHiloTitulo ->
                     val nuevoHilo = Hilo(
                         idHilo = generateRandomId(),
@@ -501,13 +551,14 @@ fun TemaScreen(
                         posts = emptyList(),
                         nombre = nuevoHiloTitulo
                     )
+                    // Actualiza el estado local y el repositorio
                     tema = tema.copy(hilos = tema.hilos + nuevoHilo)
+                    ForoRepository.actualizarTema(tema)
                 }
             }
         }
     }
 }
-
 
 @Composable
 fun HiloCard(
@@ -582,6 +633,7 @@ fun HiloScreen(
     navController: NavHostController,
     hiloInicial: Hilo
 ) {
+    // Estado local para el hilo
     var hilo by remember { mutableStateOf(hiloInicial) }
 
     Scaffold(
@@ -613,18 +665,83 @@ fun HiloScreen(
                         Spacer(modifier = Modifier.height(8.dp))
                     }
                 }
-
                 Divider()
-
                 NuevoPostSection { nuevoContenido ->
                     val nuevoPost = Post(
-                        senderId = "UsuarioActual",
+                        senderId = "UsuarioActual", // Reemplaza con el ID del usuario actual
                         receiverId = "",
                         content = nuevoContenido
                     )
+                    // Actualizamos el estado del hilo añadiendo el nuevo post
                     hilo = hilo.copy(posts = hilo.posts + nuevoPost)
+                    // Aquí podrías actualizar el tema o el repositorio si los posts están anidados en él
+                    // Por ejemplo, si el hilo pertenece a un tema, actualiza ese tema en el ForoRepository.
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun PostItem(post: Post) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = 2.dp,
+        shape = RoundedCornerShape(8.dp)
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Default.AccountCircle,
+                    contentDescription = "Avatar",
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = post.senderId,
+                    style = MaterialTheme.typography.subtitle2,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.weight(1f))
+                // Mostramos la fecha en formato DD/MM/YYYY HH:MM
+                val fecha = with(post.fechaPost) {
+                    "${dayOfMonth.toString().padStart(2, '0')}/" +
+                            "${monthNumber.toString().padStart(2, '0')}/" +
+                            "$year " +
+                            "${hour.toString().padStart(2, '0')}:" +
+                            "${minute.toString().padStart(2, '0')}"
+                }
+                Text(text = fecha, style = MaterialTheme.typography.caption)
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(text = post.content, style = MaterialTheme.typography.body1)
+        }
+    }
+}
+
+@Composable
+fun NuevoPostSection(onNuevoPost: (String) -> Unit) {
+    var contenido by remember { mutableStateOf("") }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        OutlinedTextField(
+            value = contenido,
+            onValueChange = { contenido = it },
+            label = { Text("Nuevo mensaje") },
+            modifier = Modifier.weight(1f)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Button(onClick = {
+            if (contenido.isNotBlank()) {
+                onNuevoPost(contenido)
+                contenido = ""
+            }
+        }) {
+            Text("Enviar")
         }
     }
 }
@@ -705,69 +822,7 @@ fun HiloScreen(
 */
 
 
-@Composable
-fun PostItem(post: Post) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = 2.dp,
-        shape = RoundedCornerShape(8.dp)
-    ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Default.AccountCircle,
-                    contentDescription = "Avatar",
-                    modifier = Modifier.size(24.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = post.senderId,
-                    style = MaterialTheme.typography.subtitle2,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.weight(1f))
-                // Mostramos la fecha en formato DD/MM/YYYY HH:MM
-                val fecha = with(post.fechaPost) {
-                    "${dayOfMonth.toString().padStart(2, '0')}/" +
-                            "${monthNumber.toString().padStart(2, '0')}/" +
-                            "$year " +
-                            "${hour.toString().padStart(2, '0')}:" +
-                            "${minute.toString().padStart(2, '0')}"
-                }
-                Text(text = fecha, style = MaterialTheme.typography.caption)
-            }
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(text = post.content, style = MaterialTheme.typography.body1)
-        }
-    }
-}
 
-@Composable
-fun NuevoPostSection(onNuevoPost: (String) -> Unit) {
-    var contenido by remember { mutableStateOf("") }
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        OutlinedTextField(
-            value = contenido,
-            onValueChange = { contenido = it },
-            label = { Text("Nuevo mensaje") },
-            modifier = Modifier.weight(1f)
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        Button(onClick = {
-            if (contenido.isNotBlank()) {
-                onNuevoPost(contenido)
-                contenido = ""
-            }
-        }) {
-            Text("Enviar")
-        }
-    }
-}
 
 // --- Foro con Firebase ---
 // para cuando se implemente el repositorio de Firebase
