@@ -152,7 +152,7 @@ val imagenesPerfilDibujo = mutableListOf<Imagen>().apply {
 
 val UsuariosPreCreados: SnapshotStateList<Usuario> = run {
 
-    var imagenesApp = mutableListOf<Imagen>()
+    val imagenesApp = mutableListOf<Imagen>()
     imagenesApp.add(Imagen("logo", Res.drawable.connexus))
     imagenesApp.add(Imagen("avatar", Res.drawable.avatar))
     imagenesApp.add(Imagen("unblock", Res.drawable.unblock))
@@ -755,7 +755,7 @@ private val conversacionesGrupo: List<Conversacion> = listOf(
 val conversacionesPreInicializadasUsuarioPrincipal: List<Conversacion> =
     conversacionesIndividuales + conversacionesGrupo
 
-val UsuarioPrincipal: Usuario? = UtilidadesUsuario().instanciaUsuario(
+var UsuarioPrincipal: Usuario? = UtilidadesUsuario().instanciaUsuario(
     nombre = "Usuario Principal",
     correo = "principal@example.com",
     aliasPublico = "UsuarioPrincipal",
@@ -933,6 +933,8 @@ val temasForo: List<Tema> = listOf(
 )
 
 // Nuevos datos del foro --------------------------------------------
+
+
 
 // Lista temporal de Temas + Hilos + Posts
 val temasHilosPosts = listOf(
@@ -1156,3 +1158,90 @@ val temasHilosPosts = listOf(
         )
     )
 )
+
+object ForoRepository {
+    // Lista de temas como estado mutable global
+    val temas = mutableStateListOf<Tema>().apply {
+        addAll(temasHilosPosts)
+    }
+
+    // Agrega un nuevo tema
+    fun agregarTema(nuevoTema: Tema) {
+        temas.add(nuevoTema)
+    }
+
+    // Actualiza un tema existente (por ejemplo, al agregar un hilo o post)
+    fun actualizarTema(temaActualizado: Tema) {
+        val index = temas.indexOfFirst { it.idTema == temaActualizado.idTema }
+        if (index != -1) {
+            temas[index] = temaActualizado
+        }
+    }
+
+    // Busca un tema por id
+    fun obtenerTemaPorId(idTema: String): Tema? {
+        return temas.find { it.idTema == idTema }
+    }
+
+    // Actualiza un hilo en un tema específico
+    fun actualizarHiloEnTema(temaId: String, hiloActualizado: Hilo) {
+        val tema = obtenerTemaPorId(temaId)
+        tema?.let {
+            val nuevosHilos = tema.hilos.map { hilo ->
+                if (hilo.idHilo == hiloActualizado.idHilo) hiloActualizado else hilo
+            }
+            actualizarTema(tema.copy(hilos = nuevosHilos))
+        }
+    }
+
+    // Actualiza un post en un hilo específico
+    fun actualizarPostEnHilo(temaId: String, hiloId: String, postActualizado: Post) {
+        val tema = obtenerTemaPorId(temaId)
+        tema?.let {
+            val nuevosHilos = tema.hilos.map { hilo ->
+                if (hilo.idHilo == hiloId) {
+                    val nuevosPosts = hilo.posts.map { post ->
+                        if (post.idPost == postActualizado.idPost) postActualizado else post
+                    }
+                    hilo.copy(posts = nuevosPosts)
+                } else hilo
+            }
+            actualizarTema(tema.copy(hilos = nuevosHilos))
+        }
+    }
+}
+
+
+object HilosRepository {
+    // Lista mutable de hilos (para el foro o cada tema)
+    // Puedes inicializarla con datos de ejemplo o dejarla vacía
+    val hilos = mutableStateListOf<Hilo>()
+
+    fun agregarHilo(nuevoHilo: Hilo) {
+        hilos.add(nuevoHilo)
+    }
+
+    fun actualizarHilo(hiloActualizado: Hilo) {
+        val index = hilos.indexOfFirst { it.idHilo == hiloActualizado.idHilo }
+        if (index != -1) {
+            hilos[index] = hiloActualizado
+        }
+    }
+}
+
+object PostsRepository {
+    // Lista mutable de posts (podrías tenerla por hilo o globalmente)
+    // Aquí asumiremos que es global, pero lo ideal es que cada hilo tenga su propia lista
+    val posts = mutableStateListOf<Post>()
+
+    fun agregarPost(nuevoPost: Post) {
+        posts.add(nuevoPost)
+    }
+
+    fun actualizarPost(postActualizado: Post) {
+        val index = posts.indexOfFirst { it.idPost == postActualizado.idPost }
+        if (index != -1) {
+            posts[index] = postActualizado
+        }
+    }
+}
