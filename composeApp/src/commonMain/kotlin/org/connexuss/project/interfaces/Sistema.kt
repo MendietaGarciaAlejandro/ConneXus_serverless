@@ -48,6 +48,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -70,9 +71,12 @@ import connexus_serverless.composeapp.generated.resources.usuarios
 import connexus_serverless.composeapp.generated.resources.visibilidadOff
 import connexus_serverless.composeapp.generated.resources.visibilidadOn
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.launch
 import org.connexuss.project.actualizarUsuariosGrupoGeneral
 import org.connexuss.project.comunicacion.Conversacion
 import org.connexuss.project.comunicacion.ConversacionesUsuario
+import org.connexuss.project.firebase.pruebas.FirestoreUsuariosNuestros
 import org.connexuss.project.misc.UsuarioPrincipal
 import org.connexuss.project.misc.UsuariosPreCreados
 import org.connexuss.project.misc.Imagen
@@ -485,10 +489,6 @@ fun ChatCard(conversacion: Conversacion, navController: NavHostController) {
     }
 }
 
-
-
-
-
 // --- Chats PorDefecto ---
 @Composable
 fun muestraChats(navController: NavHostController) {
@@ -549,7 +549,7 @@ fun muestraContactos(navController: NavHostController) {
     // Creamos un estado para la lista de IDs de contactos basado en UsuarioPrincipal.
     val contactosState = remember { mutableStateListOf<String>().apply {
         if (UsuarioPrincipal != null) {
-            addAll(UsuarioPrincipal.getContactos())
+            UsuarioPrincipal!!.getContactos()?.let { addAll(it) }
         }
     } }
     // Lista completa de usuarios precreados
@@ -664,7 +664,7 @@ fun muestraContactos(navController: NavHostController) {
                                         if (updatedContacts != null) {
                                             if (nuevoContactoId !in updatedContacts) {
                                                 updatedContacts.add(nuevoContactoId)
-                                                UsuarioPrincipal.setContactos(updatedContacts)
+                                                UsuarioPrincipal?.setContactos(updatedContacts)
                                                 // Actualiza el estado local para recomponer la UI
                                                 contactosState.clear()
                                                 contactosState.addAll(updatedContacts)
@@ -774,29 +774,36 @@ fun muestraContactos(navController: NavHostController) {
                                             convActualesPrincipal?.add(nuevaConversacion)
                                         }
                                         convActualesPrincipal?.let {
-                                            ConversacionesUsuario(
-                                                id = UsuarioPrincipal.getChatUser().id, // Mantenemos el id existente
-                                                idUser = UsuarioPrincipal.getIdUnico(),
-                                                conversaciones = it
-                                            )
+                                            UsuarioPrincipal?.let { it1 ->
+                                                ConversacionesUsuario(
+                                                    id = UsuarioPrincipal!!.getChatUser()!!.id, // Mantenemos el id existente
+                                                    idUser = it1.getIdUnico(),
+                                                    conversaciones = it
+                                                )
+                                            }
                                         }?.let {
-                                            UsuarioPrincipal.setChatUser(
+                                            UsuarioPrincipal?.setChatUser(
                                                 it
                                             )
                                         }
                                         // Actualiza cada usuario seleccionado: agrega la conversación a sus chats
                                         selectedContacts.forEach { usuario ->
-                                            val convActuales = usuario.getChatUser().conversaciones.toMutableList()
+                                            val convActuales = usuario.getChatUser()?.conversaciones?.toMutableList()
                                             if (nuevaConversacion != null) {
-                                                convActuales.add(nuevaConversacion)
+                                                convActuales?.add(nuevaConversacion)
                                             }
-                                            usuario.setChatUser(
-                                                ConversacionesUsuario(
-                                                    id = usuario.getChatUser().id,
-                                                    idUser = usuario.getIdUnico(),
-                                                    conversaciones = convActuales
-                                                )
-                                            )
+                                            val nuevasConversacionesUsuario = usuario.getChatUser()?.let {
+                                                if (convActuales != null) {
+                                                    ConversacionesUsuario(
+                                                        id = it.id,
+                                                        idUser = usuario.getIdUnico(),
+                                                        conversaciones = convActuales
+                                                    )
+                                                } else {
+                                                    null
+                                                }
+                                            }
+                                            usuario.setChatUser(nuevasConversacionesUsuario)
                                         }
                                     }
                                     showChatDialog = false
@@ -1750,8 +1757,14 @@ fun PantallaRegistro(navController: NavHostController) {
     var confirmPassword by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
 
-    // Realiza la traducción fuera del bloque onClick
     val errorContrasenas = traducir("error_contrasenas")
+    val errorEmailYaRegistrado = traducir("error_email_ya_registrado") // Falta implementar y mete en los mapas de idiomas
+
+    // Instanciamos un usuario vacío que se completará si el registro es correcto
+    val usuario = Usuario()
+
+    // Usamos un scope para lanzar corrutinas
+    val scope = rememberCoroutineScope()
 
     MaterialTheme {
         Scaffold(
@@ -1824,6 +1837,29 @@ fun PantallaRegistro(navController: NavHostController) {
                                     } else {
                                         errorContrasenas
                                     }
+                                    // Si no hay error, proceder a completar el usuario y enviarlo a Firestore
+                                    if (errorMessage.isEmpty()) {
+                                        // Seteamos los valores en el usuario
+                                        usuario.setNombreCompleto(nombre)
+                                        usuario.setCorreo(email)
+                                        usuario.setContrasennia(password)
+                                        usuario.setAliasPrivado("Privado_$nombre")
+                                        usuario.setAlias(UtilidadesUsuario().generarAliasPublico())
+                                        usuario.setDescripcion("Descripción de $nombre")
+                                        usuario.setImagenPerfil(UtilidadesUsuario().generarImagenPerfilRandom())
+
+                                        // Agregamos el usuario a la lista local (por ejemplo, UsuariosPreCreados)
+                                        UsuariosPreCreados.add(usuario)
+
+                                        // Ejecutamos la función suspend dentro de una corrutina
+                                        scope.launch {
+                                            FirestoreUsuariosNuestros().addUsuario(usuario)
+                                            // Navegamos a la pantalla de login después de agregar el usuario
+                                            navController.navigate("login") {
+                                                popUpTo("registro") { inclusive = true }
+                                            }
+                                        }
+                                    }
                                 },
                                 modifier = Modifier.weight(1f)
                             ) {
@@ -1858,8 +1894,164 @@ fun PantallaLogin(navController: NavHostController) {
     var password by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
 
+    // Mensajes de error (debes definir estas claves en tu mapa de idiomas)
+    val errorEmailNingunUsuario = traducir("error_email_ningun_usuario") // Ejemplo: "No hay ningún usuario registrado con ese email"
+    val errorContrasenaIncorrecta = traducir("error_contrasena_incorrecta") // Ejemplo: "Contraseña incorrecta"
+    val porFavorCompleta = traducir("por_favor_completa") // Ejemplo: "Por favor, completa todos los campos"
+
+    // Scope para lanzar corrutinas
+    val scope = rememberCoroutineScope()
+
+    MaterialTheme {
+        Scaffold(
+            topBar = {
+                DefaultTopBar(
+                    title = traducir("iniciar_sesion"),
+                    navController = navController,
+                    showBackButton = false,
+                    irParaAtras = false,
+                    muestraEngranaje = false
+                )
+            }
+        ) { padding ->
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                LimitaTamanioAncho { modifier ->
+                    Column(
+                        modifier = modifier
+                            .padding(padding)
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Image(
+                            painter = painterResource(Res.drawable.connexus),
+                            contentDescription = traducir("icono_app"),
+                            modifier = Modifier.size(100.dp)
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        OutlinedTextField(
+                            value = email,
+                            onValueChange = { email = it },
+                            label = { Text(traducir("email")) },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = password,
+                            onValueChange = { password = it },
+                            label = { Text(traducir("contrasena")) },
+                            visualTransformation = PasswordVisualTransformation(),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Button(
+                                onClick = { navController.navigate("restablecer") },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text(traducir("olvidaste_contrasena"))
+                            }
+                            Button(
+                                onClick = { navController.navigate("registro") },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text(traducir("registrarse"))
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(
+                            onClick = {
+                                scope.launch {
+                                    // Validamos que se hayan introducido ambos campos
+                                    if (email.isBlank() || password.isBlank()) {
+                                        errorMessage = porFavorCompleta
+                                        return@launch
+                                    }
+                                    // Obtén el usuario desde Firestore a través del repositorio
+                                    val usuario = FirestoreUsuariosNuestros().getUsuarioPorCorreo(email).firstOrNull()
+                                    if (usuario == null) {
+                                        // No se encontró ningún usuario con ese email
+                                        errorMessage = errorEmailNingunUsuario
+                                    } else {
+                                        // Se encontró el usuario; comprobamos la contraseña
+                                        if (usuario.getContrasennia() != password) {
+                                            errorMessage = errorContrasenaIncorrecta
+                                        } else {
+                                            UsuarioPrincipal = usuario // Asignamos el usuario encontrado a la variable global
+                                            errorMessage = ""
+                                            // Login exitoso; navega a "contactos"
+                                            navController.navigate("contactos") {
+                                                popUpTo("login") { inclusive = true }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(traducir("acceder"))
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+                        // Botones de depuración, por ejemplo:
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Button(
+                                onClick = { navController.navigate("contactos") },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text(traducir("debug_ir_a_contactos"))
+                            }
+                            Button(
+                                onClick = { navController.navigate("ajustesControlCuentas") },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text(traducir("debug_ajustes_control_cuentas"))
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(
+                            onClick = { navController.navigate("pruebasObjetosFIrebase") },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Debug: Ir a las pruebas con Firebase")
+                        }
+                        if (errorMessage.isNotEmpty()) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                errorMessage,
+                                color = MaterialTheme.colors.error,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/*
+@Composable
+fun PantallaLogin(navController: NavHostController) {
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf("") }
+
+    val errorEmailNingunUsuario = traducir("error_email_ningun_usuario") // Falta implementar y meter en los mapas de idiomas
+
     // Realiza la traducción fuera del bloque onClick
     val porFavorCompleta = traducir("por_favor_completa")
+
+    val scope = rememberCoroutineScope()
 
     MaterialTheme {
         Scaffold(
@@ -1974,3 +2166,4 @@ fun PantallaLogin(navController: NavHostController) {
         }
     }
 }
+ */

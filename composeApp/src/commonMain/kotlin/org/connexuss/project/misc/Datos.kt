@@ -152,7 +152,7 @@ val imagenesPerfilDibujo = mutableListOf<Imagen>().apply {
 
 val UsuariosPreCreados: SnapshotStateList<Usuario> = run {
 
-    var imagenesApp = mutableListOf<Imagen>()
+    val imagenesApp = mutableListOf<Imagen>()
     imagenesApp.add(Imagen("logo", Res.drawable.connexus))
     imagenesApp.add(Imagen("avatar", Res.drawable.avatar))
     imagenesApp.add(Imagen("unblock", Res.drawable.unblock))
@@ -755,7 +755,7 @@ private val conversacionesGrupo: List<Conversacion> = listOf(
 val conversacionesPreInicializadasUsuarioPrincipal: List<Conversacion> =
     conversacionesIndividuales + conversacionesGrupo
 
-val UsuarioPrincipal: Usuario? = UtilidadesUsuario().instanciaUsuario(
+var UsuarioPrincipal: Usuario? = UtilidadesUsuario().instanciaUsuario(
     nombre = "Usuario Principal",
     correo = "principal@example.com",
     aliasPublico = "UsuarioPrincipal",

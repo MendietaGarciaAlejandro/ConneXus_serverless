@@ -14,6 +14,7 @@ interface UsuariosRepositorio {
 interface UsuariosNuestrosRepositorio {
     fun getUsuario(): Flow<List<Usuario>>
     fun getUsuarioPorId(id: String): Flow<Usuario?>
+    fun getUsuarioPorCorreo(correo: String): Flow<Usuario?>
     suspend fun addUsuario(usuario: Usuario)
     suspend fun updateUsuario(usuario: Usuario)
     suspend fun deleteUsuario(usuario: Usuario)
