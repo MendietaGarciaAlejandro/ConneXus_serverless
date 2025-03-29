@@ -52,7 +52,9 @@ fun mostrarChat(navController: NavHostController, chatId : String?) {
     val listaChats = UsuarioPrincipal?.getChatUser()?.conversaciones
     val chat = listaChats?.find { it.id == chatId } ?: return
 
-    val otherParticipantId = chat.participants.firstOrNull { it != UsuarioPrincipal.getIdUnico() }
+    val otherParticipantId = chat.participants.firstOrNull {
+        it != (UsuarioPrincipal?.getIdUnico() ?: "")
+    }
         ?: chat.participants.getOrNull(1) ?: ""
     // nombre del otro participante en UsuariosPreCreados:
     val otherParticipantUser = UsuariosPreCreados.find { it.getIdUnico() == otherParticipantId }
@@ -137,24 +139,28 @@ fun mostrarChat(navController: NavHostController, chatId : String?) {
                     onClick = {
 
                         if (mensajeNuevo.isNotBlank()) {
-                            val newMessage = Mensaje(
-                                senderId = UsuarioPrincipal.getIdUnico(),
-                                receiverId = otherParticipantId,
-                                content = mensajeNuevo,
-                            )
-                            messagesState.add(newMessage)
+                            val newMessage = UsuarioPrincipal?.let {
+                                Mensaje(
+                                    senderId = it.getIdUnico(),
+                                    receiverId = otherParticipantId,
+                                    content = mensajeNuevo,
+                                )
+                            }
+                            if (newMessage != null) {
+                                messagesState.add(newMessage)
+                            }
 
                             // Actualiza la conversación
                             val updatedConversation = chat.copy(messages = messagesState.toList())
 
                             // Actualiza la conversación en UsuarioPrincipal
                             val convsPrincipal =
-                                UsuarioPrincipal.getChatUser().conversaciones.toMutableList()
+                                UsuarioPrincipal?.getChatUser()!!.conversaciones.toMutableList()
                             val indexPrincipal = convsPrincipal.indexOfFirst { it.id == chat.id }
                             if (indexPrincipal != -1) {
                                 convsPrincipal[indexPrincipal] = updatedConversation
-                                UsuarioPrincipal.setChatUser(
-                                    UsuarioPrincipal.getChatUser()
+                                UsuarioPrincipal!!.setChatUser(
+                                    UsuarioPrincipal!!.getChatUser()!!
                                         .copy(conversaciones = convsPrincipal)
                                 )
                             }
@@ -163,14 +169,22 @@ fun mostrarChat(navController: NavHostController, chatId : String?) {
                             UsuariosPreCreados.find { it.getIdUnico() == otherParticipantId }
                                 ?.let { otherUser ->
                                     val convsOther =
-                                        otherUser.getChatUser().conversaciones.toMutableList()
-                                    val indexOther = convsOther.indexOfFirst { it.id == chat.id }
+                                        otherUser.getChatUser()?.conversaciones?.toMutableList()
+                                    val indexOther = convsOther?.indexOfFirst { it.id == chat.id }
                                     if (indexOther != -1) {
-                                        convsOther[indexOther] = updatedConversation
-                                        otherUser.setChatUser(
-                                            otherUser.getChatUser()
-                                                .copy(conversaciones = convsOther)
-                                        )
+                                        if (indexOther != null) {
+                                            convsOther[indexOther] = updatedConversation
+                                        }
+                                        otherUser.getChatUser()?.let {
+                                            convsOther?.let { it1 ->
+                                                it
+                                                    .copy(conversaciones = it1)
+                                            }?.let { it2 ->
+                                                otherUser.setChatUser(
+                                                    it2
+                                                )
+                                            }
+                                        }
                                     }
                                 }
 
@@ -194,7 +208,7 @@ fun mostrarChatGrupo(navController: NavHostController, chatId: String?, imagenes
     // Obtiene la lista de conversaciones del UsuarioPrincipal y busca la conversación por su id
     val listaChats = UsuarioPrincipal?.getChatUser()?.conversaciones
     val chat = listaChats?.find { it.id == chatId } ?: return
-    val idUsuario = UsuarioPrincipal.getIdUnico()
+    val idUsuario = UsuarioPrincipal?.getIdUnico()
     val groupTitle = if (!chat.nombre.isNullOrBlank()) chat.nombre else chat.id
 
     var mensajeNuevo by remember { mutableStateOf("") }
@@ -327,35 +341,46 @@ fun mostrarChatGrupo(navController: NavHostController, chatId: String?, imagenes
                 IconButton(
                     onClick = {
                         if (mensajeNuevo.isNotBlank()) {
-                            val newMessage = Mensaje(
-                                senderId = UsuarioPrincipal.getIdUnico(),
-                                receiverId = "", // En grupo no se usa este campo
-                                content = mensajeNuevo,
-                            )
-                            messagesState.add(newMessage)
+                            val newMessage = UsuarioPrincipal?.let {
+                                Mensaje(
+                                    senderId = it.getIdUnico(),
+                                    receiverId = "", // En grupo no se usa este campo
+                                    content = mensajeNuevo,
+                                )
+                            }
+                            if (newMessage != null) {
+                                messagesState.add(newMessage)
+                            }
 
                             val updatedConversation = chat.copy(messages = messagesState.toList())
 
                             // Actualiza la conversación en UsuarioPrincipal
-                            val convsPrincipal = UsuarioPrincipal.getChatUser().conversaciones.toMutableList()
+                            val convsPrincipal = UsuarioPrincipal?.getChatUser()!!.conversaciones.toMutableList()
                             val indexPrincipal = convsPrincipal.indexOfFirst { it.id == chat.id }
                             if (indexPrincipal != -1) {
                                 convsPrincipal[indexPrincipal] = updatedConversation
-                                UsuarioPrincipal.setChatUser(
-                                    UsuarioPrincipal.getChatUser().copy(conversaciones = convsPrincipal)
+                                UsuarioPrincipal!!.setChatUser(
+                                    UsuarioPrincipal!!.getChatUser()!!.copy(conversaciones = convsPrincipal)
                                 )
                             }
 
                             // Actualiza la conversación para cada participante del grupo
                             chat.participants.forEach { participantId ->
                                 UsuariosPreCreados.find { it.getIdUnico() == participantId }?.let { otherUser ->
-                                    val convsOther = otherUser.getChatUser().conversaciones.toMutableList()
-                                    val indexOther = convsOther.indexOfFirst { it.id == chat.id }
+                                    val convsOther = otherUser.getChatUser()?.conversaciones?.toMutableList()
+                                    val indexOther = convsOther?.indexOfFirst { it.id == chat.id }
                                     if (indexOther != -1) {
-                                        convsOther[indexOther] = updatedConversation
-                                        otherUser.setChatUser(
-                                            otherUser.getChatUser().copy(conversaciones = convsOther)
-                                        )
+                                        if (indexOther != null) {
+                                            convsOther[indexOther] = updatedConversation
+                                        }
+                                        otherUser.getChatUser()?.let {
+                                            convsOther?.let { it1 -> it.copy(conversaciones = it1) }
+                                                ?.let { it2 ->
+                                                    otherUser.setChatUser(
+                                                        it2
+                                                    )
+                                                }
+                                        }
                                     }
                                 }
                             }

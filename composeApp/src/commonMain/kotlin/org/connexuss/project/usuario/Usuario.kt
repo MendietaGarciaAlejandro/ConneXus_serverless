@@ -22,8 +22,8 @@ class Usuario {
     private var aliasPrivado: String = ""
     private var idUnico: String = ""
     private var activo: Boolean = false
-    private lateinit var contactos: List<String>
-    private lateinit var chatUser: ConversacionesUsuario
+    private var contactos: List<String>? = emptyList()
+    private var chatUser: ConversacionesUsuario? = null
     private var descripcion: String = ""
     private var contrasennia: String = ""
 
@@ -31,7 +31,7 @@ class Usuario {
     @Transient
     private var imagenPerfil: DrawableResource? = null
     // Constructor completo
-    constructor(nombre: String, correo: String, aliasPublico: String, activo: Boolean, contactos: List<String>, chatUser: ConversacionesUsuario) {
+    constructor(nombre: String, correo: String, aliasPublico: String, activo: Boolean, contactos: List<String>?, chatUser: ConversacionesUsuario?) {
         this.idUnico = UtilidadesUsuario().generarIdUnico()
         this.nombre = nombre
         this.correo = correo
@@ -50,7 +50,7 @@ class Usuario {
     }
 
     //Debug: Contructor con idUnico
-    constructor(idUnico: String, nombre: String, correo: String, aliasPublico: String, activo: Boolean, contactos: List<String>, chatUser: ConversacionesUsuario?) {
+    constructor(idUnico: String, nombre: String, correo: String, aliasPublico: String, activo: Boolean, contactos: List<String>?, chatUser: ConversacionesUsuario?) {
         this.idUnico = idUnico
         this.nombre = nombre
         this.correo = correo
@@ -119,7 +119,7 @@ class Usuario {
         this.activo = activo
     }
 
-    fun getContactos(): List<String> {
+    fun getContactos(): List<String>? {
         return contactos
     }
 
@@ -127,11 +127,11 @@ class Usuario {
         this.contactos = contactos
     }
 
-    fun getChatUser(): ConversacionesUsuario {
+    fun getChatUser(): ConversacionesUsuario? {
         return chatUser
     }
 
-    fun setChatUser(chatUser: ConversacionesUsuario) {
+    fun setChatUser(chatUser: ConversacionesUsuario?) {
         this.chatUser = chatUser
     }
 
@@ -330,7 +330,4 @@ class UtilidadesUsuario {
         aliasGenerados.add(alias)
         return alias
     }
-
-
-
 }

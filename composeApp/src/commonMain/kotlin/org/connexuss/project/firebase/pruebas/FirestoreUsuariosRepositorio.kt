@@ -69,6 +69,16 @@ class FirestoreUsuariosNuestros : UsuariosNuestrosRepositorio {
             emit(documentSnapshot.data<Usuario>())
         }
     }
+    override fun getUsuarioPorCorreo(correo: String): Flow<Usuario?> = flow {
+        firestore.collection(nombreColeccion)
+            .where { "correo" equalTo correo }
+            .snapshots.collect { querySnapshot ->
+                val usuario = querySnapshot.documents.mapNotNull { documentSnapshot ->
+                    documentSnapshot.data<Usuario>()
+                }.firstOrNull()
+                emit(usuario)
+            }
+    }
 
     override suspend fun addUsuario(usuario: Usuario) {
         val userId = generateRandomStringId()
