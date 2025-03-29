@@ -1,6 +1,4 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
-import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
-import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
 
@@ -16,7 +14,6 @@ plugins {
 
 kotlin {
     androidTarget {
-        @OptIn(ExperimentalKotlinGradlePluginApi::class)
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_21)
         }
@@ -265,7 +262,7 @@ dependencies {
     implementation(libs.androidx.animation.core.lint)
     implementation(libs.androidx.material3.android)
     implementation(libs.androidx.ui.graphics.android)
-    implementation(libs.kotlinx.serialization.json.v151)
+    implementation(libs.kotlinx.serialization)
     implementation(libs.androidx.ui.text.android)
     implementation(libs.androidx.core.i18n)
     debugImplementation(compose.uiTooling)
