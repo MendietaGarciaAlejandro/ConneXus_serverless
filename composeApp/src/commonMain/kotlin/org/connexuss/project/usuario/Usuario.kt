@@ -64,8 +64,7 @@ class Usuario {
         this.imagenPerfil = generarImagenPerfilRandom()}
 
     // Constructor vacio
-    constructor() {
-    }
+    constructor()
 
     // Constructor de copia
     constructor(usuario: Usuario) {
