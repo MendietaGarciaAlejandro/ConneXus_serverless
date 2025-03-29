@@ -227,7 +227,6 @@ kotlin {
                 //implementation(libs.firebase.perf)
             }
         }
-
     }
 }
 
