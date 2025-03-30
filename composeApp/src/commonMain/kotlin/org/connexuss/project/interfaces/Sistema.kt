@@ -834,8 +834,13 @@ fun muestraContactos(navController: NavHostController) {
 
 
 // --- elemento usuario ---
+/**
+ * Composable que muestra la tarjeta de un usuario.
+ *
+ * @param usuario el objeto Usuario a mostrar.
+ * @param onClick acción a ejecutar al hacer clic en la tarjeta.
+ */
 @Composable
-fun UsuCard(usuario: Usuario, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -880,10 +885,14 @@ fun UsuCard(usuario: Usuario, onClick: () -> Unit) {
 
 
 // --- Ajustes ---
+/**
+ * Composable que muestra la pantalla de ajustes.
+ *
+ * @param navController controlador de navegación.
+ */
 @Composable
 @Preview
 fun muestraAjustes(navController: NavHostController = rememberNavController()) {
-    val user = UsuarioPrincipal
     MaterialTheme {
         Scaffold(
             topBar = {
@@ -967,6 +976,12 @@ fun muestraAjustes(navController: NavHostController = rememberNavController()) {
 }
 
 // --- Mostrar Perdil ---
+/**
+ * Composable que muestra el perfil del usuario.
+ *
+ * @param navController controlador de navegación.
+ * @param usuarioU usuario a mostrar.
+ */
 @Composable
 fun mostrarPerfil(navController: NavHostController, usuarioU: Usuario?) {
     // Se recibe el usuario
@@ -1234,8 +1249,14 @@ fun mostrarPerfil(navController: NavHostController, usuarioU: Usuario?) {
 
 
 //Mostrar perfil usuario chat, por ahora no muestra la imagen del usuario, solo muestra negro
+/**
+ * Composable que muestra el perfil de un usuario en el chat.
+ *
+ * @param navController controlador de navegación.
+ * @param userId identificador único del usuario.
+ * @param imagenesApp lista de imágenes de la aplicación.
+ */
 @Composable
-fun mostrarPerfilUsuario(navController: NavHostController, userId: String?, imagenesApp: List<Imagen>) {
     // Busca el usuario en tu lista de usuarios (UsuariosPreCreados) según el userId
     val usuario = UsuariosPreCreados.find { it.getIdUnico() == userId }
 
@@ -1348,9 +1369,14 @@ fun mostrarPerfilUsuario(navController: NavHostController, userId: String?, imag
 
 
 // --- Home Page ---
-// En la HomePage NO se muestra el botón de retroceso.
+/**
+ * Composable que muestra la pantalla de inicio.
+ *
+ * @param navController controlador de navegación.
+ */
 @Composable
 @Preview
+fun muestraHomePage(navController: NavHostController) {
 fun muestraHomePage(navController: NavHostController) {
     MaterialTheme {
         Scaffold(
@@ -1414,6 +1440,11 @@ fun muestraHomePage(navController: NavHostController) {
 }
 
 // --- SpashScreen ---
+/**
+ * Composable que muestra la pantalla de carga (Splash Screen).
+ *
+ * @param navController controlador de navegación.
+ */
 @Composable
 fun SplashScreen(navController: NavHostController) {
     // Efecto para esperar 2 segundos y navegar a "home"
@@ -1444,8 +1475,19 @@ fun SplashScreen(navController: NavHostController) {
 //--------------------------------------------------
 
 // Si el email NO está en el sistema
+/**
+ * Composable base para pantallas de verificación de email.
+ *
+ * @param navController controlador de navegación.
+ * @param titleKey clave para el título de la pantalla.
+ * @param mensajeKey clave para el mensaje mostrado.
+ * @param mostrarCampoCodigo indica si se debe mostrar el campo de código.
+ * @param textoBotonPrincipalKey clave para el texto del botón principal.
+ * @param rutaBotonPrincipal ruta de navegación del botón principal.
+ * @param textoBotonSecundarioKey clave para el texto del botón secundario.
+ * @param rutaBotonSecundario ruta de navegación del botón secundario.
+ */
 @Composable
-fun PantallaEmailBase(
     navController: NavHostController,
     titleKey: String,
     mensajeKey: String,
@@ -1526,6 +1568,11 @@ fun PantallaEmailBase(
 }
 
 // Pantalla cuando el email NO está en el sistema
+/**
+ * Composable que muestra la pantalla para email no registrado.
+ *
+ * @param navController controlador de navegación.
+ */
 @Composable
 fun PantallaEmailNoEnElSistema(navController: NavHostController) {
     PantallaEmailBase(
@@ -1538,6 +1585,11 @@ fun PantallaEmailNoEnElSistema(navController: NavHostController) {
 }
 
 // Pantalla cuando el email está en el sistema
+/**
+ * Composable que muestra la pantalla para email registrado.
+ *
+ * @param navController controlador de navegación.
+ */
 @Composable
 fun PantallaEmailEnElSistema(navController: NavHostController) {
     PantallaEmailBase(
@@ -1554,8 +1606,13 @@ fun PantallaEmailEnElSistema(navController: NavHostController) {
 
 // Pantalla de Restablecer Contraseña
 @Composable
+/**
+ * Composable que muestra la pantalla para restablecer la contraseña.
+ *
+ * @param navController controlador de navegación.
+ */
+@Composable
 fun PantallaRestablecer(navController: NavHostController) {
-    var email by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
 
     // Realiza la traducción fuera del bloque onClick
@@ -1655,6 +1712,11 @@ fun PantallaRestablecer(navController: NavHostController) {
 }
 
 // Pantalla de de restablecer contraseña ingresando la nueva contraseña
+/**
+ * Composable que muestra la pantalla para restablecer la contraseña ingresando una nueva.
+ *
+ * @param navController controlador de navegación.
+ */
 @Composable
 fun muestraRestablecimientoContasenna(navController: NavHostController) {
     var contrasenna by remember { mutableStateOf("") }
@@ -1750,8 +1812,13 @@ fun muestraRestablecimientoContasenna(navController: NavHostController) {
 }
 
 @Composable
+/**
+ * Composable que muestra la pantalla de registro de usuario.
+ *
+ * @param navController controlador de navegación.
+ */
+@Composable
 fun PantallaRegistro(navController: NavHostController) {
-    var nombre by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
@@ -1888,6 +1955,11 @@ fun PantallaRegistro(navController: NavHostController) {
     }
 }
 
+/**
+ * Composable que muestra la pantalla de inicio de sesión.
+ *
+ * @param navController controlador de navegación.
+ */
 @Composable
 fun PantallaLogin(navController: NavHostController) {
     var email by remember { mutableStateOf("") }

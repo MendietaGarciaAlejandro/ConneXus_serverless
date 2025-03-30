@@ -195,13 +195,13 @@ fun Navegacion(
             val temaId = backStackEntry.arguments?.getString("temaId")
             // Buscar el Tema en tu lista global o pasarlo como argumento
             val temaEncontrado = temasHilosPosts.find { it.idTema == temaId } ?: return@composable
-            TemaScreen(navController, temaEncontrado)
+            TemaScreen(navController, temaEncontrado.idTema)
         }
         composable("hilo/{hiloId}") { backStackEntry ->
             val hiloId = backStackEntry.arguments?.getString("hiloId")
             // Buscar el Hilo en tu estado global o pasarlo como argumento
             val hiloEncontrado = temasHilosPosts.flatMap { it.hilos }.find { it.idHilo == hiloId } ?: return@composable
-            HiloScreen(navController, hiloEncontrado)
+            HiloScreen(navController, hiloEncontrado.idHilo)
         }
     }
 }
