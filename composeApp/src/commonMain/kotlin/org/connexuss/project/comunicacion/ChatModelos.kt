@@ -68,7 +68,7 @@ data class Mensaje (
 @Serializable
 data class Conversacion (
     val id: Uuid = generateId(),
-    val participants: List<String>,
+    val participants: List<Uuid>,
     val messages: List<Mensaje> = emptyList(),
     val nombre: String? = null
 ) {
@@ -92,7 +92,7 @@ data class Conversacion (
 data class ConversacionesUsuario(
     val id: String,
     val idUser: String,
-    val conversaciones: List<Conversacion> = emptyList(),
+    val conversaciones: List<Uuid> = emptyList(),
 )
 
 /**

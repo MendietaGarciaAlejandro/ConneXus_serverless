@@ -15,27 +15,18 @@ kotlinxDatetime = "0.6.2"
 navigation-compose = "2.8.0-alpha10"
 extensionsComposeJetbrains = "2.2.0-alpha03"
 kotlinxSerialization = "1.8.0"
-
-# Para guardar los datos cerrando la app
-foundationAndroid = "1.7.8"
+foundationAndroid = "1.8.0-rc02"
 animationCoreLint = "1.8.0-rc02"
-
-# Ktor
 material3Android = "1.3.1"
-uiGraphicsAndroid = "1.7.8"
-
-#Firebase android
+uiGraphicsAndroid = "1.8.0-rc02"
 firebase-android-bom = "33.11.0"
-
-#Gradle
 gradlePlugins-crashlytics = "3.0.3"
-gradlePlugins-google-services = "4.4.2"
-
-#Gitlive
 firebaseCrashlytics = "2.1.0"
+firebaseAnalytics = "22.4.0"
 firebaseDatabase = "2.1.0"
-uiTextAndroid = "1.7.8"
+uiTextAndroid = "1.8.0-rc02"
 coreI18n = "1.0.0-rc01"
+googleServices = "4.4.2"
 
 [libraries]
 arkivanov-decompose-v080 = { module = "com.arkivanov.decompose:decompose", version.ref = "arkivanovDecompose" }
@@ -57,15 +48,10 @@ decompose-jetbrains = { module = "com.arkivanov.decompose:extensions-compose-jet
 kotlinx-serialization = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
 androidx-foundation-android = { group = "androidx.compose.foundation", name = "foundation-android", version.ref = "foundationAndroid" }
 androidx-animation-core-lint = { group = "androidx.compose.animation", name = "animation-core-lint", version.ref = "animationCoreLint" }
-
-# Ktor
 androidx-material3-android = { group = "androidx.compose.material3", name = "material3-android", version.ref = "material3Android" }
 androidx-ui-graphics-android = { group = "androidx.compose.ui", name = "ui-graphics-android", version.ref = "uiGraphicsAndroid" }
-
-#Firebase
 firebase-android-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebase-android-bom" }
-
-#Gitlive
+firebase-analytics = { module = "com.google.firebase:firebase-analytics", version.ref = "firebaseAnalytics" }
 androidx-ui-text-android = { group = "androidx.compose.ui", name = "ui-text-android", version.ref = "uiTextAndroid" }
 androidx-core-i18n = { group = "androidx.core", name = "core-i18n", version.ref = "coreI18n" }
 
@@ -75,10 +61,6 @@ androidLibrary = { id = "com.android.library", version.ref = "agp" }
 composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "compose-multiplatform" }
 composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
-
-# plugin de serializadcion de kotlin
 kotlinxSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
-
-# Cosas de Google (Firebase)
 crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "gradlePlugins-crashlytics" }
-google-services = { id = "com.google.gms.google-services", version.ref = "gradlePlugins-google-services" }
+googleServices = { id = "com.google.gms.google-services", version.ref = "googleServices" }
