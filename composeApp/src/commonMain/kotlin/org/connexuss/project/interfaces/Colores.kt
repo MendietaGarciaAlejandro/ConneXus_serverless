@@ -26,14 +26,35 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 
+/**
+ * Selecciona el esquema de colores en función del parámetro temaClaro.
+ *
+ * @param light Esquema de colores claro.
+ * @param dark Esquema de colores oscuro.
+ * @param temaClaro Bandera que indica si se debe utilizar el tema claro.
+ * @return El esquema de colores seleccionado.
+ */
 fun seleccionarTema(light: Colors, dark: Colors, temaClaro: Boolean): Colors =
     if (temaClaro) light else dark
 
+/**
+ * Configuración del tema de la aplicación.
+ *
+ * @property temaClaro Indica si se utiliza el tema claro.
+ * @property colorTemaKey Clave que representa el conjunto de colores a utilizar.
+ */
 data class TemaConfig(
     val temaClaro: Boolean = true,
     val colorTemaKey: String = "claro" // "claro" representa el tema predeterminado (coloresClaros)
 )
 
+/**
+ * Obtiene el esquema de colores correspondiente según la configuración del tema.
+ *
+ * @param temaClaro Indica si se utiliza el tema claro.
+ * @param colorTemaKey Clave que representa el conjunto de colores a utilizar.
+ * @return Esquema de colores seleccionado.
+ */
 fun getColorsForTheme(temaClaro: Boolean, colorTemaKey: String): androidx.compose.material.Colors {
     return when (colorTemaKey) {
         "azul" -> if (temaClaro) coloresAzulClaro else coloresAzulOscuro
@@ -61,6 +82,9 @@ val TemaConfigSaver: Saver<TemaConfig, List<Any>> = listSaver<TemaConfig, Any>(
 ) as Saver<TemaConfig, List<Any>>
  */
 
+/**
+ * Saver para almacenar y restaurar la configuración del tema.
+ */
 val TemaConfigSaver: Saver<TemaConfig, List<Any>> = Saver(
     save = { config -> listOf(config.temaClaro, config.colorTemaKey) },
     restore = { list ->
@@ -71,6 +95,14 @@ val TemaConfigSaver: Saver<TemaConfig, List<Any>> = Saver(
     }
 )
 
+/**
+ * Pantalla para cambiar el tema de la aplicación.
+ *
+ * @param navController Controlador de navegación.
+ * @param temaConfig Configuración actual del tema.
+ * @param onToggleTheme Función callback para alternar entre tema claro y oscuro.
+ * @param onColorChange Función callback que espera una clave de color para cambiar el tema.
+ */
 @Composable
 fun PantallaCambiarTema(
     navController: NavHostController,

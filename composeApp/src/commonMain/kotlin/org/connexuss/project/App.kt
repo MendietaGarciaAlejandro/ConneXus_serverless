@@ -19,12 +19,20 @@ import org.connexuss.project.usuario.Usuario
 var usuariosGrupoGeneral: List<Usuario> = emptyList()
     private set
 
-// Para actualizar la lista, simplemente asigna a la propiedad:
+/**
+ * Actualiza la lista global de usuarios para el grupo general.
+ *
+ * @param nuevaLista nueva lista de usuarios.
+ */
 fun actualizarUsuariosGrupoGeneral(nuevaLista: List<Usuario>) {
     usuariosGrupoGeneral = nuevaLista
 }
 
 
+/**
+ * Función principal de la aplicación Compose.
+ * Envuelve la aplicación en proveedores de idioma y fuente, y configura el tema.
+ */
 @Composable
 fun App() {
     // Estado para la configuración del tema

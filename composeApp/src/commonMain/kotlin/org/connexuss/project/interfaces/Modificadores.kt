@@ -10,7 +10,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
-/*
+/**
+ * Renderiza contenido responsive en base al ancho disponible.
+ * Si el ancho máximo es mayor a 600dp, limita el ancho del contenido.
+ *
+ * @param content Composable lambda que se renderiza con el modificador calculado.
+ */
 @Composable
 fun ResponsiveContent(content: @Composable (Modifier) -> Unit) {
     BoxWithConstraints {
@@ -23,8 +28,14 @@ fun ResponsiveContent(content: @Composable (Modifier) -> Unit) {
         content(modifier)
     }
 }
- */
 
+/**
+ * Ajusta el tamaño del contenido basado en el ancho disponible.
+ * Si el ancho máximo es mayor a 600dp, limita el ancho a 800dp y añade padding horizontal.
+ * De lo contrario, utiliza todo el ancho disponible.
+ *
+ * @param content Composable lambda que recibe el modificador calculado.
+ */
 @Composable
 fun LimitaTamanioAncho(content: @Composable (Modifier) -> Unit) {
     BoxWithConstraints(
