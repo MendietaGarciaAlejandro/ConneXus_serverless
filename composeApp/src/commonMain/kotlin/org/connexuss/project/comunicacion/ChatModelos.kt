@@ -1,11 +1,12 @@
+@file:OptIn(ExperimentalUuidApi::class)
 package org.connexuss.project.comunicacion
 
-import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.Serializable
+import kotlin.uuid.*
 
 /*
 interface ChatRepository {
@@ -36,38 +37,69 @@ class ChatService(private val chatRepository: ChatRepository) {
 }
  */
 
+/**
+ * Representa un mensaje en el chat.
+ *
+ * @property id Identificador único del mensaje.
+ * @property senderId Identificador del remitente.
+ * @property receiverId Identificador del receptor.
+ * @property content Contenido del mensaje (puede estar encriptado).
+ * @property fechaMensaje Fecha y hora en que se creó el mensaje.
+ */
 @Serializable
-data class Mensaje(
-    val id: String = generateRandomId(),
+data class Mensaje (
+    val id: Uuid = generateId(),
     val senderId: String,
     val receiverId: String,
-    val content: String, // Se puede almacenar encriptado
+    val content: String,
     //val timestamp: Long = System.currentTimeMillis() // Milisegundos desde epoch
     val fechaMensaje: LocalDateTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
-)//la fecha no se si funciona...
+)
 
+/**
+ * Representa una conversación en el chat.
+ *
+ * @property id Identificador único de la conversación.
+ * @property participants Lista de identificadores de los participantes.
+ * @property messages Lista de mensajes dentro de la conversación.
+ * @property nombre Nombre del chat (solo para grupos).
+ * @property grupo Indica si la conversación es grupal, determinada por el número de participantes.
+ */
 @Serializable
-data class Conversacion(
-    val id: String = generateRandomId(), // Valor por defecto: aleatorio
-    val participants: List<String>, // IDs de los usuarios
+data class Conversacion (
+    val id: Uuid = generateId(),
+    val participants: List<Uuid>,
     val messages: List<Mensaje> = emptyList(),
-    val nombre: String? = null           // Nombre del chat (solo para grupos)
+    val nombre: String? = null
 ) {
+    /**
+     * Indica si la conversación es grupal.
+     *
+     * Retorna `true` si la lista de participantes contiene más de dos usuarios.
+     */
     val grupo: Boolean
         get() = participants.size > 2
 }
 
+/**
+ * Representa las conversaciones asociadas a un usuario.
+ *
+ * @property id Identificador de la entrada.
+ * @property idUser Identificador del usuario.
+ * @property conversaciones Lista de conversaciones del usuario.
+ */
 @Serializable
 data class ConversacionesUsuario(
     val id: String,
     val idUser: String,
-    val conversaciones: List<Conversacion> = emptyList(),
+    val conversaciones: List<Uuid> = emptyList(),
 )
 
-//Debug: generar randomID para conversacion
-fun generateRandomId(length: Int = 10): String {
-    val charset = ('A'..'Z') + ('0'..'9')
-    return (1..length)
-        .map { charset.random() }
-        .joinToString("")
+/**
+ * Genera un identificador único.
+ *
+ * @return Uuid generado aleatoriamente.
+ */
+fun generateId(): Uuid {
+    return Uuid.random()
 }

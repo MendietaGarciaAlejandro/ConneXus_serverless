@@ -1,3 +1,4 @@
+@file:OptIn(ExperimentalUuidApi::class)
 package org.connexuss.project.interfaces
 
 import androidx.compose.foundation.Image
@@ -43,14 +44,22 @@ import org.connexuss.project.misc.UsuarioPrincipal
 import org.connexuss.project.misc.UsuariosPreCreados
 import org.connexuss.project.misc.Imagen
 import org.jetbrains.compose.resources.painterResource
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
-//Mostrar chat entre dos personas, se podria mejorar pasandole una conversacion en vez de id del chat
+/**
+ * Muestra el chat entre dos usuarios.
+ *
+ * Busca la conversación por su identificador y muestra los mensajes intercambiados.
+ * @param navController Controlador de navegación.
+ * @param chatId Identificador de la conversación.
+ */
 @Composable
-fun mostrarChat(navController: NavHostController, chatId : String?) {
+fun mostrarChat(navController: NavHostController, chatId : Uuid?) {
     // Obtiene la lista de conversaciones y busca la que tenga el id pasado
 
     val listaChats = UsuarioPrincipal?.getChatUser()?.conversaciones
-    val chat = listaChats?.find { it.id == chatId } ?: return
+    val chat = listaChats?.find { it == chatId } ?: return
 
     val otherParticipantId = chat.participants.firstOrNull {
         it != (UsuarioPrincipal?.getIdUnico() ?: "")
@@ -203,9 +212,16 @@ fun mostrarChat(navController: NavHostController, chatId : String?) {
     }
 }
 
+/**
+ * Muestra el chat grupal.
+ *
+ * Busca la conversación grupal por su identificador y muestra los mensajes compartidos.
+ * @param navController Controlador de navegación.
+ * @param chatId Identificador de la conversación grupal.
+ * @param imagenesPerfil Lista de imágenes de perfil de los participantes.
+ */
 @Composable
 fun mostrarChatGrupo(navController: NavHostController, chatId: String?, imagenesPerfil: List<Imagen>) {
-    // Obtiene la lista de conversaciones del UsuarioPrincipal y busca la conversación por su id
     val listaChats = UsuarioPrincipal?.getChatUser()?.conversaciones
     val chat = listaChats?.find { it.id == chatId } ?: return
     val idUsuario = UsuarioPrincipal?.getIdUnico()

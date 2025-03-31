@@ -77,11 +77,11 @@ fun PantallaIdiomas(navController: NavHostController) {
 data class Idioma(val palabras: Map<String, String>)
 
 val IdiomaSaver: Saver<Idioma, Map<String, String>> = object : Saver<Idioma, Map<String, String>> {
-    override fun restore(value: Map<String, String>): Idioma? {
+    override fun restore(value: Map<String, String>): Idioma {
         return Idioma(value)  // Reconstruimos el objeto a partir del mapa de palabras
     }
 
-    override fun SaverScope.save(value: Idioma): Map<String, String>? {
+    override fun SaverScope.save(value: Idioma): Map<String, String> {
         return value.palabras  // Guardamos solo el mapa de palabras
     }
 }
@@ -259,6 +259,9 @@ val espannol = Idioma(
         "eliminar_chats" to "(Eliminar Chats)",
         "control_de_cuentas" to "(Control de Cuentas)",
         "ayuda" to "Ayuda",
+        /**
+         * Localization strings for the Spanish language.
+         */
         "olvidaste_contrasena" to "¿Olvidaste tu contraseña?",
         "registrarse" to "Registrarse",
         "acceder" to "Acceder",
@@ -331,8 +334,15 @@ val espannol = Idioma(
     )
 )
 
+/**
+ * Localization strings for the English language.
+ */
 // Inglés
 
+/**
+ * Localization strings for the English language.
+ * Contains a mapping of keys to English translations.
+ */
 val ingles = Idioma(
     palabras = mapOf(
     "escribe_mensaje" to "Write a message",
@@ -474,8 +484,15 @@ val ingles = Idioma(
     )
 )
 
+/**
+ * Localization strings for the Portuguese language.
+ */
 // Portugués
 
+/**
+ * Localization strings for the Portuguese language.
+ * Contains a mapping of keys to Portuguese translations.
+ */
 val portugues = Idioma(
     palabras = mapOf(
         // Pantalla de Contactos
@@ -682,8 +699,15 @@ val portugues = Idioma(
     )
 )
 
+/**
+ * Localization strings for the French language.
+ */
 // Francés
 
+/**
+ * Localization strings for the French language.
+ * Contains a mapping of keys to French translations.
+ */
 val frances = Idioma(
     palabras = mapOf(
         // Écran des Contacts
@@ -892,8 +916,15 @@ val frances = Idioma(
     )
 )
 
+/**
+ * Localization strings for the German language.
+ */
 // Alemán
 
+/**
+ * Localization strings for the German language.
+ * Contains a mapping of keys to German translations.
+ */
 val aleman = Idioma(
     palabras = mapOf(
         // Kontakte-Bildschirm
@@ -1104,7 +1135,14 @@ val aleman = Idioma(
 )
 
 // Italiano
-
+/**
+ * Localization strings for the Italian language.
+ */
+ // Italiano
+/**
+ * Localization strings for the Italian language.
+ * Contains a mapping of keys to Italian translations.
+ */
 val italiano = Idioma(
     palabras = mapOf(
         // Schermata Contatti
