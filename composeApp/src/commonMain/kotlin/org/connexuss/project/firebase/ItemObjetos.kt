@@ -1,4 +1,4 @@
-package org.connexuss.project.firebase.pruebas
+package org.connexuss.project.firebase
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column

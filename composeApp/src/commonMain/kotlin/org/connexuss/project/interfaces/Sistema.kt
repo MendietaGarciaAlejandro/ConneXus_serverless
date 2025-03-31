@@ -76,10 +76,9 @@ import kotlinx.coroutines.launch
 import org.connexuss.project.actualizarUsuariosGrupoGeneral
 import org.connexuss.project.comunicacion.Conversacion
 import org.connexuss.project.comunicacion.ConversacionesUsuario
-import org.connexuss.project.firebase.pruebas.FirestoreUsuariosNuestros
+import org.connexuss.project.firebase.FirestoreUsuariosNuestros
 import org.connexuss.project.misc.UsuarioPrincipal
 import org.connexuss.project.misc.UsuariosPreCreados
-import org.connexuss.project.misc.Imagen
 import org.connexuss.project.usuario.AlmacenamientoUsuario
 import org.connexuss.project.usuario.Usuario
 import org.connexuss.project.usuario.UtilidadesUsuario
@@ -2094,6 +2093,13 @@ fun PantallaLogin(navController: NavHostController) {
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text("Debug: Ir a las pruebas con Firebase")
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(
+                            onClick = { navController.navigate("pruebasSupabase") },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Debug: Ir a las pruebas con Supabase")
                         }
                         if (errorMessage.isNotEmpty()) {
                             Spacer(modifier = Modifier.height(8.dp))

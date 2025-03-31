@@ -1,4 +1,4 @@
-package org.connexuss.project.firebase.pruebas
+package org.connexuss.project.firebase
 
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.firestore.firestore

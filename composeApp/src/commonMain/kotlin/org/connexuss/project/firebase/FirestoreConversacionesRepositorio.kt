@@ -1,9 +1,10 @@
-package org.connexuss.project.firebase.pruebas
+package org.connexuss.project.firebase
 
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.firestore.firestore
 import kotlinx.coroutines.flow.flow
 import org.connexuss.project.comunicacion.Conversacion
+import kotlin.uuid.ExperimentalUuidApi
 
 class FirestoreConversacionesRepositorio : ConversacionesRepositorio {
 
@@ -25,6 +26,7 @@ class FirestoreConversacionesRepositorio : ConversacionesRepositorio {
         }
     }
 
+    @OptIn(ExperimentalUuidApi::class)
     override suspend fun addConversacion(conversacion: Conversacion) {
         val conversacionId = generateRandomStringId()
         firestore.collection(nombreColeccion)
