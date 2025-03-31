@@ -1,4 +1,4 @@
-package org.connexuss.project.firebase.pruebas
+package org.connexuss.project.firebase
 
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
