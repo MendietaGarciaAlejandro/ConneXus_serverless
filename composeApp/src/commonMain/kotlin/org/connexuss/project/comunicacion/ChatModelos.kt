@@ -1,4 +1,3 @@
-@file:OptIn(ExperimentalUuidApi::class)
 package org.connexuss.project.comunicacion
 
 import kotlinx.datetime.Clock
@@ -48,7 +47,7 @@ class ChatService(private val chatRepository: ChatRepository) {
  */
 @Serializable
 data class Mensaje (
-    val id: Uuid = generateId(),
+    val id: String = generateId(),
     val senderId: String,
     val receiverId: String,
     val content: String,
@@ -67,8 +66,8 @@ data class Mensaje (
  */
 @Serializable
 data class Conversacion (
-    val id: Uuid = generateId(),
-    val participants: List<Uuid>,
+    val id: String = generateId(),
+    val participants: List<String>,
     val messages: List<Mensaje> = emptyList(),
     val nombre: String? = null
 ) {
@@ -92,14 +91,18 @@ data class Conversacion (
 data class ConversacionesUsuario(
     val id: String,
     val idUser: String,
-    val conversaciones: List<Uuid> = emptyList(),
+    val conversaciones: List<String> = emptyList(),
 )
 
 /**
  * Genera un identificador único.
  *
- * @return Uuid generado aleatoriamente.
+ * @return String generado aleatoriamente.
  */
-fun generateId(): Uuid {
-    return Uuid.random()
+fun generateId(): String {
+    val valores = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+    val longitud = 20
+    return (1..longitud)
+        .map { valores.random() }
+        .joinToString("")
 }
