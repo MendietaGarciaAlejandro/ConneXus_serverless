@@ -1,4 +1,3 @@
-@file:OptIn(ExperimentalUuidApi::class)
 package org.connexuss.project.interfaces
 
 import androidx.compose.foundation.Image
@@ -44,8 +43,6 @@ import org.connexuss.project.misc.UsuarioPrincipal
 import org.connexuss.project.misc.UsuariosPreCreados
 import org.connexuss.project.misc.Imagen
 import org.jetbrains.compose.resources.painterResource
-import kotlin.uuid.ExperimentalUuidApi
-import kotlin.uuid.Uuid
 
 /**
  * Muestra el chat entre dos usuarios.
@@ -55,17 +52,15 @@ import kotlin.uuid.Uuid
  * @param chatId Identificador de la conversación.
  */
 @Composable
-fun mostrarChat(navController: NavHostController, chatId : Uuid?) {
+fun mostrarChat(navController: NavHostController, chatId : String?) {
     // Obtiene la lista de conversaciones y busca la que tenga el id pasado
 
     val listaChats = UsuarioPrincipal?.getChatUser()?.conversaciones
     val chat = listaChats?.find { it == chatId } ?: return
 
-    val otherParticipantId = chat.participants.firstOrNull {
-        it != (UsuarioPrincipal?.getIdUnico() ?: "")
-    }
+    val otherParticipantId = chat.participants.find { it != UsuarioPrincipal?.getIdUnico() }
         ?: chat.participants.getOrNull(1) ?: ""
-    // nombre del otro participante en UsuariosPreCreados:
+
     val otherParticipantUser = UsuariosPreCreados.find { it.getIdUnico() == otherParticipantId }
     val otherParticipantName = UsuariosPreCreados.find { it.getIdUnico() == otherParticipantId }?.getNombreCompleto() ?: otherParticipantId
 

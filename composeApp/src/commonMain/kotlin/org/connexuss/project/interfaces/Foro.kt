@@ -1,5 +1,3 @@
-@file:OptIn(ExperimentalUuidApi::class)
-
 package org.connexuss.project.interfaces
 
 import androidx.compose.foundation.clickable
@@ -23,7 +21,6 @@ import kotlinx.coroutines.launch
 import org.connexuss.project.comunicacion.*
 import org.connexuss.project.misc.ForoRepository
 import org.connexuss.project.misc.temasHilosPosts
-import kotlin.uuid.ExperimentalUuidApi
 
 @Composable
 fun ForoScreen(navController: NavHostController) {

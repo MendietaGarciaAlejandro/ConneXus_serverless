@@ -173,9 +173,9 @@ fun ItemPost(post: Post, clicked: () -> Unit) {
         ) {
             Text(text = post.idPost, style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(4.dp))
-            Text(text = post.senderId, style = MaterialTheme.typography.titleMedium)
+            Text(text = post.idSender, style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(4.dp))
-            Text(text = post.receiverId, style = MaterialTheme.typography.titleMedium)
+            Text(text = post.idReceiver, style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(4.dp))
             Text(text = post.content, style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(4.dp))
@@ -203,7 +203,7 @@ fun ItemHilo(hilo: Hilo, clicked: () -> Unit) {
             Spacer(modifier = Modifier.height(4.dp))
             Text(text = hilo.idForeros.toString(), style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(4.dp))
-            Text(text = hilo.posts.toString(), style = MaterialTheme.typography.titleMedium)
+            Text(text = hilo.idPosts.toString(), style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(4.dp))
             Text(text = hilo.nombre.toString(), style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(4.dp))
@@ -229,7 +229,7 @@ fun ItemTema(tema: Tema, clicked: () -> Unit) {
             Spacer(modifier = Modifier.height(4.dp))
             Text(text = tema.idUsuario, style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(4.dp))
-            Text(text = tema.hilos.toString(), style = MaterialTheme.typography.titleMedium)
+            Text(text = tema.idHilos.toString(), style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(4.dp))
         }
     }
