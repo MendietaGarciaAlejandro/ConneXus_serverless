@@ -77,6 +77,7 @@ import org.connexuss.project.actualizarUsuariosGrupoGeneral
 import org.connexuss.project.comunicacion.Conversacion
 import org.connexuss.project.comunicacion.ConversacionesUsuario
 import org.connexuss.project.firebase.FirestoreUsuariosNuestros
+import org.connexuss.project.misc.Imagen
 import org.connexuss.project.misc.UsuarioPrincipal
 import org.connexuss.project.misc.UsuariosPreCreados
 import org.connexuss.project.usuario.AlmacenamientoUsuario
@@ -310,9 +311,6 @@ fun TopBarUsuario(
 }
 
 
-
-
-
 //BottomBar
 @Composable
 fun MiBottomBar(navController: NavHostController) {
@@ -376,9 +374,20 @@ fun muestraUsuarios(navController: NavHostController) {
 
     LaunchedEffect(Unit) {
         try {
-            val user1 = UtilidadesUsuario().instanciaUsuario("Juan Perez", "paco@jerte.org", "pakito58", true)
-            val user2 = UtilidadesUsuario().instanciaUsuario("Maria Lopez", "marii@si.se", "marii", true)
-            val user3 = UtilidadesUsuario().instanciaUsuario("Pedro Sanchez", "roba@espannoles.es", "roba", true)
+            val user1 = UtilidadesUsuario().instanciaUsuario(
+                "Juan Perez",
+                "paco@jerte.org",
+                "pakito58",
+                true
+            )
+            val user2 =
+                UtilidadesUsuario().instanciaUsuario("Maria Lopez", "marii@si.se", "marii", true)
+            val user3 = UtilidadesUsuario().instanciaUsuario(
+                "Pedro Sanchez",
+                "roba@espannoles.es",
+                "roba",
+                true
+            )
             if (user1 != null) {
                 almacenamientoUsuario.agregarUsuario(user1)
             }
@@ -459,7 +468,8 @@ fun muestraUsuarios(navController: NavHostController) {
 //Muestra el id del usuarioPrincipal ya que no esta incluido en la lista de usuarios precreados
 @Composable
 fun ChatCard(conversacion: Conversacion, navController: NavHostController) {
-    val displayName = if (!conversacion.nombre.isNullOrBlank()) conversacion.nombre else conversacion.id
+    val displayName =
+        if (!conversacion.nombre.isNullOrBlank()) conversacion.nombre else conversacion.id
 
     Card(
         modifier = Modifier
@@ -468,7 +478,8 @@ fun ChatCard(conversacion: Conversacion, navController: NavHostController) {
             .clickable {
                 if (conversacion.grupo) {
                     // Buscamos los usuarios de esa conversación y llenamos una lista con sus idUnico
-                    val usuarios = UsuariosPreCreados.filter { it.getIdUnico() in conversacion.participants }
+                    val usuarios =
+                        UsuariosPreCreados.filter { it.getIdUnico() in conversacion.participants }
 
                     // Actualizamos la lista de usuariosGrupoGeneral con los usuarios de la conversación
                     // (excluyendo al UsuarioPrincipal)
@@ -546,11 +557,13 @@ fun muestraChats(navController: NavHostController) {
 @Preview
 fun muestraContactos(navController: NavHostController) {
     // Creamos un estado para la lista de IDs de contactos basado en UsuarioPrincipal.
-    val contactosState = remember { mutableStateListOf<String>().apply {
-        if (UsuarioPrincipal != null) {
-            UsuarioPrincipal!!.getContactos()?.let { addAll(it) }
+    val contactosState = remember {
+        mutableStateListOf<String>().apply {
+            if (UsuarioPrincipal != null) {
+                UsuarioPrincipal!!.getContactos()?.let { addAll(it) }
+            }
         }
-    } }
+    }
     // Lista completa de usuarios precreados
     val todosLosUsuarios = UsuariosPreCreados
     // Filtramos los usuarios usando el estado
@@ -656,7 +669,8 @@ fun muestraContactos(navController: NavHostController) {
                                 onClick = {
                                     val nuevoContactoId = inputText.trim()
                                     // Busca en UsuariosPreCreados si existe un usuario con ese idUnico
-                                    val userFound = UsuariosPreCreados.find { it.getIdUnico() == nuevoContactoId }
+                                    val userFound =
+                                        UsuariosPreCreados.find { it.getIdUnico() == nuevoContactoId }
                                     if (userFound != null) {
                                         val updatedContacts = UsuarioPrincipal?.getContactos()
                                             ?.toMutableList()
@@ -741,14 +755,16 @@ fun muestraContactos(navController: NavHostController) {
                                     // Dentro del AlertDialog para "Nuevo Chat" en la confirmButton:
                                     if (selectedContacts.isNotEmpty()) {
                                         // Construimos el conjunto de participantes: el UsuarioPrincipal y los contactos seleccionados.
-                                        val participantesSet = (UsuarioPrincipal?.let { listOf(it.getIdUnico()) }
-                                            ?.plus(selectedContacts.map { it.getIdUnico() }))?.toSet()
+                                        val participantesSet =
+                                            (UsuarioPrincipal?.let { listOf(it.getIdUnico()) }
+                                                ?.plus(selectedContacts.map { it.getIdUnico() }))?.toSet()
 
                                         // Si sólo se ha seleccionado un contacto (chat individual), comprobamos si ya existe una conversación con ese par.
                                         if (selectedContacts.size == 1) {
-                                            val existingChat = UsuarioPrincipal?.getChatUser()?.conversaciones?.find {
-                                                it.participants.toSet() == participantesSet
-                                            }
+                                            val existingChat =
+                                                UsuarioPrincipal?.getChatUser()?.conversaciones?.find {
+                                                    it.participants.toSet() == participantesSet
+                                                }
                                             if (existingChat != null) {
                                                 // Por ejemplo, podrías mostrar un mensaje Toast o Snackbar indicando que ya existe.
                                                 // Aquí simplemente salimos sin crear una nueva conversación:
@@ -768,7 +784,8 @@ fun muestraContactos(navController: NavHostController) {
                                             )
                                         }
                                         // Actualiza el UsuarioPrincipal: agrega la nueva conversación a su lista
-                                        val convActualesPrincipal = UsuarioPrincipal?.getChatUser()?.conversaciones?.toMutableList()
+                                        val convActualesPrincipal =
+                                            UsuarioPrincipal?.getChatUser()?.conversaciones?.toMutableList()
                                         if (nuevaConversacion != null) {
                                             convActualesPrincipal?.add(nuevaConversacion)
                                         }
@@ -787,21 +804,23 @@ fun muestraContactos(navController: NavHostController) {
                                         }
                                         // Actualiza cada usuario seleccionado: agrega la conversación a sus chats
                                         selectedContacts.forEach { usuario ->
-                                            val convActuales = usuario.getChatUser()?.conversaciones?.toMutableList()
+                                            val convActuales =
+                                                usuario.getChatUser()?.conversaciones?.toMutableList()
                                             if (nuevaConversacion != null) {
                                                 convActuales?.add(nuevaConversacion)
                                             }
-                                            val nuevasConversacionesUsuario = usuario.getChatUser()?.let {
-                                                if (convActuales != null) {
-                                                    ConversacionesUsuario(
-                                                        id = it.id,
-                                                        idUser = usuario.getIdUnico(),
-                                                        conversaciones = convActuales
-                                                    )
-                                                } else {
-                                                    null
+                                            val nuevasConversacionesUsuario =
+                                                usuario.getChatUser()?.let {
+                                                    if (convActuales != null) {
+                                                        ConversacionesUsuario(
+                                                            id = it.id,
+                                                            idUser = usuario.getIdUnico(),
+                                                            conversaciones = convActuales
+                                                        )
+                                                    } else {
+                                                        null
+                                                    }
                                                 }
-                                            }
                                             usuario.setChatUser(nuevasConversacionesUsuario)
                                         }
                                     }
@@ -840,6 +859,7 @@ fun muestraContactos(navController: NavHostController) {
  * @param onClick acción a ejecutar al hacer clic en la tarjeta.
  */
 @Composable
+fun UsuCard(usuario: Usuario, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -882,7 +902,6 @@ fun muestraContactos(navController: NavHostController) {
     }
 }
 
-
 // --- Ajustes ---
 /**
  * Composable que muestra la pantalla de ajustes.
@@ -892,6 +911,7 @@ fun muestraContactos(navController: NavHostController) {
 @Composable
 @Preview
 fun muestraAjustes(navController: NavHostController = rememberNavController()) {
+    val user = UsuarioPrincipal
     MaterialTheme {
         Scaffold(
             topBar = {
@@ -1246,7 +1266,6 @@ fun mostrarPerfil(navController: NavHostController, usuarioU: Usuario?) {
 }
 
 
-
 //Mostrar perfil usuario chat, por ahora no muestra la imagen del usuario, solo muestra negro
 /**
  * Composable que muestra el perfil de un usuario en el chat.
@@ -1256,6 +1275,11 @@ fun mostrarPerfil(navController: NavHostController, usuarioU: Usuario?) {
  * @param imagenesApp lista de imágenes de la aplicación.
  */
 @Composable
+fun mostrarPerfilUsuario(
+    navController: NavHostController,
+    userId: String?,
+    imagenesApp: List<Imagen>
+) {
     // Busca el usuario en tu lista de usuarios (UsuariosPreCreados) según el userId
     val usuario = UsuariosPreCreados.find { it.getIdUnico() == userId }
 
@@ -1376,7 +1400,6 @@ fun mostrarPerfil(navController: NavHostController, usuarioU: Usuario?) {
 @Composable
 @Preview
 fun muestraHomePage(navController: NavHostController) {
-fun muestraHomePage(navController: NavHostController) {
     MaterialTheme {
         Scaffold(
             topBar = {
@@ -1462,7 +1485,8 @@ fun SplashScreen(navController: NavHostController) {
             ) {
                 // Muestra el ícono de la app en el centro
                 Image(
-                    painter = painterResource(Res.drawable.connexus
+                    painter = painterResource(
+                        Res.drawable.connexus
                     ),
                     contentDescription = "Ícono de la aplicación"
                 )
@@ -1487,6 +1511,7 @@ fun SplashScreen(navController: NavHostController) {
  * @param rutaBotonSecundario ruta de navegación del botón secundario.
  */
 @Composable
+fun PantallaEmailBase(
     navController: NavHostController,
     titleKey: String,
     mensajeKey: String,
@@ -1604,7 +1629,6 @@ fun PantallaEmailEnElSistema(navController: NavHostController) {
 }
 
 // Pantalla de Restablecer Contraseña
-@Composable
 /**
  * Composable que muestra la pantalla para restablecer la contraseña.
  *
@@ -1612,6 +1636,7 @@ fun PantallaEmailEnElSistema(navController: NavHostController) {
  */
 @Composable
 fun PantallaRestablecer(navController: NavHostController) {
+    var email by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
 
     // Realiza la traducción fuera del bloque onClick
@@ -1810,7 +1835,6 @@ fun muestraRestablecimientoContasenna(navController: NavHostController) {
     }
 }
 
-@Composable
 /**
  * Composable que muestra la pantalla de registro de usuario.
  *
@@ -1818,13 +1842,15 @@ fun muestraRestablecimientoContasenna(navController: NavHostController) {
  */
 @Composable
 fun PantallaRegistro(navController: NavHostController) {
+    var nombre by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
 
     val errorContrasenas = traducir("error_contrasenas")
-    val errorEmailYaRegistrado = traducir("error_email_ya_registrado") // Falta implementar y mete en los mapas de idiomas
+    val errorEmailYaRegistrado =
+        traducir("error_email_ya_registrado") // Falta implementar y mete en los mapas de idiomas
 
     // Instanciamos un usuario vacío que se completará si el registro es correcto
     val usuario = Usuario()
@@ -1898,11 +1924,12 @@ fun PantallaRegistro(navController: NavHostController) {
                         ) {
                             Button(
                                 onClick = {
-                                    errorMessage = if (password == confirmPassword && password.isNotBlank()) {
-                                        ""
-                                    } else {
-                                        errorContrasenas
-                                    }
+                                    errorMessage =
+                                        if (password == confirmPassword && password.isNotBlank()) {
+                                            ""
+                                        } else {
+                                            errorContrasenas
+                                        }
                                     // Si no hay error, proceder a completar el usuario y enviarlo a Firestore
                                     if (errorMessage.isEmpty()) {
                                         // Seteamos los valores en el usuario
@@ -1966,9 +1993,12 @@ fun PantallaLogin(navController: NavHostController) {
     var errorMessage by remember { mutableStateOf("") }
 
     // Mensajes de error (debes definir estas claves en tu mapa de idiomas)
-    val errorEmailNingunUsuario = traducir("error_email_ningun_usuario") // Ejemplo: "No hay ningún usuario registrado con ese email"
-    val errorContrasenaIncorrecta = traducir("error_contrasena_incorrecta") // Ejemplo: "Contraseña incorrecta"
-    val porFavorCompleta = traducir("por_favor_completa") // Ejemplo: "Por favor, completa todos los campos"
+    val errorEmailNingunUsuario =
+        traducir("error_email_ningun_usuario") // Ejemplo: "No hay ningún usuario registrado con ese email"
+    val errorContrasenaIncorrecta =
+        traducir("error_contrasena_incorrecta") // Ejemplo: "Contraseña incorrecta"
+    val porFavorCompleta =
+        traducir("por_favor_completa") // Ejemplo: "Por favor, completa todos los campos"
 
     // Scope para lanzar corrutinas
     val scope = rememberCoroutineScope()
@@ -2045,7 +2075,9 @@ fun PantallaLogin(navController: NavHostController) {
                                         return@launch
                                     }
                                     // Obtén el usuario desde Firestore a través del repositorio
-                                    val usuario = FirestoreUsuariosNuestros().getUsuarioPorCorreo(email).firstOrNull()
+                                    val usuario =
+                                        FirestoreUsuariosNuestros().getUsuarioPorCorreo(email)
+                                            .firstOrNull()
                                     if (usuario == null) {
                                         // No se encontró ningún usuario con ese email
                                         errorMessage = errorEmailNingunUsuario
@@ -2054,7 +2086,8 @@ fun PantallaLogin(navController: NavHostController) {
                                         if (usuario.getContrasennia() != password) {
                                             errorMessage = errorContrasenaIncorrecta
                                         } else {
-                                            UsuarioPrincipal = usuario // Asignamos el usuario encontrado a la variable global
+                                            UsuarioPrincipal =
+                                                usuario // Asignamos el usuario encontrado a la variable global
                                             errorMessage = ""
                                             // Login exitoso; navega a "contactos"
                                             navController.navigate("contactos") {
@@ -2116,6 +2149,7 @@ fun PantallaLogin(navController: NavHostController) {
         }
     }
 }
+
 
 /*
 @Composable
