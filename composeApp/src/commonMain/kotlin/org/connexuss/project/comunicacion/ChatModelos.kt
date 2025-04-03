@@ -91,7 +91,7 @@ data class Conversacion (
 data class ConversacionesUsuario(
     val id: String,
     val idUser: String,
-    val conversaciones: List<String> = emptyList(),
+    val conversaciones: List<Conversacion> = emptyList(),
 )
 
 /**

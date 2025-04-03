@@ -74,7 +74,7 @@ fun ForoScreen(navController: NavHostController) {
                             val nuevoTema = Tema(
                                 idUsuario = "UsuarioActual",
                                 nombre = nombre,
-                                idHilos = emptyList()
+                                hilos = emptyList()
                             )
                             ForoRepository.agregarTema(nuevoTema)
                             showNewTopicDialog = false
@@ -141,7 +141,7 @@ fun TemaScreen(navController: NavHostController, temaId: String) {
                     onDismiss = { showNewThreadDialog = false },
                     onConfirm = { titulo ->
                         val nuevoHilo = Hilo(
-                            idHilo = generateRandomId(),
+                            idHilo = generateId(),
                             idForeros = listOf(tema!!.idUsuario),
                             nombre = titulo,
                             posts = emptyList()

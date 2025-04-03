@@ -56,7 +56,7 @@ fun mostrarChat(navController: NavHostController, chatId : String?) {
     // Obtiene la lista de conversaciones y busca la que tenga el id pasado
 
     val listaChats = UsuarioPrincipal?.getChatUser()?.conversaciones
-    val chat = listaChats?.find { it == chatId } ?: return
+    val chat = listaChats?.find { it.id == chatId } ?: return
 
     val otherParticipantId = chat.participants.find { it != UsuarioPrincipal?.getIdUnico() }
         ?: chat.participants.getOrNull(1) ?: ""

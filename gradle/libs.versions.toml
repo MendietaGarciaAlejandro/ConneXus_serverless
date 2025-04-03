@@ -20,16 +20,20 @@ animationCoreLint = "1.8.0-rc02"
 material3Android = "1.3.1"
 uiGraphicsAndroid = "1.8.0-rc02"
 firebase-android-bom = "33.11.0"
-gradlePlugins-crashlytics = "3.0.3"
 firebaseCrashlytics = "2.1.0"
 firebaseAnalytics = "22.4.0"
 firebaseDatabase = "2.1.0"
 uiTextAndroid = "1.8.0-rc02"
 coreI18n = "1.0.0-rc01"
-googleServices = "4.4.2"
+
+#Gradle
+gradlePlugins-crashlytics = "3.0.3"
+gradlePlugins-google-services = "4.4.2"
+
 ktorClientJs = "3.1.2"
 supabaseKt = "3.1.3"
 ktor = "3.1.2"
+navigationSafeArgsGenerator = "2.8.9"
 
 [libraries]
 auth-kt = { module = "io.github.jan-tennert.supabase:auth-kt", version.ref = "supabaseKt" }
@@ -69,6 +73,7 @@ supabase-postgrest-kt = { module = "io.github.jan-tennert.supabase:postgrest-kt"
 ktorClientCore = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
 ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
+androidx-navigation-safe-args-generator = { group = "androidx.navigation", name = "navigation-safe-args-generator", version.ref = "navigationSafeArgsGenerator" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
@@ -76,6 +81,11 @@ androidLibrary = { id = "com.android.library", version.ref = "agp" }
 composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "compose-multiplatform" }
 composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+
+
+# plugin de serializadcion de kotlin
 kotlinxSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+
+# Cosas de Google (Firebase)
 crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "gradlePlugins-crashlytics" }
-googleServices = { id = "com.google.gms.google-services", version.ref = "googleServices" }
+google-services = { id = "com.google.gms.google-services", version.ref = "gradlePlugins-google-services" }

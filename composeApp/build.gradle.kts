@@ -1,4 +1,5 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
 
@@ -7,8 +8,8 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
-    alias(libs.plugins.googleServices)
 
+    id("com.google.gms.google-services")
     kotlin("plugin.serialization") version "2.1.0"
 }
 
@@ -36,6 +37,24 @@ kotlin {
         }
         binaries.executable()
     }
+//    @OptIn(ExperimentalWasmDsl::class)
+//    wasmJs {
+//        moduleName = "composeApp"
+//        browser {
+//            val rootDirPath = project.rootDir.path
+//            val projectDirPath = project.projectDir.path
+//            commonWebpackConfig {
+//                outputFileName = "composeApp.js"
+//                devServer = (devServer ?: KotlinWebpackConfig.DevServer()).apply {
+//                    static = (static ?: mutableListOf()).apply {
+//                        add(rootDirPath)
+//                        add(projectDirPath)
+//                    }
+//                }
+//            }
+//        }
+//        binaries.executable()
+//    }
     sourceSets {
         val desktopMain by getting
 
@@ -53,7 +72,19 @@ kotlin {
             implementation(libs.firebase.messaging)
             implementation(libs.firebase.storage)
 
+            // Dependencies for Supabase
+            //implementation(libs.bom)
+            implementation(libs.supabase.kt)
+            implementation(libs.storage.kt)
+            implementation(libs.supabase.postgrest.kt)
+            implementation(libs.auth.kt)
+            implementation(libs.realtime.kt)
+            implementation(libs.functions.kt)
+
+            // Dependencias de Ktor
+            implementation(libs.ktorClientCore)
             implementation(libs.ktor.client.okhttp)
+            implementation(libs.ktor.serialization.kotlinx.json)
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -84,6 +115,7 @@ kotlin {
             implementation(libs.realtime.kt)
             implementation(libs.functions.kt)
 
+            // Dependencias de Ktor
             implementation(libs.ktorClientCore)
             implementation(libs.ktor.client.content.negotiation)
             implementation(libs.ktor.serialization.kotlinx.json)
@@ -94,7 +126,19 @@ kotlin {
             implementation(libs.arkivanov.decompose.v080)
             implementation(libs.decompose.jetbrains)
 
+            // Dependencies for Supabase
+            //implementation(libs.bom)
+            implementation(libs.supabase.kt)
+            implementation(libs.storage.kt)
+            implementation(libs.supabase.postgrest.kt)
+            implementation(libs.auth.kt)
+            implementation(libs.realtime.kt)
+            implementation(libs.functions.kt)
+
+            // Dependencias de Ktor
+            implementation(libs.ktorClientCore)
             implementation(libs.ktor.client.okhttp)
+            implementation(libs.ktor.serialization.kotlinx.json)
         }
         val jsMain by getting {
             dependencies {
@@ -106,17 +150,30 @@ kotlin {
                 implementation(libs.firebase.storage)
             }
         }
-        wasmJsMain.dependencies {
-            implementation(libs.ktor.client.js)
-        }
+//        wasmJsMain.dependencies {
+//            // Dependencies for Supabase
+//            //implementation(libs.bom)
+//            implementation(libs.supabase.kt)
+//            implementation(libs.storage.kt)
+//            implementation(libs.supabase.postgrest.kt)
+//            implementation(libs.auth.kt)
+//            implementation(libs.realtime.kt)
+//            implementation(libs.functions.kt)
+//
+//            // Dependencias de Ktor
+//            implementation(libs.ktorClientCore)
+//            implementation(libs.ktor.client.js)
+//            implementation(libs.ktor.serialization.kotlinx.json)
+//        }
     }
 }
 
 android {
     namespace = "org.connexuss.project"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
+
     defaultConfig {
-        applicationId = "com.connexuss.app"
+        applicationId = "org.connexuss.project"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1

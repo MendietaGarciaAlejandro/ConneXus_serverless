@@ -5,9 +5,6 @@ import androidx.compose.runtime.remember
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import org.connexuss.project.misc.UsuarioPrincipal
-import org.connexuss.project.misc.imagenesPerfilPersona
-import org.connexuss.project.misc.temasHilosPosts
 import org.connexuss.project.firebase.AppFirebase
 import org.connexuss.project.firebase.FirestoreConversacionesRepositorio
 import org.connexuss.project.firebase.FirestoreConversacionesUsuariosRepositorio
@@ -52,7 +49,10 @@ import org.connexuss.project.interfaces.muestraContactos
 import org.connexuss.project.interfaces.muestraHomePage
 import org.connexuss.project.interfaces.muestraRestablecimientoContasenna
 import org.connexuss.project.interfaces.muestraUsuarios
-import org.connexuss.project.supabase.MostrarUsuariosSupabase
+import org.connexuss.project.misc.UsuarioPrincipal
+import org.connexuss.project.misc.imagenesPerfilPersona
+import org.connexuss.project.misc.temasHilosPosts
+import org.connexuss.project.supabase.MostrarUsuariosCRUD
 import org.connexuss.project.usuario.Usuario
 
 @Composable
@@ -205,7 +205,7 @@ fun Navegacion(
             HiloScreen(navController, hiloEncontrado.idHilo)
         }
         composable("pruebasSupabase") {
-            MostrarUsuariosSupabase(navController)
+            MostrarUsuariosCRUD(navController)
         }
     }
 }

@@ -13,7 +13,7 @@ import kotlin.uuid.Uuid
  * @property imagen Recurso gráfico asociado a la imagen.
  */
 data class Imagen(
-    val id: Uuid = generateId(),
+    val id: String = generateId(),
     val imagen: DrawableResource
 ) {
     // Alias para el recurso gráfico asociado a la imagen.
