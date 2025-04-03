@@ -1,4 +1,3 @@
-@file:OptIn(ExperimentalUuidApi::class)
 package org.connexuss.project.misc
 
 import androidx.compose.runtime.mutableStateListOf
@@ -24,7 +23,6 @@ import org.connexuss.project.comunicacion.Tema
 import org.connexuss.project.usuario.AlmacenamientoUsuario
 import org.connexuss.project.usuario.UtilidadesUsuario
 import org.connexuss.project.usuario.Usuario
-import kotlin.uuid.ExperimentalUuidApi
 
 // Imagenes App -----------------------------------------------------
 

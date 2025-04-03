@@ -1,4 +1,4 @@
-package org.connexuss.project.firebase.pruebas
+package org.connexuss.project.firebase
 
 import kotlinx.serialization.Serializable
 

@@ -1,4 +1,3 @@
-@file:OptIn(ExperimentalUuidApi::class)
 package org.connexuss.project.comunicacion
 
 import kotlinx.datetime.Clock
@@ -20,9 +19,9 @@ import kotlin.uuid.Uuid
  */
 @Serializable
 data class Post(
-    val idPost: Uuid = generateId(),
-    val idSender: Uuid,
-    val idReceiver: Uuid,
+    val idPost: String = generateId(),
+    val idSender: String,
+    val idReceiver: String,
     val content: String,
     val fechaPost: LocalDateTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
 )
@@ -37,9 +36,9 @@ data class Post(
  */
 @Serializable
 data class Hilo(
-    val idHilo: Uuid = generateId(),
-    val idForeros: List<Uuid>,
-    val idPosts: List<Uuid> = emptyList(),
+    val idHilo: String = generateId(),
+    val idForeros: List<String>,
+    val idPosts: List<String> = emptyList(),
     val nombre: String? = null
 )
 
@@ -53,8 +52,8 @@ data class Hilo(
  */
 @Serializable
 data class Tema(
-    val idTema: Uuid = generateId(),
-    val idUsuario: Uuid,
+    val idTema: String = generateId(),
+    val idUsuario: String,
     val nombre: String,
-    val idHilos: List<Uuid> = emptyList()
+    val idHilos: List<String> = emptyList()
 )

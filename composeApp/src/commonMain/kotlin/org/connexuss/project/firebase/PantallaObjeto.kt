@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalMaterial3Api::class)
 
-package org.connexuss.project.firebase.pruebas
+package org.connexuss.project.firebase
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons

@@ -1,4 +1,4 @@
-package org.connexuss.project.firebase.pruebas
+package org.connexuss.project.firebase
 
 import kotlinx.coroutines.flow.Flow
 import org.connexuss.project.comunicacion.Conversacion

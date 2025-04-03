@@ -8,6 +8,8 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.googleServices)
+
+    kotlin("plugin.serialization") version "2.1.0"
 }
 
 kotlin {
@@ -50,6 +52,8 @@ kotlin {
             implementation(libs.firebase.functions)
             implementation(libs.firebase.messaging)
             implementation(libs.firebase.storage)
+
+            implementation(libs.ktor.client.okhttp)
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -64,13 +68,34 @@ kotlin {
             implementation(libs.kotlinx.datetime)
             implementation(libs.navigation.compose)
             implementation(libs.kotlinx.serialization)
+            implementation(libs.firebase.database)
+            implementation(libs.firebase.firestore)
+            implementation(libs.firebase.auth)
+            implementation(libs.firebase.functions)
+            implementation(libs.firebase.messaging)
+            implementation(libs.firebase.storage)
+
+            // Dependencies for Supabase
+            //implementation(libs.bom)
+            implementation(libs.supabase.kt)
+            implementation(libs.storage.kt)
+            implementation(libs.supabase.postgrest.kt)
+            implementation(libs.auth.kt)
+            implementation(libs.realtime.kt)
+            implementation(libs.functions.kt)
+
+            implementation(libs.ktorClientCore)
+            implementation(libs.ktor.client.content.negotiation)
+            implementation(libs.ktor.serialization.kotlinx.json)
         }
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutines.swing)
             implementation(libs.arkivanov.decompose.v080)
             implementation(libs.decompose.jetbrains)
-            }
+
+            implementation(libs.ktor.client.okhttp)
+        }
         val jsMain by getting {
             dependencies {
                 implementation(compose.html.core)
@@ -80,6 +105,9 @@ kotlin {
                 implementation(libs.firebase.auth)
                 implementation(libs.firebase.storage)
             }
+        }
+        wasmJsMain.dependencies {
+            implementation(libs.ktor.client.js)
         }
     }
 }
