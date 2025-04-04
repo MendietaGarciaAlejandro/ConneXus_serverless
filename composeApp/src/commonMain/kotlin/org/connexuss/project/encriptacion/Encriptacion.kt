@@ -32,6 +32,7 @@ import dev.whyoleg.cryptography.algorithms.AES
 import dev.whyoleg.cryptography.algorithms.Digest
 import dev.whyoleg.cryptography.algorithms.EC
 import dev.whyoleg.cryptography.algorithms.ECDSA
+import dev.whyoleg.cryptography.algorithms.HMAC
 import dev.whyoleg.cryptography.algorithms.SHA512
 import dev.whyoleg.cryptography.operations.SignatureVerifier
 import io.ktor.utils.io.core.toByteArray
@@ -100,6 +101,96 @@ suspend fun pruebasDesencriptacionAES(texto: ByteArray, clave: AES.GCM.Key): Str
     return cipher.decrypt(ciphertext = texto).decodeToString()
 }
 
+/**
+ * Genera una clave HMAC utilizando SHA-512.
+ */
+suspend fun generaClaveHMAC(digest: SHA512): HMAC.Key {
+    val provider = CryptographyProvider.Default
+    val hmac = provider.get(HMAC)
+    val keyGenerator = hmac.keyGenerator(digest)
+    return keyGenerator.generateKey()
+}
+
+/**
+ * Genera una firma HMAC para el texto proporcionado utilizando la clave HMAC.
+ */
+suspend fun generaFirmaHMAC(texto: String, key: HMAC.Key): ByteArray {
+    return key.signatureGenerator().generateSignature(texto.encodeToByteArray())
+}
+
+/**
+ * Verifica la firma HMAC utilizando la clave HMAC.
+ */
+suspend fun verificaFirmaHMAC(texto: String, signature: ByteArray, key: HMAC.Key): Boolean {
+    return try {
+        key.signatureVerifier().verifySignature(texto.encodeToByteArray(), signature)
+        true
+    } catch (e: Exception) {
+        false
+    }
+}
+
+/**
+ * Codifica la clave HMAC a formato DER.
+ */
+suspend fun codificaClaveHMAC(key: HMAC.Key, format: HMAC.Key.Format): ByteArray {
+    return key.encodeToByteArray(format)
+}
+
+/**
+ * Decodifica la clave HMAC desde formato DER.
+ */
+suspend fun decodificaClaveHMAC(
+    encodedKey: ByteArray,
+    digest: SHA512,
+    format: HMAC.Key.Format = HMAC.Key.Format.RAW
+): HMAC.Key {
+    val provider = CryptographyProvider.Default
+    val hmac = provider.get(HMAC)
+    return hmac.keyDecoder(digest).decodeFromByteArray(format, encodedKey)
+}
+
+/**
+ * Realiza pruebas de HMAC generando una clave, firmando un texto y verificando la firma.
+ *
+ * @param texto El texto a ser firmado y verificado.
+ * @return true si la verificación es exitosa, false en caso contrario.
+ */
+suspend fun pruebasHMAC(texto: String): Boolean {
+    // Generar clave HMAC
+    val clave = generaClaveHMAC(digest = SHA512)
+
+    // Generar firma usando la clave
+    val firma = generaFirmaHMAC(texto, clave)
+
+    // Verificar la firma con la misma clave
+    val verificacionInicial = verificaFirmaHMAC(texto, firma, clave)
+    println("Verificación inicial: $verificacionInicial")
+
+    // Codificar la clave a formato RAW
+    val claveCodificada = codificaClaveHMAC(
+        clave,
+        format = HMAC.Key.Format.RAW
+    )
+
+    // Decodificar la clave a partir del arreglo de bytes
+    val claveDecodificada = decodificaClaveHMAC(
+        claveCodificada,
+        digest = SHA512,
+        format = HMAC.Key.Format.RAW
+    )
+
+    // Verificar la firma usando la clave decodificada
+    val verificacionDecodificada = verificaFirmaHMAC(texto, firma, claveDecodificada)
+    println("Verificación con clave decodificada: $verificacionDecodificada")
+
+    // Devuelve true si ambas verificaciones son exitosas
+    return verificacionInicial && verificacionDecodificada
+}
+
+/**
+ * Genera un par de claves ECDSA utilizando la curva especificada.
+ */
 suspend fun generaClaveECDSA(curve: EC.Curve = EC.Curve.P521): ECDSA.KeyPair {
     val provider = CryptographyProvider.Default
     val ecdsa = provider.get(ECDSA)
@@ -107,6 +198,9 @@ suspend fun generaClaveECDSA(curve: EC.Curve = EC.Curve.P521): ECDSA.KeyPair {
     return keyPairGenerator.generateKey()
 }
 
+/**
+ * Genera una firma ECDSA para el texto proporcionado utilizando la clave privada.
+ */
 suspend fun generaFirmaECDSA(
     texto: String,
     privateKey: ECDSA.PrivateKey,
@@ -118,6 +212,9 @@ suspend fun generaFirmaECDSA(
         .generateSignature(texto.encodeToByteArray())
 }
 
+/**
+ * Verifica la firma ECDSA utilizando la clave pública.
+ */
 suspend fun verificaFirmaECDSA(
     texto: String,
     signature: ByteArray,
@@ -135,6 +232,9 @@ suspend fun verificaFirmaECDSA(
     }
 }
 
+/**
+ * Codifica la clave pública a formato DER.
+ */
 suspend fun codificaClavePublica(
     publicKey: ECDSA.PublicKey,
     format: EC.PublicKey.Format = EC.PublicKey.Format.DER
@@ -142,6 +242,9 @@ suspend fun codificaClavePublica(
     return publicKey.encodeToByteArray(format)
 }
 
+/**
+ * Decodifica la clave pública desde formato DER.
+ */
 suspend fun decodificaClavePublica(
     encodedKey: ByteArray,
     curve: EC.Curve = EC.Curve.P521,
@@ -152,6 +255,12 @@ suspend fun decodificaClavePublica(
     return ecdsa.publicKeyDecoder(curve).decodeFromByteArray(format, encodedKey)
 }
 
+/**
+ * Realiza pruebas de ECDSA generando un par de claves, firmando un texto y verificando la firma.
+ *
+ * @param texto El texto a ser firmado y verificado.
+ * @return true si la verificación es exitosa, false en caso contrario.
+ */
 suspend fun pruebasECDSA(texto: String): Boolean {
     // Generar par de claves ECDSA
     val keyPair = generaClaveECDSA()
