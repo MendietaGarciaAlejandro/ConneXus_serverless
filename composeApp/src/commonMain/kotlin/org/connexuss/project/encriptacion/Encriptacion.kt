@@ -55,14 +55,13 @@ suspend fun calcularHashSHA512(textoOriginal: String): ByteArray {
 }
 
 /**
- * Calcula un hash SHA-512 de un texto y lo devuelve en formato hexadecimal.
+ * Convierte un ByteArray a una cadena hexadecimal.
  *
- * @param texto El texto a ser procesado.
- * @return El hash SHA-512 como cadena hexadecimal.
+ * @param bytes El ByteArray a convertir.
+ * @return La representación hexadecimal como String.
  */
-suspend fun hash(texto: String): String {
-    val hashBytes = calcularHashSHA512(texto)
-    return hashBytes.toHex()
+fun hash(texto: String): String {
+    return texto.hashCode().toString()
 }
 
 // Función de extensión para convertir ByteArray a cadena hexadecimal.
@@ -303,26 +302,39 @@ suspend fun pruebasECDSA(texto: String): Boolean {
 
 @Composable
 fun PantallaPruebasEncriptacion(navController: NavHostController) {
-    // Clave AES, se genera una sola vez.
-    var claveAES by remember { mutableStateOf<AES.GCM.Key?>(null) }
 
     // Estados para los textos
     var textoOriginal by remember { mutableStateOf("") }
     var textoHasheado by remember { mutableStateOf("") }
 
-    // Estados para encriptación AES
-    var textoGlobalACifrar by remember { mutableStateOf("") }
-    var textoGlobalCifrado by remember { mutableStateOf("") }
-    var textoGlobalDescifrado by remember { mutableStateOf("") }
+    // --- Estados para AES ---
+    var claveAES by remember { mutableStateOf<AES.GCM.Key?>(null) }
+    var textoAES by remember { mutableStateOf("") }
+    var resultadoCifradoAES by remember { mutableStateOf("") }
+    var resultadoDescifradoAES by remember { mutableStateOf("") }
 
-    // Estado para mensaje de error
+    // --- Estados para HMAC ---
+    var claveHMAC by remember { mutableStateOf<HMAC.Key?>(null) }
+    var textoHMAC by remember { mutableStateOf("") }
+    var firmaHMAC by remember { mutableStateOf("") }
+    var verificacionHMAC by remember { mutableStateOf("") }
+
+    // --- Estados para ECDSA ---
+    var keyPairECDSA by remember { mutableStateOf<ECDSA.KeyPair?>(null) }
+    var textoECDSA by remember { mutableStateOf("") }
+    var firmaECDSA by remember { mutableStateOf("") }
+    var verificacionECDSA by remember { mutableStateOf("") }
+
+    // Estado para mensajes de error generales
     var errorMessage by remember { mutableStateOf("") }
 
     val scope = rememberCoroutineScope()
 
-    // Generamos la clave AES una sola vez
+    // Generamos las claves/pares una sola vez
     LaunchedEffect(Unit) {
         claveAES = generaClaveAES()
+        claveHMAC = generaClaveHMAC(SHA512)
+        keyPairECDSA = generaClaveECDSA()
     }
 
     MaterialTheme {
@@ -354,6 +366,8 @@ fun PantallaPruebasEncriptacion(navController: NavHostController) {
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
+                        // ===== Sección Hash (SHA-512) =====
+                        Text("Pruebas Hash", style = MaterialTheme.typography.h6)
                         TextField(
                             value = textoOriginal,
                             onValueChange = { textoOriginal = it },
@@ -378,9 +392,11 @@ fun PantallaPruebasEncriptacion(navController: NavHostController) {
                             readOnly = true
                         )
                     }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
+                    Text(
+                        "--------------------------------------",
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
                     // Sección para pruebas de encriptación AES
                     Column(
                         modifier = Modifier
@@ -389,74 +405,196 @@ fun PantallaPruebasEncriptacion(navController: NavHostController) {
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
+                        // ===== Sección AES (Encriptación simétrica) =====
+                        Text("Pruebas AES", style = MaterialTheme.typography.h6)
                         TextField(
-                            value = textoGlobalACifrar,
-                            onValueChange = { textoGlobalACifrar = it },
-                            label = { Text("Texto a cifrar") },
+                            value = textoAES,
+                            onValueChange = { textoAES = it },
+                            label = { Text("Texto AES a cifrar") },
                             modifier = Modifier.fillMaxWidth()
                         )
-                        Button(
-                            onClick = {
-                                scope.launch {
-                                    claveAES?.let { key ->
-                                        val textoCifradoBytes = pruebasEncriptacionAES(textoGlobalACifrar, key)
-                                        // Convertimos a hexadecimal para una representación legible
-                                        textoGlobalCifrado = textoCifradoBytes.toHex()
-                                    } ?: run {
-                                        errorMessage = "Clave AES no inicializada"
-                                    }
+                        Button(onClick = {
+                            scope.launch {
+                                claveAES?.let { key ->
+                                    val cifradoBytes = pruebasEncriptacionAES(textoAES, key)
+                                    // Convertimos a hexadecimal para representación legible
+                                    resultadoCifradoAES = cifradoBytes.toHex()
+                                } ?: run {
+                                    errorMessage = "Clave AES no inicializada"
                                 }
                             }
-                        ) {
-                            Text("Cifrar")
-                        }
+                        }) { Text("Cifrar AES") }
                         TextField(
-                            value = textoGlobalCifrado,
+                            value = resultadoCifradoAES,
                             onValueChange = { },
-                            label = { Text("Texto cifrado (hex)") },
-                            modifier = Modifier.fillMaxWidth(),
-                            readOnly = true
+                            label = { Text("Texto cifrado (AES, hex)") },
+                            readOnly = true,
+                            modifier = Modifier.fillMaxWidth()
                         )
-                        Button(
-                            onClick = {
-                                scope.launch {
-                                    if (textoGlobalCifrado.isNotEmpty()) {
-                                        try {
-                                            claveAES?.let { key ->
-                                                // Convertimos el texto cifrado (hex) a ByteArray
-                                                val textoCifradoBytes = textoGlobalCifrado.hexToByteArray()
-                                                val textoDesencriptado = pruebasDesencriptacionAES(textoCifradoBytes, key)
-                                                textoGlobalDescifrado = textoDesencriptado
-                                            } ?: run {
-                                                errorMessage = "Clave AES no inicializada"
-                                            }
-                                        } catch (e: Exception) {
-                                            errorMessage = "Error al descifrar: ${e.message}"
+                        Button(onClick = {
+                            scope.launch {
+                                if (resultadoCifradoAES.isNotEmpty()) {
+                                    try {
+                                        claveAES?.let { key ->
+                                            val cifradoBytes = resultadoCifradoAES.hexToByteArray()
+                                            resultadoDescifradoAES =
+                                                pruebasDesencriptacionAES(cifradoBytes, key)
+                                        } ?: run {
+                                            errorMessage = "Clave AES no inicializada"
                                         }
-                                    } else {
-                                        errorMessage = "No hay texto cifrado para descifrar"
+                                    } catch (e: Exception) {
+                                        errorMessage = "Error al descifrar AES: ${e.message}"
                                     }
+                                } else {
+                                    errorMessage = "No hay texto cifrado para descifrar (AES)"
                                 }
                             }
-                        ) {
-                            Text("Descifrar")
-                        }
+                        }) { Text("Descifrar AES") }
                         TextField(
-                            value = textoGlobalDescifrado,
+                            value = resultadoDescifradoAES,
                             onValueChange = { },
-                            label = { Text("Texto descifrado") },
-                            modifier = Modifier.fillMaxWidth(),
-                            readOnly = true
+                            label = { Text("Texto descifrado (AES)") },
+                            readOnly = true,
+                            modifier = Modifier.fillMaxWidth()
                         )
                     }
-                    if (errorMessage.isNotEmpty()) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            errorMessage,
-                            color = MaterialTheme.colors.error,
-                            textAlign = TextAlign.Center,
+                    Text(
+                        "--------------------------------------",
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Column(
+                        modifier = Modifier
+                            .padding(horizontal = 16.dp)
+                            .fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        // ===== Sección HMAC (Autenticación/MAC) =====
+                        Text("Pruebas HMAC", style = MaterialTheme.typography.h6)
+                        TextField(
+                            value = textoHMAC,
+                            onValueChange = { textoHMAC = it },
+                            label = { Text("Texto para HMAC") },
                             modifier = Modifier.fillMaxWidth()
                         )
+                        Button(onClick = {
+                            scope.launch {
+                                claveHMAC?.let { key ->
+                                    val firmaBytes = generaFirmaHMAC(textoHMAC, key)
+                                    firmaHMAC = firmaBytes.toHex()
+                                } ?: run {
+                                    errorMessage = "Clave HMAC no inicializada"
+                                }
+                            }
+                        }) { Text("Generar Firma HMAC") }
+                        TextField(
+                            value = firmaHMAC,
+                            onValueChange = { },
+                            label = { Text("Firma HMAC (hex)") },
+                            readOnly = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Button(onClick = {
+                            scope.launch {
+                                claveHMAC?.let { key ->
+                                    val verif = verificaFirmaHMAC(
+                                        textoHMAC,
+                                        firmaHMAC.hexToByteArray(),
+                                        key
+                                    )
+                                    verificacionHMAC =
+                                        if (verif) "Firma válida" else "Firma inválida"
+                                } ?: run {
+                                    errorMessage = "Clave HMAC no inicializada"
+                                }
+                            }
+                        }) { Text("Verificar Firma HMAC") }
+                        TextField(
+                            value = verificacionHMAC,
+                            onValueChange = { },
+                            label = { Text("Resultado verificación HMAC") },
+                            readOnly = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                    Text(
+                        "--------------------------------------",
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Column(
+                        modifier = Modifier
+                            .padding(horizontal = 16.dp)
+                            .fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        // ===== Sección ECDSA (Firma digital asimétrica) =====
+                        Text("Pruebas ECDSA", style = MaterialTheme.typography.h6)
+                        TextField(
+                            value = textoECDSA,
+                            onValueChange = { textoECDSA = it },
+                            label = { Text("Texto para ECDSA") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Button(onClick = {
+                            scope.launch {
+                                keyPairECDSA?.let { kp ->
+                                    val firmaBytes = generaFirmaECDSA(
+                                        textoECDSA,
+                                        kp.privateKey,
+                                        digest = SHA512,
+                                        format = ECDSA.SignatureFormat.DER
+                                    )
+                                    firmaECDSA = firmaBytes.toHex()
+                                } ?: run {
+                                    errorMessage = "Par de claves ECDSA no inicializado"
+                                }
+                            }
+                        }) { Text("Generar Firma ECDSA") }
+                        TextField(
+                            value = firmaECDSA,
+                            onValueChange = { },
+                            label = { Text("Firma ECDSA (hex)") },
+                            readOnly = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Button(onClick = {
+                            scope.launch {
+                                keyPairECDSA?.let { kp ->
+                                    val verif = verificaFirmaECDSA(
+                                        textoECDSA,
+                                        firmaECDSA.hexToByteArray(),
+                                        kp.publicKey,
+                                        digest = SHA512,
+                                        format = ECDSA.SignatureFormat.DER
+                                    )
+                                    verificacionECDSA =
+                                        if (verif) "Firma válida" else "Firma inválida"
+                                } ?: run {
+                                    errorMessage = "Par de claves ECDSA no inicializado"
+                                }
+                            }
+                        }) { Text("Verificar Firma ECDSA") }
+                        TextField(
+                            value = verificacionECDSA,
+                            onValueChange = { },
+                            label = { Text("Resultado verificación ECDSA") },
+                            readOnly = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        // Mensaje de error general
+                        if (errorMessage.isNotEmpty()) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                errorMessage,
+                                color = MaterialTheme.colors.error,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
                     }
                 }
             }
