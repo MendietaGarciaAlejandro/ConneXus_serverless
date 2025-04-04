@@ -42,16 +42,6 @@ import org.connexuss.project.interfaces.DefaultTopBar
 import org.connexuss.project.interfaces.LimitaTamanioAncho
 
 /**
- * Calcula un hash simple de un texto utilizando el metodo hashCode.
- *
- * @param texto El texto a ser procesado.
- * @return El resultado del hash como cadena.
- */
-fun hash(texto: String): String {
-    return texto.hashCode().toString()
-}
-
-/**
  * Calcula el hash SHA-512 de un texto.
  *
  * @param textoOriginal El texto a ser procesado.
@@ -62,6 +52,17 @@ suspend fun calcularHashSHA512(textoOriginal: String): ByteArray {
     val algoritmoSHA512 = proveedor.get(SHA512)
     val hasher = algoritmoSHA512.hasher()
     return hasher.hash(textoOriginal.encodeToByteArray())
+}
+
+/**
+ * Calcula un hash SHA-512 de un texto y lo devuelve en formato hexadecimal.
+ *
+ * @param texto El texto a ser procesado.
+ * @return El hash SHA-512 como cadena hexadecimal.
+ */
+suspend fun hash(texto: String): String {
+    val hashBytes = calcularHashSHA512(texto)
+    return hashBytes.toHex()
 }
 
 // Función de extensión para convertir ByteArray a cadena hexadecimal.
