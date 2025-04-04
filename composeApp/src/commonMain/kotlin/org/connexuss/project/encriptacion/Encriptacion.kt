@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import dev.whyoleg.cryptography.CryptographyProvider
 import dev.whyoleg.cryptography.algorithms.AES
+import dev.whyoleg.cryptography.algorithms.Digest
 import dev.whyoleg.cryptography.algorithms.EC
 import dev.whyoleg.cryptography.algorithms.ECDSA
 import dev.whyoleg.cryptography.algorithms.SHA512
@@ -99,60 +100,94 @@ suspend fun pruebasDesencriptacionAES(texto: ByteArray, clave: AES.GCM.Key): Str
     return cipher.decrypt(ciphertext = texto).decodeToString()
 }
 
-suspend fun pruebasECDSA(texto: String): Boolean {
-    // Obtenemos el proveedor de criptografía por defecto
+suspend fun generaClaveECDSA(curve: EC.Curve = EC.Curve.P521): ECDSA.KeyPair {
     val provider = CryptographyProvider.Default
-
-    // Obtenemos el algoritmo ECDSA
     val ecdsa = provider.get(ECDSA)
+    val keyPairGenerator = ecdsa.keyPairGenerator(curve)
+    return keyPairGenerator.generateKey()
+}
 
-    // Creamos el generador de pares de claves usando la curva P521
-    val keyPairGenerator = ecdsa.keyPairGenerator(EC.Curve.P521)
-
-    // Generamos el par de claves ECDSA
-    val keyPair: ECDSA.KeyPair = keyPairGenerator.generateKey()
-
-    // Generamos la firma usando la clave privada y el digest SHA512
-    val signature: ByteArray = keyPair.privateKey
-        .signatureGenerator(
-            digest = SHA512,
-            format = ECDSA.SignatureFormat.DER
-        )
+suspend fun generaFirmaECDSA(
+    texto: String,
+    privateKey: ECDSA.PrivateKey,
+    digest: SHA512,
+    format: ECDSA.SignatureFormat = ECDSA.SignatureFormat.DER
+): ByteArray {
+    return privateKey
+        .signatureGenerator(digest = digest, format = format)
         .generateSignature(texto.encodeToByteArray())
+}
 
-    // Verificamos la firma con la clave pública
-    val verificationResult: Boolean = try {
-        keyPair.publicKey
-            .signatureVerifier(digest = SHA512, format = ECDSA.SignatureFormat.DER)
+suspend fun verificaFirmaECDSA(
+    texto: String,
+    signature: ByteArray,
+    publicKey: ECDSA.PublicKey,
+    digest: SHA512,
+    format: ECDSA.SignatureFormat = ECDSA.SignatureFormat.DER
+): Boolean {
+    return try {
+        publicKey
+            .signatureVerifier(digest = digest, format = format)
             .verifySignature(texto.encodeToByteArray(), signature)
         true
     } catch (e: Exception) {
         false
     }
+}
 
+suspend fun codificaClavePublica(
+    publicKey: ECDSA.PublicKey,
+    format: EC.PublicKey.Format = EC.PublicKey.Format.DER
+): ByteArray {
+    return publicKey.encodeToByteArray(format)
+}
+
+suspend fun decodificaClavePublica(
+    encodedKey: ByteArray,
+    curve: EC.Curve = EC.Curve.P521,
+    format: EC.PublicKey.Format = EC.PublicKey.Format.DER
+): ECDSA.PublicKey {
+    val provider = CryptographyProvider.Default
+    val ecdsa = provider.get(ECDSA)
+    return ecdsa.publicKeyDecoder(curve).decodeFromByteArray(format, encodedKey)
+}
+
+suspend fun pruebasECDSA(texto: String): Boolean {
+    // Generar par de claves ECDSA
+    val keyPair = generaClaveECDSA()
+
+    // Generar firma usando la clave privada
+    val signature = generaFirmaECDSA(
+        texto, keyPair.privateKey,
+        digest = SHA512,
+        format = ECDSA.SignatureFormat.DER
+    )
+
+    // Verificar la firma con la clave pública
+    val verificationResult = verificaFirmaECDSA(
+        texto,
+        signature,
+        keyPair.publicKey,
+        digest = SHA512,
+        format = ECDSA.SignatureFormat.DER)
     println("Resultado de verificación inicial: $verificationResult")
 
-    // Codificamos la clave pública a formato DER
-    val encodedPublicKey: ByteArray = keyPair.publicKey.encodeToByteArray(EC.PublicKey.Format.DER)
+    // Codificar la clave pública a formato DER
+    val encodedPublicKey = codificaClavePublica(keyPair.publicKey)
 
-    // Decodificamos la clave pública (asegurándonos de usar la misma curva)
-    val decodedPublicKey: ECDSA.PublicKey = ecdsa
-        .publicKeyDecoder(EC.Curve.P521)
-        .decodeFromByteArray(EC.PublicKey.Format.DER, encodedPublicKey)
+    // Decodificar la clave pública
+    val decodedPublicKey = decodificaClavePublica(encodedPublicKey)
 
-    // Verificamos la firma usando la clave pública decodificada
-    val decodedKeyVerificationResult: Boolean = try {
-        decodedPublicKey
-            .signatureVerifier(digest = SHA512, format = ECDSA.SignatureFormat.DER)
-            .verifySignature(texto.encodeToByteArray(), signature)
-        true
-    } catch (e: Exception) {
-        false
-    }
-
+    // Verificar la firma con la clave pública decodificada
+    val decodedKeyVerificationResult = verificaFirmaECDSA(
+        texto,
+        signature,
+        decodedPublicKey,
+        digest = SHA512,
+        format = ECDSA.SignatureFormat.DER)
     println("Resultado de verificación con clave decodificada: $decodedKeyVerificationResult")
 
-    // Devolvemos true si ambas verificaciones son exitosas
+    // Devolver true si ambas verificaciones son exitosas
     return verificationResult && decodedKeyVerificationResult
 }
 
