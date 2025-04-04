@@ -5,6 +5,7 @@ import androidx.compose.runtime.remember
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import org.connexuss.project.encriptacion.PantallaPruebasEncriptacion
 import org.connexuss.project.firebase.AppFirebase
 import org.connexuss.project.firebase.FirestoreConversacionesRepositorio
 import org.connexuss.project.firebase.FirestoreConversacionesUsuariosRepositorio
@@ -206,6 +207,9 @@ fun Navegacion(
         }
         composable("pruebasSupabase") {
             MostrarUsuariosCRUD(navController)
+        }
+        composable("pruebasEncriptacion") {
+            PantallaPruebasEncriptacion(navController)
         }
     }
 }

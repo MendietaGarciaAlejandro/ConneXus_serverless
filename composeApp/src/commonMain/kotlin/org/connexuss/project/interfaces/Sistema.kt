@@ -2121,18 +2121,29 @@ fun PantallaLogin(navController: NavHostController) {
                             }
                         }
                         Spacer(modifier = Modifier.height(16.dp))
-                        Button(
-                            onClick = { navController.navigate("pruebasObjetosFIrebase") },
-                            modifier = Modifier.fillMaxWidth()
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            Text("Debug: Ir a las pruebas con Firebase")
+                            Button(
+                                onClick = { navController.navigate("pruebasObjetosFIrebase") },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text("Debug: Ir a las pruebas con Firebase")
+                            }
+                            Button(
+                                onClick = { navController.navigate("pruebasSupabase") },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text("Debug: Ir a las pruebas con Supabase")
+                            }
                         }
                         Spacer(modifier = Modifier.height(16.dp))
                         Button(
-                            onClick = { navController.navigate("pruebasSupabase") },
+                            onClick = { navController.navigate("pruebasEncriptacion") },
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("Debug: Ir a las pruebas con Supabase")
+                            Text("Debug: Ir a las pruebas de encriptación")
                         }
                         if (errorMessage.isNotEmpty()) {
                             Spacer(modifier = Modifier.height(8.dp))

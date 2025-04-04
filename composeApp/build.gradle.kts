@@ -85,6 +85,9 @@ kotlin {
             implementation(libs.ktorClientCore)
             implementation(libs.ktor.client.okhttp)
             implementation(libs.ktor.serialization.kotlinx.json)
+
+            // Dependencias encriptación
+            implementation(libs.cryptography.provider.jdk)
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -119,6 +122,9 @@ kotlin {
             implementation(libs.ktorClientCore)
             implementation(libs.ktor.client.content.negotiation)
             implementation(libs.ktor.serialization.kotlinx.json)
+
+            // Dependencias encriptación
+            implementation(libs.cryptography.core)
         }
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
@@ -139,6 +145,9 @@ kotlin {
             implementation(libs.ktorClientCore)
             implementation(libs.ktor.client.okhttp)
             implementation(libs.ktor.serialization.kotlinx.json)
+
+            // Dependencias encriptación
+            implementation(libs.cryptography.provider.jdk)
         }
         val jsMain by getting {
             dependencies {
@@ -164,6 +173,9 @@ kotlin {
 //            implementation(libs.ktorClientCore)
 //            implementation(libs.ktor.client.js)
 //            implementation(libs.ktor.serialization.kotlinx.json)
+//
+//            // Dependencias encriptación
+//            implementation(libs.cryptography.provider.webcrypto)
 //        }
     }
 }

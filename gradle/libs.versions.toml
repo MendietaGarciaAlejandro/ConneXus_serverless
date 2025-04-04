@@ -7,6 +7,7 @@ androidx-activityCompose = "1.10.1"
 androidx-lifecycle = "2.8.4"
 arkivanovDecompose = "0.8.0"
 compose-multiplatform = "1.7.0"
+cryptographyCore = "0.4.0"
 extensionsComposeJetpackVersion = "0.8.0"
 kotlin = "2.1.0"
 kotlinx-coroutines = "1.10.1"
@@ -38,6 +39,9 @@ navigationSafeArgsGenerator = "2.8.9"
 [libraries]
 auth-kt = { module = "io.github.jan-tennert.supabase:auth-kt", version.ref = "supabaseKt" }
 bom = { module = "io.github.jan-tennert.supabase:bom", version.ref = "supabaseKt" }
+cryptography-core = { module = "dev.whyoleg.cryptography:cryptography-core", version.ref = "cryptographyCore" }
+cryptography-provider-jdk = { module = "dev.whyoleg.cryptography:cryptography-provider-jdk", version.ref = "cryptographyCore" }
+cryptography-provider-webcrypto = { module = "dev.whyoleg.cryptography:cryptography-provider-webcrypto", version.ref = "cryptographyCore" }
 functions-kt = { module = "io.github.jan-tennert.supabase:functions-kt", version.ref = "supabaseKt" }
 arkivanov-decompose-v080 = { module = "com.arkivanov.decompose:decompose", version.ref = "arkivanovDecompose" }
 decompose-extensions-compose-jetpack-v080 = { module = "com.arkivanov.decompose:extensions-compose-jetpack", version.ref = "extensionsComposeJetpackVersion" }
