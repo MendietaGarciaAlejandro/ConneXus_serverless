@@ -219,6 +219,7 @@ dependencies {
     implementation(libs.androidx.core.i18n)
     implementation(platform(libs.firebase.android.bom))
     implementation(libs.firebase.analytics)
+    implementation(libs.androidx.ui.android)
     debugImplementation(compose.uiTooling)
 }
 
