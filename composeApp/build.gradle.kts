@@ -97,6 +97,7 @@ kotlin {
             implementation(compose.material3)
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
+
             implementation(libs.androidx.lifecycle.viewmodel)
             implementation(libs.androidx.lifecycle.runtime.compose)
             implementation(libs.kotlinx.datetime)
@@ -219,6 +220,7 @@ dependencies {
     implementation(libs.androidx.core.i18n)
     implementation(platform(libs.firebase.android.bom))
     implementation(libs.firebase.analytics)
+    implementation(libs.androidx.ui.android)
     debugImplementation(compose.uiTooling)
 }
 
