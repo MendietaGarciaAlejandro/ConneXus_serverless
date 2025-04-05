@@ -50,7 +50,7 @@ val supabaseClient = createSupabaseClient(
 }
 
 @Composable
-fun MostrarUsuariosCRUD(navHostController: NavHostController) {
+fun SupabaseUsuariosCRUD(navHostController: NavHostController) {
     val scope = rememberCoroutineScope()
     // Variable para almacenar la lista de usuarios
     var usuarios by remember { mutableStateOf(emptyList<Supausuario>()) }

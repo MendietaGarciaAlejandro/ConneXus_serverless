@@ -53,7 +53,7 @@ import org.connexuss.project.interfaces.muestraUsuarios
 import org.connexuss.project.misc.UsuarioPrincipal
 import org.connexuss.project.misc.imagenesPerfilPersona
 import org.connexuss.project.misc.temasHilosPosts
-import org.connexuss.project.supabase.MostrarUsuariosCRUD
+import org.connexuss.project.supabase.SupabaseUsuariosCRUD
 import org.connexuss.project.usuario.Usuario
 
 @Composable
@@ -206,7 +206,7 @@ fun Navegacion(
             HiloScreen(navController, hiloEncontrado.idHilo)
         }
         composable("pruebasSupabase") {
-            MostrarUsuariosCRUD(navController)
+            SupabaseUsuariosCRUD(navController)
         }
         composable("pruebasEncriptacion") {
             PantallaPruebasEncriptacion(navController)
