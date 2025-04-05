@@ -1,4 +1,3 @@
-// Datos.kt
 package org.connexuss.project.misc
 
 import androidx.compose.runtime.mutableStateListOf
@@ -113,7 +112,6 @@ val imagenesPerfilAbstrasto = mutableListOf<Imagen>().apply {
     add(Imagen("abstracto050", Res.drawable.abstracto050))
     add(Imagen("abstracto051", Res.drawable.abstracto051))
 }
-
 
 val imagenesPerfilDibujo = mutableListOf<Imagen>().apply {
     add(Imagen("dibujo001", Res.drawable.dibujo001))
@@ -604,21 +602,19 @@ val UsuariosPreCreados: SnapshotStateList<Usuario> = run {
     }
     usuarios
 }
+
 //Conversaciones
 private val conversacionesIndividuales: List<Conversacion> = listOf(
     Conversacion(
-        id = "conv_ind_1",
         participants = listOf("UsuarioPrincipal", "Contacto1"),
         messages = listOf(
             Mensaje(
-                id = "msg_ind_1_1",
                 senderId = "UsuarioPrincipal",
                 receiverId = "Contacto1",
                 content = "Hola, ¿cómo estás?",
                 fechaMensaje = LocalDateTime(2023, 1, 1, 12, 0)
             ),
             Mensaje(
-                id = "msg_ind_1_2",
                 senderId = "Contacto1",
                 receiverId = "UsuarioPrincipal",
                 content = "Muy bien, ¿y tú?",
@@ -627,18 +623,15 @@ private val conversacionesIndividuales: List<Conversacion> = listOf(
         )
     ),
     Conversacion(
-        id = "conv_ind_2",
         participants = listOf("UsuarioPrincipal", "Contacto2"),
         messages = listOf(
             Mensaje(
-                id = "msg_ind_2_1",
                 senderId = "UsuarioPrincipal",
                 receiverId = "Contacto2",
                 content = "¿Nos vemos mañana?",
                 fechaMensaje = LocalDateTime(2023, 1, 2, 10, 0)
             ),
             Mensaje(
-                id = "msg_ind_2_2",
                 senderId = "Contacto2",
                 receiverId = "UsuarioPrincipal",
                 content = "Claro, ¿a qué hora?",
@@ -647,18 +640,15 @@ private val conversacionesIndividuales: List<Conversacion> = listOf(
         )
     ),
     Conversacion(
-        id = "conv_ind_3",
         participants = listOf("UsuarioPrincipal", "Contacto3"),
         messages = listOf(
             Mensaje(
-                id = "msg_ind_3_1",
                 senderId = "Contacto3",
                 receiverId = "UsuarioPrincipal",
                 content = "¿Has visto la última película?",
                 fechaMensaje = LocalDateTime(2023, 1, 3, 15, 0)
             ),
             Mensaje(
-                id = "msg_ind_3_2",
                 senderId = "UsuarioPrincipal",
                 receiverId = "Contacto3",
                 content = "Sí, estuvo genial.",
@@ -667,18 +657,15 @@ private val conversacionesIndividuales: List<Conversacion> = listOf(
         )
     ),
     Conversacion(
-        id = "conv_ind_4",
         participants = listOf("UsuarioPrincipal", "Contacto4"),
         messages = listOf(
             Mensaje(
-                id = "msg_ind_4_1",
                 senderId = "UsuarioPrincipal",
                 receiverId = "Contacto4",
                 content = "¿Quieres ir a cenar?",
                 fechaMensaje = LocalDateTime(2023, 1, 4, 18, 0)
             ),
             Mensaje(
-                id = "msg_ind_4_2",
                 senderId = "Contacto4",
                 receiverId = "UsuarioPrincipal",
                 content = "¡Claro, suena perfecto!",
@@ -691,18 +678,15 @@ private val conversacionesIndividuales: List<Conversacion> = listOf(
 // Conversaciones de grupo (3)
 private val conversacionesGrupo: List<Conversacion> = listOf(
     Conversacion(
-        id = "conv_grp_1",
         participants = listOf("UsuarioPrincipal", "Contacto5", "Contacto6"),
         messages = listOf(
             Mensaje(
-                id = "msg_grp_1_1",
                 senderId = "Contacto5",
                 receiverId = "UsuarioPrincipal",
                 content = "Bienvenidos al grupo de estudio",
                 fechaMensaje = LocalDateTime(2023, 1, 5, 9, 0)
             ),
             Mensaje(
-                id = "msg_grp_1_2",
                 senderId = "Contacto6",
                 receiverId = "UsuarioPrincipal",
                 content = "¿Quién trae los apuntes?",
@@ -711,18 +695,15 @@ private val conversacionesGrupo: List<Conversacion> = listOf(
         )
     ),
     Conversacion(
-        id = "conv_grp_2",
         participants = listOf("UsuarioPrincipal", "Contacto7", "Contacto8"),
         messages = listOf(
             Mensaje(
-                id = "msg_grp_2_1",
                 senderId = "UsuarioPrincipal",
                 receiverId = "Contacto7",
                 content = "Reunión de trabajo a las 10",
                 fechaMensaje = LocalDateTime(2023, 1, 6, 8, 50)
             ),
             Mensaje(
-                id = "msg_grp_2_2",
                 senderId = "Contacto8",
                 receiverId = "UsuarioPrincipal",
                 content = "Confirmado, allí estaré",
@@ -731,18 +712,15 @@ private val conversacionesGrupo: List<Conversacion> = listOf(
         )
     ),
     Conversacion(
-        id = "conv_grp_3",
         participants = listOf("UsuarioPrincipal", "Contacto9", "Contacto10"),
         messages = listOf(
             Mensaje(
-                id = "msg_grp_3_1",
                 senderId = "Contacto9",
                 receiverId = "UsuarioPrincipal",
                 content = "Chicos, ¿organizamos un encuentro este fin de semana?",
                 fechaMensaje = LocalDateTime(2023, 1, 7, 16, 0)
             ),
             Mensaje(
-                id = "msg_grp_3_2",
                 senderId = "Contacto10",
                 receiverId = "UsuarioPrincipal",
                 content = "Me apunto, cuenten conmigo.",
@@ -777,7 +755,6 @@ var UsuarioPrincipal: Usuario? = UtilidadesUsuario().instanciaUsuario(
 
 val hilosForo: List<Hilo> = listOf(
     Hilo(
-        idHilo = "hilo_1",
         idForeros = listOf("UsuarioPrincipal", "Contacto1"),
         posts = listOf(
             Post(
@@ -1159,45 +1136,68 @@ val temasHilosPosts = listOf(
     )
 )
 
+/**
+ * Objeto repositorio para gestionar los temas del foro.
+ */
 object ForoRepository {
-    // Lista de temas como estado mutable global
+    // Lista de temas como estado mutable global, inicializada vacía
     val temas = mutableStateListOf<Tema>().apply {
         addAll(temasHilosPosts)
     }
 
-    // Agrega un nuevo tema
+    /**
+     * Agrega un nuevo tema al repositorio.
+     *
+     * @param nuevoTema El tema a agregar.
+     */
     fun agregarTema(nuevoTema: Tema) {
         temas.add(nuevoTema)
     }
 
-    // Actualiza un tema existente (por ejemplo, al agregar un hilo o post)
+    /**
+     * Actualiza un tema existente en el repositorio.
+     *
+     * @param temaActualizado El tema con la información actualizada.
+     */
     fun actualizarTema(temaActualizado: Tema) {
-        val index = temas.indexOfFirst { it.idTema == temaActualizado.idTema }
-        if (index != -1) {
-            temas[index] = temaActualizado
-        }
+        temas.indexOfFirst { it.idTema == temaActualizado.idTema }
+            .takeIf { it != -1 }
+            ?.let { index -> temas[index] = temaActualizado }
     }
 
-    // Busca un tema por id
-    fun obtenerTemaPorId(idTema: String): Tema? {
-        return temas.find { it.idTema == idTema }
-    }
+    /**
+     * Obtiene un tema en función de su identificador.
+     *
+     * @param idTema El identificador del tema.
+     * @return El tema correspondiente o null si no se encuentra.
+     */
+    fun obtenerTemaPorId(idTema: String): Tema? =
+        temas.find { it.idTema == idTema }
 
-    // Actualiza un hilo en un tema específico
+    /**
+     * Actualiza un hilo dentro de un tema.
+     *
+     * @param temaId El identificador del tema.
+     * @param hiloActualizado El hilo con los datos actualizados.
+     */
     fun actualizarHiloEnTema(temaId: String, hiloActualizado: Hilo) {
-        val tema = obtenerTemaPorId(temaId)
-        tema?.let {
-            val nuevosHilos = tema.hilos.map { hilo ->
-                if (hilo.idHilo == hiloActualizado.idHilo) hiloActualizado else hilo
+        obtenerTemaPorId(temaId)?.let { tema ->
+            val nuevosHilos = tema.hilos.map {
+                if (it.idHilo == hiloActualizado.idHilo) hiloActualizado else it
             }
             actualizarTema(tema.copy(hilos = nuevosHilos))
         }
     }
 
-    // Actualiza un post en un hilo específico
+    /**
+     * Actualiza un post dentro de un hilo en un tema.
+     *
+     * @param temaId El identificador del tema.
+     * @param hiloId El identificador del hilo.
+     * @param postActualizado El post con los datos actualizados.
+     */
     fun actualizarPostEnHilo(temaId: String, hiloId: String, postActualizado: Post) {
-        val tema = obtenerTemaPorId(temaId)
-        tema?.let {
+        obtenerTemaPorId(temaId)?.let { tema ->
             val nuevosHilos = tema.hilos.map { hilo ->
                 if (hilo.idHilo == hiloId) {
                     val nuevosPosts = hilo.posts.map { post ->
@@ -1210,38 +1210,57 @@ object ForoRepository {
         }
     }
 }
-
-
+/**
+ * Objeto repositorio para gestionar los hilos del foro.
+ */
 object HilosRepository {
-    // Lista mutable de hilos (para el foro o cada tema)
-    // Puedes inicializarla con datos de ejemplo o dejarla vacía
+    // Lista mutable de hilos
     val hilos = mutableStateListOf<Hilo>()
 
+    /**
+     * Agrega un nuevo hilo a la lista.
+     *
+     * @param nuevoHilo El hilo a agregar.
+     */
     fun agregarHilo(nuevoHilo: Hilo) {
         hilos.add(nuevoHilo)
     }
 
+    /**
+     * Actualiza un hilo existente en la lista.
+     *
+     * @param hiloActualizado El hilo con los datos actualizados.
+     */
     fun actualizarHilo(hiloActualizado: Hilo) {
-        val index = hilos.indexOfFirst { it.idHilo == hiloActualizado.idHilo }
-        if (index != -1) {
-            hilos[index] = hiloActualizado
-        }
+        hilos.indexOfFirst { it.idHilo == hiloActualizado.idHilo }
+            .takeIf { it != -1 }
+            ?.let { index -> hilos[index] = hiloActualizado }
     }
 }
-
+/**
+ * Objeto repositorio para gestionar los posts del foro.
+ */
 object PostsRepository {
-    // Lista mutable de posts (podrías tenerla por hilo o globalmente)
-    // Aquí asumiremos que es global, pero lo ideal es que cada hilo tenga su propia lista
+    // Lista global mutable de posts
     val posts = mutableStateListOf<Post>()
 
+    /**
+     * Agrega un nuevo post a la lista.
+     *
+     * @param nuevoPost El post a agregar.
+     */
     fun agregarPost(nuevoPost: Post) {
         posts.add(nuevoPost)
     }
 
+    /**
+     * Actualiza un post existente en la lista.
+     *
+     * @param postActualizado El post con los datos actualizados.
+     */
     fun actualizarPost(postActualizado: Post) {
-        val index = posts.indexOfFirst { it.idPost == postActualizado.idPost }
-        if (index != -1) {
-            posts[index] = postActualizado
-        }
+        posts.indexOfFirst { it.idPost == postActualizado.idPost }
+            .takeIf { it != -1 }
+            ?.let { index -> posts[index] = postActualizado }
     }
 }

@@ -12,6 +12,8 @@ import org.connexuss.project.misc.imagenesPerfilDibujo
 import org.connexuss.project.misc.imagenesPerfilPersona
 import org.connexuss.project.encriptacion.hash
 import org.jetbrains.compose.resources.DrawableResource
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 // Clase usuario con sus atributos y metodos
 @Serializable
@@ -231,6 +233,11 @@ class UtilidadesUsuario {
             .joinToString("")
     }
 
+    @OptIn(ExperimentalUuidApi::class)
+    fun generaUuidUnico(): Uuid {
+        return Uuid.random()
+    }
+
     private fun validarCorreo(correo: String): Boolean {
         return correo.contains("@")
     }
@@ -251,6 +258,7 @@ class UtilidadesUsuario {
         return true
     }
 
+    @OptIn(ExperimentalUuidApi::class)
     fun instanciaUsuario(nombre: String?, correo: String?, aliasPublico: String?, activo: Boolean?): Usuario? {
         val correoValido = correo?.let { validarCorreo(it) } ?: false
         val nombreValido = nombre?.let { validarNombre(it) } ?: false
@@ -259,13 +267,14 @@ class UtilidadesUsuario {
             throw IllegalArgumentException("Datos de usuario no validos")
         }
         return if (activo != null) {
-            Usuario(nombre!!, correo!!, aliasPublico!!, activo, emptyList(), ConversacionesUsuario(generarIdUnico(), generarIdUnico(), listOf(Conversacion(generarIdUnico(), emptyList()))))
+            Usuario(nombre!!, correo!!, aliasPublico!!, activo, emptyList(), ConversacionesUsuario(generarIdUnico(), generarIdUnico(), emptyList()))
         } else {
             null
         }
     }
 
     //Debug: Contructor con idUnico
+    @OptIn(ExperimentalUuidApi::class)
     fun instanciaUsuario(idUnico: String, nombre: String, edad: Int, correo: String, aliasPublico: String, activo: Boolean): Usuario {
         val idUnico = idUnico
         val correoValido = validarCorreo(correo)
@@ -274,7 +283,7 @@ class UtilidadesUsuario {
         if (!correoValido || !nombreValido || !aliasPublicoValido) {
             throw IllegalArgumentException("Datos de usuario no validos")
         }
-        return Usuario(idUnico, nombre, correo, aliasPublico, activo, emptyList(), ConversacionesUsuario(generarIdUnico(), generarIdUnico(), listOf( Conversacion( generarIdUnico(), emptyList() ) ) ) )
+        return Usuario(idUnico, nombre, correo, aliasPublico, activo, emptyList(), ConversacionesUsuario(generarIdUnico(), generarIdUnico(), emptyList()))
     }
 
 

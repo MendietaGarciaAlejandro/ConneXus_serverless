@@ -1,4 +1,4 @@
-package org.connexuss.project.firebase.pruebas
+package org.connexuss.project.firebase
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -203,7 +203,7 @@ fun ItemHilo(hilo: Hilo, clicked: () -> Unit) {
             Spacer(modifier = Modifier.height(4.dp))
             Text(text = hilo.idForeros.toString(), style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(4.dp))
-            Text(text = hilo.posts.toString(), style = MaterialTheme.typography.titleMedium)
+            Text(text = hilo.idHilo, style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(4.dp))
             Text(text = hilo.nombre.toString(), style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(4.dp))
@@ -229,7 +229,7 @@ fun ItemTema(tema: Tema, clicked: () -> Unit) {
             Spacer(modifier = Modifier.height(4.dp))
             Text(text = tema.idUsuario, style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(4.dp))
-            Text(text = tema.hilos.toString(), style = MaterialTheme.typography.titleMedium)
+            Text(text = tema.idTema, style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(4.dp))
         }
     }

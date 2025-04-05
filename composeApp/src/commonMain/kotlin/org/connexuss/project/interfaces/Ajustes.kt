@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Button
 import androidx.compose.material.Card
 import androidx.compose.material.Icon
@@ -36,13 +38,21 @@ import connexus_serverless.composeapp.generated.resources.ic_email
 import connexus_serverless.composeapp.generated.resources.unblock
 import org.jetbrains.compose.resources.painterResource
 
-// Pantalla de Ajustes / Control de Cuentas
+/**
+ * Muestra la pantalla de control de cuentas (Ajustes).
+ *
+ * Genera una lista de cuentas de ejemplo y las muestra en tarjetas dentro de un LazyColumn.
+ *
+ * @param navController Controlador de navegación para gestionar la navegación en la aplicación.
+ */
 @Composable
 fun PantallaAjustesControlCuentas(navController: NavHostController) {
+    // Inicializa la pantalla de control de cuentas utilizando MaterialTheme y Scaffold.
     // Lista de cuentas de ejemplo
     val cuentas = generaUsuariosAleatorios()
 
     MaterialTheme {
+        // Aplica MaterialTheme para definir los estilos visuales de la pantalla.
         Scaffold(
             topBar = {
                 DefaultTopBar(
@@ -63,6 +73,7 @@ fun PantallaAjustesControlCuentas(navController: NavHostController) {
                         modifier = modifier
                             .padding(padding)
                             .padding(16.dp)
+                            .verticalScroll(rememberScrollState())
                     ) {
                         Text(traducir("lista_de_cuentas"), style = MaterialTheme.typography.h6)
                         LazyColumn(
@@ -107,7 +118,14 @@ fun PantallaAjustesControlCuentas(navController: NavHostController) {
     }
 }
 
-// Pantalla de Ajustes / Ayuda
+/**
+ * Muestra la pantalla de Ayuda (Ajustes).
+ *
+ * Presenta una lista de preguntas frecuentes y permite enviar reportes.
+ * Gestiona estados para mostrar mensajes de validación y el estado del reporte.
+ *
+ * @param navController Controlador de navegación para gestionar la navegación en la aplicación.
+ */
 @Composable
 fun PantallaAjustesAyuda(navController: NavHostController) {
     val faqs = listOf(
@@ -136,7 +154,7 @@ fun PantallaAjustesAyuda(navController: NavHostController) {
             }
         ) { padding ->
             Box(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
                 contentAlignment = Alignment.Center
             ) {
                 LimitaTamanioAncho { modifier ->
@@ -144,6 +162,7 @@ fun PantallaAjustesAyuda(navController: NavHostController) {
                         modifier = modifier
                             .padding(padding)
                             .padding(16.dp)
+                            .verticalScroll(rememberScrollState())
                     ) {
                         LazyColumn(
                             modifier = Modifier
@@ -206,6 +225,13 @@ fun PantallaAjustesAyuda(navController: NavHostController) {
     }
 }
 
+/**
+ * Genera una lista de usuarios aleatorios.
+ *
+ * Retorna una lista de 100 nombres de usuario simulados, en formato "Usuario {n}".
+ *
+ * @return Lista de nombres de usuario.
+ */
 @Composable
 fun generaUsuariosAleatorios(): List<String> {
     val usuariosGenerados = mutableListOf<String>()

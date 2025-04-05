@@ -5,27 +5,25 @@ import androidx.compose.runtime.remember
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import org.connexuss.project.misc.UsuarioPrincipal
-import org.connexuss.project.misc.imagenesPerfilPersona
-import org.connexuss.project.misc.temasHilosPosts
-import org.connexuss.project.firebase.pruebas.AppFirebase
-import org.connexuss.project.firebase.pruebas.FirestoreConversacionesRepositorio
-import org.connexuss.project.firebase.pruebas.FirestoreConversacionesUsuariosRepositorio
-import org.connexuss.project.firebase.pruebas.FirestoreHilosRepositorio
-import org.connexuss.project.firebase.pruebas.FirestoreMensajesRepositorio
-import org.connexuss.project.firebase.pruebas.FirestorePostsRepositorio
-import org.connexuss.project.firebase.pruebas.FirestoreTemasRepositorio
-import org.connexuss.project.firebase.pruebas.FirestoreUsuariosNuestros
-import org.connexuss.project.firebase.pruebas.FirestoreUsuariosRepositorio
-import org.connexuss.project.firebase.pruebas.MuestraObjetosPruebasFriebase
-import org.connexuss.project.firebase.pruebas.PantallaConversacion
-import org.connexuss.project.firebase.pruebas.PantallaConversacionUsuario
-import org.connexuss.project.firebase.pruebas.PantallaHilo
-import org.connexuss.project.firebase.pruebas.PantallaMensaje
-import org.connexuss.project.firebase.pruebas.PantallaPost
-import org.connexuss.project.firebase.pruebas.PantallaTema
-import org.connexuss.project.firebase.pruebas.PantallaUsuario
-import org.connexuss.project.firebase.pruebas.PantallaUsuarioNuestro
+import org.connexuss.project.encriptacion.PantallaPruebasEncriptacion
+import org.connexuss.project.firebase.AppFirebase
+import org.connexuss.project.firebase.FirestoreConversacionesRepositorio
+import org.connexuss.project.firebase.FirestoreConversacionesUsuariosRepositorio
+import org.connexuss.project.firebase.FirestoreHilosRepositorio
+import org.connexuss.project.firebase.FirestoreMensajesRepositorio
+import org.connexuss.project.firebase.FirestorePostsRepositorio
+import org.connexuss.project.firebase.FirestoreTemasRepositorio
+import org.connexuss.project.firebase.FirestoreUsuariosNuestros
+import org.connexuss.project.firebase.FirestoreUsuariosRepositorio
+import org.connexuss.project.firebase.MuestraObjetosPruebasFriebase
+import org.connexuss.project.firebase.PantallaConversacion
+import org.connexuss.project.firebase.PantallaConversacionUsuario
+import org.connexuss.project.firebase.PantallaHilo
+import org.connexuss.project.firebase.PantallaMensaje
+import org.connexuss.project.firebase.PantallaPost
+import org.connexuss.project.firebase.PantallaTema
+import org.connexuss.project.firebase.PantallaUsuario
+import org.connexuss.project.firebase.PantallaUsuarioNuestro
 import org.connexuss.project.interfaces.ForoScreen
 import org.connexuss.project.interfaces.HiloScreen
 import org.connexuss.project.interfaces.MuestraUsuariosGrupo
@@ -39,6 +37,7 @@ import org.connexuss.project.interfaces.PantallaIdiomas
 import org.connexuss.project.interfaces.PantallaLogin
 import org.connexuss.project.interfaces.PantallaRegistro
 import org.connexuss.project.interfaces.PantallaRestablecer
+import org.connexuss.project.interfaces.PantallaZonaPruebas
 import org.connexuss.project.interfaces.SplashScreen
 import org.connexuss.project.interfaces.TemaConfig
 import org.connexuss.project.interfaces.TemaScreen
@@ -52,6 +51,10 @@ import org.connexuss.project.interfaces.muestraContactos
 import org.connexuss.project.interfaces.muestraHomePage
 import org.connexuss.project.interfaces.muestraRestablecimientoContasenna
 import org.connexuss.project.interfaces.muestraUsuarios
+import org.connexuss.project.misc.UsuarioPrincipal
+import org.connexuss.project.misc.imagenesPerfilPersona
+import org.connexuss.project.misc.temasHilosPosts
+import org.connexuss.project.supabase.SupabaseUsuariosCRUD
 import org.connexuss.project.usuario.Usuario
 
 @Composable
@@ -195,13 +198,22 @@ fun Navegacion(
             val temaId = backStackEntry.arguments?.getString("temaId")
             // Buscar el Tema en tu lista global o pasarlo como argumento
             val temaEncontrado = temasHilosPosts.find { it.idTema == temaId } ?: return@composable
-            TemaScreen(navController, temaEncontrado)
+            TemaScreen(navController, temaEncontrado.idTema)
         }
         composable("hilo/{hiloId}") { backStackEntry ->
             val hiloId = backStackEntry.arguments?.getString("hiloId")
             // Buscar el Hilo en tu estado global o pasarlo como argumento
             val hiloEncontrado = temasHilosPosts.flatMap { it.hilos }.find { it.idHilo == hiloId } ?: return@composable
-            HiloScreen(navController, hiloEncontrado)
+            HiloScreen(navController, hiloEncontrado.idHilo)
+        }
+        composable("pruebasSupabase") {
+            SupabaseUsuariosCRUD(navController)
+        }
+        composable("pruebasEncriptacion") {
+            PantallaPruebasEncriptacion(navController)
+        }
+        composable("zonaPruebas") {
+            PantallaZonaPruebas(navController)
         }
     }
 }

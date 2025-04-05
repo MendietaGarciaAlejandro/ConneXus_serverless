@@ -26,10 +26,18 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 
+/**
+ * CompositionLocal that holds the mutable state of the current FontFamily.
+ */
 val LocalFontState = staticCompositionLocalOf<MutableState<FontFamily>> {
     error("No se ha proporcionado un estado de fuente")
 }
 
+/**
+ * Provides the global font state to its content.
+ *
+ * @param content Composable lambda that will use the font state.
+ */
 @Composable
 fun ProveedorDeFuente(content: @Composable () -> Unit) {
     val fontState = remember { mutableStateOf<FontFamily>(FontFamily.Default) }
@@ -38,6 +46,11 @@ fun ProveedorDeFuente(content: @Composable () -> Unit) {
     }
 }
 
+/**
+ * Applies MaterialTheme using the global font state.
+ *
+ * @param content Composable lambda representing the themed UI.
+ */
 @Composable
 fun AppTheme(content: @Composable () -> Unit) {
     // Usa el estado global de la fuente para definir la tipografía
@@ -48,6 +61,11 @@ fun AppTheme(content: @Composable () -> Unit) {
     )
 }
 
+/**
+ * Displays the screen to change the font.
+ *
+ * @param navController Navigation controller for handling navigation events.
+ */
 @Composable
 fun PantallaCambiarFuente(navController: NavHostController) {
     // Lista de opciones de fuentes: cada par tiene una clave de traducción y la FontFamily correspondiente.

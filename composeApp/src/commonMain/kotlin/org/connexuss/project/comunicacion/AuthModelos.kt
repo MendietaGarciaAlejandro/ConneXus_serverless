@@ -4,7 +4,15 @@ import org.connexuss.project.usuario.AlmacenamientoUsuario
 import org.connexuss.project.usuario.Usuario
 import org.connexuss.project.usuario.UtilidadesUsuario
 
-// Modelos de datos para la autenticación de usuarios.
+/**
+ * Solicitud para registrar un usuario.
+ *
+ * @property nombre Nombre completo del usuario.
+ * @property correo Correo electrónico del usuario.
+ * @property aliasPrivado Valor privado asociado al usuario.
+ * @property aliasPublico Nombre público del usuario.
+ * @property activo Indica si el usuario está activo.
+ */
 data class PeticionRegistro(
     val nombre: String,
     val correo: String,
@@ -13,25 +21,50 @@ data class PeticionRegistro(
     val activo: Boolean = true
 )
 
+/**
+ * Solicitud para iniciar sesión.
+ *
+ * @property correo Correo electrónico del usuario.
+ * @property contrasena Contraseña del usuario.
+ */
 data class PeticionLogin(
     val correo: String,
     val contrasena: String
 )
 
+/**
+ * Solicitud para recuperar la contraseña.
+ *
+ * @property correo Correo electrónico del usuario.
+ */
 data class PeticionRecuperacion(
     val correo: String
 )
 
+/**
+ * Resultado de una operación de autorización.
+ *
+ * @property exito Indica si la operación fue exitosa.
+ * @property mensaje Mensaje informativo sobre la operación.
+ * @property idUsuario Identificador único del usuario, opcional.
+ */
 data class ResultadoAutorizacion(
     val exito: Boolean,
     val mensaje: String,
     val idUsuario: String? = null
 )
 
-// Validador de datos para la autenticación de usuarios.
+/**
+ * Valida los datos para la autenticación de usuarios.
+ */
 object AuthValidator {
 
-    // Validación para el registro de usuario
+    /**
+     * Valida la solicitud de registro.
+     *
+     * @param peticion Los datos del registro.
+     * @return Lista de errores encontrados; vacía si no hay errores.
+     */
     fun validarRegistro(peticion: PeticionRegistro): List<String> {
         val errores = mutableListOf<String>()
         if (peticion.nombre.isBlank())
@@ -40,24 +73,30 @@ object AuthValidator {
             errores.add("Correo inválido")
         if (peticion.aliasPublico.isBlank())
             errores.add("Alias público no puede estar vacío")
-        // Si en el futuro se agrega un campo de contraseña en el registro, se puede validar aquí:
-        // if (request.contrasena.isBlank() || request.contrasena.length < 6)
-        //     errores.add("La contraseña debe tener al menos 6 caracteres")
         return errores
     }
 
-    // Validación para el inicio de sesión
+    /**
+     * Valida la solicitud de inicio de sesión.
+     *
+     * @param peticion Los datos de inicio de sesión.
+     * @return Lista de errores encontrados; vacía si no hay errores.
+     */
     fun validarLogin(peticion: PeticionLogin): List<String> {
         val errores = mutableListOf<String>()
         if (!peticion.correo.matches(Regex("^[A-Za-z0-9+_.-]+@(.+)$")))
             errores.add("El correo ingresado no tiene un formato válido")
         if (peticion.contrasena.isBlank())
             errores.add("La contraseña no puede estar vacía")
-        // Se puede agregar más lógica, como requisitos de longitud o caracteres especiales, si es necesario.
         return errores
     }
 
-    // Validación para la recuperación de contraseña
+    /**
+     * Valida la solicitud de recuperación de contraseña.
+     *
+     * @param peticion Los datos para recuperar la contraseña.
+     * @return Lista de errores encontrados; vacía si no hay errores.
+     */
     fun validarRecuperacion(peticion: PeticionRecuperacion): List<String> {
         val errores = mutableListOf<String>()
         if (!peticion.correo.matches(Regex("^[A-Za-z0-9+_.-]+@(.+)$")))
@@ -66,17 +105,16 @@ object AuthValidator {
     }
 }
 
-// Repositorio que encapsula la lógica de acceso a los datos de usuarios.
 /**
- * Repositorio que encapsula la lógica de acceso a los datos de usuarios.
- * Por ahora utiliza una lista en memoria para simular la persistencia.
+ * Lista mutable de usuarios registrados.
  */
-// Simulación de base de datos en memoria.
 private val usuarios = mutableListOf<Usuario>()
 
 /**
- * Crea y almacena un nuevo usuario a partir de un RegistroRequest.
- * Se asume que UtilidadesUsuario.instanciaUsuario realiza las validaciones necesarias.
+ * Crea un usuario a partir de una solicitud de registro y lo almacena.
+ *
+ * @param registro Datos de la solicitud de registro.
+ * @return El usuario creado o null si ocurre un error.
  */
 fun crearUsuario(registro: PeticionRegistro): Usuario? {
     val util = UtilidadesUsuario()
@@ -93,33 +131,39 @@ fun crearUsuario(registro: PeticionRegistro): Usuario? {
 }
 
 /**
- * Busca un usuario por su correo.
- * Devuelve el usuario encontrado o null si no existe.
+ * Obtiene un usuario filtrado por correo electrónico.
+ *
+ * @param correo Correo electrónico a buscar.
+ * @return El usuario encontrado o null si no existe.
  */
 fun obtenerUsuarioPorEmail(correo: String): Usuario? {
     return usuarios.find { it.getCorreo() == correo }
 }
 
 /**
- * Actualiza la "contraseña" del usuario identificándolo por su ID.
- * En este ejemplo, se simula la actualización de la contraseña mediante la modificación del alias privado.
+ * Actualiza la contraseña de un usuario identificado por su ID.
  *
- * @param userId: String que representa el ID único del usuario.
- * @param nuevaContrasena: La nueva contraseña (o valor a encriptar) que se almacenará.
- * @return true si la actualización fue exitosa, false en caso contrario.
+ * @param userId Identificador único del usuario.
+ * @param nuevaContrasena Nueva contraseña a asignar.
+ * @return Verdadero si la actualización fue exitosa, falso en caso contrario.
  */
 fun actualizarContrasena(userId: String, nuevaContrasena: String): Boolean {
     val usuario = usuarios.find { it.getIdUnico().toString() == userId }
     return if (usuario != null) {
-        // En un escenario real, aplicarías un hash a la contraseña. Aquí se simula asignándola directamente.
-        usuario.setAliasPrivado(nuevaContrasena)  // o: usuario.setAliasPrivado(hash(nuevaContrasena))
+        usuario.setAliasPrivado(nuevaContrasena)
         true
     } else {
         false
     }
 }
 
-// Funciones de servicio para la autenticación de usuarios.
+/**
+ * Registra un nuevo usuario utilizando la solicitud de registro.
+ *
+ * @param peticion Datos para el registro.
+ * @param almacenamientoUsuario Repositorio que maneja el almacenamiento de usuarios.
+ * @return Resultado de la operación de registro.
+ */
 fun registrarUsuario(peticion: PeticionRegistro, almacenamientoUsuario: AlmacenamientoUsuario = AlmacenamientoUsuario()): ResultadoAutorizacion {
     val errores = AuthValidator.validarRegistro(peticion)
     if (errores.isNotEmpty()) return ResultadoAutorizacion(false, errores.joinToString("; "))
@@ -131,27 +175,37 @@ fun registrarUsuario(peticion: PeticionRegistro, almacenamientoUsuario: Almacena
     }
 }
 
+/**
+ * Inicia la sesión de un usuario utilizando la solicitud de login.
+ *
+ * @param peticion Datos de inicio de sesión.
+ * @param almacenamientoUsuario Repositorio que maneja el almacenamiento de usuarios.
+ * @return Resultado de la operación de inicio de sesión.
+ */
 fun iniciarSesion(peticion: PeticionLogin, almacenamientoUsuario: AlmacenamientoUsuario = AlmacenamientoUsuario()): ResultadoAutorizacion {
     val usuario = try {
         almacenamientoUsuario.obtenerUsuarioPorCorreo(peticion.correo)
     } catch (e: Exception) {
         return ResultadoAutorizacion(false, "Usuario no encontrado")
     }
-    // Aquí se asume que el campo aliasPrivado contiene el valor "cifrado" (por ejemplo, mediante hash)
-    // y se usa para validar la contraseña. En un escenario real, tendrías un campo de contraseña propiamente.
     if (usuario.getAliasPrivado() == peticion.contrasena) {
         return ResultadoAutorizacion(true, "Inicio de sesión exitoso", usuario.getIdUnico())
     }
     return ResultadoAutorizacion(false, "Credenciales incorrectas")
 }
 
+/**
+ * Procesa la solicitud de recuperación de contraseña de un usuario.
+ *
+ * @param peticion Datos para la recuperación de contraseña.
+ * @param almacenamientoUsuario Repositorio que maneja el almacenamiento de usuarios.
+ * @return Resultado de la operación de recuperación.
+ */
 fun recuperarContrasena(peticion: PeticionRecuperacion, almacenamientoUsuario: AlmacenamientoUsuario = AlmacenamientoUsuario()): ResultadoAutorizacion {
     val usuario = try {
         almacenamientoUsuario.obtenerUsuarioPorCorreo(peticion.correo)
     } catch (e: Exception) {
         return ResultadoAutorizacion(false, "Usuario no encontrado")
     }
-    // Aquí podrías invocar un proceso de envío de email de recuperación.
-    // Por ahora, simulamos el proceso.
     return ResultadoAutorizacion(true, "Se ha enviado un correo de recuperación a ${peticion.correo}", usuario.getIdUnico())
 }
