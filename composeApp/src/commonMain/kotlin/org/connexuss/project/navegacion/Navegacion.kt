@@ -37,6 +37,7 @@ import org.connexuss.project.interfaces.PantallaIdiomas
 import org.connexuss.project.interfaces.PantallaLogin
 import org.connexuss.project.interfaces.PantallaRegistro
 import org.connexuss.project.interfaces.PantallaRestablecer
+import org.connexuss.project.interfaces.PantallaZonaPruebas
 import org.connexuss.project.interfaces.SplashScreen
 import org.connexuss.project.interfaces.TemaConfig
 import org.connexuss.project.interfaces.TemaScreen
@@ -210,6 +211,9 @@ fun Navegacion(
         }
         composable("pruebasEncriptacion") {
             PantallaPruebasEncriptacion(navController)
+        }
+        composable("zonaPruebas") {
+            PantallaZonaPruebas(navController)
         }
     }
 }

@@ -933,7 +933,8 @@ fun muestraAjustes(navController: NavHostController = rememberNavController()) {
                         modifier = modifier
                             .fillMaxSize()
                             .padding(padding)
-                            .padding(16.dp),
+                            .padding(16.dp)
+                            .verticalScroll(rememberScrollState()),
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
@@ -2102,7 +2103,62 @@ fun PantallaLogin(navController: NavHostController) {
                             Text(traducir("acceder"))
                         }
                         Spacer(modifier = Modifier.height(16.dp))
-                        // Botones de depuración, por ejemplo:
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Button(
+                                onClick = { navController.navigate("zonaPruebas") },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                    text = "Debug: Ir a la zona de pruebas"
+                                )
+                            }
+                        }
+                        if (errorMessage.isNotEmpty()) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                errorMessage,
+                                color = MaterialTheme.colors.error,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun PantallaZonaPruebas(navController: NavHostController) {
+    MaterialTheme {
+        Scaffold(
+            topBar = {
+                DefaultTopBar(
+                    title = "Zona de Pruebas",
+                    navController = navController,
+                    showBackButton = true,
+                    muestraEngranaje = true,
+                    irParaAtras = true
+                )
+            }
+        ) { padding ->
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                LimitaTamanioAncho { modifier ->
+                    Column(
+                        modifier = modifier
+                            .padding(padding)
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text("Zona de Pruebas")
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -2145,148 +2201,9 @@ fun PantallaLogin(navController: NavHostController) {
                         ) {
                             Text("Debug: Ir a las pruebas de encriptación")
                         }
-                        if (errorMessage.isNotEmpty()) {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                errorMessage,
-                                color = MaterialTheme.colors.error,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
                     }
                 }
             }
         }
     }
 }
-
-
-/*
-@Composable
-fun PantallaLogin(navController: NavHostController) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var errorMessage by remember { mutableStateOf("") }
-
-    val errorEmailNingunUsuario = traducir("error_email_ningun_usuario") // Falta implementar y meter en los mapas de idiomas
-
-    // Realiza la traducción fuera del bloque onClick
-    val porFavorCompleta = traducir("por_favor_completa")
-
-    val scope = rememberCoroutineScope()
-
-    MaterialTheme {
-        Scaffold(
-            topBar = {
-                DefaultTopBar(
-                    title = traducir("iniciar_sesion"),
-                    navController = navController,
-                    showBackButton = false,
-                    irParaAtras = false,
-                    muestraEngranaje = false
-                )
-            }
-        ) { padding ->
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                LimitaTamanioAncho { modifier ->
-                    Column(
-                        modifier = modifier.padding(padding).padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Image(
-                            painter = painterResource(Res.drawable.connexus),
-                            contentDescription = traducir("icono_app"),
-                            modifier = Modifier.size(100.dp)
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        OutlinedTextField(
-                            value = email,
-                            onValueChange = { email = it },
-                            label = { Text(traducir("email")) },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        OutlinedTextField(
-                            value = password,
-                            onValueChange = { password = it },
-                            label = { Text(traducir("contrasena")) },
-                            visualTransformation = PasswordVisualTransformation(),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            Button(
-                                onClick = { navController.navigate("restablecer") },
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Text(traducir("olvidaste_contrasena"))
-                            }
-                            Button(
-                                onClick = { navController.navigate("registro") },
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Text(traducir("registrarse"))
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Button(
-                            onClick = {
-                                errorMessage = if (email.isNotBlank() && password.isNotBlank()) {
-                                    ""
-                                } else {
-                                    porFavorCompleta
-                                }
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(traducir("acceder"))
-                        }
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            Button(
-                                onClick = { navController.navigate("contactos") },
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Text(traducir("debug_ir_a_contactos"))
-                            }
-                            Button(
-                                onClick = { navController.navigate("ajustesControlCuentas") },
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Text(traducir("debug_ajustes_control_cuentas"))
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Button(
-                            onClick = { /* navController.navigate("appFirebase") */ navController.navigate("pruebasObjetosFIrebase") },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            //Text(traducir("debug_ir_a_home"))
-                            Text("Debug: Ir a las pruebas con Firebase")
-                        }
-                        if (errorMessage.isNotEmpty()) {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                errorMessage,
-                                color = MaterialTheme.colors.error,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
- */

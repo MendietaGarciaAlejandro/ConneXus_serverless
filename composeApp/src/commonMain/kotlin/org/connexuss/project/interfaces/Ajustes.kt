@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Button
 import androidx.compose.material.Card
 import androidx.compose.material.Icon
@@ -71,6 +73,7 @@ fun PantallaAjustesControlCuentas(navController: NavHostController) {
                         modifier = modifier
                             .padding(padding)
                             .padding(16.dp)
+                            .verticalScroll(rememberScrollState())
                     ) {
                         Text(traducir("lista_de_cuentas"), style = MaterialTheme.typography.h6)
                         LazyColumn(
@@ -151,7 +154,7 @@ fun PantallaAjustesAyuda(navController: NavHostController) {
             }
         ) { padding ->
             Box(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
                 contentAlignment = Alignment.Center
             ) {
                 LimitaTamanioAncho { modifier ->
@@ -159,6 +162,7 @@ fun PantallaAjustesAyuda(navController: NavHostController) {
                         modifier = modifier
                             .padding(padding)
                             .padding(16.dp)
+                            .verticalScroll(rememberScrollState())
                     ) {
                         LazyColumn(
                             modifier = Modifier
