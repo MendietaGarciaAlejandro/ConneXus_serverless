@@ -160,7 +160,8 @@ fun TopBarGrupo(
             {
                 IconButton(onClick = {
                     if (navController != null && irParaAtras) {
-                        navController.navigate("usuariosGrupo")
+                      //  navController.navigate("usuariosGrupo")
+                        navController.popBackStack()
                     }
                 }) {
                     Icon(
