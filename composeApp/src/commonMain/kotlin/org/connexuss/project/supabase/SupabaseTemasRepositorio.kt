@@ -13,6 +13,7 @@ import org.connexuss.project.comunicacion.Tema
 interface ISupabaseTemasRepositorio {
     fun getTemas(): Flow<List<Tema>>
     fun getTemaPorId(idTema: String): Flow<Tema?>
+    fun getTemasPorIdBis(idTema: String): Flow<Tema?>
     suspend fun addTema(tema: Tema)
     suspend fun updateTema(tema: Tema)
     suspend fun deleteTema(tema: Tema)
@@ -47,6 +48,17 @@ class SupabaseTemasRepositorio : ISupabaseTemasRepositorio {
             .select()
             .decodeSingleOrNull<Tema>()
         emit(response)
+    }
+
+    override fun getTemasPorIdBis(idTema: String) = flow {
+        // Recojo todos los temas
+        val response = supabaseClient
+            .from(nombreTabla)
+            .select()
+            .decodeList<Tema>()
+        // Filtro los temas por idTema
+        val filteredResponse = response.find { it.idTema == idTema }
+        emit(filteredResponse)
     }
 
     override suspend fun addTema(tema: Tema) {

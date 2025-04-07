@@ -12,9 +12,11 @@ import org.connexuss.project.usuario.Usuario
 
 // Interfaz para simular una aplicacion CRUD que comunica con Supabase
 interface ISupabaseUsuariosRepositorio {
-    suspend fun getUsuarios(): Flow<List<Usuario>>
-    suspend fun getUsuarioPorId(id: String): Flow<Usuario?>
+    fun getUsuarios(): Flow<List<Usuario>>
+    fun getUsuarioPorId(id: String): Flow<Usuario?>
+    fun getUsuarioPorIdBis(nombre: String): Flow<Usuario?>
     suspend fun getUsuarioPorEmail(email: String): Flow<Usuario?>
+    suspend fun getUsuarioPorEmailBis(email: String): Flow<Usuario?>
     suspend fun addUsuario(usuario: Usuario)
     suspend fun updateUsuario(usuario: Usuario)
     suspend fun deleteUsuario(usuario: Usuario)
@@ -33,7 +35,7 @@ class SupabaseUsuariosRepositorio : ISupabaseUsuariosRepositorio {
     }
     private val nombreTabla = "usuarios"
 
-    override suspend fun getUsuarios() = flow {
+    override fun getUsuarios() = flow {
         val response = supabaseClient
             .from(nombreTabla)
             .select()
@@ -41,7 +43,7 @@ class SupabaseUsuariosRepositorio : ISupabaseUsuariosRepositorio {
         emit(response)
     }
 
-    override suspend fun getUsuarioPorId(id: String) = flow {
+    override fun getUsuarioPorId(id: String) = flow {
         // Construye la URL con el parámetro de consulta para filtrar por id
         val tableWithFilter = "$nombreTabla?idUnico=eq.$id"
         val response = supabaseClient
@@ -50,6 +52,18 @@ class SupabaseUsuariosRepositorio : ISupabaseUsuariosRepositorio {
             .decodeSingleOrNull<Usuario>()
         emit(response)
     }
+
+    override fun getUsuarioPorIdBis(nombre: String) = flow {
+        // Recojo todos los usuarios
+        val response = supabaseClient
+            .from(nombreTabla)
+            .select()
+            .decodeList<Usuario>()
+        // FIltro por id de entre todos los usuarios
+        val usuario = response.find { it.getIdUnico() == nombre }
+        emit(usuario)
+    }
+
     override suspend fun getUsuarioPorEmail(email: String) = flow {
         // Construye la URL con el parámetro de consulta para filtrar por email
         val tableWithFilter = "$nombreTabla?correo=eq.$email"
@@ -58,6 +72,17 @@ class SupabaseUsuariosRepositorio : ISupabaseUsuariosRepositorio {
             .select(Columns.ALL)
             .decodeSingleOrNull<Usuario>()
         emit(response)
+    }
+
+    override suspend fun getUsuarioPorEmailBis(email: String) = flow {
+        // Recojo todos los usuarios
+        val response = supabaseClient
+            .from(nombreTabla)
+            .select()
+            .decodeList<Usuario>()
+        // FIltro por id de entre todos los usuarios
+        val usuario = response.find { it.getCorreo() == email }
+        emit(usuario)
     }
 
     override suspend fun addUsuario(usuario: Usuario)  {

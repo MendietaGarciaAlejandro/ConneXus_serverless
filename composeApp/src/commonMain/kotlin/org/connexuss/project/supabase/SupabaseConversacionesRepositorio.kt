@@ -13,6 +13,7 @@ import org.connexuss.project.comunicacion.Conversacion
 interface IConversacionesRepositorio {
     fun getConversaciones(): Flow<List<Conversacion>>
     fun getConversacionPorId(id: String): Flow<Conversacion?>
+    fun getConversacionPorIdBis(id: String): Flow<Conversacion?>
     suspend fun addConversacion(conversacion: Conversacion)
     suspend fun updateConversacion(conversacion: Conversacion)
     suspend fun deleteConversacion(conversacion: Conversacion)
@@ -47,6 +48,15 @@ class SupabaseConversacionesRepositorio : IConversacionesRepositorio {
             .select(Columns.ALL)
             .decodeSingleOrNull<Conversacion>()
         emit(response)
+    }
+
+    override fun getConversacionPorIdBis(id: String) = flow {
+        val convers = supabaseClient
+            .from(nombreTabla)
+            .select()
+            .decodeList<Conversacion>()
+        val conversacion = convers.find { it.id == id }
+        emit(conversacion)
     }
 
     override suspend fun addConversacion(conversacion: Conversacion) {

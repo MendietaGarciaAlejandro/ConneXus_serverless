@@ -13,6 +13,7 @@ import org.connexuss.project.comunicacion.Post
 interface ISupabaseHiloRepositorio {
     fun getHilos(): Flow<List<Hilo>>
     fun getHiloPorId(idHilo: String): Flow<Hilo?>
+    fun getHiloPorIdBis(idHilo: String): Flow<Hilo?>
     suspend fun addHilo(hilo: Hilo)
     suspend fun updateHilo(hilo: Hilo)
     suspend fun deleteHilo(hilo: Hilo)
@@ -46,6 +47,15 @@ class SupabaseHiloRepositorio : ISupabaseHiloRepositorio {
             .select()
             .decodeSingleOrNull<Hilo>()
         emit(response)
+    }
+
+    override fun getHiloPorIdBis(idHilo: String) = flow {
+        val hilos = supabaseClient
+            .from(nombreTabla)
+            .select()
+            .decodeList<Hilo>()
+        val hilo = hilos.find { it.idHilo == idHilo }
+        emit(hilo)
     }
 
     override suspend fun addHilo(hilo: Hilo) {

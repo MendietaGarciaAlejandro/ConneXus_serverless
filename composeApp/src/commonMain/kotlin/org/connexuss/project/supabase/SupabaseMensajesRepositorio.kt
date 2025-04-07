@@ -14,6 +14,7 @@ import org.connexuss.project.comunicacion.Mensaje
 interface ISupabaseMensajesRepositorio {
     fun getMensajes(): Flow<List<Mensaje>>
     fun getMensajePorId(id: String): Flow<Mensaje?>
+    fun getMensajePorIdBis(id: String): Flow<Mensaje?>
     suspend fun addMensaje(mensaje: Mensaje)
     suspend fun updateMensaje(mensaje: Mensaje)
     suspend fun deleteMensaje(mensaje: Mensaje)
@@ -47,6 +48,15 @@ class SupabaseMensajesRepositorio : ISupabaseMensajesRepositorio {
             .select(Columns.ALL)
             .decodeSingleOrNull<Mensaje>()
         emit(response)
+    }
+
+    override fun getMensajePorIdBis(id: String) = flow {
+        val response = supabaseClient
+            .from(nombreTabla)
+            .select()
+            .decodeList<Mensaje>()
+        val filteredResponse = response.find { it.id == id }
+        emit(filteredResponse)
     }
 
     override suspend fun addMensaje(mensaje: Mensaje) {

@@ -12,6 +12,7 @@ import org.connexuss.project.comunicacion.Post
 interface ISupabasePostsRepositorio {
     fun getPosts(): Flow<List<Post>>
     fun getPostPorId(idPost: String): Flow<Post?>
+    fun getPostPorIdBis(idPost: String): Flow<Post?>
     suspend fun addPost(post: Post)
     suspend fun updatePost(post: Post)
     suspend fun deletePost(post: Post)
@@ -45,6 +46,17 @@ class SupabasePostsRepositorio : ISupabasePostsRepositorio {
             .select()
             .decodeSingleOrNull<Post>()
         emit(response)
+    }
+
+    override fun getPostPorIdBis(idPost: String) = flow {
+        // Recojo todos los posts
+        val response = supabaseClient
+            .from(nombreTabla)
+            .select()
+            .decodeList<Post>()
+        // Filtro los posts por idPost
+        val filteredResponse = response.find { it.idPost == idPost }
+        emit(filteredResponse)
     }
 
     override suspend fun addPost(post: Post) {
