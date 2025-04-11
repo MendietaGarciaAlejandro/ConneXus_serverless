@@ -36,34 +36,23 @@ class ChatService(private val chatRepository: ChatRepository) {
 }
  */
 
-/**
- * Representa un mensaje en el chat.
- *
- * @property id Identificador único del mensaje.
- * @property senderId Identificador del remitente.
- * @property receiverId Identificador del receptor.
- * @property content Contenido del mensaje (puede estar encriptado).
- * @property fechaMensaje Fecha y hora en que se creó el mensaje.
- */
+fun generateId(): String {
+    val valores = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+    val longitud = 20
+    return (1..longitud)
+        .map { valores.random() }
+        .joinToString("")
+}
+
 @Serializable
 data class Mensaje (
     val id: String = generateId(),
     val senderId: String,
     val receiverId: String,
     val content: String,
-    //val timestamp: Long = System.currentTimeMillis() // Milisegundos desde epoch
     val fechaMensaje: LocalDateTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
 )
 
-/**
- * Representa una conversación en el chat.
- *
- * @property id Identificador único de la conversación.
- * @property participants Lista de identificadores de los participantes.
- * @property messages Lista de mensajes dentro de la conversación.
- * @property nombre Nombre del chat (solo para grupos).
- * @property grupo Indica si la conversación es grupal, determinada por el número de participantes.
- */
 @Serializable
 data class Conversacion (
     val id: String = generateId(),
@@ -73,20 +62,12 @@ data class Conversacion (
 ) {
     /**
      * Indica si la conversación es grupal.
-     *
      * Retorna `true` si la lista de participantes contiene más de dos usuarios.
      */
     val grupo: Boolean
         get() = participants.size > 2
 }
 
-/**
- * Representa las conversaciones asociadas a un usuario.
- *
- * @property id Identificador de la entrada.
- * @property idUser Identificador del usuario.
- * @property conversaciones Lista de conversaciones del usuario.
- */
 @Serializable
 data class ConversacionesUsuario(
     val id: String,
@@ -94,15 +75,30 @@ data class ConversacionesUsuario(
     val conversaciones: List<Conversacion> = emptyList(),
 )
 
-/**
- * Genera un identificador único.
- *
- * @return String generado aleatoriamente.
+// NO BORRAR!!! Son las clases desarrolladas para implementar en la base de datos
+/*
+
+@Serializable
+data class Mensaje (
+    val id: String = generateId(),
+    val idUsuario: String,         // Remitente: corresponde al idUnico del Usuario
+    val idConversacion: String,    // FK a la Conversacion a la que pertenece el mensaje
+    val content: String,
+    val fechaMensaje: LocalDateTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+)
+
+@Serializable
+data class Conversacion (
+    val id: String = generateId(),
+    val nombre: String? = null     // Opcional, útil en chats grupales
+    // Se pueden agregar otros atributos si se requieren (por ejemplo, fecha de creación)
+)
+
+@Serializable
+data class ConversacionUsuario(
+    val idUsuario: String,         // FK a Usuario.idUnico
+    val idConversacion: String     // FK a Conversacion.id
+)
+// La clave compuesta (idUsuario, idConversacion) identifica la participación.
+
  */
-fun generateId(): String {
-    val valores = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-    val longitud = 20
-    return (1..longitud)
-        .map { valores.random() }
-        .joinToString("")
-}

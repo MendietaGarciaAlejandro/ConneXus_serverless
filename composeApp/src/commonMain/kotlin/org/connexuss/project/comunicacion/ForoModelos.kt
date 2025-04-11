@@ -6,15 +6,6 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.Serializable
 
-/**
- * Modelo actualizado para representar un post del foro.
- *
- * @property idPost Identificador único generado para el post.
- * @property senderId Identificador del usuario que envía el post.
- * @property receiverId Identificador del usuario que recibe el post.
- * @property content Texto del mensaje del post.
- * @property fechaPost Marca temporal con la fecha y hora de creación.
- */
 @Serializable
 data class Post(
     val idPost: String = generateId(),
@@ -24,14 +15,6 @@ data class Post(
     val fechaPost: LocalDateTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
 )
 
-/**
- * Modelo actualizado para representar un hilo en el foro.
- *
- * @property idHilo Identificador único generado para el hilo.
- * @property idForeros Lista de identificadores de los usuarios participantes.
- * @property idPosts Lista de identificadores de los posts asociados al hilo.
- * @property nombre Título o nombre que identifica el hilo; puede ser null.
- */
 @Serializable
 data class Hilo(
     val idHilo: String = generateId(),
@@ -40,14 +23,6 @@ data class Hilo(
     val nombre: String? = null
 )
 
-/**
- * Modelo actualizado para representar un tema en el foro.
- *
- * @property idTema Identificador único generado para el tema.
- * @property idUsuario Identificador del usuario que creó el tema.
- * @property nombre Nombre descriptivo del tema.
- * @property idHilos Lista de identificadores de hilos asociados al tema.
- */
 @Serializable
 data class Tema(
     val idTema: String = generateId(),
@@ -55,3 +30,33 @@ data class Tema(
     val nombre: String,
     val hilos: List<Hilo> = emptyList()
 )
+
+// NO BORRAR!!! Son las clases desarrolladas para implementar en la base de datos
+/*
+
+@Serializable
+data class Tema(
+    val idTema: String = generateId(),
+    val nombre: String,
+    val hilos: List<Hilo> = emptyList()  // Relación 1:N (cada Hilo tiene FK a Tema)
+)
+
+@Serializable
+data class Hilo(
+    val idHilo: String = generateId(),
+    val nombre: String? = null,
+    val idTema: String,                // FK a Tema.idTema
+    val posts: List<Post> = emptyList() // Relación 1:N con Post
+)
+
+@Serializable
+data class Post(
+    val idPost: String = generateId(),
+    val content: String,
+    val fechaPost: LocalDateTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()),
+    val aliasPublico: String,          // Firma pública del autor tal como se muestra en el foro
+    val idHilo: String,                // FK a Hilo.idHilo
+    val idFirmante: String? = null     // Opcional: referencia al Usuario que firma el post (USUARIO.idUnico)
+)
+
+ */

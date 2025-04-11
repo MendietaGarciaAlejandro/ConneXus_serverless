@@ -4,13 +4,12 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import org.connexuss.project.comunicacion.Conversacion
 import org.connexuss.project.comunicacion.ConversacionesUsuario
+import org.connexuss.project.encriptacion.hash
 import org.connexuss.project.misc.UsuariosPreCreados
 import org.connexuss.project.misc.imagenesPerfilAbstrasto
 import org.connexuss.project.misc.imagenesPerfilDibujo
 import org.connexuss.project.misc.imagenesPerfilPersona
-import org.connexuss.project.encriptacion.hash
 import org.jetbrains.compose.resources.DrawableResource
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -18,17 +17,16 @@ import kotlin.uuid.Uuid
 // Clase usuario con sus atributos y metodos
 @Serializable
 class Usuario {
+    private var idUnico: String = ""
     private var nombre: String = ""
     private var correo: String = ""
     private var aliasPublico: String = ""
     private var aliasPrivado: String = ""
-    private var idUnico: String = ""
     private var activo: Boolean = false
     private var contactos: List<String>? = emptyList()
     private var chatUser: ConversacionesUsuario? = null
     private var descripcion: String = ""
     private var contrasennia: String = ""
-
     private var usuariosBloqueados: List<String> = emptyList()
     @Transient
     private var imagenPerfil: DrawableResource? = null
@@ -184,10 +182,6 @@ class Usuario {
         Text("Id Unico: $idUnico")
         Text("Alias Privado: $aliasPrivado")
     }
-
-
-
-
 }
 
 // Clase que almacena los usuarios
@@ -339,3 +333,38 @@ class UtilidadesUsuario {
         return alias
     }
 }
+
+// NO BORRAR!!! Son las clases desarrolladas para implementar en la base de datos
+/*
+
+@Serializable
+data class Usuario(
+    val idUnico: String = UtilidadesUsuario().generarIdUnico(),
+    val nombre: String,
+    val correo: String,
+    val aliasPublico: String,
+    val aliasPrivado: String = hash(aliasPublico),
+    val activo: Boolean,
+    val descripcion: String = "",
+    val contrasennia: String
+) {
+    // Los arrays para contactos y bloqueos se reemplazan por entidades relacionales (ver más abajo).
+    // Métodos y composables para mostrar datos se mantienen igual o se adaptan.
+}
+
+@Serializable
+data class UsuarioBloqueado(
+    val idUsuario: String,   // Usuario que bloquea
+    val idBloqueado: String    // Usuario bloqueado
+)
+// Clave compuesta: (idUsuario, idBloqueado)
+
+@Serializable
+data class UsuarioContacto(
+    val idUsuario: String,   // Usuario propietario de la lista
+    val idContacto: String   // Usuario en la lista de contactos
+)
+// Clave compuesta: (idUsuario, idContacto)
+
+
+ */
