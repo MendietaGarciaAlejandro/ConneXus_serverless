@@ -12,24 +12,16 @@ import org.connexuss.project.comunicacion.ConversacionesUsuario
 
 interface ISupabaseConversacionesUsuarioRepositorio {
     fun getConversacionesUsuario(): Flow<List<ConversacionesUsuario>>
-    fun getConversacionPorId(idConversacion: String): Flow<ConversacionesUsuario?>
-    fun getConversacionPorIdBis(idConversacion: String): Flow<ConversacionesUsuario?>
-    suspend fun addConversacion(conversacion: ConversacionesUsuario)
-    suspend fun updateConversacion(conversacion: ConversacionesUsuario)
-    suspend fun deleteConversacion(conversacion: ConversacionesUsuario)
+    fun getConversacionPorId(idconversacionUsuario: String): Flow<ConversacionesUsuario?>
+    fun getConversacionPorIdBis(idconversacionUsuario: String): Flow<ConversacionesUsuario?>
+    suspend fun addConversacion(conversacionUsuario: ConversacionesUsuario)
+    suspend fun updateConversacion(conversacionUsuario: ConversacionesUsuario)
+    suspend fun deleteConversacion(conversacionUsuario: ConversacionesUsuario)
 }
 
 class SupabaseConversacionesUsuarioRepositorio : ISupabaseConversacionesUsuarioRepositorio {
 
-    private val supabaseClient = createSupabaseClient(
-        supabaseUrl = "https://riydmqawtpwmulqlbbjq.supabase.co",
-        supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpeWRtcWF3dHB3bXVscWxiYmpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM2MjIyNTksImV4cCI6MjA1OTE5ODI1OX0.ShUPbRe_6yvIT27o5S7JE8h3ErIJJo-icrdQD1ugl8o",
-    ) {
-        install(Storage)
-        //install(Auth)
-        install(Realtime)
-        install(Postgrest)
-    }
+    private val supabaseClient = instanciaSupabaseClient( tieneStorage = true, tieneAuth = false, tieneRealtime = true, tienePostgrest = true)
     private val nombreTabla = "conversacionesusuario"
 
     override fun getConversacionesUsuario() = flow {
@@ -40,8 +32,8 @@ class SupabaseConversacionesUsuarioRepositorio : ISupabaseConversacionesUsuarioR
         emit(response)
     }
 
-    override fun getConversacionPorId(idConversacion: String) = flow {
-        val tableWithFilter = "$nombreTabla?id=eq.$idConversacion"
+    override fun getConversacionPorId(idconversacionUsuario: String) = flow {
+        val tableWithFilter = "$nombreTabla?id=eq.$idconversacionUsuario"
         val response = supabaseClient
             .from(tableWithFilter)
             .select()
@@ -49,19 +41,19 @@ class SupabaseConversacionesUsuarioRepositorio : ISupabaseConversacionesUsuarioR
         emit(response)
     }
 
-    override fun getConversacionPorIdBis(idConversacion: String) = flow {
+    override fun getConversacionPorIdBis(idconversacionUsuario: String) = flow {
         val convers = supabaseClient
             .from(nombreTabla)
             .select()
             .decodeList<ConversacionesUsuario>()
-        val conversacion = convers.find { it.id == idConversacion }
+        val conversacion = convers.find { it.id == idconversacionUsuario }
         emit(conversacion)
     }
 
-    override suspend fun addConversacion(conversacion: ConversacionesUsuario) {
+    override suspend fun addConversacion(conversacionUsuario: ConversacionesUsuario) {
         val response = supabaseClient
             .from(nombreTabla)
-            .insert(conversacion)
+            .insert(conversacionUsuario)
             .decodeSingleOrNull<ConversacionesUsuario>()
         if (response == null) {
             throw Exception("Error al agregar la conversación")
@@ -99,13 +91,13 @@ class SupabaseConversacionesUsuarioRepositorio : ISupabaseConversacionesUsuarioR
         }
     }
 
-    override suspend fun deleteConversacion(conversacion: ConversacionesUsuario) {
+    override suspend fun deleteConversacion(conversacionUsuario: ConversacionesUsuario) {
         try {
             supabaseClient
                 .from(nombreTabla)
                 .delete {
                     filter {
-                        eq("id", conversacion.id)
+                        eq("id", conversacionUsuario.id)
                     }
                 }
                 .decodeList<Conversacion>()
