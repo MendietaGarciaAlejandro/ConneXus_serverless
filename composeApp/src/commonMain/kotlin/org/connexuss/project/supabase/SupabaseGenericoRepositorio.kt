@@ -1,5 +1,7 @@
 package org.connexuss.project.supabase
 
+import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.from
@@ -9,7 +11,6 @@ import io.github.jan.supabase.realtime.Realtime
 import io.github.jan.supabase.storage.Storage
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import kotlinx.serialization.KSerializer
 
 // Interfaz sin el modificador inline en deleteItemGeneric:
 //interface ISupabaseRepository<T : Any> {
@@ -20,17 +21,32 @@ import kotlinx.serialization.KSerializer
 //    suspend fun deleteItemGeneric(tableName: String, idField: String, idValue: Any)
 //}
 
+// Funcion que servirá para instanciar el supabaseClient con los parámetros necesarios
+fun instanciaSupabaseClient(
+    tieneStorage: Boolean = true,
+    tieneAuth: Boolean = true,
+    tieneRealtime: Boolean = true,
+    tienePostgrest: Boolean = true
+): SupabaseClient {
+    return createSupabaseClient(
+        supabaseUrl = "https://riydmqawtpwmulqlbbjq.supabase.co",
+        supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpeWRtcWF3dHB3bXVscWxiYmpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM2MjIyNTksImV4cCI6MjA1OTE5ODI1OX0.ShUPbRe_6yvIT27o5S7JE8h3ErIJJo-icrdQD1ugl8o"
+    ) {
+        if (tieneStorage) install(Storage)
+        if (tieneAuth) install(Auth)
+        if (tieneRealtime) install(Realtime)
+        if (tienePostgrest) install(Postgrest)
+    }
+}
+
 class SupabaseRepository {
 
-    val supabaseClient = createSupabaseClient(
-        supabaseUrl = "https://riydmqawtpwmulqlbbjq.supabase.co",
-        supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpeWRtcWF3dHB3bXVscWxiYmpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM2MjIyNTksImV4cCI6MjA1OTE5ODI1OX0.ShUPbRe_6yvIT27o5S7JE8h3ErIJJo-icrdQD1ugl8o",
-    ) {
-        install(Storage)
-        //install(Auth)
-        install(Realtime)
-        install(Postgrest)
-    }
+    val supabaseClient = instanciaSupabaseClient(
+        tieneStorage = true,
+        tieneAuth = false,
+        tieneRealtime = true,
+        tienePostgrest = true
+    )
 
     // Obtener todos los registros de una tabla
     inline fun <reified T : Any> getAll(tableName: String): Flow<List<T>> = flow {
