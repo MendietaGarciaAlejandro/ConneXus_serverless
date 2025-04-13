@@ -39,6 +39,13 @@ import io.github.jan.supabase.realtime.Realtime
 import io.github.jan.supabase.storage.Storage
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
+import org.connexuss.project.comunicacion.Conversacion
+import org.connexuss.project.comunicacion.ConversacionesUsuario
+import org.connexuss.project.comunicacion.Hilo
+import org.connexuss.project.comunicacion.Mensaje
+import org.connexuss.project.comunicacion.Post
+import org.connexuss.project.comunicacion.Tema
+import org.connexuss.project.comunicacion.generateId
 import org.connexuss.project.interfaces.DefaultTopBar
 import org.connexuss.project.interfaces.LimitaTamanioAncho
 
@@ -82,49 +89,49 @@ fun SupabasePruebasInterfaz(navHostController: NavHostController) {
                             Text("CRUD de Usuarios")
                         }
                         Button(
-                            onClick = { navHostController.navigate("supabaseUsuariosBloqueados") },
+                            onClick = { /*navHostController.navigate("supabaseUsuariosBloqueados")*/ },
                             modifier = Modifier.fillMaxWidth().padding(8.dp)
                         ) {
                             Text("CRUD de UsuariosBloqueados")
                         }
                         Button(
-                            onClick = { navHostController.navigate("supabaseUsuariosContactos") },
+                            onClick = { /*navHostController.navigate("supabaseUsuariosContactos")*/ },
                             modifier = Modifier.fillMaxWidth().padding(8.dp)
                         ) {
                             Text("CRUD de UsuariosContactos")
                         }
                         Button(
-                            onClick = { navHostController.navigate("supabaseConversaciones") },
+                            onClick = { navHostController.navigate("supabasePruebasConversaciones") },
                             modifier = Modifier.fillMaxWidth().padding(8.dp)
                         ) {
                             Text("CRUD de Conversaciones")
                         }
                         Button(
-                            onClick = { navHostController.navigate("supabaseMensajes") },
+                            onClick = { navHostController.navigate("supabasePruebasMensajes") },
                             modifier = Modifier.fillMaxWidth().padding(8.dp)
                         ) {
                             Text("CRUD de Mensajes")
                         }
                         Button(
-                            onClick = { navHostController.navigate("supabaseConversacionesUsuario") },
+                            onClick = { navHostController.navigate("supabasePruebasConversacionesUsuarioCRUD") },
                             modifier = Modifier.fillMaxWidth().padding(8.dp)
                         ) {
                             Text("CRUD de ConversacionesUsuario")
                         }
                         Button(
-                            onClick = { navHostController.navigate("supabaseTemas") },
+                            onClick = { navHostController.navigate("supabasePruebasTemasCRUD") },
                             modifier = Modifier.fillMaxWidth().padding(8.dp)
                         ) {
                             Text("CRUD de Temas")
                         }
                         Button(
-                            onClick = { navHostController.navigate("supabaseHilos") },
+                            onClick = { navHostController.navigate("supabasePruebasHilosCRUD") },
                             modifier = Modifier.fillMaxWidth().padding(8.dp)
                         ) {
                             Text("CRUD de Hilos")
                         }
                         Button(
-                            onClick = { navHostController.navigate("supabasePosts") },
+                            onClick = { navHostController.navigate("supabasePruebasPostsCRUD") },
                             modifier = Modifier.fillMaxWidth().padding(8.dp)
                         ) {
                             Text("CRUD de Posts")
@@ -135,6 +142,540 @@ fun SupabasePruebasInterfaz(navHostController: NavHostController) {
         }
     }
 }
+
+@Composable
+fun SupabaseMensajesCRUD(navHostController: NavHostController) {
+    val repository = SupabaseRepository()
+    val scope = rememberCoroutineScope()
+    var mensajes by remember { mutableStateOf(emptyList<Mensaje>()) }
+    // Campos para el formulario de inserción
+    var senderId by remember { mutableStateOf("") }
+    var receiverId by remember { mutableStateOf("") }
+    var content by remember { mutableStateOf("") }
+
+    // Función para recargar mensajes
+    fun cargarMensajes() {
+        scope.launch {
+            repository.getAll<Mensaje>("mensajes").collect { mensajes = it }
+        }
+    }
+
+    LaunchedEffect(Unit) { cargarMensajes() }
+
+    MaterialTheme {
+        Scaffold(
+            topBar = {
+                DefaultTopBar(
+                    title = "CRUD de Mensajes",
+                    navController = navHostController,
+                    showBackButton = true,
+                    irParaAtras = true,
+                    muestraEngranaje = true
+                )
+            }
+        ) { padding ->
+            LimitaTamanioAncho { modifier ->
+                Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+                    Text("Mensajes registrados", style = MaterialTheme.typography.h6)
+                    LazyColumn(modifier = Modifier.weight(1f)) {
+                        items(mensajes) { mensaje ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text("${mensaje.senderId} -> ${mensaje.receiverId}: ${mensaje.content}")
+                                // Botón de eliminación (para pruebas)
+                                Button(onClick = {
+                                    scope.launch {
+                                        repository.deleteItem<Mensaje>("mensajes", "id", mensaje.id)
+                                        cargarMensajes()
+                                    }
+                                }) { Text("Eliminar") }
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    OutlinedTextField(
+                        value = senderId,
+                        onValueChange = { senderId = it },
+                        label = { Text("Sender ID") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = receiverId,
+                        onValueChange = { receiverId = it },
+                        label = { Text("Receiver ID") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = content,
+                        onValueChange = { content = it },
+                        label = { Text("Content") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Button(
+                        onClick = {
+                            scope.launch {
+                                repository.addItem(
+                                    "mensajes",
+                                    Mensaje(
+                                        senderId = senderId,
+                                        receiverId = receiverId,
+                                        content = content
+                                    )
+                                )
+                                senderId = ""
+                                receiverId = ""
+                                content = ""
+                                cargarMensajes()
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                    ) {
+                        Text("Insertar Mensaje")
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SupabaseConversacionesCRUD(navHostController: NavHostController) {
+    val repository = SupabaseRepository()
+    val scope = rememberCoroutineScope()
+    var conversaciones by remember { mutableStateOf(emptyList<Conversacion>()) }
+    var nombre by remember { mutableStateOf("") }
+    // Para simplicidad, aquí asumimos que solo se ingresa un nombre para la conversación.
+
+    fun cargarConversaciones() {
+        scope.launch {
+            repository.getAll<Conversacion>("conversaciones").collect { conversaciones = it }
+        }
+    }
+
+    LaunchedEffect(Unit) { cargarConversaciones() }
+
+    MaterialTheme {
+        Scaffold(
+            topBar = {
+                DefaultTopBar(
+                    title = "CRUD de Conversaciones",
+                    navController = navHostController,
+                    showBackButton = true,
+                    irParaAtras = true,
+                    muestraEngranaje = true
+                )
+            }
+        ) { padding ->
+            LimitaTamanioAncho { modifier ->
+                Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+                    Text("Conversaciones registradas", style = MaterialTheme.typography.h6)
+                    LazyColumn(modifier = Modifier.weight(1f)) {
+                        items(conversaciones) { conv ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text("Conversación: ${conv.nombre ?: "Sin nombre"}  \nParticipantes: ${conv.participants.joinToString()}")
+                                Button(onClick = {
+                                    scope.launch {
+                                        repository.deleteItem<Conversacion>(
+                                            "conversaciones",
+                                            "id",
+                                            conv.id
+                                        )
+                                        cargarConversaciones()
+                                    }
+                                }) { Text("Eliminar") }
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    OutlinedTextField(
+                        value = nombre,
+                        onValueChange = { nombre = it },
+                        label = { Text("Nombre Conversación") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Button(
+                        onClick = {
+                            scope.launch {
+                                // Para insertar, se debe construir un objeto Conversacion.
+                                // Aquí se inserta con participantes vacíos y sin mensajes.
+                                repository.addItem(
+                                    "conversaciones",
+                                    Conversacion(
+                                        id = generateId(),
+                                        participants = emptyList(),
+                                        nombre = nombre
+                                    )
+                                )
+                                nombre = ""
+                                cargarConversaciones()
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                    ) {
+                        Text("Insertar Conversación")
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SupabaseConversacionesUsuarioCRUD(navHostController: NavHostController) {
+    val repository = SupabaseRepository()
+    val scope = rememberCoroutineScope()
+    var convUsuarioList by remember { mutableStateOf(emptyList<ConversacionesUsuario>()) }
+    var idUser by remember { mutableStateOf("") }
+    // Se asume que 'conversaciones' se inicializa vacío o con algún valor predefinido.
+
+    fun cargarConversacionesUsuario() {
+        scope.launch {
+            repository.getAll<ConversacionesUsuario>("conversacionesusuarios").collect { convUsuarioList = it }
+        }
+    }
+
+    LaunchedEffect(Unit) { cargarConversacionesUsuario() }
+
+    MaterialTheme {
+        Scaffold(
+            topBar = {
+                DefaultTopBar(
+                    title = "CRUD de ConversacionesUsuario",
+                    navController = navHostController,
+                    showBackButton = true,
+                    irParaAtras = true,
+                    muestraEngranaje = true
+                )
+            }
+        ) { padding ->
+            LimitaTamanioAncho { modifier ->
+                Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+                    Text("ConversacionesUsuario registrados", style = MaterialTheme.typography.h6)
+                    LazyColumn(modifier = Modifier.weight(1f)) {
+                        items(convUsuarioList) { convUser ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text("Usuario: ${convUser.idUser}  - Conversaciones: ${convUser.conversaciones.size}")
+                                Button(onClick = {
+                                    scope.launch {
+                                        repository.deleteItem<ConversacionesUsuario>(
+                                            "conversacionesusuarios",
+                                            "id",
+                                            convUser.id
+                                        )
+                                        cargarConversacionesUsuario()
+                                    }
+                                }) { Text("Eliminar") }
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    OutlinedTextField(
+                        value = idUser,
+                        onValueChange = { idUser = it },
+                        label = { Text("ID del Usuario") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Button(
+                        onClick = {
+                            scope.launch {
+                                repository.addItem(
+                                    "conversacionesusuarios",
+                                    ConversacionesUsuario(
+                                        id = generateId(),
+                                        idUser = idUser,
+                                        conversaciones = emptyList()
+                                    )
+                                )
+                                idUser = ""
+                                cargarConversacionesUsuario()
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                    ) {
+                        Text("Insertar ConversacionesUsuario")
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SupabasePostsCRUD(navHostController: NavHostController) {
+    val repository = SupabaseRepository()
+    val scope = rememberCoroutineScope()
+    var posts by remember { mutableStateOf(emptyList<Post>()) }
+    var senderId by remember { mutableStateOf("") }
+    var receiverId by remember { mutableStateOf("") }
+    var content by remember { mutableStateOf("") }
+
+    fun cargarPosts() {
+        scope.launch {
+            repository.getAll<Post>("posts").collect { posts = it }
+        }
+    }
+
+    LaunchedEffect(Unit) { cargarPosts() }
+
+    MaterialTheme {
+        Scaffold(
+            topBar = {
+                DefaultTopBar(
+                    title = "CRUD de Posts",
+                    navController = navHostController,
+                    showBackButton = true,
+                    irParaAtras = true,
+                    muestraEngranaje = true
+                )
+            }
+        ) { padding ->
+            LimitaTamanioAncho { modifier ->
+                Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+                    Text("Posts registrados", style = MaterialTheme.typography.h6)
+                    LazyColumn(modifier = Modifier.weight(1f)) {
+                        items(posts) { post ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text("Post: ${post.content} \nFrom: ${post.senderId} to ${post.receiverId}")
+                                Button(onClick = {
+                                    scope.launch {
+                                        repository.deleteItem<Post>("posts", "idPost", post.idPost)
+                                        cargarPosts()
+                                    }
+                                }) { Text("Eliminar") }
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    OutlinedTextField(
+                        value = senderId,
+                        onValueChange = { senderId = it },
+                        label = { Text("Sender ID") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = receiverId,
+                        onValueChange = { receiverId = it },
+                        label = { Text("Receiver ID") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = content,
+                        onValueChange = { content = it },
+                        label = { Text("Content") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Button(
+                        onClick = {
+                            scope.launch {
+                                repository.addItem(
+                                    "posts",
+                                    Post(
+                                        senderId = senderId,
+                                        receiverId = receiverId,
+                                        content = content
+                                    )
+                                )
+                                senderId = ""
+                                receiverId = ""
+                                content = ""
+                                cargarPosts()
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                    ) {
+                        Text("Insertar Post")
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SupabaseHilosCRUD(navHostController: NavHostController) {
+    val repository = SupabaseRepository()
+    val scope = rememberCoroutineScope()
+    var hilos by remember { mutableStateOf(emptyList<Hilo>()) }
+    var nombre by remember { mutableStateOf("") }
+    // Para simplificar, asumimos que la lista de foreros se ingresa como una cadena separada por comas.
+    var foreros by remember { mutableStateOf("") }
+
+    fun cargarHilos() {
+        scope.launch {
+            repository.getAll<Hilo>("hilos").collect { hilos = it }
+        }
+    }
+
+    LaunchedEffect(Unit) { cargarHilos() }
+
+    MaterialTheme {
+        Scaffold(
+            topBar = {
+                DefaultTopBar(
+                    title = "CRUD de Hilos",
+                    navController = navHostController,
+                    showBackButton = true,
+                    irParaAtras = true,
+                    muestraEngranaje = true
+                )
+            }
+        ) { padding ->
+            LimitaTamanioAncho { modifier ->
+                Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+                    Text("Hilos registrados", style = MaterialTheme.typography.h6)
+                    LazyColumn(modifier = Modifier.weight(1f)) {
+                        items(hilos) { hilo ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text("Hilo: ${hilo.nombre ?: "Sin nombre"} \nForeros: ${hilo.idForeros.joinToString()}")
+                                Button(onClick = {
+                                    scope.launch {
+                                        repository.deleteItem<Hilo>("hilos", "idHilo", hilo.idHilo)
+                                        cargarHilos()
+                                    }
+                                }) { Text("Eliminar") }
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    OutlinedTextField(
+                        value = nombre,
+                        onValueChange = { nombre = it },
+                        label = { Text("Nombre del Hilo") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = foreros,
+                        onValueChange = { foreros = it },
+                        label = { Text("Foreros (separados por comas)") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Button(
+                        onClick = {
+                            scope.launch {
+                                val listaForeros = foreros.split(",").map { it.trim() }
+                                repository.addItem(
+                                    "hilos",
+                                    Hilo(
+                                        idForeros = listaForeros,
+                                        posts = emptyList(),
+                                        nombre = nombre
+                                    )
+                                )
+                                nombre = ""
+                                foreros = ""
+                                cargarHilos()
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                    ) {
+                        Text("Insertar Hilo")
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SupabaseTemasCRUD(navHostController: NavHostController) {
+    val repository = SupabaseRepository()
+    val scope = rememberCoroutineScope()
+    var temas by remember { mutableStateOf(emptyList<Tema>()) }
+    var idUsuario by remember { mutableStateOf("") }
+    var nombre by remember { mutableStateOf("") }
+
+    fun cargarTemas() {
+        scope.launch {
+            repository.getAll<Tema>("temas").collect { temas = it }
+        }
+    }
+
+    LaunchedEffect(Unit) { cargarTemas() }
+
+    MaterialTheme {
+        Scaffold(
+            topBar = {
+                DefaultTopBar(
+                    title = "CRUD de Temas",
+                    navController = navHostController,
+                    showBackButton = true,
+                    irParaAtras = true,
+                    muestraEngranaje = true
+                )
+            }
+        ) { padding ->
+            LimitaTamanioAncho { modifier ->
+                Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+                    Text("Temas registrados", style = MaterialTheme.typography.h6)
+                    LazyColumn(modifier = Modifier.weight(1f)) {
+                        items(temas) { tema ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text("Tema: ${tema.nombre} - Usuario: ${tema.idUsuario}")
+                                Button(onClick = {
+                                    scope.launch {
+                                        repository.deleteItem<Tema>("temas", "idTema", tema.idTema)
+                                        cargarTemas()
+                                    }
+                                }) { Text("Eliminar") }
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    OutlinedTextField(
+                        value = idUsuario,
+                        onValueChange = { idUsuario = it },
+                        label = { Text("ID Usuario") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = nombre,
+                        onValueChange = { nombre = it },
+                        label = { Text("Nombre del Tema") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Button(
+                        onClick = {
+                            scope.launch {
+                                repository.addItem(
+                                    "temas",
+                                    Tema(
+                                        idUsuario = idUsuario,
+                                        nombre = nombre,
+                                        hilos = emptyList()
+                                    )
+                                )
+                                idUsuario = ""
+                                nombre = ""
+                                cargarTemas()
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                    ) {
+                        Text("Insertar Tema")
+                    }
+                }
+            }
+        }
+    }
+}
+
 
 @Composable
 fun SupabaseUsuariosCRUD(navHostController: NavHostController) {

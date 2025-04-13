@@ -54,7 +54,12 @@ import org.connexuss.project.interfaces.muestraUsuarios
 import org.connexuss.project.misc.UsuarioPrincipal
 import org.connexuss.project.misc.imagenesPerfilPersona
 import org.connexuss.project.misc.temasHilosPosts
+import org.connexuss.project.supabase.SupabaseConversacionesCRUD
+import org.connexuss.project.supabase.SupabaseHilosCRUD
+import org.connexuss.project.supabase.SupabaseMensajesCRUD
+import org.connexuss.project.supabase.SupabasePostsCRUD
 import org.connexuss.project.supabase.SupabasePruebasInterfaz
+import org.connexuss.project.supabase.SupabaseTemasCRUD
 import org.connexuss.project.supabase.SupabaseUsuariosCRUD
 import org.connexuss.project.usuario.Usuario
 
@@ -207,9 +212,6 @@ fun Navegacion(
             val hiloEncontrado = temasHilosPosts.flatMap { it.hilos }.find { it.idHilo == hiloId } ?: return@composable
             HiloScreen(navController, hiloEncontrado.idHilo)
         }
-        composable("pruebasSupabase") {
-            SupabaseUsuariosCRUD(navController)
-        }
         composable("pruebasEncriptacion") {
             PantallaPruebasEncriptacion(navController)
         }
@@ -218,6 +220,27 @@ fun Navegacion(
         }
         composable("supabasePruebas") {
             SupabasePruebasInterfaz(navController)
+        }
+        composable("supabaseUsuariosCRUD") {
+            SupabaseUsuariosCRUD(navController)
+        }
+        composable("supabasePruebasMensajes") {
+            SupabaseMensajesCRUD(navController)
+        }
+        composable("supabasePruebasConversaciones") {
+            SupabaseConversacionesCRUD(navController)
+        }
+        composable("supabasePruebasConversacionesUsuarioCRUD") {
+            SupabaseConversacionesCRUD(navController)
+        }
+        composable("supabasePruebasTemasCRUD") {
+            SupabaseTemasCRUD(navController)
+        }
+        composable("supabasePruebasHilosCRUD") {
+            SupabaseHilosCRUD(navController)
+        }
+        composable("supabasePruebasPostsCRUD") {
+            SupabasePostsCRUD(navController)
         }
     }
 }
