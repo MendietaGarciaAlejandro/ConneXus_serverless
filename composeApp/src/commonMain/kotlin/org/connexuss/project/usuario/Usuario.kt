@@ -499,8 +499,7 @@ data class Usuario(
         Text("Alias Privado: $aliasPrivado")
     }
 }
-
-
+ */
 @Serializable
 data class UsuarioBloqueado(
     @SerialName("idusuario")
@@ -516,4 +515,3 @@ data class UsuarioContacto(
     @SerialName("idcontacto")
     val idContacto: String   // ID del contacto
 )
- */

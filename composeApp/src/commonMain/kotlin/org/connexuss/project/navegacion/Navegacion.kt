@@ -54,13 +54,7 @@ import org.connexuss.project.interfaces.muestraUsuarios
 import org.connexuss.project.misc.UsuarioPrincipal
 import org.connexuss.project.misc.imagenesPerfilPersona
 import org.connexuss.project.misc.temasHilosPosts
-import org.connexuss.project.supabase.SupabaseConversacionesCRUD
-import org.connexuss.project.supabase.SupabaseHilosCRUD
-import org.connexuss.project.supabase.SupabaseMensajesCRUD
-import org.connexuss.project.supabase.SupabasePostsCRUD
-import org.connexuss.project.supabase.SupabasePruebasInterfaz
-import org.connexuss.project.supabase.SupabaseTemasCRUD
-import org.connexuss.project.supabase.SupabaseUsuariosCRUD
+import org.connexuss.project.supabase.*
 import org.connexuss.project.usuario.Usuario
 
 @Composable
@@ -231,7 +225,7 @@ fun Navegacion(
             SupabaseConversacionesCRUD(navController)
         }
         composable("supabasePruebasConversacionesUsuarioCRUD") {
-            SupabaseConversacionesCRUD(navController)
+            SupabaseConversacionesUsuarioCRUD(navController)
         }
         composable("supabasePruebasTemasCRUD") {
             SupabaseTemasCRUD(navController)
@@ -241,6 +235,12 @@ fun Navegacion(
         }
         composable("supabasePruebasPostsCRUD") {
             SupabasePostsCRUD(navController)
+        }
+        composable("supabaseBloqueadosCRUD") {
+            SupabaseBloqueadosCRUD(navController)
+        }
+        composable("supabaseContactosCRUD") {
+            SupabaseContactosCRUD(navController)
         }
     }
 }

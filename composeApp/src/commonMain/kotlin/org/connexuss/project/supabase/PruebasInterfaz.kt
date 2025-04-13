@@ -48,6 +48,8 @@ import org.connexuss.project.comunicacion.Tema
 import org.connexuss.project.comunicacion.generateId
 import org.connexuss.project.interfaces.DefaultTopBar
 import org.connexuss.project.interfaces.LimitaTamanioAncho
+import org.connexuss.project.usuario.UsuarioBloqueado
+import org.connexuss.project.usuario.UsuarioContacto
 
 // Inicializa el cliente de Supabase con tus credenciales
 val supabaseClient = instanciaSupabaseClient( tieneStorage = true, tieneAuth = false, tieneRealtime = true, tienePostgrest = true)
@@ -89,13 +91,13 @@ fun SupabasePruebasInterfaz(navHostController: NavHostController) {
                             Text("CRUD de Usuarios")
                         }
                         Button(
-                            onClick = { /*navHostController.navigate("supabaseUsuariosBloqueados")*/ },
+                            onClick = { navHostController.navigate("supabaseBloqueadosCRUD") },
                             modifier = Modifier.fillMaxWidth().padding(8.dp)
                         ) {
                             Text("CRUD de UsuariosBloqueados")
                         }
                         Button(
-                            onClick = { /*navHostController.navigate("supabaseUsuariosContactos")*/ },
+                            onClick = { navHostController.navigate("supabaseContactosCRUD") },
                             modifier = Modifier.fillMaxWidth().padding(8.dp)
                         ) {
                             Text("CRUD de UsuariosContactos")
@@ -852,6 +854,170 @@ fun SupabaseUsuariosCRUD(navHostController: NavHostController) {
                         }
                     }
                 )
+            }
+        }
+    }
+}
+
+@Composable
+fun SupabaseBloqueadosCRUD(navHostController: NavHostController) {
+    val scope = rememberCoroutineScope()
+    var bloqueos by remember { mutableStateOf(emptyList<UsuarioBloqueado>()) }
+    var idUsuario by remember { mutableStateOf("") }
+    var idBloqueado by remember { mutableStateOf("") }
+
+    suspend fun cargarBloqueos() {
+        bloqueos = supabaseClient
+            .from("usuario_bloqueados")
+            .select()
+            .decodeList<UsuarioBloqueado>()
+    }
+
+    LaunchedEffect(Unit) { cargarBloqueos() }
+
+    MaterialTheme {
+        Scaffold(
+            topBar = {
+                DefaultTopBar(
+                    title = "Usuarios Bloqueados",
+                    navController = navHostController,
+                    showBackButton = true,
+                    irParaAtras = true
+                )
+            }
+        ) { padding ->
+            LimitaTamanioAncho { modifier ->
+                Column(modifier = modifier.fillMaxSize().padding(padding)) {
+                    Text("Bloqueos registrados", style = MaterialTheme.typography.h6)
+                    LazyColumn(modifier = Modifier.weight(1f)) {
+                        items(bloqueos) { b ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text("${b.idUsuario} bloqueó a ${b.idBloqueado}")
+                                Button(
+                                    onClick = {
+                                        scope.launch {
+                                            supabaseClient
+                                                .from("usuario_bloqueados")
+                                                .delete {
+                                                    filter {
+                                                        eq("idusuario", b.idUsuario)
+                                                        eq("idbloqueado", b.idBloqueado)
+                                                    }
+                                                }
+                                            cargarBloqueos()
+                                        }
+                                    }
+                                ) {
+                                    Text("Eliminar")
+                                }
+                            }
+                        }
+                    }
+                    Divider()
+                    Text("Bloquear usuario", style = MaterialTheme.typography.h6)
+                    OutlinedTextField(value = idUsuario, onValueChange = { idUsuario = it }, label = { Text("ID Usuario") })
+                    OutlinedTextField(value = idBloqueado, onValueChange = { idBloqueado = it }, label = { Text("ID Bloqueado") })
+                    Button(
+                        onClick = {
+                            scope.launch {
+                                supabaseClient
+                                    .from("usuario_bloqueados")
+                                    .insert(UsuarioBloqueado(idUsuario, idBloqueado))
+                                idUsuario = ""
+                                idBloqueado = ""
+                                cargarBloqueos()
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                    ) {
+                        Text("Agregar Bloqueo")
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SupabaseContactosCRUD(navHostController: NavHostController) {
+    val scope = rememberCoroutineScope()
+    var contactos by remember { mutableStateOf(emptyList<UsuarioContacto>()) }
+    var idUsuario by remember { mutableStateOf("") }
+    var idContacto by remember { mutableStateOf("") }
+
+    suspend fun cargarContactos() {
+        contactos = supabaseClient
+            .from("usuario_contactos")
+            .select()
+            .decodeList<UsuarioContacto>()
+    }
+
+    LaunchedEffect(Unit) { cargarContactos() }
+
+    MaterialTheme {
+        Scaffold(
+            topBar = {
+                DefaultTopBar(
+                    title = "Contactos de Usuario",
+                    navController = navHostController,
+                    showBackButton = true,
+                    irParaAtras = true
+                )
+            }
+        ) { padding ->
+            LimitaTamanioAncho { modifier ->
+                Column(modifier = modifier.fillMaxSize().padding(padding)) {
+                    Text("Contactos registrados", style = MaterialTheme.typography.h6)
+                    LazyColumn(modifier = Modifier.weight(1f)) {
+                        items(contactos) { c ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text("${c.idUsuario} tiene como contacto a ${c.idContacto}")
+                                Button(
+                                    onClick = {
+                                        scope.launch {
+                                            supabaseClient
+                                                .from("usuario_contactos")
+                                                .delete {
+                                                    filter {
+                                                        eq("idusuario", c.idUsuario)
+                                                        eq("idcontacto", c.idContacto)
+                                                    }
+                                                }
+                                            cargarContactos()
+                                        }
+                                    }
+                                ) {
+                                    Text("Eliminar")
+                                }
+                            }
+                        }
+                    }
+                    Divider()
+                    Text("Agregar contacto", style = MaterialTheme.typography.h6)
+                    OutlinedTextField(value = idUsuario, onValueChange = { idUsuario = it }, label = { Text("ID Usuario") })
+                    OutlinedTextField(value = idContacto, onValueChange = { idContacto = it }, label = { Text("ID Contacto") })
+                    Button(
+                        onClick = {
+                            scope.launch {
+                                supabaseClient
+                                    .from("usuario_contactos")
+                                    .insert(UsuarioContacto(idUsuario, idContacto))
+                                idUsuario = ""
+                                idContacto = ""
+                                cargarContactos()
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                    ) {
+                        Text("Agregar Contacto")
+                    }
+                }
             }
         }
     }
