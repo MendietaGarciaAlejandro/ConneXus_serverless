@@ -1,6 +1,7 @@
 package org.connexuss.project.supabase
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -10,6 +11,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.AlertDialog
 import androidx.compose.material.Button
 import androidx.compose.material.Divider
@@ -24,6 +27,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
@@ -40,6 +44,97 @@ import org.connexuss.project.interfaces.LimitaTamanioAncho
 
 // Inicializa el cliente de Supabase con tus credenciales
 val supabaseClient = instanciaSupabaseClient( tieneStorage = true, tieneAuth = false, tieneRealtime = true, tienePostgrest = true)
+
+@Composable
+fun SupabasePruebasInterfaz(navHostController: NavHostController) {
+    // Aquí se muestran botones para probar la interación con los objetos de la app,
+    // y las tablas de Supabase (navega a la pantalla cada objeto pulsando el botón)
+    MaterialTheme {
+        Scaffold(
+            topBar = {
+                DefaultTopBar(
+                    title = "Pruebas de Interfaz",
+                    navController = navHostController,
+                    showBackButton = true,
+                    irParaAtras = true,
+                    muestraEngranaje = true
+                )
+            }
+        ) { padding ->
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                LimitaTamanioAncho { modifier ->
+                    Column(
+                        modifier = modifier
+                            .padding(padding)
+                            .padding(16.dp)
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text("Pruebas de interfaz", style = MaterialTheme.typography.h6)
+                        Button(
+                            onClick = { navHostController.navigate("supabaseUsuariosCRUD") },
+                            modifier = Modifier.fillMaxWidth().padding(8.dp)
+                        ) {
+                            Text("CRUD de Usuarios")
+                        }
+                        Button(
+                            onClick = { navHostController.navigate("supabaseUsuariosBloqueados") },
+                            modifier = Modifier.fillMaxWidth().padding(8.dp)
+                        ) {
+                            Text("CRUD de UsuariosBloqueados")
+                        }
+                        Button(
+                            onClick = { navHostController.navigate("supabaseUsuariosContactos") },
+                            modifier = Modifier.fillMaxWidth().padding(8.dp)
+                        ) {
+                            Text("CRUD de UsuariosContactos")
+                        }
+                        Button(
+                            onClick = { navHostController.navigate("supabaseConversaciones") },
+                            modifier = Modifier.fillMaxWidth().padding(8.dp)
+                        ) {
+                            Text("CRUD de Conversaciones")
+                        }
+                        Button(
+                            onClick = { navHostController.navigate("supabaseMensajes") },
+                            modifier = Modifier.fillMaxWidth().padding(8.dp)
+                        ) {
+                            Text("CRUD de Mensajes")
+                        }
+                        Button(
+                            onClick = { navHostController.navigate("supabaseConversacionesUsuario") },
+                            modifier = Modifier.fillMaxWidth().padding(8.dp)
+                        ) {
+                            Text("CRUD de ConversacionesUsuario")
+                        }
+                        Button(
+                            onClick = { navHostController.navigate("supabaseTemas") },
+                            modifier = Modifier.fillMaxWidth().padding(8.dp)
+                        ) {
+                            Text("CRUD de Temas")
+                        }
+                        Button(
+                            onClick = { navHostController.navigate("supabaseHilos") },
+                            modifier = Modifier.fillMaxWidth().padding(8.dp)
+                        ) {
+                            Text("CRUD de Hilos")
+                        }
+                        Button(
+                            onClick = { navHostController.navigate("supabasePosts") },
+                            modifier = Modifier.fillMaxWidth().padding(8.dp)
+                        ) {
+                            Text("CRUD de Posts")
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
 
 @Composable
 fun SupabaseUsuariosCRUD(navHostController: NavHostController) {

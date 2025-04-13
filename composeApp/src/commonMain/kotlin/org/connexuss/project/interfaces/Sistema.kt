@@ -2189,7 +2189,7 @@ fun PantallaZonaPruebas(navController: NavHostController) {
                                 Text("Debug: Ir a las pruebas con Firebase")
                             }
                             Button(
-                                onClick = { navController.navigate("pruebasSupabase") },
+                                onClick = { navController.navigate("supabasePruebas") },
                                 modifier = Modifier.weight(1f)
                             ) {
                                 Text("Debug: Ir a las pruebas con Supabase")

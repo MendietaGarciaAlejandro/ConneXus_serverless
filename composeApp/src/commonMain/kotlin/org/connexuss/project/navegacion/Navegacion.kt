@@ -54,6 +54,7 @@ import org.connexuss.project.interfaces.muestraUsuarios
 import org.connexuss.project.misc.UsuarioPrincipal
 import org.connexuss.project.misc.imagenesPerfilPersona
 import org.connexuss.project.misc.temasHilosPosts
+import org.connexuss.project.supabase.SupabasePruebasInterfaz
 import org.connexuss.project.supabase.SupabaseUsuariosCRUD
 import org.connexuss.project.usuario.Usuario
 
@@ -214,6 +215,9 @@ fun Navegacion(
         }
         composable("zonaPruebas") {
             PantallaZonaPruebas(navController)
+        }
+        composable("supabasePruebas") {
+            SupabasePruebasInterfaz(navController)
         }
     }
 }
