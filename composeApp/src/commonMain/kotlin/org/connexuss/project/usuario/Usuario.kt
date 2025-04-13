@@ -6,6 +6,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.connexuss.project.comunicacion.ConversacionesUsuario
+import org.connexuss.project.comunicacion.generateId
 import org.connexuss.project.encriptacion.hash
 import org.connexuss.project.misc.UsuariosPreCreados
 import org.connexuss.project.misc.imagenesPerfilAbstrasto
@@ -339,7 +340,7 @@ class UtilidadesUsuario {
 /*
 @Serializable
 data class Usuario(
-    @SerialName("id_unico")
+    @SerialName("idunico")
     var idUnico: String = "",
 
     @SerialName("nombre")
@@ -348,39 +349,20 @@ data class Usuario(
     @SerialName("correo")
     var correo: String = "",
 
-    @SerialName("alias_publico")
+    @SerialName("aliaspublico")
     var aliasPublico: String = "",
 
-    @SerialName("alias_privado")
+    @SerialName("aliasprivado")
     var aliasPrivado: String = "",
 
     @SerialName("activo")
     var activo: Boolean = false,
-
-    /**
-     * Se asume que 'contactos' es un array (text[] o JSON[]) en la BD.
-     */
-    @SerialName("contactos")
-    var contactos: List<String>? = emptyList(),
-
-    /**
-     * Asumimos 'chat_user' es un JSON con la info de 'ConversacionesUsuario'
-     * (esto no es muy normalizado, pero corresponde a tu clase).
-     */
-    @SerialName("chat_user")
-    var chatUser: ConversacionesUsuario? = null,
 
     @SerialName("descripcion")
     var descripcion: String = "",
 
     @SerialName("contrasennia")
     var contrasennia: String = "",
-
-    /**
-     * Se asume 'usuarios_bloqueados' es un array (text[] o JSON[]) en la BD.
-     */
-    @SerialName("usuarios_bloqueados")
-    var usuariosBloqueados: List<String> = emptyList(),
 
     /**
      * No mapeamos 'imagenPerfil' a la BD,
@@ -395,7 +377,6 @@ data class Usuario(
         correo: String,
         aliasPublico: String,
         activo: Boolean,
-        contactos: List<String>?,
         chatUser: ConversacionesUsuario?
     ) : this() {
         this.idUnico = UtilidadesUsuario().generarIdUnico()
@@ -404,8 +385,6 @@ data class Usuario(
         this.aliasPublico = aliasPublico
         this.aliasPrivado = hash(aliasPublico)
         this.activo = activo
-        this.contactos = contactos
-        this.chatUser = chatUser
         this.imagenPerfil = generarImagenPerfilRandom()
     }
 
@@ -415,17 +394,13 @@ data class Usuario(
     }
 
     //Debug: Contructor con idUnico
-    constructor(idUnico: String, nombre: String, correo: String, aliasPublico: String, activo: Boolean, contactos: List<String>?, chatUser: ConversacionesUsuario?) {
+    constructor(idUnico: String, nombre: String, correo: String, aliasPublico: String, activo: Boolean) {
         this.idUnico = idUnico
         this.nombre = nombre
         this.correo = correo
         this.aliasPublico = aliasPublico
         this.aliasPrivado = hash(aliasPublico)
         this.activo = activo
-        this.contactos = contactos
-        if (chatUser != null) {
-            this.chatUser = chatUser
-        }
         this.imagenPerfil = generarImagenPerfilRandom()}
 
     // Constructor vacio
@@ -483,22 +458,6 @@ data class Usuario(
         this.activo = activo
     }
 
-    fun getContactos(): List<String>? {
-        return contactos
-    }
-
-    fun setContactos(contactos: List<String>) {
-        this.contactos = contactos
-    }
-
-    fun getChatUser(): ConversacionesUsuario? {
-        return chatUser
-    }
-
-    fun setChatUser(chatUser: ConversacionesUsuario?) {
-        this.chatUser = chatUser
-    }
-
     fun getDescripcion(): String {
         return descripcion
     }
@@ -513,14 +472,6 @@ data class Usuario(
 
     fun setContrasennia(contrasennia: String) {
         this.contrasennia = contrasennia
-    }
-
-    fun getUsuariosBloqueados(): List<String> {
-        return usuariosBloqueados
-    }
-
-    fun setUsuariosBloqueados(usuariosBloqueados: List<String>) {
-        this.usuariosBloqueados = usuariosBloqueados
     }
 
     fun getImagenPerfil(): DrawableResource? {
@@ -548,4 +499,21 @@ data class Usuario(
         Text("Alias Privado: $aliasPrivado")
     }
 }
+
+
+@Serializable
+data class UsuarioBloqueado(
+    @SerialName("idusuario")
+    val idUsuario: String,   // ID del usuario que bloquea
+    @SerialName("idbloqueado")
+    val idBloqueado: String   // ID del usuario bloqueado
+)
+
+@Serializable
+data class UsuarioContacto(
+    @SerialName("idusuario")
+    val idUsuario: String,   // ID del usuario
+    @SerialName("idcontacto")
+    val idContacto: String   // ID del contacto
+)
  */

@@ -83,18 +83,18 @@ data class Mensaje(
     @SerialName("id")
     val id: String = generateId(),
 
-    @SerialName("sender_id")
-    val senderId: String,
-
-    @SerialName("receiver_id")
-    val receiverId: String,
+    @SerialName("fechamensaje")
+    val fechaMensaje: LocalDateTime = Clock.System.now()
+        .toLocalDateTime(TimeZone.currentSystemDefault()),
 
     @SerialName("content")
     val content: String,
 
-    @SerialName("fecha_mensaje")
-    val fechaMensaje: LocalDateTime = Clock.System.now()
-        .toLocalDateTime(TimeZone.currentSystemDefault())
+    @SerialName("idusuario")
+    val idusuario: String = generateId(),
+
+    @SerialName("idconversacion")
+    val idconversacion: String
 )
 
 @Serializable
@@ -102,44 +102,16 @@ data class Conversacion(
     @SerialName("id")
     val id: String = generateId(),
 
-    /**
-     * Se asume que la columna 'participants' es un JSON[] o text[]
-     * que almacena la lista de participantes.
-     */
-    @SerialName("participants")
-    val participants: List<String>,
-
-    /**
-     * Se asume que la columna 'messages' es un JSON[] que almacena
-     * la lista de mensajes en la misma tabla, lo cual es posible,
-     * pero no es muy normalizado. Ajusta según tu diagrama.
-     */
-    @SerialName("messages")
-    val messages: List<Mensaje> = emptyList(),
-
     @SerialName("nombre")
     val nombre: String? = null
-) {
-    /**
-     * Indica si la conversación es grupal: más de dos participantes.
-     */
-    val grupo: Boolean
-        get() = participants.size > 2
-}
+)
 
 @Serializable
 data class ConversacionesUsuario(
-    @SerialName("id")
-    val id: String,
+    @SerialName("idusuario")
+    val idusuario: String = generateId(),
 
-    @SerialName("id_user")
-    val idUser: String,
-
-    /**
-     * Se asume que 'conversaciones' es un JSON[] en la base de datos
-     * que almacena una lista de `Conversacion`.
-     */
-    @SerialName("conversaciones")
-    val conversaciones: List<Conversacion> = emptyList(),
+    @SerialName("idconversacion")
+    val idconversacion: String = generateId(),
 )
  */
