@@ -2,6 +2,7 @@ package org.connexuss.project.usuario
 
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.connexuss.project.comunicacion.ConversacionesUsuario
@@ -336,35 +337,215 @@ class UtilidadesUsuario {
 
 // NO BORRAR!!! Son las clases desarrolladas para implementar en la base de datos
 /*
-
 @Serializable
 data class Usuario(
-    val idUnico: String = UtilidadesUsuario().generarIdUnico(),
-    val nombre: String,
-    val correo: String,
-    val aliasPublico: String,
-    val aliasPrivado: String = hash(aliasPublico),
-    val activo: Boolean,
-    val descripcion: String = "",
-    val contrasennia: String
+    @SerialName("id_unico")
+    var idUnico: String = "",
+
+    @SerialName("nombre")
+    var nombre: String = "",
+
+    @SerialName("correo")
+    var correo: String = "",
+
+    @SerialName("alias_publico")
+    var aliasPublico: String = "",
+
+    @SerialName("alias_privado")
+    var aliasPrivado: String = "",
+
+    @SerialName("activo")
+    var activo: Boolean = false,
+
+    /**
+     * Se asume que 'contactos' es un array (text[] o JSON[]) en la BD.
+     */
+    @SerialName("contactos")
+    var contactos: List<String>? = emptyList(),
+
+    /**
+     * Asumimos 'chat_user' es un JSON con la info de 'ConversacionesUsuario'
+     * (esto no es muy normalizado, pero corresponde a tu clase).
+     */
+    @SerialName("chat_user")
+    var chatUser: ConversacionesUsuario? = null,
+
+    @SerialName("descripcion")
+    var descripcion: String = "",
+
+    @SerialName("contrasennia")
+    var contrasennia: String = "",
+
+    /**
+     * Se asume 'usuarios_bloqueados' es un array (text[] o JSON[]) en la BD.
+     */
+    @SerialName("usuarios_bloqueados")
+    var usuariosBloqueados: List<String> = emptyList(),
+
+    /**
+     * No mapeamos 'imagenPerfil' a la BD,
+     * pues es un @Transient en tu clase original.
+     */
+    @Transient
+    var imagenPerfil: DrawableResource? = null
 ) {
-    // Los arrays para contactos y bloqueos se reemplazan por entidades relacionales (ver más abajo).
-    // Métodos y composables para mostrar datos se mantienen igual o se adaptan.
+    // Constructor extra si quieres
+    constructor(
+        nombre: String,
+        correo: String,
+        aliasPublico: String,
+        activo: Boolean,
+        contactos: List<String>?,
+        chatUser: ConversacionesUsuario?
+    ) : this() {
+        this.idUnico = UtilidadesUsuario().generarIdUnico()
+        this.nombre = nombre
+        this.correo = correo
+        this.aliasPublico = aliasPublico
+        this.aliasPrivado = hash(aliasPublico)
+        this.activo = activo
+        this.contactos = contactos
+        this.chatUser = chatUser
+        this.imagenPerfil = generarImagenPerfilRandom()
+    }
+
+    fun generarImagenPerfilRandom(): DrawableResource {
+        val todasImagenes = imagenesPerfilPersona + imagenesPerfilAbstrasto + imagenesPerfilDibujo
+        return todasImagenes.random().resource
+    }
+
+    //Debug: Contructor con idUnico
+    constructor(idUnico: String, nombre: String, correo: String, aliasPublico: String, activo: Boolean, contactos: List<String>?, chatUser: ConversacionesUsuario?) {
+        this.idUnico = idUnico
+        this.nombre = nombre
+        this.correo = correo
+        this.aliasPublico = aliasPublico
+        this.aliasPrivado = hash(aliasPublico)
+        this.activo = activo
+        this.contactos = contactos
+        if (chatUser != null) {
+            this.chatUser = chatUser
+        }
+        this.imagenPerfil = generarImagenPerfilRandom()}
+
+    // Constructor vacio
+    constructor()
+
+    // Constructor de copia
+    constructor(usuario: Usuario) {
+        this.idUnico = usuario.idUnico
+        this.nombre = usuario.nombre
+        this.correo = usuario.correo
+        this.aliasPublico = usuario.aliasPublico
+        this.activo = usuario.activo
+    }
+
+    // Getter y Setter del usuario
+    fun getNombreCompleto(): String {
+        return nombre
+    }
+    fun setNombreCompleto(nombreCompleto: String) {
+        this.nombre = nombreCompleto
+    }
+
+    fun getCorreo(): String {
+        return correo
+    }
+    fun setCorreo(correo: String) {
+        this.correo = correo
+    }
+
+    fun getAlias(): String {
+        return aliasPublico
+    }
+    fun setAlias(alias: String) {
+        this.aliasPublico = alias
+    }
+
+    fun getAliasPrivado(): String {
+        return aliasPrivado
+    }
+    fun setAliasPrivado(aliasPrivado: String) {
+        this.aliasPrivado = aliasPrivado
+    }
+
+    fun getIdUnico(): String {
+        return idUnico
+    }
+    fun setIdUnico(idUnico: String) {
+        this.idUnico = idUnico
+    }
+
+    fun getActivo(): Boolean {
+        return activo
+    }
+    fun setActivo(activo: Boolean) {
+        this.activo = activo
+    }
+
+    fun getContactos(): List<String>? {
+        return contactos
+    }
+
+    fun setContactos(contactos: List<String>) {
+        this.contactos = contactos
+    }
+
+    fun getChatUser(): ConversacionesUsuario? {
+        return chatUser
+    }
+
+    fun setChatUser(chatUser: ConversacionesUsuario?) {
+        this.chatUser = chatUser
+    }
+
+    fun getDescripcion(): String {
+        return descripcion
+    }
+
+    fun setDescripcion(descripcion: String) {
+        this.descripcion = descripcion
+    }
+
+    fun getContrasennia(): String {
+        return contrasennia
+    }
+
+    fun setContrasennia(contrasennia: String) {
+        this.contrasennia = contrasennia
+    }
+
+    fun getUsuariosBloqueados(): List<String> {
+        return usuariosBloqueados
+    }
+
+    fun setUsuariosBloqueados(usuariosBloqueados: List<String>) {
+        this.usuariosBloqueados = usuariosBloqueados
+    }
+
+    fun getImagenPerfil(): DrawableResource? {
+        return imagenPerfil
+    }
+
+    fun setImagenPerfil(imagenPerfil: DrawableResource) {
+        this.imagenPerfil = imagenPerfil
+    }
+
+
+    // Metodo para imprimir los datos públicos del usuario
+    @Composable
+    fun imprimirDatosPublicos() {
+        Text("Nombre: $nombre")
+        Text("Alias: $aliasPublico")
+        Text("Activo: $activo")
+    }
+
+    // Metodo para imprimir los datos privados del usuario
+    @Composable
+    fun imprimirDatosPrivados() {
+        Text("Correo: $correo")
+        Text("Id Unico: $idUnico")
+        Text("Alias Privado: $aliasPrivado")
+    }
 }
-
-@Serializable
-data class UsuarioBloqueado(
-    val idUsuario: String,   // Usuario que bloquea
-    val idBloqueado: String    // Usuario bloqueado
-)
-// Clave compuesta: (idUsuario, idBloqueado)
-
-@Serializable
-data class UsuarioContacto(
-    val idUsuario: String,   // Usuario propietario de la lista
-    val idContacto: String   // Usuario en la lista de contactos
-)
-// Clave compuesta: (idUsuario, idContacto)
-
-
  */

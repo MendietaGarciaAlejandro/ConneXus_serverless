@@ -4,6 +4,7 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlin.uuid.*
 
@@ -77,28 +78,68 @@ data class ConversacionesUsuario(
 
 // NO BORRAR!!! Son las clases desarrolladas para implementar en la base de datos
 /*
-
 @Serializable
-data class Mensaje (
+data class Mensaje(
+    @SerialName("id")
     val id: String = generateId(),
-    val idUsuario: String,         // Remitente: corresponde al idUnico del Usuario
-    val idConversacion: String,    // FK a la Conversacion a la que pertenece el mensaje
+
+    @SerialName("sender_id")
+    val senderId: String,
+
+    @SerialName("receiver_id")
+    val receiverId: String,
+
+    @SerialName("content")
     val content: String,
-    val fechaMensaje: LocalDateTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+
+    @SerialName("fecha_mensaje")
+    val fechaMensaje: LocalDateTime = Clock.System.now()
+        .toLocalDateTime(TimeZone.currentSystemDefault())
 )
 
 @Serializable
-data class Conversacion (
+data class Conversacion(
+    @SerialName("id")
     val id: String = generateId(),
-    val nombre: String? = null     // Opcional, útil en chats grupales
-    // Se pueden agregar otros atributos si se requieren (por ejemplo, fecha de creación)
-)
+
+    /**
+     * Se asume que la columna 'participants' es un JSON[] o text[]
+     * que almacena la lista de participantes.
+     */
+    @SerialName("participants")
+    val participants: List<String>,
+
+    /**
+     * Se asume que la columna 'messages' es un JSON[] que almacena
+     * la lista de mensajes en la misma tabla, lo cual es posible,
+     * pero no es muy normalizado. Ajusta según tu diagrama.
+     */
+    @SerialName("messages")
+    val messages: List<Mensaje> = emptyList(),
+
+    @SerialName("nombre")
+    val nombre: String? = null
+) {
+    /**
+     * Indica si la conversación es grupal: más de dos participantes.
+     */
+    val grupo: Boolean
+        get() = participants.size > 2
+}
 
 @Serializable
-data class ConversacionUsuario(
-    val idUsuario: String,         // FK a Usuario.idUnico
-    val idConversacion: String     // FK a Conversacion.id
-)
-// La clave compuesta (idUsuario, idConversacion) identifica la participación.
+data class ConversacionesUsuario(
+    @SerialName("id")
+    val id: String,
 
+    @SerialName("id_user")
+    val idUser: String,
+
+    /**
+     * Se asume que 'conversaciones' es un JSON[] en la base de datos
+     * que almacena una lista de `Conversacion`.
+     */
+    @SerialName("conversaciones")
+    val conversaciones: List<Conversacion> = emptyList(),
+)
  */
