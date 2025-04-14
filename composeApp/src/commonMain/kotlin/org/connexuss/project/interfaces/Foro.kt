@@ -275,6 +275,7 @@ fun HiloScreen(navController: NavHostController, hiloId: String, repo: SupabaseR
         }
     }
 
+
     if (hiloActual == null) {
         EmptyStateMessage("Hilo no encontrado")
         return
