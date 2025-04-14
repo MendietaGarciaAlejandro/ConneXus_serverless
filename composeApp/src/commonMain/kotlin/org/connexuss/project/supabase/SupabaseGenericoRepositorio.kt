@@ -39,7 +39,7 @@ fun instanciaSupabaseClient(
     }
 }
 
-class SupabaseRepository {
+class SupabaseRepositorioGenerico {
 
     val supabaseClient = instanciaSupabaseClient(
         tieneStorage = true,

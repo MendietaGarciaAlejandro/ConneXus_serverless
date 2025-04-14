@@ -32,11 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import io.github.jan.supabase.auth.auth
-import io.github.jan.supabase.createSupabaseClient
-import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.from
-import io.github.jan.supabase.realtime.Realtime
-import io.github.jan.supabase.storage.Storage
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import org.connexuss.project.comunicacion.Conversacion
@@ -147,7 +143,7 @@ fun SupabasePruebasInterfaz(navHostController: NavHostController) {
 
 @Composable
 fun SupabaseMensajesCRUD(navHostController: NavHostController) {
-    val repository = SupabaseRepository()
+    val repository = SupabaseRepositorioGenerico()
     val scope = rememberCoroutineScope()
     var mensajes by remember { mutableStateOf(emptyList<Mensaje>()) }
     // Campos para el formulario de inserción
@@ -177,7 +173,7 @@ fun SupabaseMensajesCRUD(navHostController: NavHostController) {
             }
         ) { padding ->
             LimitaTamanioAncho { modifier ->
-                Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+                Column(modifier = modifier.fillMaxSize().padding(padding)) {
                     Text("Mensajes registrados", style = MaterialTheme.typography.h6)
                     LazyColumn(modifier = Modifier.weight(1f)) {
                         items(mensajes) { mensaje ->
@@ -244,7 +240,7 @@ fun SupabaseMensajesCRUD(navHostController: NavHostController) {
 
 @Composable
 fun SupabaseConversacionesCRUD(navHostController: NavHostController) {
-    val repository = SupabaseRepository()
+    val repository = SupabaseRepositorioGenerico()
     val scope = rememberCoroutineScope()
     var conversaciones by remember { mutableStateOf(emptyList<Conversacion>()) }
     var nombre by remember { mutableStateOf("") }
@@ -271,7 +267,7 @@ fun SupabaseConversacionesCRUD(navHostController: NavHostController) {
             }
         ) { padding ->
             LimitaTamanioAncho { modifier ->
-                Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+                Column(modifier = modifier.fillMaxSize().padding(padding)) {
                     Text("Conversaciones registradas", style = MaterialTheme.typography.h6)
                     LazyColumn(modifier = Modifier.weight(1f)) {
                         items(conversaciones) { conv ->
@@ -329,7 +325,7 @@ fun SupabaseConversacionesCRUD(navHostController: NavHostController) {
 
 @Composable
 fun SupabaseConversacionesUsuarioCRUD(navHostController: NavHostController) {
-    val repository = SupabaseRepository()
+    val repository = SupabaseRepositorioGenerico()
     val scope = rememberCoroutineScope()
     var convUsuarioList by remember { mutableStateOf(emptyList<ConversacionesUsuario>()) }
     var idUser by remember { mutableStateOf("") }
@@ -356,7 +352,7 @@ fun SupabaseConversacionesUsuarioCRUD(navHostController: NavHostController) {
             }
         ) { padding ->
             LimitaTamanioAncho { modifier ->
-                Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+                Column(modifier = modifier.fillMaxSize().padding(padding)) {
                     Text("ConversacionesUsuario registrados", style = MaterialTheme.typography.h6)
                     LazyColumn(modifier = Modifier.weight(1f)) {
                         items(convUsuarioList) { convUser ->
@@ -412,7 +408,7 @@ fun SupabaseConversacionesUsuarioCRUD(navHostController: NavHostController) {
 
 @Composable
 fun SupabasePostsCRUD(navHostController: NavHostController) {
-    val repository = SupabaseRepository()
+    val repository = SupabaseRepositorioGenerico()
     val scope = rememberCoroutineScope()
     var posts by remember { mutableStateOf(emptyList<Post>()) }
     var senderId by remember { mutableStateOf("") }
@@ -440,7 +436,7 @@ fun SupabasePostsCRUD(navHostController: NavHostController) {
             }
         ) { padding ->
             LimitaTamanioAncho { modifier ->
-                Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+                Column(modifier = modifier.fillMaxSize().padding(padding)) {
                     Text("Posts registrados", style = MaterialTheme.typography.h6)
                     LazyColumn(modifier = Modifier.weight(1f)) {
                         items(posts) { post ->
@@ -506,7 +502,7 @@ fun SupabasePostsCRUD(navHostController: NavHostController) {
 
 @Composable
 fun SupabaseHilosCRUD(navHostController: NavHostController) {
-    val repository = SupabaseRepository()
+    val repository = SupabaseRepositorioGenerico()
     val scope = rememberCoroutineScope()
     var hilos by remember { mutableStateOf(emptyList<Hilo>()) }
     var nombre by remember { mutableStateOf("") }
@@ -534,7 +530,7 @@ fun SupabaseHilosCRUD(navHostController: NavHostController) {
             }
         ) { padding ->
             LimitaTamanioAncho { modifier ->
-                Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+                Column(modifier = modifier.fillMaxSize().padding(padding)) {
                     Text("Hilos registrados", style = MaterialTheme.typography.h6)
                     LazyColumn(modifier = Modifier.weight(1f)) {
                         items(hilos) { hilo ->
@@ -594,7 +590,7 @@ fun SupabaseHilosCRUD(navHostController: NavHostController) {
 
 @Composable
 fun SupabaseTemasCRUD(navHostController: NavHostController) {
-    val repository = SupabaseRepository()
+    val repository = SupabaseRepositorioGenerico()
     val scope = rememberCoroutineScope()
     var temas by remember { mutableStateOf(emptyList<Tema>()) }
     var idUsuario by remember { mutableStateOf("") }
@@ -621,7 +617,7 @@ fun SupabaseTemasCRUD(navHostController: NavHostController) {
             }
         ) { padding ->
             LimitaTamanioAncho { modifier ->
-                Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+                Column(modifier = modifier.fillMaxSize().padding(padding)) {
                     Text("Temas registrados", style = MaterialTheme.typography.h6)
                     LazyColumn(modifier = Modifier.weight(1f)) {
                         items(temas) { tema ->
@@ -677,7 +673,6 @@ fun SupabaseTemasCRUD(navHostController: NavHostController) {
         }
     }
 }
-
 
 @Composable
 fun SupabaseUsuariosCRUD(navHostController: NavHostController) {
