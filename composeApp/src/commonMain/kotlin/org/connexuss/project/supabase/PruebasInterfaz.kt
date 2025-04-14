@@ -151,10 +151,12 @@ fun SupabaseMensajesCRUD(navHostController: NavHostController) {
     var receiverId by remember { mutableStateOf("") }
     var content by remember { mutableStateOf("") }
 
+    val nombreTabla = "mensaje"
+
     // Función para recargar mensajes
     fun cargarMensajes() {
         scope.launch {
-            repository.getAll<Mensaje>("mensajes").collect { mensajes = it }
+            repository.getAll<Mensaje>(nombreTabla).collect { mensajes = it }
         }
     }
 
@@ -185,7 +187,7 @@ fun SupabaseMensajesCRUD(navHostController: NavHostController) {
                                 // Botón de eliminación (para pruebas)
                                 Button(onClick = {
                                     scope.launch {
-                                        repository.deleteItem<Mensaje>("mensajes", "id", mensaje.id)
+                                        repository.deleteItem<Mensaje>(nombreTabla, "id", mensaje.id)
                                         cargarMensajes()
                                     }
                                 }) { Text("Eliminar") }
@@ -215,7 +217,7 @@ fun SupabaseMensajesCRUD(navHostController: NavHostController) {
                         onClick = {
                             scope.launch {
                                 repository.addItem(
-                                    "mensajes",
+                                    nombreTabla,
                                     Mensaje(
                                         senderId = senderId,
                                         receiverId = receiverId,
@@ -246,9 +248,11 @@ fun SupabaseConversacionesCRUD(navHostController: NavHostController) {
     var nombre by remember { mutableStateOf("") }
     // Para simplicidad, aquí asumimos que solo se ingresa un nombre para la conversación.
 
+    val nombreTabla = "conversacion"
+
     fun cargarConversaciones() {
         scope.launch {
-            repository.getAll<Conversacion>("conversaciones").collect { conversaciones = it }
+            repository.getAll<Conversacion>(nombreTabla).collect { conversaciones = it }
         }
     }
 
@@ -279,7 +283,7 @@ fun SupabaseConversacionesCRUD(navHostController: NavHostController) {
                                 Button(onClick = {
                                     scope.launch {
                                         repository.deleteItem<Conversacion>(
-                                            "conversaciones",
+                                            nombreTabla,
                                             "id",
                                             conv.id
                                         )
@@ -302,7 +306,7 @@ fun SupabaseConversacionesCRUD(navHostController: NavHostController) {
                                 // Para insertar, se debe construir un objeto Conversacion.
                                 // Aquí se inserta con participantes vacíos y sin mensajes.
                                 repository.addItem(
-                                    "conversaciones",
+                                    nombreTabla,
                                     Conversacion(
                                         id = generateId(),
                                         participants = emptyList(),
@@ -331,9 +335,11 @@ fun SupabaseConversacionesUsuarioCRUD(navHostController: NavHostController) {
     var idUser by remember { mutableStateOf("") }
     // Se asume que 'conversaciones' se inicializa vacío o con algún valor predefinido.
 
+    val nombreTabla = "conversaciones_usuario"
+
     fun cargarConversacionesUsuario() {
         scope.launch {
-            repository.getAll<ConversacionesUsuario>("conversacionesusuarios").collect { convUsuarioList = it }
+            repository.getAll<ConversacionesUsuario>(nombreTabla).collect { convUsuarioList = it }
         }
     }
 
@@ -364,7 +370,7 @@ fun SupabaseConversacionesUsuarioCRUD(navHostController: NavHostController) {
                                 Button(onClick = {
                                     scope.launch {
                                         repository.deleteItem<ConversacionesUsuario>(
-                                            "conversacionesusuarios",
+                                            nombreTabla,
                                             "id",
                                             convUser.id
                                         )
@@ -385,7 +391,7 @@ fun SupabaseConversacionesUsuarioCRUD(navHostController: NavHostController) {
                         onClick = {
                             scope.launch {
                                 repository.addItem(
-                                    "conversacionesusuarios",
+                                    nombreTabla,
                                     ConversacionesUsuario(
                                         id = generateId(),
                                         idUser = idUser,
@@ -415,9 +421,11 @@ fun SupabasePostsCRUD(navHostController: NavHostController) {
     var receiverId by remember { mutableStateOf("") }
     var content by remember { mutableStateOf("") }
 
+    val nombreTabla = "post"
+
     fun cargarPosts() {
         scope.launch {
-            repository.getAll<Post>("posts").collect { posts = it }
+            repository.getAll<Post>(nombreTabla).collect { posts = it }
         }
     }
 
@@ -447,7 +455,7 @@ fun SupabasePostsCRUD(navHostController: NavHostController) {
                                 Text("Post: ${post.content} \nFrom: ${post.senderId} to ${post.receiverId}")
                                 Button(onClick = {
                                     scope.launch {
-                                        repository.deleteItem<Post>("posts", "idPost", post.idPost)
+                                        repository.deleteItem<Post>(nombreTabla, "idPost", post.idPost)
                                         cargarPosts()
                                     }
                                 }) { Text("Eliminar") }
@@ -477,7 +485,7 @@ fun SupabasePostsCRUD(navHostController: NavHostController) {
                         onClick = {
                             scope.launch {
                                 repository.addItem(
-                                    "posts",
+                                    nombreTabla,
                                     Post(
                                         senderId = senderId,
                                         receiverId = receiverId,
@@ -509,9 +517,11 @@ fun SupabaseHilosCRUD(navHostController: NavHostController) {
     // Para simplificar, asumimos que la lista de foreros se ingresa como una cadena separada por comas.
     var foreros by remember { mutableStateOf("") }
 
+    val nombreTabla = "hilo"
+
     fun cargarHilos() {
         scope.launch {
-            repository.getAll<Hilo>("hilos").collect { hilos = it }
+            repository.getAll<Hilo>(nombreTabla).collect { hilos = it }
         }
     }
 
@@ -541,7 +551,7 @@ fun SupabaseHilosCRUD(navHostController: NavHostController) {
                                 Text("Hilo: ${hilo.nombre ?: "Sin nombre"} \nForeros: ${hilo.idForeros.joinToString()}")
                                 Button(onClick = {
                                     scope.launch {
-                                        repository.deleteItem<Hilo>("hilos", "idHilo", hilo.idHilo)
+                                        repository.deleteItem<Hilo>(nombreTabla, "idHilo", hilo.idHilo)
                                         cargarHilos()
                                     }
                                 }) { Text("Eliminar") }
@@ -566,7 +576,7 @@ fun SupabaseHilosCRUD(navHostController: NavHostController) {
                             scope.launch {
                                 val listaForeros = foreros.split(",").map { it.trim() }
                                 repository.addItem(
-                                    "hilos",
+                                    nombreTabla,
                                     Hilo(
                                         idForeros = listaForeros,
                                         posts = emptyList(),
@@ -596,9 +606,11 @@ fun SupabaseTemasCRUD(navHostController: NavHostController) {
     var idUsuario by remember { mutableStateOf("") }
     var nombre by remember { mutableStateOf("") }
 
+    val nombreTabla = "tema"
+
     fun cargarTemas() {
         scope.launch {
-            repository.getAll<Tema>("temas").collect { temas = it }
+            repository.getAll<Tema>(nombreTabla).collect { temas = it }
         }
     }
 
@@ -628,7 +640,7 @@ fun SupabaseTemasCRUD(navHostController: NavHostController) {
                                 Text("Tema: ${tema.nombre} - Usuario: ${tema.idUsuario}")
                                 Button(onClick = {
                                     scope.launch {
-                                        repository.deleteItem<Tema>("temas", "idTema", tema.idTema)
+                                        repository.deleteItem<Tema>(nombreTabla, "idTema", tema.idTema)
                                         cargarTemas()
                                     }
                                 }) { Text("Eliminar") }
@@ -652,7 +664,7 @@ fun SupabaseTemasCRUD(navHostController: NavHostController) {
                         onClick = {
                             scope.launch {
                                 repository.addItem(
-                                    "temas",
+                                    nombreTabla,
                                     Tema(
                                         idUsuario = idUsuario,
                                         nombre = nombre,
@@ -690,10 +702,12 @@ fun SupabaseUsuariosCRUD(navHostController: NavHostController) {
     var nuevoEmail by remember { mutableStateOf("") }
     var nuevoPassword by remember { mutableStateOf("") }
 
+    val nombreTabla = "usuario"
+
     // Función para recargar usuarios
     suspend fun cargarUsuarios() {
         usuarios = supabaseClient
-            .from("supausuarios")
+            .from(nombreTabla)
             .select()
             .decodeList<Supausuario>()
     }
@@ -861,9 +875,11 @@ fun SupabaseBloqueadosCRUD(navHostController: NavHostController) {
     var idUsuario by remember { mutableStateOf("") }
     var idBloqueado by remember { mutableStateOf("") }
 
+    val nombreTabla = "usuario_bloqueados"
+
     suspend fun cargarBloqueos() {
         bloqueos = supabaseClient
-            .from("usuario_bloqueados")
+            .from(nombreTabla)
             .select()
             .decodeList<UsuarioBloqueado>()
     }
@@ -895,7 +911,7 @@ fun SupabaseBloqueadosCRUD(navHostController: NavHostController) {
                                     onClick = {
                                         scope.launch {
                                             supabaseClient
-                                                .from("usuario_bloqueados")
+                                                .from(nombreTabla)
                                                 .delete {
                                                     filter {
                                                         eq("idusuario", b.idUsuario)
@@ -919,7 +935,7 @@ fun SupabaseBloqueadosCRUD(navHostController: NavHostController) {
                         onClick = {
                             scope.launch {
                                 supabaseClient
-                                    .from("usuario_bloqueados")
+                                    .from(nombreTabla)
                                     .insert(UsuarioBloqueado(idUsuario, idBloqueado))
                                 idUsuario = ""
                                 idBloqueado = ""
@@ -943,9 +959,11 @@ fun SupabaseContactosCRUD(navHostController: NavHostController) {
     var idUsuario by remember { mutableStateOf("") }
     var idContacto by remember { mutableStateOf("") }
 
+    val nombreTabla = "usuario_contactos"
+
     suspend fun cargarContactos() {
         contactos = supabaseClient
-            .from("usuario_contactos")
+            .from(nombreTabla)
             .select()
             .decodeList<UsuarioContacto>()
     }
@@ -977,7 +995,7 @@ fun SupabaseContactosCRUD(navHostController: NavHostController) {
                                     onClick = {
                                         scope.launch {
                                             supabaseClient
-                                                .from("usuario_contactos")
+                                                .from(nombreTabla)
                                                 .delete {
                                                     filter {
                                                         eq("idusuario", c.idUsuario)
@@ -1001,7 +1019,7 @@ fun SupabaseContactosCRUD(navHostController: NavHostController) {
                         onClick = {
                             scope.launch {
                                 supabaseClient
-                                    .from("usuario_contactos")
+                                    .from(nombreTabla)
                                     .insert(UsuarioContacto(idUsuario, idContacto))
                                 idUsuario = ""
                                 idContacto = ""
