@@ -6,7 +6,6 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.connexuss.project.comunicacion.ConversacionesUsuario
-import org.connexuss.project.comunicacion.generateId
 import org.connexuss.project.encriptacion.hash
 import org.connexuss.project.misc.UsuariosPreCreados
 import org.connexuss.project.misc.imagenesPerfilAbstrasto
@@ -17,6 +16,7 @@ import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 // Clase usuario con sus atributos y metodos
+/*
 @Serializable
 class Usuario {
     private var idUnico: String = ""
@@ -185,6 +185,7 @@ class Usuario {
         Text("Alias Privado: $aliasPrivado")
     }
 }
+ */
 
 // Clase que almacena los usuarios
 class AlmacenamientoUsuario {
@@ -254,7 +255,6 @@ class UtilidadesUsuario {
         return true
     }
 
-    @OptIn(ExperimentalUuidApi::class)
     fun instanciaUsuario(nombre: String?, correo: String?, aliasPublico: String?, activo: Boolean?): Usuario? {
         val correoValido = correo?.let { validarCorreo(it) } ?: false
         val nombreValido = nombre?.let { validarNombre(it) } ?: false
@@ -263,15 +263,30 @@ class UtilidadesUsuario {
             throw IllegalArgumentException("Datos de usuario no validos")
         }
         return if (activo != null) {
-            Usuario(nombre!!, correo!!, aliasPublico!!, activo, emptyList(), ConversacionesUsuario(generarIdUnico(), generarIdUnico(), emptyList()))
+            Usuario(
+                generarIdUnico(),
+                nombre!!,
+                correo!!,
+                aliasPublico!!,
+                aliasPrivado = hash(aliasPublico),
+                activo,
+                descripcion = "",
+                contrasennia = "",
+                imagenPerfil = generarImagenPerfilRandom()
+            )
         } else {
             null
         }
     }
 
     //Debug: Contructor con idUnico
-    @OptIn(ExperimentalUuidApi::class)
-    fun instanciaUsuario(idUnico: String, nombre: String, edad: Int, correo: String, aliasPublico: String, activo: Boolean): Usuario {
+    fun instanciaUsuario(
+        idUnico: String,
+        nombre: String,
+        correo: String,
+        aliasPublico: String,
+        activo: Boolean
+    ): Usuario {
         val idUnico = idUnico
         val correoValido = validarCorreo(correo)
         val nombreValido = validarNombre(nombre)
@@ -279,7 +294,17 @@ class UtilidadesUsuario {
         if (!correoValido || !nombreValido || !aliasPublicoValido) {
             throw IllegalArgumentException("Datos de usuario no validos")
         }
-        return Usuario(idUnico, nombre, correo, aliasPublico, activo, emptyList(), ConversacionesUsuario(generarIdUnico(), generarIdUnico(), emptyList()))
+        return Usuario(
+            idUnico,
+            nombre,
+            correo,
+            aliasPublico,
+            aliasPrivado = hash(aliasPublico),
+            activo,
+            descripcion = "",
+            contrasennia = "",
+            imagenPerfil = generarImagenPerfilRandom()
+        )
     }
 
 
@@ -337,7 +362,6 @@ class UtilidadesUsuario {
 }
 
 // NO BORRAR!!! Son las clases desarrolladas para implementar en la base de datos
-/*
 @Serializable
 data class Usuario(
     @SerialName("idunico")
@@ -394,20 +418,18 @@ data class Usuario(
     }
 
     //Debug: Contructor con idUnico
-    constructor(idUnico: String, nombre: String, correo: String, aliasPublico: String, activo: Boolean) {
+    constructor(idUnico: String, nombre: String, correo: String, aliasPublico: String, activo: Boolean) : this() {
         this.idUnico = idUnico
         this.nombre = nombre
         this.correo = correo
         this.aliasPublico = aliasPublico
         this.aliasPrivado = hash(aliasPublico)
         this.activo = activo
-        this.imagenPerfil = generarImagenPerfilRandom()}
-
-    // Constructor vacio
-    constructor()
+        this.imagenPerfil = generarImagenPerfilRandom()
+    }
 
     // Constructor de copia
-    constructor(usuario: Usuario) {
+    constructor(usuario: Usuario) : this() {
         this.idUnico = usuario.idUnico
         this.nombre = usuario.nombre
         this.correo = usuario.correo
@@ -499,7 +521,7 @@ data class Usuario(
         Text("Alias Privado: $aliasPrivado")
     }
 }
- */
+
 @Serializable
 data class UsuarioBloqueado(
     @SerialName("idusuario")

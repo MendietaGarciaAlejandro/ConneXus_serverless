@@ -45,6 +45,7 @@ fun generateId(): String {
         .joinToString("")
 }
 
+/*
 @Serializable
 data class Mensaje (
     val id: String = generateId(),
@@ -75,9 +76,10 @@ data class ConversacionesUsuario(
     val idUser: String,
     val conversaciones: List<Conversacion> = emptyList(),
 )
+ */
 
 // NO BORRAR!!! Son las clases desarrolladas para implementar en la base de datos
-/*
+
 @Serializable
 data class Mensaje(
     @SerialName("id")
@@ -114,4 +116,3 @@ data class ConversacionesUsuario(
     @SerialName("idconversacion")
     val idconversacion: String = generateId(),
 )
- */

@@ -171,7 +171,6 @@ val UsuariosPreCreados: SnapshotStateList<Usuario> = run {
         val user1 = UtilidadesUsuario().instanciaUsuario(
             "JP",
             "Juan Perez",
-            25,
             "paco@jerte.org",
             "pakito58",
             true
@@ -179,7 +178,6 @@ val UsuariosPreCreados: SnapshotStateList<Usuario> = run {
         val user2 = UtilidadesUsuario().instanciaUsuario(
             "ML",
             "Maria Lopez",
-            30,
             "marii@si.se",
             "marii",
             true
@@ -187,7 +185,6 @@ val UsuariosPreCreados: SnapshotStateList<Usuario> = run {
         val user3 = UtilidadesUsuario().instanciaUsuario(
             "PS",
             "Pedro Sanchez",
-            40,
             "roba@espannoles.es",
             "roba",
             true

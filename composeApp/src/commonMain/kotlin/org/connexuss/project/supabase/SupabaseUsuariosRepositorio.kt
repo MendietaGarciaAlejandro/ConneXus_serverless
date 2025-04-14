@@ -25,7 +25,7 @@ interface ISupabaseUsuariosRepositorio {
 class SupabaseUsuariosRepositorio : ISupabaseUsuariosRepositorio {
 
     private val supabaseClient = instanciaSupabaseClient( tieneStorage = true, tieneAuth = false, tieneRealtime = true, tienePostgrest = true)
-    private val nombreTabla = "usuarios"
+    private val nombreTabla = "usuario"
 
     override fun getUsuarios() = flow {
         val response = supabaseClient
