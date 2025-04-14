@@ -1,10 +1,13 @@
 package org.connexuss.project.navegacion
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import org.connexuss.project.encriptacion.PantallaPruebasEncriptacion
 import org.connexuss.project.firebase.AppFirebase
 import org.connexuss.project.firebase.FirestoreConversacionesRepositorio
@@ -51,9 +54,9 @@ import org.connexuss.project.interfaces.muestraContactos
 import org.connexuss.project.interfaces.muestraHomePage
 import org.connexuss.project.interfaces.muestraRestablecimientoContasenna
 import org.connexuss.project.interfaces.muestraUsuarios
+import org.connexuss.project.misc.HilosRepository
 import org.connexuss.project.misc.UsuarioPrincipal
 import org.connexuss.project.misc.imagenesPerfilPersona
-import org.connexuss.project.misc.temasHilosPosts
 import org.connexuss.project.supabase.*
 import org.connexuss.project.usuario.Usuario
 
@@ -200,11 +203,24 @@ fun Navegacion(
             val temaEncontrado = temasHilosPosts.find { it.idTema == temaId } ?: return@composable
             TemaScreen(navController, temaEncontrado.idTema)
         }
-        composable("hilo/{hiloId}") { backStackEntry ->
-            val hiloId = backStackEntry.arguments?.getString("hiloId")
-            // Buscar el Hilo en tu estado global o pasarlo como argumento
-            val hiloEncontrado = temasHilosPosts.flatMap { it.hilos }.find { it.idHilo == hiloId } ?: return@composable
-            HiloScreen(navController, hiloEncontrado.idHilo)
+        composable(
+            "hilo/{hiloId}",
+            arguments = listOf(navArgument("hiloId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val hiloId = backStackEntry.arguments?.getString("hiloId") ?: ""
+            val hilo = HilosRepository.hilos.find { it.idHilo == hiloId }
+
+            if (hilo != null) {
+                HiloScreen(
+                    navController = navController,
+                    hiloId = hiloId,
+                    repo = repositorioHilos,
+                )
+            } else {
+                LaunchedEffect(Unit) {
+                    navController.popBackStack()
+                }
+            }
         }
         composable("pruebasEncriptacion") {
             PantallaPruebasEncriptacion(navController)

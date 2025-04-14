@@ -221,6 +221,7 @@ dependencies {
     implementation(platform(libs.firebase.android.bom))
     implementation(libs.firebase.analytics)
     implementation(libs.androidx.ui.android)
+    implementation(libs.material3.android)
     debugImplementation(compose.uiTooling)
 }
 

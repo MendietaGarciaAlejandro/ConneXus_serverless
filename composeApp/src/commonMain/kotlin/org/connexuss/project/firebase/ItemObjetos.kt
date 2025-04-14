@@ -171,15 +171,16 @@ fun ItemPost(post: Post, clicked: () -> Unit) {
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
-            Text(text = post.idPost, style = MaterialTheme.typography.titleMedium)
+            Text(text = "ID: ${post.idPost}", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(4.dp))
-            Text(text = post.senderId, style = MaterialTheme.typography.titleMedium)
+            // Se muestra el id del firmante (usuario)
+            Text(text = "Firmante: ${post.idFirmante}", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(4.dp))
-            Text(text = post.receiverId, style = MaterialTheme.typography.titleMedium)
+            // Se muestra el contenido del post
+            Text(text = "Contenido: ${post.content}", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(4.dp))
-            Text(text = post.content, style = MaterialTheme.typography.titleMedium)
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(text = post.fechaPost.toString(), style = MaterialTheme.typography.titleMedium)
+            // Se muestra la fecha del post
+            Text(text = "Fecha: ${post.fechaPost}", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(4.dp))
         }
     }
@@ -199,13 +200,13 @@ fun ItemHilo(hilo: Hilo, clicked: () -> Unit) {
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
-            Text(text = hilo.idHilo, style = MaterialTheme.typography.titleMedium)
+            Text(text = "ID Hilo: ${hilo.idHilo}", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(4.dp))
-            Text(text = hilo.idForeros.toString(), style = MaterialTheme.typography.titleMedium)
+            // Se muestra el nombre del hilo. Al ser opcional, se usa toString()
+            Text(text = "Nombre: ${hilo.nombre ?: "Sin nombre"}", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(4.dp))
-            Text(text = hilo.idHilo, style = MaterialTheme.typography.titleMedium)
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(text = hilo.nombre.toString(), style = MaterialTheme.typography.titleMedium)
+            // Se muestra el id del tema al que pertenece el hilo
+            Text(text = "ID Tema: ${hilo.idTema}", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(4.dp))
         }
     }
@@ -225,11 +226,10 @@ fun ItemTema(tema: Tema, clicked: () -> Unit) {
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
-            Text(text = tema.idTema, style = MaterialTheme.typography.titleMedium)
+            Text(text = "ID Tema: ${tema.idTema}", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(4.dp))
-            Text(text = tema.idUsuario, style = MaterialTheme.typography.titleMedium)
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(text = tema.idTema, style = MaterialTheme.typography.titleMedium)
+            // Se muestra el nombre del tema
+            Text(text = "Nombre: ${tema.nombre}", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(4.dp))
         }
     }

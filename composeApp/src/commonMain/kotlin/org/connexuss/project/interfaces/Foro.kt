@@ -1,26 +1,62 @@
 package org.connexuss.project.interfaces
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.*
+import androidx.compose.material.AlertDialog
+import androidx.compose.material.Button
+import androidx.compose.material.Card
+import androidx.compose.material.Divider
+import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.OutlinedTextField
+import androidx.compose.material.Scaffold
+import androidx.compose.material.Text
+import androidx.compose.material.TextButton
+import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.rememberScaffoldState
+import androidx.compose.material.SnackbarDuration
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import io.github.jan.supabase.postgrest.query.PostgrestQueryBuilder
 import kotlinx.coroutines.launch
-import org.connexuss.project.comunicacion.*
-import org.connexuss.project.misc.ForoRepository
-import org.connexuss.project.misc.temasHilosPosts
+import org.connexuss.project.comunicacion.Hilo
+import org.connexuss.project.comunicacion.Post
+import org.connexuss.project.comunicacion.Tema
+import org.connexuss.project.comunicacion.generateId
+import org.connexuss.project.misc.*
+import org.connexuss.project.supabase.SupabaseRepositorioGenerico
+
 
 @Composable
 fun ForoScreen(navController: NavHostController) {
@@ -29,10 +65,13 @@ fun ForoScreen(navController: NavHostController) {
     var showNewTopicDialog by remember { mutableStateOf(false) }
     var searchText by remember { mutableStateOf("") }
 
-    val allTemas = ForoRepository.temas
-    val filteredTemas = if (searchText.isBlank())
+    // Obtener temas observables del repositorio
+    val allTemas = ForoRepository.obtenerTemas()
+    val filteredTemas = if (searchText.isBlank()) {
         allTemas
-    else allTemas.filter { it.nombre.contains(searchText, ignoreCase = true) }
+    } else {
+        allTemas.filter { it.nombre.contains(searchText, ignoreCase = true) }
+    }
 
     Scaffold(
         scaffoldState = scaffoldState,
@@ -50,49 +89,99 @@ fun ForoScreen(navController: NavHostController) {
     ) { padding ->
         Box(modifier = Modifier.padding(padding)) {
             LimitaTamanioAncho { modifier ->
-                if (filteredTemas.isEmpty()) {
-                    EmptyStateMessage("No hay temas disponibles")
-                } else {
-                    LazyColumn(
+                when {
+                    filteredTemas.isEmpty() && searchText.isBlank() ->
+                        EmptyStateMessage("Presiona el + para crear un nuevo tema")
+
+                    filteredTemas.isEmpty() ->
+                        EmptyStateMessage("No se encontraron temas")
+
+                    else -> LazyColumn(
                         modifier = modifier.fillMaxSize(),
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         items(filteredTemas) { tema ->
-                            TemaCard(tema = tema) {
-                                navController.navigate("tema/${tema.idTema}")
-                            }
+                            TemaCard(
+                                tema = tema,
+                                hilosCount = HilosRepository.obtenerHilosPorTema(tema.idTema).size,
+                                onTemaClick = {
+                                    navController.navigate("tema/${tema.idTema}")
+                                }
+                            )
                         }
                     }
                 }
             }
+
+            // Dialogo para nuevo tema
             if (showNewTopicDialog) {
                 CrearElementoDialog(
                     onDismiss = { showNewTopicDialog = false },
                     onConfirm = { nombre ->
                         scope.launch {
-                            val nuevoTema = Tema(
-                                idUsuario = "UsuarioActual",
-                                nombre = nombre,
-                                hilos = emptyList()
-                            )
-                            ForoRepository.agregarTema(nuevoTema)
+                            try {
+                                val nuevoTema = Tema(nombre = nombre)
+                                ForoRepository.agregarTema(nuevoTema)
+                                scaffoldState.snackbarHostState.showSnackbar(
+                                    "Tema '${nombre}' creado",
+                                    duration = SnackbarDuration.Short
+                                )
+                            } catch (e: Exception) {
+                                scaffoldState.snackbarHostState.showSnackbar(
+                                    "Error al crear tema: ${e.message}",
+                                    duration = SnackbarDuration.Long
+                                )
+                            }
                             showNewTopicDialog = false
-                            scaffoldState.snackbarHostState.showSnackbar("Tema creado con éxito")
                         }
                     },
-                    title = "Crear nuevo tema",
-                    label = "Nombre del tema"
+                    title = "Nuevo Tema",
+                    label = "Introduce el nombre del tema",
+                    confirmText = "Crear",
+                    cancelText = "Cancelar"
                 )
             }
         }
     }
 }
 
+fun PostgrestQueryBuilder.eq(column: String, value: Any): PostgrestQueryBuilder {
+    // Aquí se utiliza el método filter pasando "eq" como operador de igualdad.
+    return this.filter(column, value)
+}
+
+fun PostgrestQueryBuilder.filter(
+    column: String,
+    value: Any
+): PostgrestQueryBuilder {
+    // Aquí se implementa la lógica para filtrar los resultados.
+    return this.eq(column, value)
+}
+
 @Composable
 fun TemaScreen(navController: NavHostController, temaId: String) {
-    var tema by remember { mutableStateOf(ForoRepository.temas.find { it.idTema == temaId }) }
+    val scope = rememberCoroutineScope()
+    val repo = SupabaseRepositorioGenerico()
+    var tema by remember { mutableStateOf<Tema?>(null) }
+    var hilos by remember { mutableStateOf<List<Hilo>>(emptyList()) }
     var showNewThreadDialog by remember { mutableStateOf(false) }
+
+    // Cargar tema y sus hilos al iniciar la pantalla
+    LaunchedEffect(temaId) {
+        // Obtener el tema específico
+        repo.getItem<Tema>("temas") {
+            eq("idtema", temaId)
+        }.collect { result ->
+            // Aquí asignas el resultado a la variable 'tema'
+            tema = result
+        }
+
+        // Obtener todos los hilos y filtrar por el tema actual
+        repo.getAll<Hilo>("hilo").collect { allHilos ->
+            hilos = allHilos.filter { it.idTema == temaId }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -120,7 +209,11 @@ fun TemaScreen(navController: NavHostController, temaId: String) {
                     )
                 }
             } else {
-                Column(modifier = modifier.fillMaxSize().padding(padding)) {
+                Column(
+                    modifier = modifier
+                        .fillMaxSize()
+                        .padding(padding)
+                ) {
                     LazyColumn(
                         modifier = Modifier
                             .weight(1f)
@@ -128,7 +221,7 @@ fun TemaScreen(navController: NavHostController, temaId: String) {
                         contentPadding = PaddingValues(vertical = 8.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        items(tema!!.hilos) { hilo ->
+                        items(hilos) { hilo ->
                             HiloCard(hilo = hilo) {
                                 navController.navigate("hilo/${hilo.idHilo}")
                             }
@@ -136,20 +229,21 @@ fun TemaScreen(navController: NavHostController, temaId: String) {
                     }
                 }
             }
+
             if (showNewThreadDialog && tema != null) {
                 CrearElementoDialog(
                     onDismiss = { showNewThreadDialog = false },
                     onConfirm = { titulo ->
-                        val nuevoHilo = Hilo(
-                            idHilo = generateId(),
-                            idForeros = listOf(tema!!.idUsuario),
-                            nombre = titulo,
-                            posts = emptyList()
-                        )
-                        val temaActualizado = tema!!.copy(hilos = tema!!.hilos + nuevoHilo)
-                        ForoRepository.actualizarTema(temaActualizado)
-                        tema = temaActualizado
-                        showNewThreadDialog = false
+                        scope.launch {
+                            val nuevoHilo = Hilo(
+                                idHilo = generateId(),
+                                nombre = titulo,
+                                idTema = tema!!.idTema
+                            )
+                            repo.addItem("hilo", nuevoHilo)
+                            hilos = hilos + nuevoHilo
+                            showNewThreadDialog = false
+                        }
                     },
                     title = "Crear nuevo hilo",
                     label = "Título del hilo"
@@ -160,20 +254,36 @@ fun TemaScreen(navController: NavHostController, temaId: String) {
 }
 
 @Composable
-fun HiloScreen(navController: NavHostController, hiloId: String) {
-    var hilo by remember {
-        mutableStateOf(
-            temasHilosPosts.flatMap { it.hilos }.find { it.idHilo == hiloId }
-        )
+fun HiloScreen(navController: NavHostController, hiloId: String, repo: SupabaseRepositorioGenerico) {
+    val hilos = remember { mutableStateListOf<Hilo>() }
+    val hilo by remember { mutableStateOf(HilosRepository.hilos.find { it.idHilo == hiloId }) }
+    val postsDelHilo by remember { mutableStateOf(PostsRepository.obtenerPostsPorHilo(hiloId)) }
+    val posts = remember { mutableStateListOf<Post>() }
+
+    // Filtrar el hilo actual basado en hiloId
+    val hiloActual = hilos.find { it.idHilo == hiloId }
+
+    // Cargar los hilos y posts desde Supabase
+    LaunchedEffect(Unit) {
+        // Obtener el hilo específico
+        repo.getItem<Hilo>("hilo") {
+            eq("idhilo", hiloId)
+        }.collect {
+            hiloActual?.let {
+                hilos.add(it)
+            }
+        }
     }
-    if (hilo == null) {
+
+    if (hiloActual == null) {
         EmptyStateMessage("Hilo no encontrado")
         return
     }
+
     Scaffold(
         topBar = {
             CommonTopBar(
-                title = hilo!!.nombre ?: "Hilo",
+                title = hiloActual.nombre ?: "Hilo",
                 navController = navController,
                 showBackButton = true
             )
@@ -186,20 +296,25 @@ fun HiloScreen(navController: NavHostController, hiloId: String) {
                     modifier = Modifier.weight(1f).padding(16.dp),
                     contentPadding = PaddingValues(vertical = 8.dp)
                 ) {
-                    items(hilo!!.posts) { post ->
+                    items(posts.filter { it.idHilo == hiloId }) { post ->
                         PostItem(post = post)
                         Spacer(modifier = Modifier.height(8.dp))
                     }
                 }
                 Divider()
-                NuevoPostSection { contenido ->
-                    val nuevoPost = Post(
-                        senderId = "UsuarioActual",
-                        receiverId = "",
-                        content = contenido
-                    )
-                    hilo = hilo!!.copy(posts = hilo!!.posts + nuevoPost)
-                }
+                NuevoPostSection(
+                    hiloId = hiloId,
+                    onNuevoPost = { contenido ->
+                        val nuevoPost = Post(
+                            idPost = generateId(),
+                            content = contenido,
+                            idHilo = hiloId,
+                            idFirmante = "UsuarioActual",
+                            aliaspublico = "AliasPublicoActual"
+                        )
+                        repo.addItem("posts", nuevoPost)
+                    }
+                )
             }
         }
     }
@@ -277,21 +392,27 @@ fun CommonTopBar(
 }
 
 @Composable
-fun TemaCard(tema: Tema, onClick: () -> Unit) {
+fun TemaCard(
+    tema: Tema,
+    hilosCount: Int,
+    onTemaClick: () -> Unit
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick() },
-        elevation = 4.dp,
-        shape = RoundedCornerShape(8.dp)
+            .clickable(onClick = onTemaClick),
+        elevation = 4.dp
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = tema.nombre, style = MaterialTheme.typography.h6)
-            Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "Creado por: ${tema.idUsuario}",
-                style = MaterialTheme.typography.body2,
-                color = MaterialTheme.colors.onSurface.copy(alpha = 0.7f)
+                text = tema.nombre,
+                style = MaterialTheme.typography.h6
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "$hilosCount ${if (hilosCount == 1) "hilo" else "hilos"}",
+                style = MaterialTheme.typography.caption,
+                color = MaterialTheme.colors.secondaryVariant
             )
         }
     }
@@ -307,23 +428,18 @@ fun HiloCard(hilo: Hilo, onClick: () -> Unit) {
         shape = RoundedCornerShape(8.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = hilo.nombre ?: "Hilo sin título", style = MaterialTheme.typography.subtitle1)
+            // Se muestra el nombre del hilo o un mensaje por defecto si es nulo
+            Text(
+                text = hilo.nombre ?: "Hilo sin título",
+                style = MaterialTheme.typography.subtitle1
+            )
             Spacer(modifier = Modifier.height(4.dp))
-            if (hilo.posts.isNotEmpty()) {
-                Text(
-                    text = hilo.posts.last().content,
-                    style = MaterialTheme.typography.body2,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    color = MaterialTheme.colors.onSurface.copy(alpha = 0.7f)
-                )
-            } else {
-                Text(
-                    text = "Sin mensajes",
-                    style = MaterialTheme.typography.body2,
-                    color = MaterialTheme.colors.onSurface.copy(alpha = 0.5f)
-                )
-            }
+            // Se muestra, por ejemplo, el id del tema relacionado.
+            Text(
+                text = "Tema: ${hilo.idTema}",
+                style = MaterialTheme.typography.caption,
+                color = MaterialTheme.colors.onSurface.copy(alpha = 0.7f)
+            )
         }
     }
 }
@@ -344,7 +460,7 @@ fun PostItem(post: Post) {
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = post.senderId,
+                    text = post.idFirmante,
                     style = MaterialTheme.typography.subtitle2,
                     fontWeight = FontWeight.Bold
                 )
@@ -361,8 +477,11 @@ fun PostItem(post: Post) {
 }
 
 @Composable
-fun NuevoPostSection(onNuevoPost: (String) -> Unit) {
+fun NuevoPostSection(hiloId: String, onNuevoPost: suspend (String) -> Unit) {
     var contenido by remember { mutableStateOf("") }
+    val scope = rememberCoroutineScope()
+    val repo = SupabaseRepositorioGenerico()
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -378,13 +497,21 @@ fun NuevoPostSection(onNuevoPost: (String) -> Unit) {
         Spacer(modifier = Modifier.width(8.dp))
         Button(
             onClick = {
-                if (contenido.isNotBlank()) {
-                    onNuevoPost(contenido)
-                    contenido = ""
+                scope.launch {
+                    val nuevoPost = Post(
+                        idPost = generateId(),
+                        content = contenido,
+                        idHilo = hiloId,  // Ahora se utiliza el parámetro
+                        idFirmante = "UsuarioActual",
+                        aliaspublico = "AliasPublicoActual"
+                    )
+                    repo.addItem("posts", nuevoPost)
+                    contenido = "" // Limpiar el campo de texto
                 }
-            }
+            },
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
         ) {
-            Text("Enviar")
+            Text("Insertar Post")
         }
     }
 }

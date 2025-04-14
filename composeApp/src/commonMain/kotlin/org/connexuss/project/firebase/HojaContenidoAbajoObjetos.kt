@@ -11,6 +11,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -26,6 +27,9 @@ import org.connexuss.project.comunicacion.Hilo
 import org.connexuss.project.comunicacion.Mensaje
 import org.connexuss.project.comunicacion.Post
 import org.connexuss.project.comunicacion.Tema
+import org.connexuss.project.comunicacion.generateId
+import org.connexuss.project.interfaces.eq
+import org.connexuss.project.supabase.SupabaseRepositorioGenerico
 import org.connexuss.project.usuario.Usuario
 
 @Composable
@@ -94,9 +98,9 @@ fun HojaContenidoAbajoUsuariosNuestros(
     var idUnico by remember { mutableStateOf(usuario?.getIdUnico() ?: "") }
     var descripcion by remember { mutableStateOf(usuario?.getDescripcion() ?: "") }
     var contrasennia by remember { mutableStateOf(usuario?.getContrasennia() ?: "") }
-    var usuariosBloqueados by remember { mutableStateOf(usuario?.getUsuariosBloqueados().toString() ?: "") }
+    var usuariosBloqueados by remember { mutableStateOf(usuario?.getUsuariosBloqueados().toString()) }
     val chatUserPrueba = ConversacionesUsuario("", "", emptyList())
-    var usuarioInterno = Usuario("", "", "", "", false, emptyList(), chatUserPrueba)
+    val usuarioInterno = Usuario("", "", "", "", false, emptyList(), chatUserPrueba)
 
     Column(
         modifier = Modifier
@@ -367,12 +371,19 @@ fun HojaContenidoAbajoPosts(
     onSave: (Post) -> Unit,
     onDelete: (Post?) -> Unit
 ) {
+    // Estado para cada campo (si el post existe, se usan sus valores; de lo contrario se inician vacíos)
     var id by remember { mutableStateOf(post?.idPost ?: "") }
-    val usuarioEnvia by remember { mutableStateOf(post?.senderId ?: "") }
-    val usuarioRecibe by remember { mutableStateOf(post?.receiverId ?: "") }
     var contenido by remember { mutableStateOf(post?.content ?: "") }
+    var idHilo by remember { mutableStateOf(post?.idHilo ?: "") }
+    var idFirmante by remember { mutableStateOf(post?.idFirmante ?: "") }
+    // Como fechaPost es de tipo LocalDateTime, se muestra su valor en String (se podría usar un DatePicker)
     var fecha by remember { mutableStateOf(post?.fechaPost.toString()) }
-    val fechaHoy = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+
+    // Se consulta el alias del usuario (se supone que existe el data class Usuario y la función getAlias())
+    val repo = SupabaseRepositorioGenerico()
+    val aliasPublicoUsuario = repo.getItem<Usuario>("usuario") {
+        eq("idunico", idFirmante)
+    }.collectAsState(initial = null)
 
     Column(
         modifier = Modifier
@@ -384,7 +395,7 @@ fun HojaContenidoAbajoPosts(
             value = id,
             onValueChange = { id = it },
             singleLine = true,
-            label = { Text("ID") }
+            label = { Text("ID Post") }
         )
         Spacer(modifier = Modifier.height(8.dp))
         TextField(
@@ -397,17 +408,43 @@ fun HojaContenidoAbajoPosts(
         Spacer(modifier = Modifier.height(8.dp))
         TextField(
             modifier = Modifier.fillMaxWidth(),
+            value = idHilo,
+            onValueChange = { idHilo = it },
+            singleLine = true,
+            label = { Text("ID Hilo") }
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        TextField(
+            modifier = Modifier.fillMaxWidth(),
+            value = idFirmante,
+            onValueChange = { idFirmante = it },
+            singleLine = true,
+            label = { Text("ID Firmante") }
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        TextField(
+            modifier = Modifier.fillMaxWidth(),
             value = fecha,
             onValueChange = { fecha = it },
             singleLine = true,
-            label = { Text("Fecha") }
+            label = { Text("Fecha Post") }
         )
         Spacer(modifier = Modifier.height(16.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            Button(onClick = { onSave(Post(id, usuarioEnvia, usuarioRecibe, contenido, /*LocalDateTime.parse(fecha)*/ fechaHoy)) }) {
+            Button(onClick = {
+                onSave(Post(
+                    // Si el ID no fue ingresado manualmente, se genera uno nuevo.
+                    idPost = id.ifEmpty { generateId() },
+                    content = contenido,
+                    fechaPost = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()),
+                    aliaspublico = aliasPublicoUsuario.value?.getAlias() ?: "",
+                    idHilo = idHilo,
+                    idFirmante = idFirmante
+                ))
+            }) {
                 Text(text = if (post == null) "Guardar" else "Actualizar")
             }
             Button(onClick = { onDelete(post) }) {
@@ -424,9 +461,8 @@ fun HojaContenidoAbajoHilos(
     onDelete: (Hilo?) -> Unit
 ) {
     var id by remember { mutableStateOf(hilo?.idHilo ?: "") }
-    var idForeros by remember { mutableStateOf(hilo?.idForeros?.joinToString(", ") ?: "") }
-    var posts by remember { mutableStateOf(hilo?.posts.toString()) }
     var nombre by remember { mutableStateOf(hilo?.nombre ?: "") }
+    var idTema by remember { mutableStateOf(hilo?.idTema ?: "") }
 
     Column(
         modifier = Modifier
@@ -438,38 +474,36 @@ fun HojaContenidoAbajoHilos(
             value = id,
             onValueChange = { id = it },
             singleLine = true,
-            label = { Text("ID") }
+            label = { Text("ID Hilo") }
         )
         Spacer(modifier = Modifier.height(8.dp))
-        TextField(
-            modifier = Modifier.fillMaxWidth(),
-            value = idForeros,
-            onValueChange = { idForeros = it },
-            singleLine = true,
-            label = { Text("ID Foreros") }
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        TextField(
-            modifier = Modifier.fillMaxWidth(),
-            value = posts,
-            onValueChange = { posts = it },
-            singleLine = true,
-            label = { Text("Posts") }
-        )
-        Spacer(modifier = Modifier.height(16.dp))
         TextField(
             modifier = Modifier.fillMaxWidth(),
             value = nombre,
             onValueChange = { nombre = it },
             singleLine = true,
-            label = { Text("Nombre") }
+            label = { Text("Nombre del Hilo") }
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        TextField(
+            modifier = Modifier.fillMaxWidth(),
+            value = idTema,
+            onValueChange = { idTema = it },
+            singleLine = true,
+            label = { Text("ID Tema") }
         )
         Spacer(modifier = Modifier.height(16.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            Button(onClick = { onSave(Hilo(id, idForeros.split(", "), emptyList(), nombre)) }) {
+            Button(onClick = {
+                onSave(Hilo(
+                    idHilo = id.ifEmpty { generateId() },
+                    nombre = nombre,
+                    idTema = idTema
+                ))
+            }) {
                 Text(text = if (hilo == null) "Guardar" else "Actualizar")
             }
             Button(onClick = { onDelete(hilo) }) {
@@ -486,9 +520,7 @@ fun HojaContenidoAbajoTemas(
     onDelete: (Tema?) -> Unit
 ) {
     var id by remember { mutableStateOf(tema?.idTema ?: "") }
-    var idUsuario by remember { mutableStateOf(tema?.idUsuario ?: "") }
     var nombre by remember { mutableStateOf(tema?.nombre ?: "") }
-    var hilos by remember { mutableStateOf(tema?.hilos.toString()) }
 
     Column(
         modifier = Modifier
@@ -500,38 +532,27 @@ fun HojaContenidoAbajoTemas(
             value = id,
             onValueChange = { id = it },
             singleLine = true,
-            label = { Text("ID") }
+            label = { Text("ID Tema") }
         )
         Spacer(modifier = Modifier.height(8.dp))
-        TextField(
-            modifier = Modifier.fillMaxWidth(),
-            value = idUsuario,
-            onValueChange = { idUsuario = it },
-            singleLine = true,
-            label = { Text("ID Usuario") }
-        )
-        Spacer(modifier = Modifier.height(16.dp))
         TextField(
             modifier = Modifier.fillMaxWidth(),
             value = nombre,
             onValueChange = { nombre = it },
             singleLine = true,
-            label = { Text("Nombre") }
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        TextField(
-            modifier = Modifier.fillMaxWidth(),
-            value = hilos,
-            onValueChange = { hilos = it },
-            singleLine = true,
-            label = { Text("Hilos") }
+            label = { Text("Nombre del Tema") }
         )
         Spacer(modifier = Modifier.height(16.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            Button(onClick = { onSave(Tema(id, idUsuario, nombre, emptyList())) }) {
+            Button(onClick = {
+                onSave(Tema(
+                    idTema = id.ifEmpty { generateId() },
+                    nombre = nombre
+                ))
+            }) {
                 Text(text = if (tema == null) "Guardar" else "Actualizar")
             }
             Button(onClick = { onDelete(tema) }) {
