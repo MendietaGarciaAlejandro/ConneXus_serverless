@@ -9,7 +9,7 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
 
-    id("com.google.gms.google-services")
+    // id("com.google.gms.google-services")
     kotlin("plugin.serialization") version "2.1.0"
 }
 
@@ -37,24 +37,24 @@ kotlin {
         }
         binaries.executable()
     }
-//    @OptIn(ExperimentalWasmDsl::class)
-//    wasmJs {
-//        moduleName = "composeApp"
-//        browser {
-//            val rootDirPath = project.rootDir.path
-//            val projectDirPath = project.projectDir.path
-//            commonWebpackConfig {
-//                outputFileName = "composeApp.js"
-//                devServer = (devServer ?: KotlinWebpackConfig.DevServer()).apply {
-//                    static = (static ?: mutableListOf()).apply {
-//                        add(rootDirPath)
-//                        add(projectDirPath)
-//                    }
-//                }
-//            }
-//        }
-//        binaries.executable()
-//    }
+    @OptIn(ExperimentalWasmDsl::class)
+    wasmJs {
+        moduleName = "composeApp"
+        browser {
+            val rootDirPath = project.rootDir.path
+            val projectDirPath = project.projectDir.path
+            commonWebpackConfig {
+                outputFileName = "composeApp.js"
+                devServer = (devServer ?: KotlinWebpackConfig.DevServer()).apply {
+                    static = (static ?: mutableListOf()).apply {
+                        add(rootDirPath)
+                        add(projectDirPath)
+                    }
+                }
+            }
+        }
+        binaries.executable()
+    }
     sourceSets {
         val desktopMain by getting
 
@@ -64,13 +64,15 @@ kotlin {
             implementation(libs.arkivanov.decompose.v080)
             implementation(libs.decompose.extensions.compose.jetpack.v080)
             implementation(libs.kotlinx.serialization)
-            implementation(project.dependencies.platform(libs.firebase.android.bom))
-            implementation(libs.firebase.database)
-            implementation(libs.firebase.firestore)
-            implementation(libs.firebase.auth)
-            implementation(libs.firebase.functions)
-            implementation(libs.firebase.messaging)
-            implementation(libs.firebase.storage)
+
+            // Dependencies for Firebase
+//            implementation(project.dependencies.platform(libs.firebase.android.bom))
+//            implementation(libs.firebase.database)
+//            implementation(libs.firebase.firestore)
+//            implementation(libs.firebase.auth)
+//            implementation(libs.firebase.functions)
+//            implementation(libs.firebase.messaging)
+//            implementation(libs.firebase.storage)
 
             // Dependencies for Supabase
             //implementation(libs.bom)
@@ -103,12 +105,14 @@ kotlin {
             implementation(libs.kotlinx.datetime)
             implementation(libs.navigation.compose)
             implementation(libs.kotlinx.serialization)
-            implementation(libs.firebase.database)
-            implementation(libs.firebase.firestore)
-            implementation(libs.firebase.auth)
-            implementation(libs.firebase.functions)
-            implementation(libs.firebase.messaging)
-            implementation(libs.firebase.storage)
+
+            // Dependencies for Firebase
+//            implementation(libs.firebase.database)
+//            implementation(libs.firebase.firestore)
+//            implementation(libs.firebase.auth)
+//            implementation(libs.firebase.functions)
+//            implementation(libs.firebase.messaging)
+//            implementation(libs.firebase.storage)
 
             // Dependencies for Supabase
             //implementation(libs.bom)
@@ -153,31 +157,33 @@ kotlin {
         val jsMain by getting {
             dependencies {
                 implementation(compose.html.core)
-                implementation(npm("libphonenumber-js", "1.10.13"))
-                implementation(libs.firebase.database)
-                implementation(libs.firebase.firestore)
-                implementation(libs.firebase.auth)
-                implementation(libs.firebase.storage)
+
+                // Dependencies for Firebase
+//                implementation(npm("libphonenumber-js", "1.10.13"))
+//                implementation(libs.firebase.database)
+//                implementation(libs.firebase.firestore)
+//                implementation(libs.firebase.auth)
+//                implementation(libs.firebase.storage)
             }
         }
-//        wasmJsMain.dependencies {
-//            // Dependencies for Supabase
-//            //implementation(libs.bom)
-//            implementation(libs.supabase.kt)
-//            implementation(libs.storage.kt)
-//            implementation(libs.supabase.postgrest.kt)
-//            implementation(libs.auth.kt)
-//            implementation(libs.realtime.kt)
-//            implementation(libs.functions.kt)
-//
-//            // Dependencias de Ktor
-//            implementation(libs.ktorClientCore)
-//            implementation(libs.ktor.client.js)
-//            implementation(libs.ktor.serialization.kotlinx.json)
-//
-//            // Dependencias encriptación
-//            implementation(libs.cryptography.provider.webcrypto)
-//        }
+        wasmJsMain.dependencies {
+            // Dependencies for Supabase
+            //implementation(libs.bom)
+            implementation(libs.supabase.kt)
+            implementation(libs.storage.kt)
+            implementation(libs.supabase.postgrest.kt)
+            implementation(libs.auth.kt)
+            implementation(libs.realtime.kt)
+            implementation(libs.functions.kt)
+
+            // Dependencias de Ktor
+            implementation(libs.ktorClientCore)
+            implementation(libs.ktor.client.js)
+            implementation(libs.ktor.serialization.kotlinx.json)
+
+            // Dependencias encriptación
+            implementation(libs.cryptography.provider.webcrypto)
+        }
     }
 }
 
@@ -209,7 +215,6 @@ android {
 }
 
 dependencies {
-    implementation(libs.firebase.firestore.ktx)
     implementation(libs.kotlinx.datetime)
     implementation(libs.androidx.foundation.android)
     implementation(libs.androidx.animation.core.lint)
@@ -218,8 +223,12 @@ dependencies {
     implementation(libs.kotlinx.serialization)
     implementation(libs.androidx.ui.text.android)
     implementation(libs.androidx.core.i18n)
-    implementation(platform(libs.firebase.android.bom))
-    implementation(libs.firebase.analytics)
+
+    // Dependencies for Firebase
+//    implementation(platform(libs.firebase.android.bom))
+//    implementation(libs.firebase.analytics)
+//    implementation(libs.firebase.firestore.ktx)
+
     implementation(libs.androidx.ui.android)
     implementation(libs.material3.android)
     debugImplementation(compose.uiTooling)
