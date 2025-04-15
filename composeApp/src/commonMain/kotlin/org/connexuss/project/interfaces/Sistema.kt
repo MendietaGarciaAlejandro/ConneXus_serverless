@@ -469,6 +469,7 @@ fun muestraUsuarios(navController: NavHostController) {
 //Muestra el id del usuarioPrincipal ya que no esta incluido en la lista de usuarios precreados
 @Composable
 fun ChatCard(conversacion: Conversacion, navController: NavHostController) {
+    // Se define el nombre a mostrar: si 'nombre' no es nulo o vacío se usa; de lo contrario, se usa el 'id'
     val displayName =
         if (!conversacion.nombre.isNullOrBlank()) conversacion.nombre else conversacion.id
 
@@ -477,25 +478,15 @@ fun ChatCard(conversacion: Conversacion, navController: NavHostController) {
             .fillMaxWidth()
             .padding(vertical = 4.dp)
             .clickable {
-                if (conversacion.grupo) {
-                    // Buscamos los usuarios de esa conversación y llenamos una lista con sus idUnico
-                    val usuarios =
-                        UsuariosPreCreados.filter { it.getIdUnico() in conversacion.participants }
-
-                    // Actualizamos la lista de usuariosGrupoGeneral con los usuarios de la conversación
-                    // (excluyendo al UsuarioPrincipal)
-                    actualizarUsuariosGrupoGeneral(usuarios.filter { it.getIdUnico() != UsuarioPrincipal?.getIdUnico() })
-                    navController.navigate("mostrarChatGrupo/${conversacion.id}")
-                } else {
-                    navController.navigate("mostrarChat/${conversacion.id}")
-                }
+                // Al no disponer de propiedades para identificar grupos o participantes,
+                // simplemente navegamos a la pantalla de chat individual
+                navController.navigate("mostrarChat/${conversacion.id}")
             },
         elevation = 4.dp
     ) {
+        // Mostramos únicamente el nombre del chat (o el id, si no hubiera nombre)
         Column(modifier = Modifier.padding(16.dp)) {
             Text(text = "Chat: $displayName")
-            Text(text = "Participantes: ${conversacion.participants.joinToString()}")
-            Text(text = "Número de mensajes: ${conversacion.messages.size}")
         }
     }
 }
@@ -519,28 +510,26 @@ fun muestraChats(navController: NavHostController) {
             bottomBar = { MiBottomBar(navController) }
         ) { padding ->
             LimitaTamanioAncho { modifier ->
-                LazyColumn(
+                Box(
                     modifier = modifier
                         .fillMaxSize()
                         .padding(padding)
                         .padding(16.dp)
                 ) {
-                    // Usa items para iterar sobre la lista de chats
-                    listaChats?.let { chats ->
-                        items(chats) { conversacion ->
-                            ChatCard(conversacion = conversacion, navController = navController)
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        listaChats?.let { chats ->
+                            items(chats) { conversacion ->
+                                ChatCard(conversacion = conversacion, navController = navController)
+                            }
                         }
                     }
-                }
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(bottom = 56.dp),
-                    contentAlignment = Alignment.BottomEnd
-                ) {
                     FloatingActionButton(
                         onClick = { navController.navigate("nuevo") },
-                        modifier = Modifier.padding(16.dp)
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(16.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Person,
