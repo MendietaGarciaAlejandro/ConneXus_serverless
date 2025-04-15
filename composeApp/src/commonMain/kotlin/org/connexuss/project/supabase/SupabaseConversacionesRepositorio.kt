@@ -67,8 +67,6 @@ class SupabaseConversacionesRepositorio : IConversacionesRepositorio {
     override suspend fun updateConversacion(conversacion: Conversacion) {
         val updateData = mapOf(
             "id" to conversacion.id,
-            "participants" to conversacion.participants,
-            "messages" to conversacion.messages,
             "nombre" to conversacion.nombre
         )
         try {

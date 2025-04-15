@@ -68,9 +68,7 @@ class SupabaseTemasRepositorio : ISupabaseTemasRepositorio {
     override suspend fun updateTema(tema: Tema) {
         val updateData = mapOf(
             "idTema" to tema.idTema,
-            "idUsuario" to tema.idUsuario,
             "nombre" to tema.nombre,
-            "hilos" to tema.hilos
         )
         try {
             supabaseClient

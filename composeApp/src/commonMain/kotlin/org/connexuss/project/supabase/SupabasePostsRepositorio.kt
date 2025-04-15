@@ -66,10 +66,11 @@ class SupabasePostsRepositorio : ISupabasePostsRepositorio {
     override suspend fun updatePost(post: Post) {
         val updateData = mapOf(
             "idPost" to post.idPost,
-            "senderId" to post.senderId,
-            "receiverId" to post.receiverId,
             "content" to post.content,
-            "fechaPost" to post.fechaPost
+            "idHilo" to post.idHilo,
+            "idFirmante" to post.idFirmante,
+            "fechaPost" to post.fechaPost,
+            "aliaspublico" to post.aliaspublico,
         )
         try {
             supabaseClient

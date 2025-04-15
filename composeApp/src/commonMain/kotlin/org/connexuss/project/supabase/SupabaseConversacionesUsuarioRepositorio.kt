@@ -1,10 +1,6 @@
 package org.connexuss.project.supabase
 
-import io.github.jan.supabase.createSupabaseClient
-import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.from
-import io.github.jan.supabase.realtime.Realtime
-import io.github.jan.supabase.storage.Storage
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import org.connexuss.project.comunicacion.Conversacion
@@ -13,7 +9,8 @@ import org.connexuss.project.comunicacion.ConversacionesUsuario
 interface ISupabaseConversacionesUsuarioRepositorio {
     fun getConversacionesUsuario(): Flow<List<ConversacionesUsuario>>
     fun getConversacionPorId(idconversacionUsuario: String): Flow<ConversacionesUsuario?>
-    fun getConversacionPorIdBis(idconversacionUsuario: String): Flow<ConversacionesUsuario?>
+    fun getConversacionPorIdUsuario(id: String): Flow<ConversacionesUsuario?>
+    fun getConversacionPorIdConversacion(id: String): Flow<ConversacionesUsuario?>
     suspend fun addConversacion(conversacionUsuario: ConversacionesUsuario)
     suspend fun updateConversacion(conversacionUsuario: ConversacionesUsuario)
     suspend fun deleteConversacion(conversacionUsuario: ConversacionesUsuario)
@@ -41,12 +38,21 @@ class SupabaseConversacionesUsuarioRepositorio : ISupabaseConversacionesUsuarioR
         emit(response)
     }
 
-    override fun getConversacionPorIdBis(idconversacionUsuario: String) = flow {
+    override fun getConversacionPorIdUsuario(id: String) = flow {
         val convers = supabaseClient
             .from(nombreTabla)
             .select()
             .decodeList<ConversacionesUsuario>()
-        val conversacion = convers.find { it.id == idconversacionUsuario }
+        val conversacion = convers.find { it.idusuario == id }
+        emit(conversacion)
+    }
+
+    override fun getConversacionPorIdConversacion(id: String) = flow {
+        val convers = supabaseClient
+            .from(nombreTabla)
+            .select()
+            .decodeList<ConversacionesUsuario>()
+        val conversacion = convers.find { it.idconversacion == id }
         emit(conversacion)
     }
 
@@ -64,16 +70,18 @@ class SupabaseConversacionesUsuarioRepositorio : ISupabaseConversacionesUsuarioR
 
     override suspend fun updateConversacion(conversacionUsuario: ConversacionesUsuario) {
         val updateData = mapOf(
-            "id" to conversacionUsuario.id,
-            "idUser" to conversacionUsuario.idUser,
-            "conversaciones" to conversacionUsuario.conversaciones,
+            "idusuario" to conversacionUsuario.idusuario,
+            "idconversacion" to conversacionUsuario.idconversacion
         )
         try {
             supabaseClient
                 .from(nombreTabla)
                 .update(updateData) {
                     filter {
-                        eq("id", conversacionUsuario.id)
+                        eq("idconversacion", conversacionUsuario.idconversacion)
+                    }
+                    filter {
+                        eq("idusuario", conversacionUsuario.idusuario)
                     }
                     select()
                 }
@@ -97,7 +105,10 @@ class SupabaseConversacionesUsuarioRepositorio : ISupabaseConversacionesUsuarioR
                 .from(nombreTabla)
                 .delete {
                     filter {
-                        eq("id", conversacionUsuario.id)
+                        eq("idconversacion", conversacionUsuario.idconversacion)
+                    }
+                    filter {
+                        eq("idusuario", conversacionUsuario.idusuario)
                     }
                 }
                 .decodeList<Conversacion>()
