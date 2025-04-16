@@ -73,7 +73,7 @@ fun PantallaAjustesControlCuentas(navController: NavHostController) {
                         modifier = modifier
                             .padding(padding)
                             .padding(16.dp)
-                            .verticalScroll(rememberScrollState())
+                            //.verticalScroll(rememberScrollState())
                     ) {
                         Text(traducir("lista_de_cuentas"), style = MaterialTheme.typography.h6)
                         LazyColumn(

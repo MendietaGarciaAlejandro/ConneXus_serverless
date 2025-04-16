@@ -12,6 +12,7 @@ import org.connexuss.project.comunicacion.Post
 interface ISupabasePostsRepositorio {
     fun getPosts(): Flow<List<Post>>
     fun getPostPorId(idPost: String): Flow<Post?>
+    fun getPostPorIdBis(idPost: String): Flow<Post?>
     suspend fun addPost(post: Post)
     suspend fun updatePost(post: Post)
     suspend fun deletePost(post: Post)
@@ -19,15 +20,7 @@ interface ISupabasePostsRepositorio {
 
 class SupabasePostsRepositorio : ISupabasePostsRepositorio {
 
-    private val supabaseClient = createSupabaseClient(
-        supabaseUrl = "https://riydmqawtpwmulqlbbjq.supabase.co",
-        supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpeWRtcWF3dHB3bXVscWxiYmpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM2MjIyNTksImV4cCI6MjA1OTE5ODI1OX0.ShUPbRe_6yvIT27o5S7JE8h3ErIJJo-icrdQD1ugl8o",
-    ) {
-        install(Storage)
-        //install(Auth)
-        install(Realtime)
-        install(Postgrest)
-    }
+    private val supabaseClient = instanciaSupabaseClient( tieneStorage = true, tieneAuth = false, tieneRealtime = true, tienePostgrest = true)
     private val nombreTabla = "posts"
 
     override fun getPosts() = flow {
@@ -47,6 +40,17 @@ class SupabasePostsRepositorio : ISupabasePostsRepositorio {
         emit(response)
     }
 
+    override fun getPostPorIdBis(idPost: String) = flow {
+        // Recojo todos los posts
+        val response = supabaseClient
+            .from(nombreTabla)
+            .select()
+            .decodeList<Post>()
+        // Filtro los posts por idPost
+        val filteredResponse = response.find { it.idPost == idPost }
+        emit(filteredResponse)
+    }
+
     override suspend fun addPost(post: Post) {
         val response = supabaseClient
             .from(nombreTabla)
@@ -62,10 +66,11 @@ class SupabasePostsRepositorio : ISupabasePostsRepositorio {
     override suspend fun updatePost(post: Post) {
         val updateData = mapOf(
             "idPost" to post.idPost,
-            "senderId" to post.senderId,
-            "receiverId" to post.receiverId,
             "content" to post.content,
-            "fechaPost" to post.fechaPost
+            "idHilo" to post.idHilo,
+            "idFirmante" to post.idFirmante,
+            "fechaPost" to post.fechaPost,
+            "aliaspublico" to post.aliaspublico,
         )
         try {
             supabaseClient

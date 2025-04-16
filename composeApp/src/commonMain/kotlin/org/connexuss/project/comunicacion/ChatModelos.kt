@@ -4,6 +4,7 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlin.uuid.*
 
@@ -36,34 +37,24 @@ class ChatService(private val chatRepository: ChatRepository) {
 }
  */
 
-/**
- * Representa un mensaje en el chat.
- *
- * @property id Identificador único del mensaje.
- * @property senderId Identificador del remitente.
- * @property receiverId Identificador del receptor.
- * @property content Contenido del mensaje (puede estar encriptado).
- * @property fechaMensaje Fecha y hora en que se creó el mensaje.
- */
+fun generateId(): String {
+    val valores = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+    val longitud = 20
+    return (1..longitud)
+        .map { valores.random() }
+        .joinToString("")
+}
+
+/*
 @Serializable
 data class Mensaje (
     val id: String = generateId(),
     val senderId: String,
     val receiverId: String,
     val content: String,
-    //val timestamp: Long = System.currentTimeMillis() // Milisegundos desde epoch
     val fechaMensaje: LocalDateTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
 )
 
-/**
- * Representa una conversación en el chat.
- *
- * @property id Identificador único de la conversación.
- * @property participants Lista de identificadores de los participantes.
- * @property messages Lista de mensajes dentro de la conversación.
- * @property nombre Nombre del chat (solo para grupos).
- * @property grupo Indica si la conversación es grupal, determinada por el número de participantes.
- */
 @Serializable
 data class Conversacion (
     val id: String = generateId(),
@@ -73,36 +64,55 @@ data class Conversacion (
 ) {
     /**
      * Indica si la conversación es grupal.
-     *
      * Retorna `true` si la lista de participantes contiene más de dos usuarios.
      */
     val grupo: Boolean
         get() = participants.size > 2
 }
 
-/**
- * Representa las conversaciones asociadas a un usuario.
- *
- * @property id Identificador de la entrada.
- * @property idUser Identificador del usuario.
- * @property conversaciones Lista de conversaciones del usuario.
- */
 @Serializable
 data class ConversacionesUsuario(
     val id: String,
     val idUser: String,
     val conversaciones: List<Conversacion> = emptyList(),
 )
-
-/**
- * Genera un identificador único.
- *
- * @return String generado aleatoriamente.
  */
-fun generateId(): String {
-    val valores = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-    val longitud = 20
-    return (1..longitud)
-        .map { valores.random() }
-        .joinToString("")
-}
+
+// NO BORRAR!!! Son las clases desarrolladas para implementar en la base de datos
+
+@Serializable
+data class Mensaje(
+    @SerialName("id")
+    val id: String = generateId(),
+
+    @SerialName("fechamensaje")
+    val fechaMensaje: LocalDateTime = Clock.System.now()
+        .toLocalDateTime(TimeZone.currentSystemDefault()),
+
+    @SerialName("content")
+    val content: String,
+
+    @SerialName("idusuario")
+    val idusuario: String = generateId(),
+
+    @SerialName("idconversacion")
+    val idconversacion: String
+)
+
+@Serializable
+data class Conversacion(
+    @SerialName("id")
+    val id: String = generateId(),
+
+    @SerialName("nombre")
+    val nombre: String? = null
+)
+
+@Serializable
+data class ConversacionesUsuario(
+    @SerialName("idusuario")
+    val idusuario: String = generateId(),
+
+    @SerialName("idconversacion")
+    val idconversacion: String = generateId(),
+)

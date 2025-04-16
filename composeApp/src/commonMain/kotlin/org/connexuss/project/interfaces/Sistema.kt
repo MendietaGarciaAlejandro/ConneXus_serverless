@@ -12,11 +12,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -28,7 +26,6 @@ import androidx.compose.material.BottomNavigation
 import androidx.compose.material.BottomNavigationItem
 import androidx.compose.material.Button
 import androidx.compose.material.Card
-import androidx.compose.material.Checkbox
 import androidx.compose.material.FloatingActionButton
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
@@ -73,15 +70,16 @@ import connexus_serverless.composeapp.generated.resources.visibilidadOn
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
-import org.connexuss.project.actualizarUsuariosGrupoGeneral
 import org.connexuss.project.comunicacion.Conversacion
 import org.connexuss.project.comunicacion.ConversacionesUsuario
-import org.connexuss.project.firebase.FirestoreUsuariosNuestros
 import org.connexuss.project.misc.Imagen
 import org.connexuss.project.misc.UsuarioPrincipal
 import org.connexuss.project.misc.UsuariosPreCreados
+import org.connexuss.project.supabase.SupabaseRepositorioGenerico
+import org.connexuss.project.supabase.SupabaseUsuariosRepositorio
 import org.connexuss.project.usuario.AlmacenamientoUsuario
 import org.connexuss.project.usuario.Usuario
+import org.connexuss.project.usuario.UsuarioContacto
 import org.connexuss.project.usuario.UtilidadesUsuario
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
@@ -160,7 +158,8 @@ fun TopBarGrupo(
             {
                 IconButton(onClick = {
                     if (navController != null && irParaAtras) {
-                        navController.navigate("usuariosGrupo")
+                      //  navController.navigate("usuariosGrupo")
+                        navController.popBackStack()
                     }
                 }) {
                     Icon(
@@ -217,21 +216,21 @@ fun MuestraUsuariosGrupo(
                                 .fillMaxWidth()
                                 .padding(vertical = 4.dp)
                                 .clickable {
-                                    navController.navigate("mostrarPerfil/${usuario.getIdUnico()}")
+                                    navController.navigate("mostrarPerfil/${usuario.getIdUnicoMio()}")
                                 },
                             elevation = 4.dp
                         ) {
                             Column(modifier = Modifier.padding(16.dp)) {
                                 Text(
-                                    text = "${traducir("nombre_label")} ${usuario.getNombreCompleto()}",
+                                    text = "${traducir("nombre_label")} ${usuario.getNombreCompletoMio()}",
                                     style = MaterialTheme.typography.subtitle1
                                 )
                                 Text(
-                                    text = "${traducir("alias_label")} ${usuario.getAlias()}",
+                                    text = "${traducir("alias_label")} ${usuario.getAliasMio()}",
                                     style = MaterialTheme.typography.body1
                                 )
                                 Text(
-                                    text = "${traducir("alias_privado_label")} ${usuario.getAliasPrivado()}",
+                                    text = "${traducir("alias_privado_label")} ${usuario.getAliasPrivadoMio()}",
                                     style = MaterialTheme.typography.body2
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
@@ -440,15 +439,15 @@ fun muestraUsuarios(navController: NavHostController) {
                                     ) {
                                         Column(modifier = Modifier.padding(16.dp)) {
                                             Text(
-                                                text = "${traducir("nombre_label")} ${usuario.getNombreCompleto()}",
+                                                text = "${traducir("nombre_label")} ${usuario.getNombreCompletoMio()}",
                                                 style = MaterialTheme.typography.subtitle1
                                             )
                                             Text(
-                                                text = "${traducir("alias_label")} ${usuario.getAlias()}",
+                                                text = "${traducir("alias_label")} ${usuario.getAliasMio()}",
                                                 style = MaterialTheme.typography.body1
                                             )
                                             Text(
-                                                text = "${traducir("activo_label")} ${usuario.getActivo()}",
+                                                text = "${traducir("activo_label")} ${usuario.getActivoMio()}",
                                                 style = MaterialTheme.typography.body2
                                             )
                                             Spacer(modifier = Modifier.height(8.dp))
@@ -468,6 +467,7 @@ fun muestraUsuarios(navController: NavHostController) {
 //Muestra el id del usuarioPrincipal ya que no esta incluido en la lista de usuarios precreados
 @Composable
 fun ChatCard(conversacion: Conversacion, navController: NavHostController) {
+    // Se define el nombre a mostrar: si 'nombre' no es nulo o vacío se usa; de lo contrario, se usa el 'id'
     val displayName =
         if (!conversacion.nombre.isNullOrBlank()) conversacion.nombre else conversacion.id
 
@@ -476,25 +476,15 @@ fun ChatCard(conversacion: Conversacion, navController: NavHostController) {
             .fillMaxWidth()
             .padding(vertical = 4.dp)
             .clickable {
-                if (conversacion.grupo) {
-                    // Buscamos los usuarios de esa conversación y llenamos una lista con sus idUnico
-                    val usuarios =
-                        UsuariosPreCreados.filter { it.getIdUnico() in conversacion.participants }
-
-                    // Actualizamos la lista de usuariosGrupoGeneral con los usuarios de la conversación
-                    // (excluyendo al UsuarioPrincipal)
-                    actualizarUsuariosGrupoGeneral(usuarios.filter { it.getIdUnico() != UsuarioPrincipal?.getIdUnico() })
-                    navController.navigate("mostrarChatGrupo/${conversacion.id}")
-                } else {
-                    navController.navigate("mostrarChat/${conversacion.id}")
-                }
+                // Al no disponer de propiedades para identificar grupos o participantes,
+                // simplemente navegamos a la pantalla de chat individual
+                navController.navigate("mostrarChat/${conversacion.id}")
             },
         elevation = 4.dp
     ) {
+        // Mostramos únicamente el nombre del chat (o el id, si no hubiera nombre)
         Column(modifier = Modifier.padding(16.dp)) {
             Text(text = "Chat: $displayName")
-            Text(text = "Participantes: ${conversacion.participants.joinToString()}")
-            Text(text = "Número de mensajes: ${conversacion.messages.size}")
         }
     }
 }
@@ -502,7 +492,31 @@ fun ChatCard(conversacion: Conversacion, navController: NavHostController) {
 // --- Chats PorDefecto ---
 @Composable
 fun muestraChats(navController: NavHostController) {
-    val listaChats = UsuarioPrincipal?.getChatUser()?.conversaciones
+    val currentUserId = UsuarioPrincipal?.getIdUnicoMio() ?: return
+
+    val repo = remember { SupabaseRepositorioGenerico() }
+    var conversacionesUsuario by remember { mutableStateOf<List<ConversacionesUsuario>>(emptyList()) }
+    var listaConversaciones by remember { mutableStateOf<List<Conversacion>>(emptyList()) }
+
+    // Recupera las relaciones (conversaciones_usuario) para el UsuarioPrincipal
+    LaunchedEffect(currentUserId) {
+        repo.getAll<ConversacionesUsuario>("conversaciones_usuario")
+            .collect { convUsers ->
+                // Filtramos las relaciones para que pertenezcan al usuario actual
+                conversacionesUsuario = convUsers.filter { it.idusuario == currentUserId }
+            }
+    }
+
+    // Una vez obtenidas las relaciones, extraemos los IDs de conversación y consultamos la tabla conversacion
+    LaunchedEffect(conversacionesUsuario) {
+        // Lista de IDs de conversación del usuario
+        val convIds = conversacionesUsuario.map { it.idconversacion }
+        repo.getAll<Conversacion>("conversacion")
+            .collect { allConversaciones ->
+                // Filtramos las conversaciones cuya id esté en convIds
+                listaConversaciones = allConversaciones.filter { it.id in convIds }
+            }
+    }
 
     MaterialTheme {
         Scaffold(
@@ -518,28 +532,24 @@ fun muestraChats(navController: NavHostController) {
             bottomBar = { MiBottomBar(navController) }
         ) { padding ->
             LimitaTamanioAncho { modifier ->
-                LazyColumn(
+                Box(
                     modifier = modifier
                         .fillMaxSize()
                         .padding(padding)
                         .padding(16.dp)
                 ) {
-                    // Usa items para iterar sobre la lista de chats
-                    listaChats?.let { chats ->
-                        items(chats) { conversacion ->
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        items(listaConversaciones) { conversacion ->
                             ChatCard(conversacion = conversacion, navController = navController)
                         }
                     }
-                }
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(bottom = 56.dp),
-                    contentAlignment = Alignment.BottomEnd
-                ) {
                     FloatingActionButton(
                         onClick = { navController.navigate("nuevo") },
-                        modifier = Modifier.padding(16.dp)
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(16.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Person,
@@ -554,29 +564,30 @@ fun muestraChats(navController: NavHostController) {
 
 // --- Contactos ---
 @Composable
-@Preview
 fun muestraContactos(navController: NavHostController) {
-    // Creamos un estado para la lista de IDs de contactos basado en UsuarioPrincipal.
-    val contactosState = remember {
-        mutableStateListOf<String>().apply {
-            if (UsuarioPrincipal != null) {
-                UsuarioPrincipal!!.getContactos()?.let { addAll(it) }
-            }
+    // Se obtiene el id del UsuarioPrincipal (no se asume que tenga métodos de lista)
+    val currentUserId = UsuarioPrincipal?.idUnico ?: return
+    val repo = remember { SupabaseRepositorioGenerico() }
+    val scope = rememberCoroutineScope()
+
+    // Estado que contendrá los registros de la tabla "usuario_contacto" para el UsuarioPrincipal.
+    var registrosContacto by remember { mutableStateOf<List<UsuarioContacto>>(emptyList()) }
+    // A partir de esos registros, se filtrarán los usuarios precargados.
+    val contactos = UsuariosPreCreados.filter { usuario ->
+        registrosContacto.any { it.idContacto == usuario.idUnico }
+    }
+
+    // Consulta a la tabla "usuario_contacto" para traer los contactos relacionados al UsuarioPrincipal.
+    LaunchedEffect(currentUserId) {
+        repo.getAll<UsuarioContacto>("usuario_contacto").collect { lista ->
+            // Se filtran solo aquellos registros donde idusuario coincida con el UsuarioPrincipal.
+            registrosContacto = lista.filter { it.idUsuario == currentUserId }
         }
     }
-    // Lista completa de usuarios precreados
-    val todosLosUsuarios = UsuariosPreCreados
-    // Filtramos los usuarios usando el estado
-    val usuarios = todosLosUsuarios.filter { it.getIdUnico() in contactosState }
 
-    var showContactoDialog by remember { mutableStateOf(false) }
-    var inputText by remember { mutableStateOf("") }
-
-    var showChatDialog by remember { mutableStateOf(false) }
-    // Estado para los contactos seleccionados para el chat.
-    val selectedContacts = remember { mutableStateListOf<Usuario>() }
-    // Estado para el nombre del chat de grupo (se mostrará si se selecciona más de 1 contacto)
-    var groupChatName by remember { mutableStateOf("") }
+    // Estados para el AlertDialog de "Nuevo Contacto"
+    var showNuevoContactoDialog by remember { mutableStateOf(false) }
+    var nuevoContactoId by remember { mutableStateOf("") }
 
     MaterialTheme {
         Scaffold(
@@ -595,253 +606,88 @@ fun muestraContactos(navController: NavHostController) {
                     .fillMaxSize()
                     .padding(padding)
             ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(top = 80.dp)
-                ) {
-                    LimitaTamanioAncho { modifier ->
-                        LazyColumn(
-                            modifier = modifier
-                                .fillMaxSize()
-                                .padding(horizontal = 16.dp, vertical = 8.dp)
-                        ) {
-                            items(usuarios) { usuario ->
-                                Card(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 4.dp),
-                                    elevation = 4.dp
-                                ) {
-                                    Column(modifier = Modifier.padding(16.dp)) {
-                                        Text(
-                                            text = "${traducir("nombre_label")} ${usuario.getNombreCompleto()}",
-                                            style = MaterialTheme.typography.subtitle1
-                                        )
-                                        Text(
-                                            text = "${traducir("alias_label")} ${usuario.getAlias()}",
-                                            style = MaterialTheme.typography.body1
-                                        )
-                                    }
+                Column(modifier = Modifier.fillMaxSize()) {
+                    // Lista de contactos obtenidos de la consulta.
+                    LazyColumn(modifier = Modifier.weight(1f)) {
+                        items(contactos) { usuario ->
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(8.dp),
+                                elevation = 4.dp
+                            ) {
+                                Column(modifier = Modifier.padding(16.dp)) {
+                                    Text(
+                                        text = "${traducir("nombre_label")}: ${usuario.getNombreCompletoMio()}",
+                                        style = MaterialTheme.typography.subtitle1
+                                    )
+                                    Text(
+                                        text = "${traducir("alias_label")}: ${usuario.getAliasMio()}",
+                                        style = MaterialTheme.typography.body1
+                                    )
                                 }
                             }
                         }
                     }
-                }
-                Row(
-                    modifier = Modifier
-                        .align(Alignment.TopCenter)
-                        .padding(16.dp)
-                        .widthIn(max = 800.dp)
-                        .padding(horizontal = 32.dp),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
+
+                    // Botón para agregar un nuevo contacto
                     Button(
-                        onClick = { showContactoDialog = true },
-                        modifier = Modifier.weight(1f)
+                        onClick = { showNuevoContactoDialog = true },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
                     ) {
                         Text(text = traducir("nuevo_contacto"))
                     }
-                    Button(
-                        onClick = { showChatDialog = true },
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text(text = traducir("nuevo_chat"))
-                    }
                 }
-                // AlertDialog para "Nuevo Contacto"
-                if (showContactoDialog) {
+
+                // AlertDialog para agregar un nuevo contacto
+                if (showNuevoContactoDialog) {
                     AlertDialog(
-                        onDismissRequest = { showContactoDialog = false },
+                        onDismissRequest = { showNuevoContactoDialog = false },
                         title = { Text(text = traducir("nuevo_contacto")) },
                         text = {
                             Column {
-                                Text("Introduce el idUnico del usuario:")
+                                Text(text = "Introduce el idUnico del usuario:")
                                 OutlinedTextField(
-                                    value = inputText,
-                                    onValueChange = { inputText = it },
-                                    label = { Text("idUnico") }
+                                    value = nuevoContactoId,
+                                    onValueChange = { nuevoContactoId = it },
+                                    label = { Text(text = "idUnico") }
                                 )
                             }
                         },
                         confirmButton = {
                             TextButton(
                                 onClick = {
-                                    val nuevoContactoId = inputText.trim()
-                                    // Busca en UsuariosPreCreados si existe un usuario con ese idUnico
-                                    val userFound =
-                                        UsuariosPreCreados.find { it.getIdUnico() == nuevoContactoId }
-                                    if (userFound != null) {
-                                        val updatedContacts = UsuarioPrincipal?.getContactos()
-                                            ?.toMutableList()
-                                        if (updatedContacts != null) {
-                                            if (nuevoContactoId !in updatedContacts) {
-                                                updatedContacts.add(nuevoContactoId)
-                                                UsuarioPrincipal?.setContactos(updatedContacts)
-                                                // Actualiza el estado local para recomponer la UI
-                                                contactosState.clear()
-                                                contactosState.addAll(updatedContacts)
+                                    val idContactoIngresado = nuevoContactoId.trim()
+                                    // Se verifica que el id ingresado exista en la lista de usuarios precargados.
+                                    val contactoEncontrado = UsuariosPreCreados.find { it.idUnico == idContactoIngresado }
+                                    if (contactoEncontrado != null) {
+                                        scope.launch {
+                                            // Se inserta un nuevo registro en la tabla "usuario_contacto"
+                                            val nuevoRegistro = UsuarioContacto(
+                                                idUsuario = currentUserId,
+                                                idContacto = idContactoIngresado
+                                            )
+                                            repo.addItem("usuario_contacto", nuevoRegistro)
+                                            // Se consulta nuevamente la tabla para actualizar el estado local.
+                                            repo.getAll<UsuarioContacto>("usuario_contacto").collect { lista ->
+                                                registrosContacto = lista.filter { it.idUsuario == currentUserId }
                                             }
                                         }
                                     }
-                                    inputText = ""
-                                    showContactoDialog = false
+                                    nuevoContactoId = ""
+                                    showNuevoContactoDialog = false
                                 }
-                            ) {
-                                Text(text = traducir("guardar"))
-                            }
+                            ) { Text(text = traducir("guardar")) }
                         },
                         dismissButton = {
                             TextButton(
                                 onClick = {
-                                    inputText = ""
-                                    showContactoDialog = false
+                                    nuevoContactoId = ""
+                                    showNuevoContactoDialog = false
                                 }
-                            ) {
-                                Text(text = traducir("cancelar"))
-                            }
-                        }
-                    )
-                }
-                // AlertDialog para "Nuevo Chat"
-                if (showChatDialog) {
-                    AlertDialog(
-                        onDismissRequest = {
-                            showChatDialog = false
-                            selectedContacts.clear()
-                            groupChatName = ""
-                        },
-                        title = { Text(text = traducir("nuevo_chat")) },
-                        text = {
-                            Column {
-                                Text(text = traducir("selecciona_contactos_chat"))
-                                LazyColumn(modifier = Modifier.heightIn(max = 300.dp)) {
-                                    items(usuarios) { usuario ->
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(vertical = 4.dp)
-                                        ) {
-                                            val isSelected = selectedContacts.contains(usuario)
-                                            Checkbox(
-                                                checked = isSelected,
-                                                onCheckedChange = { checked ->
-                                                    if (checked) {
-                                                        selectedContacts.add(usuario)
-                                                    } else {
-                                                        selectedContacts.remove(usuario)
-                                                    }
-                                                }
-                                            )
-                                            Text(text = usuario.getNombreCompleto())
-                                        }
-                                    }
-                                }
-                                // Si se han seleccionado más de un contacto (grupo), solicita el nombre del grupo
-                                if (selectedContacts.size > 1) {
-                                    OutlinedTextField(
-                                        value = groupChatName,
-                                        onValueChange = { groupChatName = it },
-                                        label = { Text("Nombre del grupo") },
-                                        modifier = Modifier.fillMaxWidth()
-                                    )
-                                }
-                            }
-                        },
-                        confirmButton = {
-                            TextButton(
-                                onClick = onClick@{
-                                    // Dentro del AlertDialog para "Nuevo Chat" en la confirmButton:
-                                    if (selectedContacts.isNotEmpty()) {
-                                        // Construimos el conjunto de participantes: el UsuarioPrincipal y los contactos seleccionados.
-                                        val participantesSet =
-                                            (UsuarioPrincipal?.let { listOf(it.getIdUnico()) }
-                                                ?.plus(selectedContacts.map { it.getIdUnico() }))?.toSet()
-
-                                        // Si sólo se ha seleccionado un contacto (chat individual), comprobamos si ya existe una conversación con ese par.
-                                        if (selectedContacts.size == 1) {
-                                            val existingChat =
-                                                UsuarioPrincipal?.getChatUser()?.conversaciones?.find {
-                                                    it.participants.toSet() == participantesSet
-                                                }
-                                            if (existingChat != null) {
-                                                // Por ejemplo, podrías mostrar un mensaje Toast o Snackbar indicando que ya existe.
-                                                // Aquí simplemente salimos sin crear una nueva conversación:
-                                                showChatDialog = false
-                                                selectedContacts.clear()
-                                                groupChatName = ""
-                                                return@onClick
-                                            }
-                                        }
-
-                                        // Crea la nueva conversación:
-                                        val nuevaConversacion = participantesSet?.let {
-                                            Conversacion(
-                                                participants = it.toList(),  // Conservamos la lista, el orden puede no ser relevante
-                                                messages = emptyList(),
-                                                nombre = if (selectedContacts.size > 1 && groupChatName.isNotBlank()) groupChatName else null
-                                            )
-                                        }
-                                        // Actualiza el UsuarioPrincipal: agrega la nueva conversación a su lista
-                                        val convActualesPrincipal =
-                                            UsuarioPrincipal?.getChatUser()?.conversaciones?.toMutableList()
-                                        if (nuevaConversacion != null) {
-                                            convActualesPrincipal?.add(nuevaConversacion)
-                                        }
-                                        convActualesPrincipal?.let {
-                                            UsuarioPrincipal?.let { it1 ->
-                                                ConversacionesUsuario(
-                                                    id = UsuarioPrincipal!!.getChatUser()!!.id, // Mantenemos el id existente
-                                                    idUser = it1.getIdUnico(),
-                                                    conversaciones = it
-                                                )
-                                            }
-                                        }?.let {
-                                            UsuarioPrincipal?.setChatUser(
-                                                it
-                                            )
-                                        }
-                                        // Actualiza cada usuario seleccionado: agrega la conversación a sus chats
-                                        selectedContacts.forEach { usuario ->
-                                            val convActuales =
-                                                usuario.getChatUser()?.conversaciones?.toMutableList()
-                                            if (nuevaConversacion != null) {
-                                                convActuales?.add(nuevaConversacion)
-                                            }
-                                            val nuevasConversacionesUsuario =
-                                                usuario.getChatUser()?.let {
-                                                    if (convActuales != null) {
-                                                        ConversacionesUsuario(
-                                                            id = it.id,
-                                                            idUser = usuario.getIdUnico(),
-                                                            conversaciones = convActuales
-                                                        )
-                                                    } else {
-                                                        null
-                                                    }
-                                                }
-                                            usuario.setChatUser(nuevasConversacionesUsuario)
-                                        }
-                                    }
-                                    showChatDialog = false
-                                    selectedContacts.clear()
-                                    groupChatName = ""
-                                }
-                            ) {
-                                Text(text = traducir("crear_chat"))
-                            }
-                        },
-                        dismissButton = {
-                            TextButton(
-                                onClick = {
-                                    showChatDialog = false
-                                    selectedContacts.clear()
-                                    groupChatName = ""
-                                }
-                            ) {
-                                Text(text = traducir("cancelar"))
-                            }
+                            ) { Text(text = traducir("cancelar")) }
                         }
                     )
                 }
@@ -849,6 +695,7 @@ fun muestraContactos(navController: NavHostController) {
         }
     }
 }
+
 
 
 // --- elemento usuario ---
@@ -872,7 +719,7 @@ fun UsuCard(usuario: Usuario, onClick: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Imagen cuadrada a la izquierda
-            usuario.getImagenPerfil()?.let { painterResource(it as DrawableResource) }?.let {
+            usuario.getImagenPerfilMio()?.let { painterResource(it as DrawableResource) }?.let {
                 Image(
                     painter = it,
                     contentDescription = "Imagen de perfil",
@@ -886,15 +733,15 @@ fun UsuCard(usuario: Usuario, onClick: () -> Unit) {
             // Información del usuario en una columna
             Column {
                 Text(
-                    text = "${traducir("nombre_label")} ${usuario.getNombreCompleto()}",
+                    text = "${traducir("nombre_label")} ${usuario.getNombreCompletoMio()}",
                     style = MaterialTheme.typography.subtitle1
                 )
                 Text(
-                    text = "${traducir("alias_publico")} ${usuario.getAlias()}",
+                    text = "${traducir("alias_publico")} ${usuario.getAliasMio()}",
                     style = MaterialTheme.typography.body1
                 )
                 Text(
-                    text = "${traducir("alias_privado")} ${usuario.getAliasPrivado()}",
+                    text = "${traducir("alias_privado")} ${usuario.getAliasPrivadoMio()}",
                     style = MaterialTheme.typography.body2
                 )
             }
@@ -1014,15 +861,15 @@ fun mostrarPerfil(navController: NavHostController, usuarioU: Usuario?) {
     var nuevoEmail by remember { mutableStateOf("") }
 
     // Campos del usuario
-    var aliasPrivado by remember { mutableStateOf(usuario?.getAliasPrivado() ?: "") }
-    var aliasPublico by remember { mutableStateOf(usuario?.getAlias() ?: "") }
-    var descripcion by remember { mutableStateOf(usuario?.getDescripcion() ?: "") }
-    var contrasennia by remember { mutableStateOf(usuario?.getContrasennia() ?: "") }
-    var email by remember { mutableStateOf(usuario?.getCorreo() ?: "") }
+    var aliasPrivado by remember { mutableStateOf(usuario?.getAliasPrivadoMio() ?: "") }
+    var aliasPublico by remember { mutableStateOf(usuario?.getAliasMio() ?: "") }
+    var descripcion by remember { mutableStateOf(usuario?.getDescripcionMio() ?: "") }
+    var contrasennia by remember { mutableStateOf(usuario?.getContrasenniaMio() ?: "") }
+    var email by remember { mutableStateOf(usuario?.getCorreoMio() ?: "") }
     var isNameVisible by remember { mutableStateOf(false) }
 
     // Estado para la imagen de perfil (para refrescar la UI al cambiarla)
-    val imagenPerfilState = remember { mutableStateOf(usuario?.getImagenPerfil()) }
+    val imagenPerfilState = remember { mutableStateOf(usuario?.getImagenPerfilMio()) }
 
     MaterialTheme {
         Scaffold(
@@ -1076,7 +923,7 @@ fun mostrarPerfil(navController: NavHostController, usuarioU: Usuario?) {
                                 onClick = {
                                     // Genera una nueva imagen aleatoria y actualiza tanto el usuario como el estado mutable
                                     val nuevaImagen = usuario.generarImagenPerfilRandom()
-                                    usuario.setImagenPerfil(nuevaImagen)
+                                    usuario.setImagenPerfilMia(nuevaImagen)
                                     imagenPerfilState.value = nuevaImagen
                                 },
                                 modifier = Modifier.align(Alignment.CenterHorizontally)
@@ -1179,11 +1026,11 @@ fun mostrarPerfil(navController: NavHostController, usuarioU: Usuario?) {
                                 Button(
                                     onClick = {
                                         usuario.apply {
-                                            setAliasPrivado(aliasPrivado)
-                                            setAlias(aliasPublico)
-                                            setDescripcion(descripcion)
-                                            setContrasennia(contrasennia)
-                                            setCorreo(email)
+                                            setAliasPrivadoMio(aliasPrivado)
+                                            setAliasMio(aliasPublico)
+                                            setDescripcionMio(descripcion)
+                                            setContrasenniaMio(contrasennia)
+                                            setCorreoMio(email)
                                         }
                                         navController.popBackStack()
                                     }
@@ -1282,12 +1129,12 @@ fun mostrarPerfilUsuario(
     imagenesApp: List<Imagen>
 ) {
     // Busca el usuario en tu lista de usuarios (UsuariosPreCreados) según el userId
-    val usuario = UsuariosPreCreados.find { it.getIdUnico() == userId }
+    val usuario = UsuariosPreCreados.find { it.getIdUnicoMio() == userId }
 
     Scaffold(
         topBar = {
             DefaultTopBar(
-                title = usuario?.getNombreCompleto() ?: "Perfil",
+                title = usuario?.getNombreCompletoMio() ?: "Perfil",
                 navController = navController,
                 showBackButton = true,
                 irParaAtras = true,
@@ -1305,9 +1152,9 @@ fun mostrarPerfilUsuario(
                 Text("Usuario no encontrado")
             }
         } else {
-            var aliasPrivado by remember { mutableStateOf(usuario.getAliasPrivado()) }
-            var aliasPublico by remember { mutableStateOf(usuario.getAlias()) }
-            var descripcion by remember { mutableStateOf(usuario.getDescripcion()) }
+            var aliasPrivado by remember { mutableStateOf(usuario.getAliasPrivadoMio()) }
+            var aliasPublico by remember { mutableStateOf(usuario.getAliasMio()) }
+            var descripcion by remember { mutableStateOf(usuario.getDescripcionMio()) }
 
             Column(
                 modifier = Modifier
@@ -1318,10 +1165,10 @@ fun mostrarPerfilUsuario(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 // Imagen de perfil
-                usuario.getImagenPerfil()?.let { painterResource(it) }?.let {
+                usuario.getImagenPerfilMio()?.let { painterResource(it) }?.let {
                     Image(
                         painter = it,
-                        contentDescription = "Imagen de perfil de ${usuario.getNombreCompleto()}",
+                        contentDescription = "Imagen de perfil de ${usuario.getNombreCompletoMio()}",
                         modifier = Modifier
                             .size(100.dp)
                             .clip(RoundedCornerShape(8.dp))
@@ -1849,6 +1696,8 @@ fun PantallaRegistro(navController: NavHostController) {
     var confirmPassword by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
 
+    val repoSupabase = SupabaseUsuariosRepositorio()
+
     val errorContrasenas = traducir("error_contrasenas")
     val errorEmailYaRegistrado =
         traducir("error_email_ya_registrado") // Falta implementar y mete en los mapas de idiomas
@@ -1934,20 +1783,20 @@ fun PantallaRegistro(navController: NavHostController) {
                                     // Si no hay error, proceder a completar el usuario y enviarlo a Firestore
                                     if (errorMessage.isEmpty()) {
                                         // Seteamos los valores en el usuario
-                                        usuario.setNombreCompleto(nombre)
-                                        usuario.setCorreo(email)
-                                        usuario.setContrasennia(password)
-                                        usuario.setAliasPrivado("Privado_$nombre")
-                                        usuario.setAlias(UtilidadesUsuario().generarAliasPublico())
-                                        usuario.setDescripcion("Descripción de $nombre")
-                                        usuario.setImagenPerfil(UtilidadesUsuario().generarImagenPerfilRandom())
+                                        usuario.setNombreCompletoMio(nombre)
+                                        usuario.setCorreoMio(email)
+                                        usuario.setContrasenniaMio(password)
+                                        usuario.setAliasPrivadoMio("Privado_$nombre")
+                                        usuario.setAliasMio(UtilidadesUsuario().generarAliasPublico())
+                                        usuario.setDescripcionMio("Descripción de $nombre")
+                                        usuario.setImagenPerfilMia(UtilidadesUsuario().generarImagenPerfilRandom())
 
                                         // Agregamos el usuario a la lista local (por ejemplo, UsuariosPreCreados)
                                         UsuariosPreCreados.add(usuario)
 
                                         // Ejecutamos la función suspend dentro de una corrutina
                                         scope.launch {
-                                            FirestoreUsuariosNuestros().addUsuario(usuario)
+                                            repoSupabase.addUsuario(usuario)
                                             // Navegamos a la pantalla de login después de agregar el usuario
                                             navController.navigate("login") {
                                                 popUpTo("registro") { inclusive = true }
@@ -1992,6 +1841,8 @@ fun PantallaLogin(navController: NavHostController) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
+
+    val repoSupabase = SupabaseUsuariosRepositorio()
 
     // Mensajes de error (debes definir estas claves en tu mapa de idiomas)
     val errorEmailNingunUsuario =
@@ -2077,14 +1928,14 @@ fun PantallaLogin(navController: NavHostController) {
                                     }
                                     // Obtén el usuario desde Firestore a través del repositorio
                                     val usuario =
-                                        FirestoreUsuariosNuestros().getUsuarioPorCorreo(email)
+                                        repoSupabase.getUsuarioPorEmail(email)
                                             .firstOrNull()
                                     if (usuario == null) {
                                         // No se encontró ningún usuario con ese email
                                         errorMessage = errorEmailNingunUsuario
                                     } else {
                                         // Se encontró el usuario; comprobamos la contraseña
-                                        if (usuario.getContrasennia() != password) {
+                                        if (usuario.getContrasenniaMio() != password) {
                                             errorMessage = errorContrasenaIncorrecta
                                         } else {
                                             UsuarioPrincipal =
@@ -2181,14 +2032,14 @@ fun PantallaZonaPruebas(navController: NavHostController) {
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
+//                            Button(
+//                                onClick = { navController.navigate("pruebasObjetosFIrebase") },
+//                                modifier = Modifier.weight(1f)
+//                            ) {
+//                                Text("Debug: Ir a las pruebas con Firebase")
+//                            }
                             Button(
-                                onClick = { navController.navigate("pruebasObjetosFIrebase") },
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Text("Debug: Ir a las pruebas con Firebase")
-                            }
-                            Button(
-                                onClick = { navController.navigate("pruebasSupabase") },
+                                onClick = { navController.navigate("supabasePruebas") },
                                 modifier = Modifier.weight(1f)
                             ) {
                                 Text("Debug: Ir a las pruebas con Supabase")

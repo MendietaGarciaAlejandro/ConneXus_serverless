@@ -13,6 +13,7 @@ import org.connexuss.project.comunicacion.Post
 interface ISupabaseHiloRepositorio {
     fun getHilos(): Flow<List<Hilo>>
     fun getHiloPorId(idHilo: String): Flow<Hilo?>
+    fun getHiloPorIdBis(idHilo: String): Flow<Hilo?>
     suspend fun addHilo(hilo: Hilo)
     suspend fun updateHilo(hilo: Hilo)
     suspend fun deleteHilo(hilo: Hilo)
@@ -20,15 +21,7 @@ interface ISupabaseHiloRepositorio {
 
 class SupabaseHiloRepositorio : ISupabaseHiloRepositorio {
 
-    private val supabaseClient = createSupabaseClient(
-        supabaseUrl = "https://riydmqawtpwmulqlbbjq.supabase.co",
-        supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpeWRtcWF3dHB3bXVscWxiYmpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM2MjIyNTksImV4cCI6MjA1OTE5ODI1OX0.ShUPbRe_6yvIT27o5S7JE8h3ErIJJo-icrdQD1ugl8o",
-    ) {
-        install(Storage)
-        //install(Auth)
-        install(Realtime)
-        install(Postgrest)
-    }
+    private val supabaseClient = instanciaSupabaseClient( tieneStorage = true, tieneAuth = false, tieneRealtime = true, tienePostgrest = true)
     private val nombreTabla = "hilos"
 
     override fun getHilos() = flow {
@@ -48,6 +41,15 @@ class SupabaseHiloRepositorio : ISupabaseHiloRepositorio {
         emit(response)
     }
 
+    override fun getHiloPorIdBis(idHilo: String) = flow {
+        val hilos = supabaseClient
+            .from(nombreTabla)
+            .select()
+            .decodeList<Hilo>()
+        val hilo = hilos.find { it.idHilo == idHilo }
+        emit(hilo)
+    }
+
     override suspend fun addHilo(hilo: Hilo) {
         val response = supabaseClient
             .from(nombreTabla)
@@ -63,8 +65,7 @@ class SupabaseHiloRepositorio : ISupabaseHiloRepositorio {
     override suspend fun updateHilo(hilo: Hilo) {
         val updateData = mapOf(
             "idHilo" to hilo.idHilo,
-            "idForeros" to hilo.idForeros,
-            "posts" to hilo.posts,
+            "idTema" to hilo.idTema,
             "nombre" to hilo.nombre
         )
         try {

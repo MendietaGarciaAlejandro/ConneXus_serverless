@@ -1,34 +1,31 @@
 package org.connexuss.project.usuario
 
-import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import org.connexuss.project.comunicacion.Conversacion
-import org.connexuss.project.comunicacion.ConversacionesUsuario
+import org.connexuss.project.encriptacion.hash
 import org.connexuss.project.misc.UsuariosPreCreados
 import org.connexuss.project.misc.imagenesPerfilAbstrasto
 import org.connexuss.project.misc.imagenesPerfilDibujo
 import org.connexuss.project.misc.imagenesPerfilPersona
-import org.connexuss.project.encriptacion.hash
 import org.jetbrains.compose.resources.DrawableResource
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 // Clase usuario con sus atributos y metodos
+/*
 @Serializable
 class Usuario {
+    private var idUnico: String = ""
     private var nombre: String = ""
     private var correo: String = ""
     private var aliasPublico: String = ""
     private var aliasPrivado: String = ""
-    private var idUnico: String = ""
     private var activo: Boolean = false
     private var contactos: List<String>? = emptyList()
     private var chatUser: ConversacionesUsuario? = null
     private var descripcion: String = ""
     private var contrasennia: String = ""
-
     private var usuariosBloqueados: List<String> = emptyList()
     @Transient
     private var imagenPerfil: DrawableResource? = null
@@ -184,11 +181,8 @@ class Usuario {
         Text("Id Unico: $idUnico")
         Text("Alias Privado: $aliasPrivado")
     }
-
-
-
-
 }
+ */
 
 // Clase que almacena los usuarios
 class AlmacenamientoUsuario {
@@ -207,19 +201,19 @@ class AlmacenamientoUsuario {
     }
 
     fun obtenerUsuarioPorId(id: String): Usuario {
-        return usuarios.find { it.getIdUnico() == id }!!
+        return usuarios.find { it.getIdUnicoMio() == id }!!
     }
 
     fun obtenerUsuarioPorAlias(alias: String): Usuario {
-        return usuarios.find { it.getAlias() == alias }!!
+        return usuarios.find { it.getAliasMio() == alias }!!
     }
 
     fun obtenerUsuarioPorCorreo(correo: String): Usuario {
-        return usuarios.find { it.getCorreo() == correo }!!
+        return usuarios.find { it.getCorreoMio() == correo }!!
     }
 
     fun obtenerUsuarioPorNombre(nombre: String): Usuario {
-        return usuarios.find { it.getNombreCompleto() == nombre }!!
+        return usuarios.find { it.getNombreCompletoMio() == nombre }!!
     }
 }
 
@@ -258,7 +252,6 @@ class UtilidadesUsuario {
         return true
     }
 
-    @OptIn(ExperimentalUuidApi::class)
     fun instanciaUsuario(nombre: String?, correo: String?, aliasPublico: String?, activo: Boolean?): Usuario? {
         val correoValido = correo?.let { validarCorreo(it) } ?: false
         val nombreValido = nombre?.let { validarNombre(it) } ?: false
@@ -267,25 +260,50 @@ class UtilidadesUsuario {
             throw IllegalArgumentException("Datos de usuario no validos")
         }
         return if (activo != null) {
-            Usuario(nombre!!, correo!!, aliasPublico!!, activo, emptyList(), ConversacionesUsuario(generarIdUnico(), generarIdUnico(), emptyList()))
+            val usuario = Usuario(
+                generarIdUnico(),
+                nombre!!,
+                correo!!,
+                aliasPublico!!,
+                aliasPrivado = hash(aliasPublico),
+                activo,
+                descripcion = "",
+                contrasennia = ""
+            )
+            usuario.imagenPerfil = generarImagenPerfilRandom()
+            usuario
         } else {
             null
         }
     }
 
     //Debug: Contructor con idUnico
-    @OptIn(ExperimentalUuidApi::class)
-    fun instanciaUsuario(idUnico: String, nombre: String, edad: Int, correo: String, aliasPublico: String, activo: Boolean): Usuario {
-        val idUnico = idUnico
+    fun instanciaUsuario(
+        idUnico: String,
+        nombre: String,
+        correo: String,
+        aliasPublico: String,
+        activo: Boolean
+    ): Usuario {
         val correoValido = validarCorreo(correo)
         val nombreValido = validarNombre(nombre)
         val aliasPublicoValido = validarNombre(aliasPublico)
         if (!correoValido || !nombreValido || !aliasPublicoValido) {
             throw IllegalArgumentException("Datos de usuario no validos")
         }
-        return Usuario(idUnico, nombre, correo, aliasPublico, activo, emptyList(), ConversacionesUsuario(generarIdUnico(), generarIdUnico(), emptyList()))
+        val usuario = Usuario(
+            idUnico,
+            nombre,
+            correo,
+            aliasPublico,
+            aliasPrivado = hash(aliasPublico),
+            activo,
+            descripcion = "",
+            contrasennia = ""
+        )
+        usuario.imagenPerfil = generarImagenPerfilRandom()
+        return usuario
     }
-
 
     // Genera un alias Publico aleatorio para un usuario
     companion object {
@@ -320,7 +338,7 @@ class UtilidadesUsuario {
 
     // Función que obtiene los alias existentes en UsuariosPreCreados
     private fun obtenerAliasExistentes(): Set<String> {
-        return UsuariosPreCreados.map { it.getAlias() }.toSet()
+        return UsuariosPreCreados.map { it.getAliasMio() }.toSet()
     }
 
     fun generarImagenPerfilRandom(): DrawableResource {
@@ -339,3 +357,178 @@ class UtilidadesUsuario {
         return alias
     }
 }
+
+// NO BORRAR!!! Son las clases desarrolladas para implementar en la base de datos
+@Serializable
+data class Usuario(
+    @SerialName("idunico")
+    var idUnico: String = "",
+
+    @SerialName("nombre")
+    var nombre: String = "",
+
+    @SerialName("correo")
+    var correo: String = "",
+
+    @SerialName("aliaspublico")
+    var aliasPublico: String = "",
+
+    @SerialName("aliasprivado")
+    var aliasPrivado: String = "",
+
+    @SerialName("activo")
+    var activo: Boolean = false,
+
+    @SerialName("descripcion")
+    var descripcion: String = "",
+
+    @SerialName("contrasennia")
+    var contrasennia: String = "",
+
+    /**
+     * No mapeamos 'imagenPerfil' a la BD,
+     * pues es un @Transient en tu clase original.
+     */
+    @Transient
+    var imagenPerfil: DrawableResource? = null
+) {
+    // Constructor extra si quieres
+    constructor(
+        nombre: String,
+        correo: String,
+        aliasPublico: String,
+        activo: Boolean
+    ) : this() {
+        this.idUnico = UtilidadesUsuario().generarIdUnico()
+        this.nombre = nombre
+        this.correo = correo
+        this.aliasPublico = aliasPublico
+        this.aliasPrivado = hash(aliasPublico)
+        this.activo = activo
+        this.imagenPerfil = generarImagenPerfilRandom()
+    }
+
+    fun generarImagenPerfilRandom(): DrawableResource {
+        val todasImagenes = imagenesPerfilPersona + imagenesPerfilAbstrasto + imagenesPerfilDibujo
+        return todasImagenes.random().resource
+    }
+
+    //Debug: Contructor con idUnico
+    constructor(idUnico: String, nombre: String, correo: String, aliasPublico: String, activo: Boolean) : this() {
+        this.idUnico = idUnico
+        this.nombre = nombre
+        this.correo = correo
+        this.aliasPublico = aliasPublico
+        this.aliasPrivado = hash(aliasPublico)
+        this.activo = activo
+        this.imagenPerfil = generarImagenPerfilRandom()
+    }
+
+    // Constructor de copia
+    constructor(usuario: Usuario) : this() {
+        this.idUnico = usuario.idUnico
+        this.nombre = usuario.nombre
+        this.correo = usuario.correo
+        this.aliasPublico = usuario.aliasPublico
+        this.activo = usuario.activo
+    }
+
+    // Getter y Setter del usuario
+    fun getNombreCompletoMio(): String {
+        return nombre
+    }
+    fun setNombreCompletoMio(nombreCompleto: String) {
+        this.nombre = nombreCompleto
+    }
+
+    fun getCorreoMio(): String {
+        return correo
+    }
+    fun setCorreoMio(correo: String) {
+        this.correo = correo
+    }
+
+    fun getAliasMio(): String {
+        return aliasPublico
+    }
+    fun setAliasMio(alias: String) {
+        this.aliasPublico = alias
+    }
+
+    fun getAliasPrivadoMio(): String {
+        return aliasPrivado
+    }
+    fun setAliasPrivadoMio(aliasPrivado: String) {
+        this.aliasPrivado = aliasPrivado
+    }
+
+    fun getIdUnicoMio(): String {
+        return idUnico
+    }
+    fun setIdUnicoMio(idUnico: String) {
+        this.idUnico = idUnico
+    }
+
+    fun getActivoMio(): Boolean {
+        return activo
+    }
+    fun setActivoMio(activo: Boolean) {
+        this.activo = activo
+    }
+
+    fun getDescripcionMio(): String {
+        return descripcion
+    }
+
+    fun setDescripcionMio(descripcion: String) {
+        this.descripcion = descripcion
+    }
+
+    fun getContrasenniaMio(): String {
+        return contrasennia
+    }
+
+    fun setContrasenniaMio(contrasennia: String) {
+        this.contrasennia = contrasennia
+    }
+
+    fun getImagenPerfilMio(): DrawableResource? {
+        return imagenPerfil
+    }
+
+    fun setImagenPerfilMia(imagenPerfil: DrawableResource) {
+        this.imagenPerfil = imagenPerfil
+    }
+
+//    // Metodo para imprimir los datos públicos del usuario
+//    @Composable
+//    fun imprimirDatosPublicos() {
+//        Text("Nombre: $nombre")
+//        Text("Alias: $aliasPublico")
+//        Text("Activo: $activo")
+//    }
+//
+//    // Metodo para imprimir los datos privados del usuario
+//    @Composable
+//    fun imprimirDatosPrivados() {
+//        Text("Correo: $correo")
+//        Text("Id Unico: $idUnico")
+//        Text("Alias Privado: $aliasPrivado")
+//    }
+}
+
+@Serializable
+data class UsuarioBloqueado(
+    @SerialName("idusuario")
+    val idUsuario: String,   // ID del usuario que bloquea
+    @SerialName("idbloqueado")
+    val idBloqueado: String   // ID del usuario bloqueado
+)
+
+@Serializable
+data class UsuarioContacto(
+    @SerialName("idusuario")
+    val idUsuario: String,   // ID del usuario
+    @SerialName("idcontacto")
+    val idContacto: String   // ID del contacto
+)

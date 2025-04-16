@@ -13,6 +13,7 @@ import org.connexuss.project.comunicacion.Conversacion
 interface IConversacionesRepositorio {
     fun getConversaciones(): Flow<List<Conversacion>>
     fun getConversacionPorId(id: String): Flow<Conversacion?>
+    fun getConversacionPorIdBis(id: String): Flow<Conversacion?>
     suspend fun addConversacion(conversacion: Conversacion)
     suspend fun updateConversacion(conversacion: Conversacion)
     suspend fun deleteConversacion(conversacion: Conversacion)
@@ -20,15 +21,7 @@ interface IConversacionesRepositorio {
 
 class SupabaseConversacionesRepositorio : IConversacionesRepositorio {
 
-    private val supabaseClient = createSupabaseClient(
-        supabaseUrl = "https://riydmqawtpwmulqlbbjq.supabase.co",
-        supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpeWRtcWF3dHB3bXVscWxiYmpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM2MjIyNTksImV4cCI6MjA1OTE5ODI1OX0.ShUPbRe_6yvIT27o5S7JE8h3ErIJJo-icrdQD1ugl8o",
-    ) {
-        install(Storage)
-        //install(Auth)
-        install(Realtime)
-        install(Postgrest)
-    }
+    private val supabaseClient = instanciaSupabaseClient( tieneStorage = true, tieneAuth = false, tieneRealtime = true, tienePostgrest = true)
     private val nombreTabla = "conversaciones"
 
     override fun getConversaciones() = flow {
@@ -49,12 +42,21 @@ class SupabaseConversacionesRepositorio : IConversacionesRepositorio {
         emit(response)
     }
 
+    override fun getConversacionPorIdBis(id: String) = flow {
+        val convers = supabaseClient
+            .from(nombreTabla)
+            .select()
+            .decodeList<Conversacion>()
+        val conversacion = convers.find { it.id == id }
+        emit(conversacion)
+    }
+
     override suspend fun addConversacion(conversacion: Conversacion) {
         // Implementación para agregar un usuario a Supabase
         val response = supabaseClient
             .from(nombreTabla)
             .insert(conversacion)
-            .decodeSingleOrNull<Supausuario>()
+            .decodeSingleOrNull<Conversacion>()
         if (response == null) {
             throw Exception("Error al agregar la conversación")
         } else {
@@ -65,8 +67,6 @@ class SupabaseConversacionesRepositorio : IConversacionesRepositorio {
     override suspend fun updateConversacion(conversacion: Conversacion) {
         val updateData = mapOf(
             "id" to conversacion.id,
-            "participants" to conversacion.participants,
-            "messages" to conversacion.messages,
             "nombre" to conversacion.nombre
         )
         try {

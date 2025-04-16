@@ -14,6 +14,7 @@ import org.connexuss.project.comunicacion.Mensaje
 interface ISupabaseMensajesRepositorio {
     fun getMensajes(): Flow<List<Mensaje>>
     fun getMensajePorId(id: String): Flow<Mensaje?>
+    fun getMensajePorIdBis(id: String): Flow<Mensaje?>
     suspend fun addMensaje(mensaje: Mensaje)
     suspend fun updateMensaje(mensaje: Mensaje)
     suspend fun deleteMensaje(mensaje: Mensaje)
@@ -21,15 +22,7 @@ interface ISupabaseMensajesRepositorio {
 
 class SupabaseMensajesRepositorio : ISupabaseMensajesRepositorio {
 
-    private val supabaseClient = createSupabaseClient(
-        supabaseUrl = "https://riydmqawtpwmulqlbbjq.supabase.co",
-        supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpeWRtcWF3dHB3bXVscWxiYmpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM2MjIyNTksImV4cCI6MjA1OTE5ODI1OX0.ShUPbRe_6yvIT27o5S7JE8h3ErIJJo-icrdQD1ugl8o",
-    ) {
-        install(Storage)
-        //install(Auth)
-        install(Realtime)
-        install(Postgrest)
-    }
+    private val supabaseClient = instanciaSupabaseClient( tieneStorage = true, tieneAuth = false, tieneRealtime = true, tienePostgrest = true)
     private val nombreTabla = "mensajes"
 
     override fun getMensajes() = flow {
@@ -49,11 +42,20 @@ class SupabaseMensajesRepositorio : ISupabaseMensajesRepositorio {
         emit(response)
     }
 
+    override fun getMensajePorIdBis(id: String) = flow {
+        val response = supabaseClient
+            .from(nombreTabla)
+            .select()
+            .decodeList<Mensaje>()
+        val filteredResponse = response.find { it.id == id }
+        emit(filteredResponse)
+    }
+
     override suspend fun addMensaje(mensaje: Mensaje) {
         val response = supabaseClient
             .from(nombreTabla)
             .insert(mensaje)
-            .decodeSingleOrNull<Supausuario>()
+            .decodeSingleOrNull<Mensaje>()
         if (response == null) {
             throw Exception("Error al agregar el mensaje")
         } else {
@@ -64,8 +66,8 @@ class SupabaseMensajesRepositorio : ISupabaseMensajesRepositorio {
     override suspend fun updateMensaje(mensaje: Mensaje) {
         val updateData = mapOf(
             "id" to mensaje.id,
-            "senderId" to mensaje.senderId,
-            "receiverId" to mensaje.receiverId,
+            "idusuario" to mensaje.idusuario,
+            "idconversacion" to mensaje.idconversacion,
             "content" to mensaje.content,
             "fechaMensaje" to mensaje.fechaMensaje
         )

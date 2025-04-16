@@ -1,11 +1,17 @@
 package org.connexuss.project.navegacion
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import org.connexuss.project.comunicacion.Tema
 import org.connexuss.project.encriptacion.PantallaPruebasEncriptacion
+/*
 import org.connexuss.project.firebase.AppFirebase
 import org.connexuss.project.firebase.FirestoreConversacionesRepositorio
 import org.connexuss.project.firebase.FirestoreConversacionesUsuariosRepositorio
@@ -24,6 +30,7 @@ import org.connexuss.project.firebase.PantallaPost
 import org.connexuss.project.firebase.PantallaTema
 import org.connexuss.project.firebase.PantallaUsuario
 import org.connexuss.project.firebase.PantallaUsuarioNuestro
+ */
 import org.connexuss.project.interfaces.ForoScreen
 import org.connexuss.project.interfaces.HiloScreen
 import org.connexuss.project.interfaces.MuestraUsuariosGrupo
@@ -51,10 +58,10 @@ import org.connexuss.project.interfaces.muestraContactos
 import org.connexuss.project.interfaces.muestraHomePage
 import org.connexuss.project.interfaces.muestraRestablecimientoContasenna
 import org.connexuss.project.interfaces.muestraUsuarios
+import org.connexuss.project.misc.HilosRepository
 import org.connexuss.project.misc.UsuarioPrincipal
 import org.connexuss.project.misc.imagenesPerfilPersona
-import org.connexuss.project.misc.temasHilosPosts
-import org.connexuss.project.supabase.SupabaseUsuariosCRUD
+import org.connexuss.project.supabase.*
 import org.connexuss.project.usuario.Usuario
 
 @Composable
@@ -66,6 +73,7 @@ fun Navegacion(
 ) {
     val navController = rememberNavController()
 
+    /*
     val repositorioUsuarios = remember { FirestoreUsuariosRepositorio() }
     val repositorioUsuariosNuestros = remember { FirestoreUsuariosNuestros() }
     val repositorioMensajes = remember { FirestoreMensajesRepositorio() }
@@ -74,9 +82,9 @@ fun Navegacion(
     val repositorioPosts = remember { FirestorePostsRepositorio() }
     val repositorioHilos = remember { FirestoreHilosRepositorio() }
     val repositorioTemas = remember { FirestoreTemasRepositorio() }
+     */
 
-
-
+    val repoSupabase = remember { SupabaseRepositorioGenerico() }
 
     NavHost(navController = navController, startDestination = "splash") {
         composable("splash") {
@@ -153,6 +161,7 @@ fun Navegacion(
             val userId = backStackEntry.arguments?.getString("userId")
             mostrarPerfilUsuario(navController, userId, imagenesPerfilPersona)
         }
+        /*
         composable("appFirebase") {
             AppFirebase(navController)
         }
@@ -183,6 +192,7 @@ fun Navegacion(
         composable("Tema") {
             PantallaTema(repositorioTemas, navController)
         }
+        */
         composable("mostrarParticipantesGrupo/{chatId}" ) {
             backStackEntry ->
             val chatId = backStackEntry.arguments?.getString("chatId")
@@ -195,25 +205,75 @@ fun Navegacion(
             ForoScreen(navController)
         }
         composable("tema/{temaId}") { backStackEntry ->
-            val temaId = backStackEntry.arguments?.getString("temaId")
-            // Buscar el Tema en tu lista global o pasarlo como argumento
-            val temaEncontrado = temasHilosPosts.find { it.idTema == temaId } ?: return@composable
-            TemaScreen(navController, temaEncontrado.idTema)
+            val todosTemas = remember { repoSupabase.getAll<Tema>("tema") }
+            val temaId = backStackEntry.arguments?.getString("temaId") ?: ""
+            val tema = todosTemas.collectAsState(initial = emptyList()).value.find { it.idTema == temaId }
+            if (tema != null) {
+                TemaScreen(
+                    navController = navController,
+                    temaId = temaId,
+                    /*repo = repoSupabase,*/
+                )
+            } else {
+                LaunchedEffect(Unit) {
+                    navController.popBackStack()
+                }
+            }
         }
-        composable("hilo/{hiloId}") { backStackEntry ->
-            val hiloId = backStackEntry.arguments?.getString("hiloId")
-            // Buscar el Hilo en tu estado global o pasarlo como argumento
-            val hiloEncontrado = temasHilosPosts.flatMap { it.hilos }.find { it.idHilo == hiloId } ?: return@composable
-            HiloScreen(navController, hiloEncontrado.idHilo)
-        }
-        composable("pruebasSupabase") {
-            SupabaseUsuariosCRUD(navController)
+        composable(
+            "hilo/{hiloId}",
+            arguments = listOf(navArgument("hiloId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val hiloId = backStackEntry.arguments?.getString("hiloId") ?: ""
+            val hilo = HilosRepository.hilos.find { it.idHilo == hiloId }
+
+            if (hilo != null) {
+                HiloScreen(
+                    navController = navController,
+                    hiloId = hiloId,
+                    repo = repoSupabase,
+                )
+            } else {
+                LaunchedEffect(Unit) {
+                    navController.popBackStack()
+                }
+            }
         }
         composable("pruebasEncriptacion") {
             PantallaPruebasEncriptacion(navController)
         }
         composable("zonaPruebas") {
             PantallaZonaPruebas(navController)
+        }
+        composable("supabasePruebas") {
+            SupabasePruebasInterfaz(navController)
+        }
+        composable("supabaseUsuariosCRUD") {
+            SupabaseUsuariosCRUD(navController)
+        }
+        composable("supabasePruebasMensajes") {
+            SupabaseMensajesCRUD(navController)
+        }
+        composable("supabasePruebasConversaciones") {
+            SupabaseConversacionesCRUD(navController)
+        }
+        composable("supabasePruebasConversacionesUsuarioCRUD") {
+            SupabaseConversacionesUsuarioCRUD(navController)
+        }
+        composable("supabasePruebasTemasCRUD") {
+            SupabaseTemasCRUD(navController)
+        }
+        composable("supabasePruebasHilosCRUD") {
+            SupabaseHilosCRUD(navController)
+        }
+        composable("supabasePruebasPostsCRUD") {
+            SupabasePostsCRUD(navController)
+        }
+        composable("supabaseBloqueadosCRUD") {
+            SupabaseBloqueadosCRUD(navController)
+        }
+        composable("supabaseContactosCRUD") {
+            SupabaseContactosCRUD(navController)
         }
     }
 }

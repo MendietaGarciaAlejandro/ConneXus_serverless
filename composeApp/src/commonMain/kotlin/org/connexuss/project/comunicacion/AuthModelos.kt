@@ -137,7 +137,7 @@ fun crearUsuario(registro: PeticionRegistro): Usuario? {
  * @return El usuario encontrado o null si no existe.
  */
 fun obtenerUsuarioPorEmail(correo: String): Usuario? {
-    return usuarios.find { it.getCorreo() == correo }
+    return usuarios.find { it.getCorreoMio() == correo }
 }
 
 /**
@@ -148,9 +148,9 @@ fun obtenerUsuarioPorEmail(correo: String): Usuario? {
  * @return Verdadero si la actualización fue exitosa, falso en caso contrario.
  */
 fun actualizarContrasena(userId: String, nuevaContrasena: String): Boolean {
-    val usuario = usuarios.find { it.getIdUnico().toString() == userId }
+    val usuario = usuarios.find { it.getIdUnicoMio().toString() == userId }
     return if (usuario != null) {
-        usuario.setAliasPrivado(nuevaContrasena)
+        usuario.setAliasPrivadoMio(nuevaContrasena)
         true
     } else {
         false
@@ -169,7 +169,7 @@ fun registrarUsuario(peticion: PeticionRegistro, almacenamientoUsuario: Almacena
     if (errores.isNotEmpty()) return ResultadoAutorizacion(false, errores.joinToString("; "))
     val usuario = crearUsuario(peticion)
     return if (usuario != null) {
-        ResultadoAutorizacion(true, "Registro exitoso", usuario.getIdUnico())
+        ResultadoAutorizacion(true, "Registro exitoso", usuario.getIdUnicoMio())
     } else {
         ResultadoAutorizacion(false, "Error al registrar usuario")
     }
@@ -188,8 +188,8 @@ fun iniciarSesion(peticion: PeticionLogin, almacenamientoUsuario: Almacenamiento
     } catch (e: Exception) {
         return ResultadoAutorizacion(false, "Usuario no encontrado")
     }
-    if (usuario.getAliasPrivado() == peticion.contrasena) {
-        return ResultadoAutorizacion(true, "Inicio de sesión exitoso", usuario.getIdUnico())
+    if (usuario.getAliasPrivadoMio() == peticion.contrasena) {
+        return ResultadoAutorizacion(true, "Inicio de sesión exitoso", usuario.getIdUnicoMio())
     }
     return ResultadoAutorizacion(false, "Credenciales incorrectas")
 }
@@ -207,5 +207,5 @@ fun recuperarContrasena(peticion: PeticionRecuperacion, almacenamientoUsuario: A
     } catch (e: Exception) {
         return ResultadoAutorizacion(false, "Usuario no encontrado")
     }
-    return ResultadoAutorizacion(true, "Se ha enviado un correo de recuperación a ${peticion.correo}", usuario.getIdUnico())
+    return ResultadoAutorizacion(true, "Se ha enviado un correo de recuperación a ${peticion.correo}", usuario.getIdUnicoMio())
 }

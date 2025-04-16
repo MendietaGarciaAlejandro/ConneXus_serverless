@@ -1,10 +1,6 @@
 package org.connexuss.project.supabase
 
-import io.github.jan.supabase.createSupabaseClient
-import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.from
-import io.github.jan.supabase.realtime.Realtime
-import io.github.jan.supabase.storage.Storage
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import org.connexuss.project.comunicacion.Conversacion
@@ -12,23 +8,17 @@ import org.connexuss.project.comunicacion.ConversacionesUsuario
 
 interface ISupabaseConversacionesUsuarioRepositorio {
     fun getConversacionesUsuario(): Flow<List<ConversacionesUsuario>>
-    fun getConversacionPorId(idConversacion: String): Flow<ConversacionesUsuario?>
-    suspend fun addConversacion(conversacion: ConversacionesUsuario)
-    suspend fun updateConversacion(conversacion: ConversacionesUsuario)
-    suspend fun deleteConversacion(conversacion: ConversacionesUsuario)
+    fun getConversacionPorId(idconversacionUsuario: String): Flow<ConversacionesUsuario?>
+    fun getConversacionPorIdUsuario(id: String): Flow<ConversacionesUsuario?>
+    fun getConversacionPorIdConversacion(id: String): Flow<ConversacionesUsuario?>
+    suspend fun addConversacion(conversacionUsuario: ConversacionesUsuario)
+    suspend fun updateConversacion(conversacionUsuario: ConversacionesUsuario)
+    suspend fun deleteConversacion(conversacionUsuario: ConversacionesUsuario)
 }
 
 class SupabaseConversacionesUsuarioRepositorio : ISupabaseConversacionesUsuarioRepositorio {
 
-    private val supabaseClient = createSupabaseClient(
-        supabaseUrl = "https://riydmqawtpwmulqlbbjq.supabase.co",
-        supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpeWRtcWF3dHB3bXVscWxiYmpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM2MjIyNTksImV4cCI6MjA1OTE5ODI1OX0.ShUPbRe_6yvIT27o5S7JE8h3ErIJJo-icrdQD1ugl8o",
-    ) {
-        install(Storage)
-        //install(Auth)
-        install(Realtime)
-        install(Postgrest)
-    }
+    private val supabaseClient = instanciaSupabaseClient( tieneStorage = true, tieneAuth = false, tieneRealtime = true, tienePostgrest = true)
     private val nombreTabla = "conversacionesusuario"
 
     override fun getConversacionesUsuario() = flow {
@@ -39,8 +29,8 @@ class SupabaseConversacionesUsuarioRepositorio : ISupabaseConversacionesUsuarioR
         emit(response)
     }
 
-    override fun getConversacionPorId(idConversacion: String) = flow {
-        val tableWithFilter = "$nombreTabla?id=eq.$idConversacion"
+    override fun getConversacionPorId(idconversacionUsuario: String) = flow {
+        val tableWithFilter = "$nombreTabla?id=eq.$idconversacionUsuario"
         val response = supabaseClient
             .from(tableWithFilter)
             .select()
@@ -48,10 +38,28 @@ class SupabaseConversacionesUsuarioRepositorio : ISupabaseConversacionesUsuarioR
         emit(response)
     }
 
-    override suspend fun addConversacion(conversacion: ConversacionesUsuario) {
+    override fun getConversacionPorIdUsuario(id: String) = flow {
+        val convers = supabaseClient
+            .from(nombreTabla)
+            .select()
+            .decodeList<ConversacionesUsuario>()
+        val conversacion = convers.find { it.idusuario == id }
+        emit(conversacion)
+    }
+
+    override fun getConversacionPorIdConversacion(id: String) = flow {
+        val convers = supabaseClient
+            .from(nombreTabla)
+            .select()
+            .decodeList<ConversacionesUsuario>()
+        val conversacion = convers.find { it.idconversacion == id }
+        emit(conversacion)
+    }
+
+    override suspend fun addConversacion(conversacionUsuario: ConversacionesUsuario) {
         val response = supabaseClient
             .from(nombreTabla)
-            .insert(conversacion)
+            .insert(conversacionUsuario)
             .decodeSingleOrNull<ConversacionesUsuario>()
         if (response == null) {
             throw Exception("Error al agregar la conversación")
@@ -62,16 +70,18 @@ class SupabaseConversacionesUsuarioRepositorio : ISupabaseConversacionesUsuarioR
 
     override suspend fun updateConversacion(conversacionUsuario: ConversacionesUsuario) {
         val updateData = mapOf(
-            "id" to conversacionUsuario.id,
-            "idUser" to conversacionUsuario.idUser,
-            "conversaciones" to conversacionUsuario.conversaciones,
+            "idusuario" to conversacionUsuario.idusuario,
+            "idconversacion" to conversacionUsuario.idconversacion
         )
         try {
             supabaseClient
                 .from(nombreTabla)
                 .update(updateData) {
                     filter {
-                        eq("id", conversacionUsuario.id)
+                        eq("idconversacion", conversacionUsuario.idconversacion)
+                    }
+                    filter {
+                        eq("idusuario", conversacionUsuario.idusuario)
                     }
                     select()
                 }
@@ -89,13 +99,16 @@ class SupabaseConversacionesUsuarioRepositorio : ISupabaseConversacionesUsuarioR
         }
     }
 
-    override suspend fun deleteConversacion(conversacion: ConversacionesUsuario) {
+    override suspend fun deleteConversacion(conversacionUsuario: ConversacionesUsuario) {
         try {
             supabaseClient
                 .from(nombreTabla)
                 .delete {
                     filter {
-                        eq("id", conversacion.id)
+                        eq("idconversacion", conversacionUsuario.idconversacion)
+                    }
+                    filter {
+                        eq("idusuario", conversacionUsuario.idusuario)
                     }
                 }
                 .decodeList<Conversacion>()
