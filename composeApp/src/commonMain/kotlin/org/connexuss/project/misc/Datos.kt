@@ -21,6 +21,7 @@ import org.connexuss.project.comunicacion.Hilo
 import org.connexuss.project.comunicacion.Mensaje
 import org.connexuss.project.comunicacion.Post
 import org.connexuss.project.comunicacion.Tema
+import org.connexuss.project.comunicacion.generateId
 import org.connexuss.project.usuario.AlmacenamientoUsuario
 import org.connexuss.project.usuario.UtilidadesUsuario
 import org.connexuss.project.usuario.Usuario
@@ -601,153 +602,166 @@ val UsuariosPreCreados: SnapshotStateList<Usuario> = run {
     usuarios
 }
 
-//Conversaciones
-private val conversacionesIndividuales: List<Conversacion> = listOf(
-    Conversacion(
-        participants = listOf("UsuarioPrincipal", "Contacto1"),
-        messages = listOf(
-            Mensaje(
-                senderId = "UsuarioPrincipal",
-                receiverId = "Contacto1",
-                content = "Hola, ¿cómo estás?",
-                fechaMensaje = LocalDateTime(2023, 1, 1, 12, 0)
-            ),
-            Mensaje(
-                senderId = "Contacto1",
-                receiverId = "UsuarioPrincipal",
-                content = "Muy bien, ¿y tú?",
-                fechaMensaje = LocalDateTime(2023, 1, 1, 12, 5)
-            )
-        )
-    ),
-    Conversacion(
-        participants = listOf("UsuarioPrincipal", "Contacto2"),
-        messages = listOf(
-            Mensaje(
-                senderId = "UsuarioPrincipal",
-                receiverId = "Contacto2",
-                content = "¿Nos vemos mañana?",
-                fechaMensaje = LocalDateTime(2023, 1, 2, 10, 0)
-            ),
-            Mensaje(
-                senderId = "Contacto2",
-                receiverId = "UsuarioPrincipal",
-                content = "Claro, ¿a qué hora?",
-                fechaMensaje = LocalDateTime(2023, 1, 2, 10, 5)
-            )
-        )
-    ),
-    Conversacion(
-        participants = listOf("UsuarioPrincipal", "Contacto3"),
-        messages = listOf(
-            Mensaje(
-                senderId = "Contacto3",
-                receiverId = "UsuarioPrincipal",
-                content = "¿Has visto la última película?",
-                fechaMensaje = LocalDateTime(2023, 1, 3, 15, 0)
-            ),
-            Mensaje(
-                senderId = "UsuarioPrincipal",
-                receiverId = "Contacto3",
-                content = "Sí, estuvo genial.",
-                fechaMensaje = LocalDateTime(2023, 1, 3, 15, 10)
-            )
-        )
-    ),
-    Conversacion(
-        participants = listOf("UsuarioPrincipal", "Contacto4"),
-        messages = listOf(
-            Mensaje(
-                senderId = "UsuarioPrincipal",
-                receiverId = "Contacto4",
-                content = "¿Quieres ir a cenar?",
-                fechaMensaje = LocalDateTime(2023, 1, 4, 18, 0)
-            ),
-            Mensaje(
-                senderId = "Contacto4",
-                receiverId = "UsuarioPrincipal",
-                content = "¡Claro, suena perfecto!",
-                fechaMensaje = LocalDateTime(2023, 1, 4, 18, 15)
-            )
-        )
-    )
-)
+////Conversaciones
+//private val conversacionesIndividuales: List<Conversacion> = listOf(
+//    Conversacion(
+//        participants = listOf("UsuarioPrincipal", "Contacto1"),
+//        messages = listOf(
+//            Mensaje(
+//                senderId = "UsuarioPrincipal",
+//                receiverId = "Contacto1",
+//                content = "Hola, ¿cómo estás?",
+//                fechaMensaje = LocalDateTime(2023, 1, 1, 12, 0)
+//            ),
+//            Mensaje(
+//                senderId = "Contacto1",
+//                receiverId = "UsuarioPrincipal",
+//                content = "Muy bien, ¿y tú?",
+//                fechaMensaje = LocalDateTime(2023, 1, 1, 12, 5)
+//            )
+//        )
+//    ),
+//    Conversacion(
+//        participants = listOf("UsuarioPrincipal", "Contacto2"),
+//        messages = listOf(
+//            Mensaje(
+//                senderId = "UsuarioPrincipal",
+//                receiverId = "Contacto2",
+//                content = "¿Nos vemos mañana?",
+//                fechaMensaje = LocalDateTime(2023, 1, 2, 10, 0)
+//            ),
+//            Mensaje(
+//                senderId = "Contacto2",
+//                receiverId = "UsuarioPrincipal",
+//                content = "Claro, ¿a qué hora?",
+//                fechaMensaje = LocalDateTime(2023, 1, 2, 10, 5)
+//            )
+//        )
+//    ),
+//    Conversacion(
+//        participants = listOf("UsuarioPrincipal", "Contacto3"),
+//        messages = listOf(
+//            Mensaje(
+//                senderId = "Contacto3",
+//                receiverId = "UsuarioPrincipal",
+//                content = "¿Has visto la última película?",
+//                fechaMensaje = LocalDateTime(2023, 1, 3, 15, 0)
+//            ),
+//            Mensaje(
+//                senderId = "UsuarioPrincipal",
+//                receiverId = "Contacto3",
+//                content = "Sí, estuvo genial.",
+//                fechaMensaje = LocalDateTime(2023, 1, 3, 15, 10)
+//            )
+//        )
+//    ),
+//    Conversacion(
+//        participants = listOf("UsuarioPrincipal", "Contacto4"),
+//        messages = listOf(
+//            Mensaje(
+//                senderId = "UsuarioPrincipal",
+//                receiverId = "Contacto4",
+//                content = "¿Quieres ir a cenar?",
+//                fechaMensaje = LocalDateTime(2023, 1, 4, 18, 0)
+//            ),
+//            Mensaje(
+//                senderId = "Contacto4",
+//                receiverId = "UsuarioPrincipal",
+//                content = "¡Claro, suena perfecto!",
+//                fechaMensaje = LocalDateTime(2023, 1, 4, 18, 15)
+//            )
+//        )
+//    )
+//)
+//
+//// Conversaciones de grupo (3)
+//private val conversacionesGrupo: List<Conversacion> = listOf(
+//    Conversacion(
+//        participants = listOf("UsuarioPrincipal", "Contacto5", "Contacto6"),
+//        messages = listOf(
+//            Mensaje(
+//                senderId = "Contacto5",
+//                receiverId = "UsuarioPrincipal",
+//                content = "Bienvenidos al grupo de estudio",
+//                fechaMensaje = LocalDateTime(2023, 1, 5, 9, 0)
+//            ),
+//            Mensaje(
+//                senderId = "Contacto6",
+//                receiverId = "UsuarioPrincipal",
+//                content = "¿Quién trae los apuntes?",
+//                fechaMensaje = LocalDateTime(2023, 1, 5, 9, 10)
+//            )
+//        )
+//    ),
+//    Conversacion(
+//        participants = listOf("UsuarioPrincipal", "Contacto7", "Contacto8"),
+//        messages = listOf(
+//            Mensaje(
+//                senderId = "UsuarioPrincipal",
+//                receiverId = "Contacto7",
+//                content = "Reunión de trabajo a las 10",
+//                fechaMensaje = LocalDateTime(2023, 1, 6, 8, 50)
+//            ),
+//            Mensaje(
+//                senderId = "Contacto8",
+//                receiverId = "UsuarioPrincipal",
+//                content = "Confirmado, allí estaré",
+//                fechaMensaje = LocalDateTime(2023, 1, 6, 9, 0)
+//            )
+//        )
+//    ),
+//    Conversacion(
+//        participants = listOf("UsuarioPrincipal", "Contacto9", "Contacto10"),
+//        messages = listOf(
+//            Mensaje(
+//                senderId = "Contacto9",
+//                receiverId = "UsuarioPrincipal",
+//                content = "Chicos, ¿organizamos un encuentro este fin de semana?",
+//                fechaMensaje = LocalDateTime(2023, 1, 7, 16, 0)
+//            ),
+//            Mensaje(
+//                senderId = "Contacto10",
+//                receiverId = "UsuarioPrincipal",
+//                content = "Me apunto, cuenten conmigo.",
+//                fechaMensaje = LocalDateTime(2023, 1, 7, 16, 10)
+//            )
+//        )
+//    )
+//)
 
-// Conversaciones de grupo (3)
-private val conversacionesGrupo: List<Conversacion> = listOf(
-    Conversacion(
-        participants = listOf("UsuarioPrincipal", "Contacto5", "Contacto6"),
-        messages = listOf(
-            Mensaje(
-                senderId = "Contacto5",
-                receiverId = "UsuarioPrincipal",
-                content = "Bienvenidos al grupo de estudio",
-                fechaMensaje = LocalDateTime(2023, 1, 5, 9, 0)
-            ),
-            Mensaje(
-                senderId = "Contacto6",
-                receiverId = "UsuarioPrincipal",
-                content = "¿Quién trae los apuntes?",
-                fechaMensaje = LocalDateTime(2023, 1, 5, 9, 10)
-            )
-        )
-    ),
-    Conversacion(
-        participants = listOf("UsuarioPrincipal", "Contacto7", "Contacto8"),
-        messages = listOf(
-            Mensaje(
-                senderId = "UsuarioPrincipal",
-                receiverId = "Contacto7",
-                content = "Reunión de trabajo a las 10",
-                fechaMensaje = LocalDateTime(2023, 1, 6, 8, 50)
-            ),
-            Mensaje(
-                senderId = "Contacto8",
-                receiverId = "UsuarioPrincipal",
-                content = "Confirmado, allí estaré",
-                fechaMensaje = LocalDateTime(2023, 1, 6, 9, 0)
-            )
-        )
-    ),
-    Conversacion(
-        participants = listOf("UsuarioPrincipal", "Contacto9", "Contacto10"),
-        messages = listOf(
-            Mensaje(
-                senderId = "Contacto9",
-                receiverId = "UsuarioPrincipal",
-                content = "Chicos, ¿organizamos un encuentro este fin de semana?",
-                fechaMensaje = LocalDateTime(2023, 1, 7, 16, 0)
-            ),
-            Mensaje(
-                senderId = "Contacto10",
-                receiverId = "UsuarioPrincipal",
-                content = "Me apunto, cuenten conmigo.",
-                fechaMensaje = LocalDateTime(2023, 1, 7, 16, 10)
-            )
-        )
-    )
-)
+//val conversacionesPreInicializadasUsuarioPrincipal: List<Conversacion> =
+//    conversacionesIndividuales + conversacionesGrupo
+//
+//var UsuarioPrincipal: Usuario? = UtilidadesUsuario().instanciaUsuario(
+//    nombre = "Usuario Principal",
+//    correo = "principal@example.com",
+//    aliasPublico = "UsuarioPrincipal",
+//    activo = true
+//)?.apply {
+//    // Asigna algunos contactos de ejemplo (puedes modificar según tus necesidades)
+//    setContactos(listOf("JP", "ML"))
+//    // Define un chat de ejemplo para este usuario
+//    setChatUser(
+//        ConversacionesUsuario(
+//            id = "chatUser_1",
+//            idUser = "UsuarioPrincipal",
+//            conversaciones = conversacionesPreInicializadasUsuarioPrincipal
+//        )
+//    )
+//}
 
-val conversacionesPreInicializadasUsuarioPrincipal: List<Conversacion> =
-    conversacionesIndividuales + conversacionesGrupo
-
-var UsuarioPrincipal: Usuario? = UtilidadesUsuario().instanciaUsuario(
+// Arreglar con la nueva estructura de datos (usuario_contactos, usuario_bloqueados,etc.)
+var UsuarioPrincipal: Usuario? = Usuario(
+    idUnico = "1",
     nombre = "Usuario Principal",
     correo = "principal@example.com",
     aliasPublico = "UsuarioPrincipal",
-    activo = true
-)?.apply {
-    // Asigna algunos contactos de ejemplo (puedes modificar según tus necesidades)
-    setContactos(listOf("JP", "ML"))
-    // Define un chat de ejemplo para este usuario
-    setChatUser(
-        ConversacionesUsuario(
-            id = "chatUser_1",
-            idUser = "UsuarioPrincipal",
-            conversaciones = conversacionesPreInicializadasUsuarioPrincipal
-        )
-    )
-}
+    aliasPrivado = "UsuarioPrincipal",
+    activo = true,
+    descripcion = "Descripción del usuario",
+    contrasennia = "123456789",
+    imagenPerfil = Res.drawable.connexus
+)
 
 // Datos foro
 /*

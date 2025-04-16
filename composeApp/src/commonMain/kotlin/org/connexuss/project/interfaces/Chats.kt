@@ -25,10 +25,12 @@ import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,10 +40,14 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import connexus_serverless.composeapp.generated.resources.Res
 import connexus_serverless.composeapp.generated.resources.connexus
+import kotlinx.coroutines.launch
+import org.connexuss.project.comunicacion.Conversacion
+import org.connexuss.project.comunicacion.ConversacionesUsuario
 import org.connexuss.project.comunicacion.Mensaje
 import org.connexuss.project.misc.UsuarioPrincipal
 import org.connexuss.project.misc.UsuariosPreCreados
 import org.connexuss.project.misc.Imagen
+import org.connexuss.project.supabase.SupabaseRepositorioGenerico
 import org.jetbrains.compose.resources.painterResource
 
 /**
@@ -52,34 +58,69 @@ import org.jetbrains.compose.resources.painterResource
  * @param chatId Identificador de la conversación.
  */
 @Composable
-fun mostrarChat(navController: NavHostController, chatId : String?) {
-    // Obtiene la lista de conversaciones y busca la que tenga el id pasado
+fun mostrarChat(navController: NavHostController, chatId: String?) {
+    // Se asume que el UsuarioPrincipal ya está definido de forma global
+    val currentUser = UsuarioPrincipal
+    val currentUserId = currentUser?.getIdUnico() ?: return
 
-    val listaChats = UsuarioPrincipal?.getChatUser()?.conversaciones
-    val chat = listaChats?.find { it.id == chatId } ?: return
-
-    val otherParticipantId = chat.participants.find { it != UsuarioPrincipal?.getIdUnico() }
-        ?: chat.participants.getOrNull(1) ?: ""
-
-    val otherParticipantUser = UsuariosPreCreados.find { it.getIdUnico() == otherParticipantId }
-    val otherParticipantName = UsuariosPreCreados.find { it.getIdUnico() == otherParticipantId }?.getNombreCompleto() ?: otherParticipantId
-
-    val profileImage = otherParticipantUser?.getImagenPerfil() ?: Res.drawable.connexus
-
+    val supabaseRepo = remember { SupabaseRepositorioGenerico() }
+    var chat by remember { mutableStateOf<Conversacion?>(null) }
+    var participants by remember { mutableStateOf<List<String>>(emptyList()) }
+    var messages by remember { mutableStateOf<List<Mensaje>>(emptyList()) }
     var mensajeNuevo by remember { mutableStateOf("") }
-    val messagesState = remember { mutableStateListOf<Mensaje>().apply { addAll(chat.messages) } }
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(chatId) {
+        chatId?.let { id ->
+            // --- CONSULTA DE CONVERSACIÓN ---
+            // Se obtiene la conversación por su id. Se asume que, para este usuario, la conversación existe.
+            supabaseRepo.getItem<Conversacion>("conversacion") { eq("id", id) }
+                .collect { conv ->
+                    chat = conv
+                }
+
+            // --- PARTICIPANTES ---
+            // Se obtiene la lista de relaciones en conversaciones_usuario filtrando por el chatId.
+            supabaseRepo.getAll<ConversacionesUsuario>("conversaciones_usuario")
+                .collect { convUsuarios ->
+                    // Se considera solo las relaciones del usuario actual
+                    participants = convUsuarios
+                        .filter { it.idconversacion == id }
+                        .map { it.idusuario }
+                        .distinct()
+                    // Si no existe la relación con el UsuarioPrincipal, se sale
+                    if (currentUserId !in participants) {
+                        // Podrías mostrar un error o redireccionar
+                        return@collect
+                    }
+                }
+
+            // --- MENSAJES ---
+            // Se obtienen todos los mensajes de la conversación
+            supabaseRepo.getAll<Mensaje>("mensaje")
+                .collect { allMessages ->
+                    messages = allMessages.filter { it.idconversacion == id }
+                }
+        }
+    }
+
+    // Determinar al otro participante (se asume que siempre son 2 participantes)
+    val otherParticipantId = participants.firstOrNull { it != currentUserId } ?: ""
+    val otherParticipant = UsuariosPreCreados.find { it.getIdUnico() == otherParticipantId }
+    val otherParticipantName = otherParticipant?.getNombreCompleto() ?: otherParticipantId
+    val profileImage = otherParticipant?.getImagenPerfil() ?: Res.drawable.connexus
 
     Scaffold(
         topBar = {
             TopBarUsuario(
-                title = otherParticipantName, // Muestra el nombre del otro participante
+                title = otherParticipantName,
                 profileImage = profileImage,
                 navController = navController,
                 showBackButton = true,
                 irParaAtras = true,
                 muestraEngranaje = false,
                 onTitleClick = {
-                    // Navega al perfil del otro participante
+                    // Navega al perfil del otro usuario
                     navController.navigate("mostrarPerfilUsuario/$otherParticipantId")
                 }
             )
@@ -90,43 +131,39 @@ fun mostrarChat(navController: NavHostController, chatId : String?) {
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // Sección de mensajes
+            // --- LISTA DE MENSAJES ---
             LazyColumn(
                 modifier = Modifier
                     .weight(1f)
                     .padding(8.dp)
             ) {
-                items(messagesState) { mensaje ->
-                    // Dependiendo del senderId, izquierda o derecha
-                    val isParticipant1 = mensaje.senderId == otherParticipantId
-                    if (isParticipant1) Alignment.CenterStart else Alignment.CenterEnd
-
+                items(messages) { mensaje ->
+                    val isCurrentUser = mensaje.idusuario == currentUserId
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(8.dp),
-                        contentAlignment = if (isParticipant1) Alignment.CenterStart else Alignment.CenterEnd
+                        contentAlignment = if (isCurrentUser) Alignment.CenterEnd else Alignment.CenterStart
                     ) {
                         Box(
                             modifier = Modifier
-                                .padding(8.dp)
-                                .widthIn(max = 250.dp)
-                                .background(if (isParticipant1) Color(0xFFB2EBF2) else Color(0xFFC8E6C9))
+                                .background(
+                                    color = if (isCurrentUser) Color(0xFFC8E6C9) else Color(0xFFB2EBF2),
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                                .padding(12.dp)
+                                .widthIn(max = 280.dp)
                         ) {
-                            Column(
-                                modifier = Modifier
-                                    .padding(8.dp)
-                            ) {
-                                Text(text = mensaje.content,
-                                    modifier = Modifier.padding(bottom = 4.dp),
-                                    style = MaterialTheme.typography.body1)
-                            }
+                            Text(
+                                text = mensaje.content,
+                                style = MaterialTheme.typography.body1
+                            )
                         }
                     }
                 }
             }
 
-            // Barra de escritura
+            // --- ENVIAR MENSAJE ---
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -141,66 +178,27 @@ fun mostrarChat(navController: NavHostController, chatId : String?) {
                 )
                 IconButton(
                     onClick = {
-
-                        if (mensajeNuevo.isNotBlank()) {
-                            val newMessage = UsuarioPrincipal?.let {
-                                Mensaje(
-                                    senderId = it.getIdUnico(),
-                                    receiverId = otherParticipantId,
+                        if (mensajeNuevo.isNotBlank() && chatId != null) {
+                            scope.launch {
+                                // Crea y envía el nuevo mensaje, vinculándolo a la conversación y al usuario actual
+                                val newMessage = Mensaje(
                                     content = mensajeNuevo,
+                                    idusuario = currentUserId,
+                                    idconversacion = chatId
                                 )
-                            }
-                            if (newMessage != null) {
-                                messagesState.add(newMessage)
-                            }
-
-                            // Actualiza la conversación
-                            val updatedConversation = chat.copy(messages = messagesState.toList())
-
-                            // Actualiza la conversación en UsuarioPrincipal
-                            val convsPrincipal =
-                                UsuarioPrincipal?.getChatUser()!!.conversaciones.toMutableList()
-                            val indexPrincipal = convsPrincipal.indexOfFirst { it.id == chat.id }
-                            if (indexPrincipal != -1) {
-                                convsPrincipal[indexPrincipal] = updatedConversation
-                                UsuarioPrincipal!!.setChatUser(
-                                    UsuarioPrincipal!!.getChatUser()!!
-                                        .copy(conversaciones = convsPrincipal)
-                                )
-                            }
-
-                            // Actualiza la conversación en el otro usuario, si lo encuentra
-                            UsuariosPreCreados.find { it.getIdUnico() == otherParticipantId }
-                                ?.let { otherUser ->
-                                    val convsOther =
-                                        otherUser.getChatUser()?.conversaciones?.toMutableList()
-                                    val indexOther = convsOther?.indexOfFirst { it.id == chat.id }
-                                    if (indexOther != -1) {
-                                        if (indexOther != null) {
-                                            convsOther[indexOther] = updatedConversation
-                                        }
-                                        otherUser.getChatUser()?.let {
-                                            convsOther?.let { it1 ->
-                                                it
-                                                    .copy(conversaciones = it1)
-                                            }?.let { it2 ->
-                                                otherUser.setChatUser(
-                                                    it2
-                                                )
-                                            }
-                                        }
+                                // Se agrega el mensaje a la BD
+                                supabaseRepo.addItem("mensaje", newMessage)
+                                mensajeNuevo = ""
+                                // Se refrescan los mensajes actualizando el estado
+                                supabaseRepo.getAll<Mensaje>("mensaje")
+                                    .collect { allMessages ->
+                                        messages = allMessages.filter { it.idconversacion == chatId }
                                     }
-                                }
-
-                            mensajeNuevo = ""
+                            }
                         }
-
                     }
                 ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.Send,
-                        contentDescription = traducir("enviar")
-                    )
+                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = traducir("enviar"))
                 }
             }
         }
@@ -216,14 +214,37 @@ fun mostrarChat(navController: NavHostController, chatId : String?) {
  * @param imagenesPerfil Lista de imágenes de perfil de los participantes.
  */
 @Composable
-fun mostrarChatGrupo(navController: NavHostController, chatId: String?, imagenesPerfil: List<Imagen>) {
-    val listaChats = UsuarioPrincipal?.getChatUser()?.conversaciones
-    val chat = listaChats?.find { it.id == chatId } ?: return
-    val idUsuario = UsuarioPrincipal?.getIdUnico()
-    val groupTitle = if (!chat.nombre.isNullOrBlank()) chat.nombre else chat.id
+fun mostrarChatGrupo(
+    navController: NavHostController,
+    chatId: String?,
+    imagenesPerfil: List<Imagen>
+) {
+    val currentUser = UsuarioPrincipal
+    val currentUserId = currentUser?.getIdUnico() ?: return
 
+    val supabaseRepo = remember { SupabaseRepositorioGenerico() }
+    var chat by remember { mutableStateOf<Conversacion?>(null) }
+    var messages by remember { mutableStateOf<List<Mensaje>>(emptyList()) }
     var mensajeNuevo by remember { mutableStateOf("") }
-    val messagesState = remember { mutableStateListOf<Mensaje>().apply { addAll(chat.messages) } }
+    val scope = rememberCoroutineScope()
+
+    // Recupera datos de la conversación y sus mensajes a través del repositorio
+    LaunchedEffect(chatId) {
+        chatId?.let { id ->
+            supabaseRepo.getItem<Conversacion>("conversacion") { eq("id", id) }
+                .collect { conv ->
+                    chat = conv
+                }
+
+            supabaseRepo.getAll<Mensaje>("mensaje")
+                .collect { allMessages ->
+                    messages = allMessages.filter { it.idconversacion == id }
+                }
+        }
+    }
+
+    // El título del grupo se define a partir del nombre o del id de la conversación
+    val groupTitle = chat?.nombre?.takeIf { it.isNotBlank() } ?: chatId.orEmpty()
 
     Scaffold(
         topBar = {
@@ -234,8 +255,8 @@ fun mostrarChatGrupo(navController: NavHostController, chatId: String?, imagenes
                 irParaAtras = true,
                 muestraEngranaje = true,
                 onUsuariosClick = {
-                    // Al pulsar, abre una pantalla con una lista de los participantes del grupo
-                    //navController.navigate("mostrarParticipantesGrupo/$chatId")
+                    // Navega a la pantalla de participantes si se requiere:
+                    // navController.navigate("mostrarParticipantesGrupo/$chatId")
                 }
             )
         }
@@ -245,32 +266,29 @@ fun mostrarChatGrupo(navController: NavHostController, chatId: String?, imagenes
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // Sección de mensajes
+            // Lista de mensajes
             LazyColumn(
                 modifier = Modifier
                     .weight(1f)
                     .padding(8.dp)
             ) {
-                items(messagesState) { mensaje ->
-                    // Buscamos el usuario emisor en UsuariosPreCreados
-                    val senderUser = UsuariosPreCreados.find { it.getIdUnico() == mensaje.senderId }
-                    val senderAlias = senderUser?.getAlias() ?: mensaje.senderId
-                    // Obtenemos la imagen de perfil, o usamos la imagen por defecto
+                items(messages) { mensaje ->
+                    // Se utiliza 'idusuario' del mensaje para determinar el remitente
+                    val isCurrentUser = mensaje.idusuario == currentUserId
+                    val senderUser = UsuariosPreCreados.find { it.getIdUnico() == mensaje.idusuario }
+                    val senderAlias = senderUser?.getAlias() ?: mensaje.idusuario
                     val senderImageRes = senderUser?.getImagenPerfil() ?: Res.drawable.connexus
                     val imagePainter = painterResource(senderImageRes)
-
-                    // Determinamos si el mensaje es del UsuarioPrincipal
-                    val vaDerecha = idUsuario == mensaje.senderId
 
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 4.dp),
-                        horizontalArrangement = if (vaDerecha) Arrangement.End else Arrangement.Start,
+                        horizontalArrangement = if (isCurrentUser) Arrangement.End else Arrangement.Start,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        if (!vaDerecha) {
-                            // Imagen del emisor a la izquierda: la envolvemos en clickable para navegar a su perfil
+                        if (!isCurrentUser) {
+                            // Imagen del remitente a la izquierda, navegable a su perfil
                             Image(
                                 painter = imagePainter,
                                 contentDescription = "Imagen de perfil",
@@ -280,33 +298,32 @@ fun mostrarChatGrupo(navController: NavHostController, chatId: String?, imagenes
                                     .clip(RoundedCornerShape(20.dp))
                                     .border(1.dp, Color.Gray, RoundedCornerShape(20.dp))
                                     .clickable {
-                                        // Navega al perfil del emisor
-                                        navController.navigate("mostrarPerfilUsuario/${senderUser?.getIdUnico() ?: mensaje.senderId}")
+                                        navController.navigate(
+                                            "mostrarPerfilUsuario/${senderUser?.getIdUnico() ?: mensaje.idusuario}"
+                                        )
                                     }
                             )
                         }
 
-                        // Caja de mensaje
+                        // Caja con el mensaje y el alias del remitente
                         Box(
                             modifier = Modifier
                                 .padding(
-                                    start = if (vaDerecha) 0.dp else 8.dp,
-                                    end = if (vaDerecha) 8.dp else 0.dp
+                                    start = if (isCurrentUser) 0.dp else 8.dp,
+                                    end = if (isCurrentUser) 8.dp else 0.dp
                                 )
                                 .widthIn(max = 250.dp)
                                 .background(
-                                    color = if (vaDerecha) Color(0xFFC8E6C9) else Color(0xFFB2EBF2),
+                                    color = if (isCurrentUser) Color(0xFFC8E6C9) else Color(0xFFB2EBF2),
                                     shape = RoundedCornerShape(8.dp)
                                 )
                                 .border(
                                     width = 1.dp,
-                                    color = if (vaDerecha) Color(0xFFC8E6C9) else Color(0xFFB2EBF2),
+                                    color = if (isCurrentUser) Color(0xFFC8E6C9) else Color(0xFFB2EBF2),
                                     shape = RoundedCornerShape(8.dp)
                                 )
                         ) {
-                            Column(
-                                modifier = Modifier.padding(8.dp)
-                            ) {
+                            Column(modifier = Modifier.padding(8.dp)) {
                                 Text(
                                     text = senderAlias,
                                     modifier = Modifier.padding(bottom = 4.dp),
@@ -319,8 +336,8 @@ fun mostrarChatGrupo(navController: NavHostController, chatId: String?, imagenes
                             }
                         }
 
-                        if (vaDerecha) {
-                            // Imagen del emisor a la derecha (generalmente el UsuarioPrincipal, pero la hacemos clickable igual)
+                        if (isCurrentUser) {
+                            // Imagen del remitente (UsuarioPrincipal) a la derecha
                             Image(
                                 painter = imagePainter,
                                 contentDescription = "Imagen de perfil",
@@ -328,7 +345,9 @@ fun mostrarChatGrupo(navController: NavHostController, chatId: String?, imagenes
                                     .size(40.dp)
                                     .padding(start = 8.dp)
                                     .clickable {
-                                        navController.navigate("mostrarPerfilUsuario/${senderUser?.getIdUnico() ?: mensaje.senderId}")
+                                        navController.navigate(
+                                            "mostrarPerfilUsuario/${senderUser?.getIdUnico() ?: mensaje.idusuario}"
+                                        )
                                     }
                             )
                         }
@@ -336,7 +355,7 @@ fun mostrarChatGrupo(navController: NavHostController, chatId: String?, imagenes
                 }
             }
 
-            // Barra de escritura
+            // Barra de entrada para escribir un mensaje nuevo
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -351,51 +370,22 @@ fun mostrarChatGrupo(navController: NavHostController, chatId: String?, imagenes
                 )
                 IconButton(
                     onClick = {
-                        if (mensajeNuevo.isNotBlank()) {
-                            val newMessage = UsuarioPrincipal?.let {
-                                Mensaje(
-                                    senderId = it.getIdUnico(),
-                                    receiverId = "", // En grupo no se usa este campo
+                        if (mensajeNuevo.isNotBlank() && chatId != null) {
+                            scope.launch {
+                                // Se crea el nuevo mensaje usando 'idusuario' y 'idconversacion'
+                                val newMessage = Mensaje(
                                     content = mensajeNuevo,
+                                    idusuario = currentUserId,
+                                    idconversacion = chatId
                                 )
-                            }
-                            if (newMessage != null) {
-                                messagesState.add(newMessage)
-                            }
-
-                            val updatedConversation = chat.copy(messages = messagesState.toList())
-
-                            // Actualiza la conversación en UsuarioPrincipal
-                            val convsPrincipal = UsuarioPrincipal?.getChatUser()!!.conversaciones.toMutableList()
-                            val indexPrincipal = convsPrincipal.indexOfFirst { it.id == chat.id }
-                            if (indexPrincipal != -1) {
-                                convsPrincipal[indexPrincipal] = updatedConversation
-                                UsuarioPrincipal!!.setChatUser(
-                                    UsuarioPrincipal!!.getChatUser()!!.copy(conversaciones = convsPrincipal)
-                                )
-                            }
-
-                            // Actualiza la conversación para cada participante del grupo
-                            chat.participants.forEach { participantId ->
-                                UsuariosPreCreados.find { it.getIdUnico() == participantId }?.let { otherUser ->
-                                    val convsOther = otherUser.getChatUser()?.conversaciones?.toMutableList()
-                                    val indexOther = convsOther?.indexOfFirst { it.id == chat.id }
-                                    if (indexOther != -1) {
-                                        if (indexOther != null) {
-                                            convsOther[indexOther] = updatedConversation
-                                        }
-                                        otherUser.getChatUser()?.let {
-                                            convsOther?.let { it1 -> it.copy(conversaciones = it1) }
-                                                ?.let { it2 ->
-                                                    otherUser.setChatUser(
-                                                        it2
-                                                    )
-                                                }
-                                        }
+                                supabaseRepo.addItem("mensaje", newMessage)
+                                mensajeNuevo = ""
+                                // Actualiza la lista de mensajes de la conversación
+                                supabaseRepo.getAll<Mensaje>("mensaje")
+                                    .collect { allMessages ->
+                                        messages = allMessages.filter { it.idconversacion == chatId }
                                     }
-                                }
                             }
-                            mensajeNuevo = ""
                         }
                     }
                 ) {
@@ -408,9 +398,6 @@ fun mostrarChatGrupo(navController: NavHostController, chatId: String?, imagenes
         }
     }
 }
-
-
-
 
 /*
 // --- Nuevo Chat ---
