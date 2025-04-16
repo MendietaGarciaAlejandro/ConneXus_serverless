@@ -13,11 +13,9 @@ import connexus_serverless.composeapp.generated.resources.*
 import connexus_serverless.composeapp.generated.resources.unblock
 import connexus_serverless.composeapp.generated.resources.visibilidadOff
 import connexus_serverless.composeapp.generated.resources.visibilidadOn
+import kotlinx.coroutines.flow.asFlow
 import kotlinx.datetime.LocalDateTime
-import org.connexuss.project.comunicacion.Conversacion
-import org.connexuss.project.comunicacion.ConversacionesUsuario
 import org.connexuss.project.comunicacion.Hilo
-import org.connexuss.project.comunicacion.Mensaje
 import org.connexuss.project.comunicacion.Post
 import org.connexuss.project.comunicacion.Tema
 import org.connexuss.project.usuario.AlmacenamientoUsuario
@@ -170,7 +168,6 @@ val UsuariosPreCreados: SnapshotStateList<Usuario> = run {
         val user1 = UtilidadesUsuario().instanciaUsuario(
             "JP",
             "Juan Perez",
-            25,
             "paco@jerte.org",
             "pakito58",
             true
@@ -178,7 +175,6 @@ val UsuariosPreCreados: SnapshotStateList<Usuario> = run {
         val user2 = UtilidadesUsuario().instanciaUsuario(
             "ML",
             "Maria Lopez",
-            30,
             "marii@si.se",
             "marii",
             true
@@ -186,7 +182,6 @@ val UsuariosPreCreados: SnapshotStateList<Usuario> = run {
         val user3 = UtilidadesUsuario().instanciaUsuario(
             "PS",
             "Pedro Sanchez",
-            40,
             "roba@espannoles.es",
             "roba",
             true
@@ -603,156 +598,170 @@ val UsuariosPreCreados: SnapshotStateList<Usuario> = run {
     usuarios
 }
 
-//Conversaciones
-private val conversacionesIndividuales: List<Conversacion> = listOf(
-    Conversacion(
-        participants = listOf("UsuarioPrincipal", "Contacto1"),
-        messages = listOf(
-            Mensaje(
-                senderId = "UsuarioPrincipal",
-                receiverId = "Contacto1",
-                content = "Hola, ¿cómo estás?",
-                fechaMensaje = LocalDateTime(2023, 1, 1, 12, 0)
-            ),
-            Mensaje(
-                senderId = "Contacto1",
-                receiverId = "UsuarioPrincipal",
-                content = "Muy bien, ¿y tú?",
-                fechaMensaje = LocalDateTime(2023, 1, 1, 12, 5)
-            )
-        )
-    ),
-    Conversacion(
-        participants = listOf("UsuarioPrincipal", "Contacto2"),
-        messages = listOf(
-            Mensaje(
-                senderId = "UsuarioPrincipal",
-                receiverId = "Contacto2",
-                content = "¿Nos vemos mañana?",
-                fechaMensaje = LocalDateTime(2023, 1, 2, 10, 0)
-            ),
-            Mensaje(
-                senderId = "Contacto2",
-                receiverId = "UsuarioPrincipal",
-                content = "Claro, ¿a qué hora?",
-                fechaMensaje = LocalDateTime(2023, 1, 2, 10, 5)
-            )
-        )
-    ),
-    Conversacion(
-        participants = listOf("UsuarioPrincipal", "Contacto3"),
-        messages = listOf(
-            Mensaje(
-                senderId = "Contacto3",
-                receiverId = "UsuarioPrincipal",
-                content = "¿Has visto la última película?",
-                fechaMensaje = LocalDateTime(2023, 1, 3, 15, 0)
-            ),
-            Mensaje(
-                senderId = "UsuarioPrincipal",
-                receiverId = "Contacto3",
-                content = "Sí, estuvo genial.",
-                fechaMensaje = LocalDateTime(2023, 1, 3, 15, 10)
-            )
-        )
-    ),
-    Conversacion(
-        participants = listOf("UsuarioPrincipal", "Contacto4"),
-        messages = listOf(
-            Mensaje(
-                senderId = "UsuarioPrincipal",
-                receiverId = "Contacto4",
-                content = "¿Quieres ir a cenar?",
-                fechaMensaje = LocalDateTime(2023, 1, 4, 18, 0)
-            ),
-            Mensaje(
-                senderId = "Contacto4",
-                receiverId = "UsuarioPrincipal",
-                content = "¡Claro, suena perfecto!",
-                fechaMensaje = LocalDateTime(2023, 1, 4, 18, 15)
-            )
-        )
-    )
-)
+////Conversaciones
+//private val conversacionesIndividuales: List<Conversacion> = listOf(
+//    Conversacion(
+//        participants = listOf("UsuarioPrincipal", "Contacto1"),
+//        messages = listOf(
+//            Mensaje(
+//                senderId = "UsuarioPrincipal",
+//                receiverId = "Contacto1",
+//                content = "Hola, ¿cómo estás?",
+//                fechaMensaje = LocalDateTime(2023, 1, 1, 12, 0)
+//            ),
+//            Mensaje(
+//                senderId = "Contacto1",
+//                receiverId = "UsuarioPrincipal",
+//                content = "Muy bien, ¿y tú?",
+//                fechaMensaje = LocalDateTime(2023, 1, 1, 12, 5)
+//            )
+//        )
+//    ),
+//    Conversacion(
+//        participants = listOf("UsuarioPrincipal", "Contacto2"),
+//        messages = listOf(
+//            Mensaje(
+//                senderId = "UsuarioPrincipal",
+//                receiverId = "Contacto2",
+//                content = "¿Nos vemos mañana?",
+//                fechaMensaje = LocalDateTime(2023, 1, 2, 10, 0)
+//            ),
+//            Mensaje(
+//                senderId = "Contacto2",
+//                receiverId = "UsuarioPrincipal",
+//                content = "Claro, ¿a qué hora?",
+//                fechaMensaje = LocalDateTime(2023, 1, 2, 10, 5)
+//            )
+//        )
+//    ),
+//    Conversacion(
+//        participants = listOf("UsuarioPrincipal", "Contacto3"),
+//        messages = listOf(
+//            Mensaje(
+//                senderId = "Contacto3",
+//                receiverId = "UsuarioPrincipal",
+//                content = "¿Has visto la última película?",
+//                fechaMensaje = LocalDateTime(2023, 1, 3, 15, 0)
+//            ),
+//            Mensaje(
+//                senderId = "UsuarioPrincipal",
+//                receiverId = "Contacto3",
+//                content = "Sí, estuvo genial.",
+//                fechaMensaje = LocalDateTime(2023, 1, 3, 15, 10)
+//            )
+//        )
+//    ),
+//    Conversacion(
+//        participants = listOf("UsuarioPrincipal", "Contacto4"),
+//        messages = listOf(
+//            Mensaje(
+//                senderId = "UsuarioPrincipal",
+//                receiverId = "Contacto4",
+//                content = "¿Quieres ir a cenar?",
+//                fechaMensaje = LocalDateTime(2023, 1, 4, 18, 0)
+//            ),
+//            Mensaje(
+//                senderId = "Contacto4",
+//                receiverId = "UsuarioPrincipal",
+//                content = "¡Claro, suena perfecto!",
+//                fechaMensaje = LocalDateTime(2023, 1, 4, 18, 15)
+//            )
+//        )
+//    )
+//)
+//
+//// Conversaciones de grupo (3)
+//private val conversacionesGrupo: List<Conversacion> = listOf(
+//    Conversacion(
+//        participants = listOf("UsuarioPrincipal", "Contacto5", "Contacto6"),
+//        messages = listOf(
+//            Mensaje(
+//                senderId = "Contacto5",
+//                receiverId = "UsuarioPrincipal",
+//                content = "Bienvenidos al grupo de estudio",
+//                fechaMensaje = LocalDateTime(2023, 1, 5, 9, 0)
+//            ),
+//            Mensaje(
+//                senderId = "Contacto6",
+//                receiverId = "UsuarioPrincipal",
+//                content = "¿Quién trae los apuntes?",
+//                fechaMensaje = LocalDateTime(2023, 1, 5, 9, 10)
+//            )
+//        )
+//    ),
+//    Conversacion(
+//        participants = listOf("UsuarioPrincipal", "Contacto7", "Contacto8"),
+//        messages = listOf(
+//            Mensaje(
+//                senderId = "UsuarioPrincipal",
+//                receiverId = "Contacto7",
+//                content = "Reunión de trabajo a las 10",
+//                fechaMensaje = LocalDateTime(2023, 1, 6, 8, 50)
+//            ),
+//            Mensaje(
+//                senderId = "Contacto8",
+//                receiverId = "UsuarioPrincipal",
+//                content = "Confirmado, allí estaré",
+//                fechaMensaje = LocalDateTime(2023, 1, 6, 9, 0)
+//            )
+//        )
+//    ),
+//    Conversacion(
+//        participants = listOf("UsuarioPrincipal", "Contacto9", "Contacto10"),
+//        messages = listOf(
+//            Mensaje(
+//                senderId = "Contacto9",
+//                receiverId = "UsuarioPrincipal",
+//                content = "Chicos, ¿organizamos un encuentro este fin de semana?",
+//                fechaMensaje = LocalDateTime(2023, 1, 7, 16, 0)
+//            ),
+//            Mensaje(
+//                senderId = "Contacto10",
+//                receiverId = "UsuarioPrincipal",
+//                content = "Me apunto, cuenten conmigo.",
+//                fechaMensaje = LocalDateTime(2023, 1, 7, 16, 10)
+//            )
+//        )
+//    )
+//)
 
-// Conversaciones de grupo (3)
-private val conversacionesGrupo: List<Conversacion> = listOf(
-    Conversacion(
-        participants = listOf("UsuarioPrincipal", "Contacto5", "Contacto6"),
-        messages = listOf(
-            Mensaje(
-                senderId = "Contacto5",
-                receiverId = "UsuarioPrincipal",
-                content = "Bienvenidos al grupo de estudio",
-                fechaMensaje = LocalDateTime(2023, 1, 5, 9, 0)
-            ),
-            Mensaje(
-                senderId = "Contacto6",
-                receiverId = "UsuarioPrincipal",
-                content = "¿Quién trae los apuntes?",
-                fechaMensaje = LocalDateTime(2023, 1, 5, 9, 10)
-            )
-        )
-    ),
-    Conversacion(
-        participants = listOf("UsuarioPrincipal", "Contacto7", "Contacto8"),
-        messages = listOf(
-            Mensaje(
-                senderId = "UsuarioPrincipal",
-                receiverId = "Contacto7",
-                content = "Reunión de trabajo a las 10",
-                fechaMensaje = LocalDateTime(2023, 1, 6, 8, 50)
-            ),
-            Mensaje(
-                senderId = "Contacto8",
-                receiverId = "UsuarioPrincipal",
-                content = "Confirmado, allí estaré",
-                fechaMensaje = LocalDateTime(2023, 1, 6, 9, 0)
-            )
-        )
-    ),
-    Conversacion(
-        participants = listOf("UsuarioPrincipal", "Contacto9", "Contacto10"),
-        messages = listOf(
-            Mensaje(
-                senderId = "Contacto9",
-                receiverId = "UsuarioPrincipal",
-                content = "Chicos, ¿organizamos un encuentro este fin de semana?",
-                fechaMensaje = LocalDateTime(2023, 1, 7, 16, 0)
-            ),
-            Mensaje(
-                senderId = "Contacto10",
-                receiverId = "UsuarioPrincipal",
-                content = "Me apunto, cuenten conmigo.",
-                fechaMensaje = LocalDateTime(2023, 1, 7, 16, 10)
-            )
-        )
-    )
-)
+//val conversacionesPreInicializadasUsuarioPrincipal: List<Conversacion> =
+//    conversacionesIndividuales + conversacionesGrupo
+//
+//var UsuarioPrincipal: Usuario? = UtilidadesUsuario().instanciaUsuario(
+//    nombre = "Usuario Principal",
+//    correo = "principal@example.com",
+//    aliasPublico = "UsuarioPrincipal",
+//    activo = true
+//)?.apply {
+//    // Asigna algunos contactos de ejemplo (puedes modificar según tus necesidades)
+//    setContactos(listOf("JP", "ML"))
+//    // Define un chat de ejemplo para este usuario
+//    setChatUser(
+//        ConversacionesUsuario(
+//            id = "chatUser_1",
+//            idUser = "UsuarioPrincipal",
+//            conversaciones = conversacionesPreInicializadasUsuarioPrincipal
+//        )
+//    )
+//}
 
-val conversacionesPreInicializadasUsuarioPrincipal: List<Conversacion> =
-    conversacionesIndividuales + conversacionesGrupo
-
-var UsuarioPrincipal: Usuario? = UtilidadesUsuario().instanciaUsuario(
+// Arreglar con la nueva estructura de datos (usuario_contactos, usuario_bloqueados,etc.)
+var UsuarioPrincipal: Usuario? = Usuario(
+    idUnico = "1",
     nombre = "Usuario Principal",
     correo = "principal@example.com",
     aliasPublico = "UsuarioPrincipal",
+    aliasPrivado = "UsuarioPrincipal",
     activo = true
-)?.apply {
-    // Asigna algunos contactos de ejemplo (puedes modificar según tus necesidades)
-    setContactos(listOf("JP", "ML"))
-    // Define un chat de ejemplo para este usuario
-    setChatUser(
-        ConversacionesUsuario(
-            id = "chatUser_1",
-            idUser = "UsuarioPrincipal",
-            conversaciones = conversacionesPreInicializadasUsuarioPrincipal
-        )
-    )
+).apply {
+    descripcion = "Descripción del usuario"
+    contrasennia = "123456789"
+    imagenPerfil = Res.drawable.connexus
 }
 
 // Datos foro
-
+/*
 val hilosForo: List<Hilo> = listOf(
     Hilo(
         idForeros = listOf("UsuarioPrincipal", "Contacto1"),
@@ -887,7 +896,9 @@ val hilosForo: List<Hilo> = listOf(
         nombre = "Hilo de grupo 3"
     )
 )
+ */
 
+/*
 val temasForo: List<Tema> = listOf(
     Tema(
         idTema = "tema_1",
@@ -908,11 +919,12 @@ val temasForo: List<Tema> = listOf(
         idUsuario = "UsuarioPrincipal"
     )
 )
+ */
 
 // Nuevos datos del foro --------------------------------------------
 
 
-
+/*
 // Lista temporal de Temas + Hilos + Posts
 val temasHilosPosts = listOf(
     Tema(
@@ -1135,132 +1147,190 @@ val temasHilosPosts = listOf(
         )
     )
 )
-
-/**
- * Objeto repositorio para gestionar los temas del foro.
  */
+
+// Lista de Temas
+var temasDatos = mutableListOf(
+    Tema(
+        idTema = "tema1",
+        nombre = "Tecnología"
+    ),
+    Tema(
+        idTema = "tema2",
+        nombre = "Cocina"
+    ),
+    Tema(
+        idTema = "tema3",
+        nombre = "Viajes"
+    )
+)
+
+// Lista de Hilos (relacionados con los temas)
+var hilosDatos = mutableListOf(
+    Hilo(
+        idHilo = "hilo1",
+        nombre = "Mejores laptops 2023",
+        idTema = "tema1"
+    ),
+    Hilo(
+        idHilo = "hilo2",
+        nombre = "Recetas vegetarianas",
+        idTema = "tema2"
+    ),
+    Hilo(
+        idHilo = "hilo3",
+        nombre = null,  // Ejemplo de hilo sin nombre
+        idTema = "tema1"
+    )
+)
+
+// Lista de Posts (relacionados con los hilos)
+var postsDatos = mutableStateListOf(
+    Post(
+        idPost = "post1",
+        content = "Opino que la Dell XPS 15 sigue siendo la mejor opción",
+        fechaPost = LocalDateTime(2023, 10, 15, 14, 30),
+        aliaspublico = "techlover123",
+        idHilo = "hilo1",
+        idFirmante = "user123"
+    ),
+    Post(
+        idPost = "post2",
+        content = "Aquí mi receta de hamburguesa de lentejas:...",
+        fechaPost = LocalDateTime(2023, 10, 16, 9, 15),
+        aliaspublico = "chefamateur",
+        idHilo = "hilo2",
+        idFirmante = "user456"
+    ),
+    Post(
+        idPost = "post3",
+        content = "¿Alguien ha probado las nuevas MacBook M2?",
+        fechaPost = LocalDateTime(2023, 10, 17, 18, 0),
+        aliaspublico = "curious_user",
+        idHilo = "hilo1",
+        idFirmante = "user789"
+    )
+)
+
 object ForoRepository {
-    // Lista de temas como estado mutable global, inicializada vacía
-    val temas = mutableStateListOf<Tema>().apply {
-        addAll(temasHilosPosts)
-    }
+    // Lista de temas con estado mutable
+    private val _temas = mutableStateListOf<Tema>()
+    val temas: List<Tema> get() = _temas
+    val temasFlow = _temas.asFlow() // Requiere dependencia de coroutines
 
-    /**
-     * Agrega un nuevo tema al repositorio.
-     *
-     * @param nuevoTema El tema a agregar.
-     */
     fun agregarTema(nuevoTema: Tema) {
-        temas.add(nuevoTema)
+        _temas.add(nuevoTema)
     }
 
     /**
-     * Actualiza un tema existente en el repositorio.
-     *
-     * @param temaActualizado El tema con la información actualizada.
+     * Actualiza un tema existente
      */
     fun actualizarTema(temaActualizado: Tema) {
-        temas.indexOfFirst { it.idTema == temaActualizado.idTema }
-            .takeIf { it != -1 }
-            ?.let { index -> temas[index] = temaActualizado }
-    }
-
-    /**
-     * Obtiene un tema en función de su identificador.
-     *
-     * @param idTema El identificador del tema.
-     * @return El tema correspondiente o null si no se encuentra.
-     */
-    fun obtenerTemaPorId(idTema: String): Tema? =
-        temas.find { it.idTema == idTema }
-
-    /**
-     * Actualiza un hilo dentro de un tema.
-     *
-     * @param temaId El identificador del tema.
-     * @param hiloActualizado El hilo con los datos actualizados.
-     */
-    fun actualizarHiloEnTema(temaId: String, hiloActualizado: Hilo) {
-        obtenerTemaPorId(temaId)?.let { tema ->
-            val nuevosHilos = tema.hilos.map {
-                if (it.idHilo == hiloActualizado.idHilo) hiloActualizado else it
-            }
-            actualizarTema(tema.copy(hilos = nuevosHilos))
+        val index = temas.indexOfFirst { it.idTema == temaActualizado.idTema }
+        if (index != -1) {
+            _temas[index] = temaActualizado
         }
     }
 
     /**
-     * Actualiza un post dentro de un hilo en un tema.
-     *
-     * @param temaId El identificador del tema.
-     * @param hiloId El identificador del hilo.
-     * @param postActualizado El post con los datos actualizados.
+     * Obtiene tema por ID
      */
-    fun actualizarPostEnHilo(temaId: String, hiloId: String, postActualizado: Post) {
-        obtenerTemaPorId(temaId)?.let { tema ->
-            val nuevosHilos = tema.hilos.map { hilo ->
-                if (hilo.idHilo == hiloId) {
-                    val nuevosPosts = hilo.posts.map { post ->
-                        if (post.idPost == postActualizado.idPost) postActualizado else post
-                    }
-                    hilo.copy(posts = nuevosPosts)
-                } else hilo
-            }
-            actualizarTema(tema.copy(hilos = nuevosHilos))
-        }
+    fun obtenerTemaPorId(idTema: String): Tema? {
+        return temas.firstOrNull { it.idTema == idTema }
+    }
+
+    /**
+     * Elimina un tema
+     */
+    fun eliminarTema(idTema: String) {
+        _temas.removeAll { it.idTema == idTema }
+    }
+
+    fun obtenerTemas(): List<Tema> {
+        return _temas
     }
 }
-/**
- * Objeto repositorio para gestionar los hilos del foro.
- */
+
 object HilosRepository {
-    // Lista mutable de hilos
-    val hilos = mutableStateListOf<Hilo>()
+    // Lista de hilos con estado mutable
+    val hilos = mutableStateListOf<Hilo>().apply {
+        addAll(hilosDatos)
+    }
 
     /**
-     * Agrega un nuevo hilo a la lista.
-     *
-     * @param nuevoHilo El hilo a agregar.
+     * Obtiene hilos por tema
+     */
+    fun obtenerHilosPorTema(idTema: String): List<Hilo> {
+        return hilos.filter { it.idTema == idTema }
+    }
+
+    /**
+     * Agrega nuevo hilo
      */
     fun agregarHilo(nuevoHilo: Hilo) {
-        hilos.add(nuevoHilo)
+        if (!hilos.any { it.idHilo == nuevoHilo.idHilo }) {
+            hilos.add(nuevoHilo)
+        }
     }
 
     /**
-     * Actualiza un hilo existente en la lista.
-     *
-     * @param hiloActualizado El hilo con los datos actualizados.
+     * Actualiza hilo existente
      */
     fun actualizarHilo(hiloActualizado: Hilo) {
-        hilos.indexOfFirst { it.idHilo == hiloActualizado.idHilo }
-            .takeIf { it != -1 }
-            ?.let { index -> hilos[index] = hiloActualizado }
+        val index = hilos.indexOfFirst { it.idHilo == hiloActualizado.idHilo }
+        if (index != -1) {
+            hilos[index] = hiloActualizado
+        }
+    }
+
+    /**
+     * Elimina hilo por ID
+     */
+    fun eliminarHilo(idHilo: String) {
+        hilos.removeAll { it.idHilo == idHilo }
+    }
+
+    fun obtenerHiloPorId(idHilo: String): Hilo? {
+        return hilos.firstOrNull { it.idHilo == idHilo }
     }
 }
-/**
- * Objeto repositorio para gestionar los posts del foro.
- */
-object PostsRepository {
-    // Lista global mutable de posts
-    val posts = mutableStateListOf<Post>()
 
-    /**
-     * Agrega un nuevo post a la lista.
-     *
-     * @param nuevoPost El post a agregar.
-     */
-    fun agregarPost(nuevoPost: Post) {
-        posts.add(nuevoPost)
+object PostsRepository {
+    // Lista de posts con estado mutable
+    val posts = mutableStateListOf<Post>().apply {
+        addAll(postsDatos)
     }
 
     /**
-     * Actualiza un post existente en la lista.
-     *
-     * @param postActualizado El post con los datos actualizados.
+     * Obtiene posts por hilo
+     */
+    fun obtenerPostsPorHilo(idHilo: String): List<Post> {
+        return posts.filter { it.idHilo == idHilo }
+    }
+
+    /**
+     * Agrega nuevo post
+     */
+    fun agregarPost(nuevoPost: Post) {
+        if (!posts.any { it.idPost == nuevoPost.idPost }) {
+            posts.add(nuevoPost)
+        }
+    }
+
+    /**
+     * Actualiza post existente
      */
     fun actualizarPost(postActualizado: Post) {
-        posts.indexOfFirst { it.idPost == postActualizado.idPost }
-            .takeIf { it != -1 }
-            ?.let { index -> posts[index] = postActualizado }
+        val index = posts.indexOfFirst { it.idPost == postActualizado.idPost }
+        if (index != -1) {
+            posts[index] = postActualizado
+        }
+    }
+
+    /**
+     * Elimina post por ID
+     */
+    fun eliminarPost(idPost: String) {
+        posts.removeAll { it.idPost == idPost }
     }
 }

@@ -65,8 +65,7 @@ class SupabaseHiloRepositorio : ISupabaseHiloRepositorio {
     override suspend fun updateHilo(hilo: Hilo) {
         val updateData = mapOf(
             "idHilo" to hilo.idHilo,
-            "idForeros" to hilo.idForeros,
-            "posts" to hilo.posts,
+            "idTema" to hilo.idTema,
             "nombre" to hilo.nombre
         )
         try {

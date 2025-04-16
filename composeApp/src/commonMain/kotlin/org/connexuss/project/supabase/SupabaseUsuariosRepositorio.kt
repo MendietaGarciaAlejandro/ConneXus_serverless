@@ -1,11 +1,7 @@
 package org.connexuss.project.supabase
 
-import io.github.jan.supabase.createSupabaseClient
-import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.Columns
-import io.github.jan.supabase.realtime.Realtime
-import io.github.jan.supabase.storage.Storage
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import org.connexuss.project.usuario.Usuario
@@ -25,7 +21,7 @@ interface ISupabaseUsuariosRepositorio {
 class SupabaseUsuariosRepositorio : ISupabaseUsuariosRepositorio {
 
     private val supabaseClient = instanciaSupabaseClient( tieneStorage = true, tieneAuth = false, tieneRealtime = true, tienePostgrest = true)
-    private val nombreTabla = "usuarios"
+    private val nombreTabla = "usuario"
 
     override fun getUsuarios() = flow {
         val response = supabaseClient
@@ -52,7 +48,7 @@ class SupabaseUsuariosRepositorio : ISupabaseUsuariosRepositorio {
             .select()
             .decodeList<Usuario>()
         // FIltro por id de entre todos los usuarios
-        val usuario = response.find { it.getIdUnico() == nombre }
+        val usuario = response.find { it.getIdUnicoMio() == nombre }
         emit(usuario)
     }
 
@@ -73,7 +69,7 @@ class SupabaseUsuariosRepositorio : ISupabaseUsuariosRepositorio {
             .select()
             .decodeList<Usuario>()
         // FIltro por id de entre todos los usuarios
-        val usuario = response.find { it.getCorreo() == email }
+        val usuario = response.find { it.getCorreoMio() == email }
         emit(usuario)
     }
 
@@ -92,17 +88,17 @@ class SupabaseUsuariosRepositorio : ISupabaseUsuariosRepositorio {
 
     override suspend fun updateUsuario(usuario: Usuario) {
         val updateData = mapOf(
-            "nombre" to usuario.getNombreCompleto(),
-            "correo" to usuario.getCorreo(),
-            "contrasennia" to usuario.getContrasennia(),
-            "idUnico" to usuario.getIdUnico()
+            "nombre" to usuario.getNombreCompletoMio(),
+            "correo" to usuario.getCorreoMio(),
+            "contrasennia" to usuario.getContrasenniaMio(),
+            "idUnico" to usuario.getIdUnicoMio()
         )
         try {
             supabaseClient
                 .from(nombreTabla)
                 .update(updateData) {
                     filter {
-                        eq("idUnico", usuario.getIdUnico())
+                        eq("idUnico", usuario.getIdUnicoMio())
                     }
                     select()
                 }
@@ -121,7 +117,7 @@ class SupabaseUsuariosRepositorio : ISupabaseUsuariosRepositorio {
                 .from(nombreTabla)
                 .delete {
                     filter {
-                        eq("idUnico", usuario.getIdUnico())
+                        eq("idUnico", usuario.getIdUnicoMio())
                     }
                     select()
                 }

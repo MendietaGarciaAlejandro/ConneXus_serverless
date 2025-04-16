@@ -19,9 +19,11 @@ import androidx.compose.material.Divider
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Scaffold
+import androidx.compose.material.Switch
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -29,6 +31,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import io.github.jan.supabase.auth.auth
@@ -44,6 +47,7 @@ import org.connexuss.project.comunicacion.Tema
 import org.connexuss.project.comunicacion.generateId
 import org.connexuss.project.interfaces.DefaultTopBar
 import org.connexuss.project.interfaces.LimitaTamanioAncho
+import org.connexuss.project.usuario.Usuario
 import org.connexuss.project.usuario.UsuarioBloqueado
 import org.connexuss.project.usuario.UsuarioContacto
 
@@ -146,14 +150,14 @@ fun SupabaseMensajesCRUD(navHostController: NavHostController) {
     val repository = SupabaseRepositorioGenerico()
     val scope = rememberCoroutineScope()
     var mensajes by remember { mutableStateOf(emptyList<Mensaje>()) }
-    // Campos para el formulario de inserción
-    var senderId by remember { mutableStateOf("") }
-    var receiverId by remember { mutableStateOf("") }
+
+    // Campos actualizados para coincidir con la data class Mensaje
+    var idUsuario by remember { mutableStateOf("") }
+    var idConversacion by remember { mutableStateOf("") }
     var content by remember { mutableStateOf("") }
 
     val nombreTabla = "mensaje"
 
-    // Función para recargar mensajes
     fun cargarMensajes() {
         scope.launch {
             repository.getAll<Mensaje>(nombreTabla).collect { mensajes = it }
@@ -183,8 +187,12 @@ fun SupabaseMensajesCRUD(navHostController: NavHostController) {
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Text("${mensaje.senderId} -> ${mensaje.receiverId}: ${mensaje.content}")
-                                // Botón de eliminación (para pruebas)
+                                Column {
+                                    Text("Usuario: ${mensaje.idusuario}")
+                                    Text("Conversación: ${mensaje.idconversacion}")
+                                    Text("Mensaje: ${mensaje.content}")
+                                    Text("Fecha: ${mensaje.fechaMensaje}")
+                                }
                                 Button(onClick = {
                                     scope.launch {
                                         repository.deleteItem<Mensaje>(nombreTabla, "id", mensaje.id)
@@ -196,21 +204,21 @@ fun SupabaseMensajesCRUD(navHostController: NavHostController) {
                     }
                     Spacer(modifier = Modifier.height(16.dp))
                     OutlinedTextField(
-                        value = senderId,
-                        onValueChange = { senderId = it },
-                        label = { Text("Sender ID") },
+                        value = idUsuario,
+                        onValueChange = { idUsuario = it },
+                        label = { Text("ID Usuario") },
                         modifier = Modifier.fillMaxWidth()
                     )
                     OutlinedTextField(
-                        value = receiverId,
-                        onValueChange = { receiverId = it },
-                        label = { Text("Receiver ID") },
+                        value = idConversacion,
+                        onValueChange = { idConversacion = it },
+                        label = { Text("ID Conversación") },
                         modifier = Modifier.fillMaxWidth()
                     )
                     OutlinedTextField(
                         value = content,
                         onValueChange = { content = it },
-                        label = { Text("Content") },
+                        label = { Text("Contenido") },
                         modifier = Modifier.fillMaxWidth()
                     )
                     Button(
@@ -219,13 +227,13 @@ fun SupabaseMensajesCRUD(navHostController: NavHostController) {
                                 repository.addItem(
                                     nombreTabla,
                                     Mensaje(
-                                        senderId = senderId,
-                                        receiverId = receiverId,
-                                        content = content
+                                        content = content,
+                                        idusuario = idUsuario,
+                                        idconversacion = idConversacion
                                     )
                                 )
-                                senderId = ""
-                                receiverId = ""
+                                idUsuario = ""
+                                idConversacion = ""
                                 content = ""
                                 cargarMensajes()
                             }
@@ -271,7 +279,11 @@ fun SupabaseConversacionesCRUD(navHostController: NavHostController) {
             }
         ) { padding ->
             LimitaTamanioAncho { modifier ->
-                Column(modifier = modifier.fillMaxSize().padding(padding)) {
+                Column(
+                    modifier = modifier
+                        .fillMaxSize()
+                        .padding(padding)
+                ) {
                     Text("Conversaciones registradas", style = MaterialTheme.typography.h6)
                     LazyColumn(modifier = Modifier.weight(1f)) {
                         items(conversaciones) { conv ->
@@ -279,7 +291,8 @@ fun SupabaseConversacionesCRUD(navHostController: NavHostController) {
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Text("Conversación: ${conv.nombre ?: "Sin nombre"}  \nParticipantes: ${conv.participants.joinToString()}")
+                                // Se muestra el nombre de la conversación, considerando que puede ser nulo
+                                Text("Conversación: ${conv.nombre ?: "Sin nombre"}")
                                 Button(onClick = {
                                     scope.launch {
                                         repository.deleteItem<Conversacion>(
@@ -289,7 +302,9 @@ fun SupabaseConversacionesCRUD(navHostController: NavHostController) {
                                         )
                                         cargarConversaciones()
                                     }
-                                }) { Text("Eliminar") }
+                                }) {
+                                    Text("Eliminar")
+                                }
                             }
                         }
                     }
@@ -303,13 +318,11 @@ fun SupabaseConversacionesCRUD(navHostController: NavHostController) {
                     Button(
                         onClick = {
                             scope.launch {
-                                // Para insertar, se debe construir un objeto Conversacion.
-                                // Aquí se inserta con participantes vacíos y sin mensajes.
+                                // Se inserta la conversación únicamente con el nombre.
                                 repository.addItem(
                                     nombreTabla,
                                     Conversacion(
                                         id = generateId(),
-                                        participants = emptyList(),
                                         nombre = nombre
                                     )
                                 )
@@ -317,7 +330,9 @@ fun SupabaseConversacionesCRUD(navHostController: NavHostController) {
                                 cargarConversaciones()
                             }
                         },
-                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp)
                     ) {
                         Text("Insertar Conversación")
                     }
@@ -333,8 +348,8 @@ fun SupabaseConversacionesUsuarioCRUD(navHostController: NavHostController) {
     val scope = rememberCoroutineScope()
     var convUsuarioList by remember { mutableStateOf(emptyList<ConversacionesUsuario>()) }
     var idUser by remember { mutableStateOf("") }
-    // Se asume que 'conversaciones' se inicializa vacío o con algún valor predefinido.
 
+    // Nombre de la tabla para las conversaciones-usuario
     val nombreTabla = "conversaciones_usuario"
 
     fun cargarConversacionesUsuario() {
@@ -358,7 +373,11 @@ fun SupabaseConversacionesUsuarioCRUD(navHostController: NavHostController) {
             }
         ) { padding ->
             LimitaTamanioAncho { modifier ->
-                Column(modifier = modifier.fillMaxSize().padding(padding)) {
+                Column(
+                    modifier = modifier
+                        .fillMaxSize()
+                        .padding(padding)
+                ) {
                     Text("ConversacionesUsuario registrados", style = MaterialTheme.typography.h6)
                     LazyColumn(modifier = Modifier.weight(1f)) {
                         items(convUsuarioList) { convUser ->
@@ -366,17 +385,21 @@ fun SupabaseConversacionesUsuarioCRUD(navHostController: NavHostController) {
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Text("Usuario: ${convUser.idUser}  - Conversaciones: ${convUser.conversaciones.size}")
+                                // Se muestran las propiedades reales de la data class
+                                Text("Usuario: ${convUser.idusuario}  - Conversación: ${convUser.idconversacion}")
                                 Button(onClick = {
                                     scope.launch {
+                                        // Se utiliza 'idconversacion' como identificador único para eliminar el registro
                                         repository.deleteItem<ConversacionesUsuario>(
                                             nombreTabla,
-                                            "id",
-                                            convUser.id
+                                            "idconversacion",
+                                            convUser.idconversacion
                                         )
                                         cargarConversacionesUsuario()
                                     }
-                                }) { Text("Eliminar") }
+                                }) {
+                                    Text("Eliminar")
+                                }
                             }
                         }
                     }
@@ -390,19 +413,21 @@ fun SupabaseConversacionesUsuarioCRUD(navHostController: NavHostController) {
                     Button(
                         onClick = {
                             scope.launch {
+                                // Se crea una nueva instancia usando los nombres de propiedades originales
                                 repository.addItem(
                                     nombreTabla,
                                     ConversacionesUsuario(
-                                        id = generateId(),
-                                        idUser = idUser,
-                                        conversaciones = emptyList()
+                                        idusuario = idUser,
+                                        idconversacion = generateId()
                                     )
                                 )
                                 idUser = ""
                                 cargarConversacionesUsuario()
                             }
                         },
-                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp)
                     ) {
                         Text("Insertar ConversacionesUsuario")
                     }
@@ -417,8 +442,9 @@ fun SupabasePostsCRUD(navHostController: NavHostController) {
     val repository = SupabaseRepositorioGenerico()
     val scope = rememberCoroutineScope()
     var posts by remember { mutableStateOf(emptyList<Post>()) }
-    var senderId by remember { mutableStateOf("") }
-    var receiverId by remember { mutableStateOf("") }
+    var aliasPublico by remember { mutableStateOf("") }
+    var idHilo by remember { mutableStateOf("") }
+    var idFirmante by remember { mutableStateOf("") }
     var content by remember { mutableStateOf("") }
 
     val nombreTabla = "post"
@@ -452,33 +478,50 @@ fun SupabasePostsCRUD(navHostController: NavHostController) {
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Text("Post: ${post.content} \nFrom: ${post.senderId} to ${post.receiverId}")
+                                Text(
+                                    "Post: ${post.content}\n" +
+                                            "Alias Público: ${post.aliaspublico}\n" +
+                                            "Hilo: ${post.idHilo}\n" +
+                                            "Firmante: ${post.idFirmante}"
+                                )
                                 Button(onClick = {
                                     scope.launch {
-                                        repository.deleteItem<Post>(nombreTabla, "idPost", post.idPost)
+                                        repository.deleteItem<Post>(
+                                            nombreTabla,
+                                            "idpost",
+                                            post.idPost
+                                        )
                                         cargarPosts()
                                     }
-                                }) { Text("Eliminar") }
+                                }) {
+                                    Text("Eliminar")
+                                }
                             }
                         }
                     }
                     Spacer(modifier = Modifier.height(16.dp))
                     OutlinedTextField(
-                        value = senderId,
-                        onValueChange = { senderId = it },
-                        label = { Text("Sender ID") },
+                        value = aliasPublico,
+                        onValueChange = { aliasPublico = it },
+                        label = { Text("Alias Público") },
                         modifier = Modifier.fillMaxWidth()
                     )
                     OutlinedTextField(
-                        value = receiverId,
-                        onValueChange = { receiverId = it },
-                        label = { Text("Receiver ID") },
+                        value = idHilo,
+                        onValueChange = { idHilo = it },
+                        label = { Text("ID Hilo") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = idFirmante,
+                        onValueChange = { idFirmante = it },
+                        label = { Text("ID Firmante") },
                         modifier = Modifier.fillMaxWidth()
                     )
                     OutlinedTextField(
                         value = content,
                         onValueChange = { content = it },
-                        label = { Text("Content") },
+                        label = { Text("Contenido del Post") },
                         modifier = Modifier.fillMaxWidth()
                     )
                     Button(
@@ -487,13 +530,15 @@ fun SupabasePostsCRUD(navHostController: NavHostController) {
                                 repository.addItem(
                                     nombreTabla,
                                     Post(
-                                        senderId = senderId,
-                                        receiverId = receiverId,
-                                        content = content
+                                        content = content,
+                                        aliaspublico = aliasPublico,
+                                        idHilo = idHilo.ifEmpty { generateId() },
+                                        idFirmante = idFirmante
                                     )
                                 )
-                                senderId = ""
-                                receiverId = ""
+                                aliasPublico = ""
+                                idHilo = ""
+                                idFirmante = ""
                                 content = ""
                                 cargarPosts()
                             }
@@ -514,8 +559,7 @@ fun SupabaseHilosCRUD(navHostController: NavHostController) {
     val scope = rememberCoroutineScope()
     var hilos by remember { mutableStateOf(emptyList<Hilo>()) }
     var nombre by remember { mutableStateOf("") }
-    // Para simplificar, asumimos que la lista de foreros se ingresa como una cadena separada por comas.
-    var foreros by remember { mutableStateOf("") }
+    var idTema by remember { mutableStateOf("") }
 
     val nombreTabla = "hilo"
 
@@ -540,7 +584,11 @@ fun SupabaseHilosCRUD(navHostController: NavHostController) {
             }
         ) { padding ->
             LimitaTamanioAncho { modifier ->
-                Column(modifier = modifier.fillMaxSize().padding(padding)) {
+                Column(
+                    modifier = modifier
+                        .fillMaxSize()
+                        .padding(padding)
+                ) {
                     Text("Hilos registrados", style = MaterialTheme.typography.h6)
                     LazyColumn(modifier = Modifier.weight(1f)) {
                         items(hilos) { hilo ->
@@ -548,13 +596,19 @@ fun SupabaseHilosCRUD(navHostController: NavHostController) {
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Text("Hilo: ${hilo.nombre ?: "Sin nombre"} \nForeros: ${hilo.idForeros.joinToString()}")
+                                Text("Hilo: ${hilo.nombre ?: "Sin nombre"}\nID Tema: ${hilo.idTema}")
                                 Button(onClick = {
                                     scope.launch {
-                                        repository.deleteItem<Hilo>(nombreTabla, "idHilo", hilo.idHilo)
+                                        repository.deleteItem<Hilo>(
+                                            nombreTabla,
+                                            "idhilo",
+                                            hilo.idHilo
+                                        )
                                         cargarHilos()
                                     }
-                                }) { Text("Eliminar") }
+                                }) {
+                                    Text("Eliminar")
+                                }
                             }
                         }
                     }
@@ -566,29 +620,29 @@ fun SupabaseHilosCRUD(navHostController: NavHostController) {
                         modifier = Modifier.fillMaxWidth()
                     )
                     OutlinedTextField(
-                        value = foreros,
-                        onValueChange = { foreros = it },
-                        label = { Text("Foreros (separados por comas)") },
+                        value = idTema,
+                        onValueChange = { idTema = it },
+                        label = { Text("ID del Tema") },
                         modifier = Modifier.fillMaxWidth()
                     )
                     Button(
                         onClick = {
                             scope.launch {
-                                val listaForeros = foreros.split(",").map { it.trim() }
                                 repository.addItem(
                                     nombreTabla,
                                     Hilo(
-                                        idForeros = listaForeros,
-                                        posts = emptyList(),
-                                        nombre = nombre
+                                        nombre = nombre,
+                                        idTema = idTema
                                     )
                                 )
                                 nombre = ""
-                                foreros = ""
+                                idTema = ""
                                 cargarHilos()
                             }
                         },
-                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp)
                     ) {
                         Text("Insertar Hilo")
                     }
@@ -603,7 +657,6 @@ fun SupabaseTemasCRUD(navHostController: NavHostController) {
     val repository = SupabaseRepositorioGenerico()
     val scope = rememberCoroutineScope()
     var temas by remember { mutableStateOf(emptyList<Tema>()) }
-    var idUsuario by remember { mutableStateOf("") }
     var nombre by remember { mutableStateOf("") }
 
     val nombreTabla = "tema"
@@ -629,7 +682,11 @@ fun SupabaseTemasCRUD(navHostController: NavHostController) {
             }
         ) { padding ->
             LimitaTamanioAncho { modifier ->
-                Column(modifier = modifier.fillMaxSize().padding(padding)) {
+                Column(
+                    modifier = modifier
+                        .fillMaxSize()
+                        .padding(padding)
+                ) {
                     Text("Temas registrados", style = MaterialTheme.typography.h6)
                     LazyColumn(modifier = Modifier.weight(1f)) {
                         items(temas) { tema ->
@@ -637,23 +694,23 @@ fun SupabaseTemasCRUD(navHostController: NavHostController) {
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Text("Tema: ${tema.nombre} - Usuario: ${tema.idUsuario}")
+                                Text("Tema: ${tema.nombre}")
                                 Button(onClick = {
                                     scope.launch {
-                                        repository.deleteItem<Tema>(nombreTabla, "idTema", tema.idTema)
+                                        repository.deleteItem<Tema>(
+                                            nombreTabla,
+                                            "idtema",
+                                            tema.idTema
+                                        )
                                         cargarTemas()
                                     }
-                                }) { Text("Eliminar") }
+                                }) {
+                                    Text("Eliminar")
+                                }
                             }
                         }
                     }
                     Spacer(modifier = Modifier.height(16.dp))
-                    OutlinedTextField(
-                        value = idUsuario,
-                        onValueChange = { idUsuario = it },
-                        label = { Text("ID Usuario") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
                     OutlinedTextField(
                         value = nombre,
                         onValueChange = { nombre = it },
@@ -663,20 +720,20 @@ fun SupabaseTemasCRUD(navHostController: NavHostController) {
                     Button(
                         onClick = {
                             scope.launch {
+                                // Se inserta la conversación usando solo el campo 'nombre'
                                 repository.addItem(
                                     nombreTabla,
                                     Tema(
-                                        idUsuario = idUsuario,
-                                        nombre = nombre,
-                                        hilos = emptyList()
+                                        nombre = nombre
                                     )
                                 )
-                                idUsuario = ""
                                 nombre = ""
                                 cargarTemas()
                             }
                         },
-                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp)
                     ) {
                         Text("Insertar Tema")
                     }
@@ -689,32 +746,43 @@ fun SupabaseTemasCRUD(navHostController: NavHostController) {
 @Composable
 fun SupabaseUsuariosCRUD(navHostController: NavHostController) {
     val scope = rememberCoroutineScope()
-    // Variable para almacenar la lista de usuarios
-    var usuarios by remember { mutableStateOf(emptyList<Supausuario>()) }
-    // Variables para el formulario de inserción
+    val repo = remember { SupabaseRepositorioGenerico() }
+
+    // Usa mutableStateOf para crear un estado mutable
+    var usuarios by remember { mutableStateOf(emptyList<Usuario>()) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    // Campos para inserción
     var nombre by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    // Variables para editar
+    var aliasPublico by remember { mutableStateOf("") }
+    var aliasPrivado by remember { mutableStateOf("") }
+    var descripcion by remember { mutableStateOf("") }
+    var activo by remember { mutableStateOf(false) }
+
+    // Campos para edición
     var showEditDialog by remember { mutableStateOf(false) }
-    var usuarioAEditar by remember { mutableStateOf<Supausuario?>(null) }
+    var usuarioAEditar by remember { mutableStateOf<Usuario?>(null) }
     var nuevoNombre by remember { mutableStateOf("") }
     var nuevoEmail by remember { mutableStateOf("") }
     var nuevoPassword by remember { mutableStateOf("") }
+    var nuevoAliasPublico by remember { mutableStateOf("") }
+    var nuevoAliasPrivado by remember { mutableStateOf("") }
+    var nuevaDescripcion by remember { mutableStateOf("") }
+    var nuevoActivo by remember { mutableStateOf(false) }
 
-    val nombreTabla = "usuario"
-
-    // Función para recargar usuarios
-    suspend fun cargarUsuarios() {
-        usuarios = supabaseClient
-            .from(nombreTabla)
-            .select()
-            .decodeList<Supausuario>()
-    }
-
-    // Cargar usuarios al iniciar el Composable
     LaunchedEffect(Unit) {
-        cargarUsuarios()
+        try {
+            repo.getAll<Usuario>("usuario").collect {
+                usuarios = it // Actualiza el estado mutable
+                errorMessage = null // Limpia cualquier mensaje de error anterior
+                println("Usuarios cargados: $it") // Log para verificar los datos cargados
+            }
+        } catch (e: Exception) {
+            errorMessage = "Error al cargar usuarios: ${e.message}"
+            println(errorMessage) // Log para verificar el error
+        }
     }
 
     MaterialTheme {
@@ -731,76 +799,97 @@ fun SupabaseUsuariosCRUD(navHostController: NavHostController) {
         ) { padding ->
             LimitaTamanioAncho { modifier ->
                 Column(modifier = modifier.fillMaxSize().padding(padding)) {
-                    Text("Supausuarios registrados", style = MaterialTheme.typography.h6)
+                    if (errorMessage != null) {
+                        Text(errorMessage!!, color = Color.Red)
+                    }
+
+                    Text("Usuarios registrados", style = MaterialTheme.typography.h6)
+
                     LazyColumn(modifier = Modifier.weight(1f)) {
-                        items(usuarios) { usuario ->
+                        items(usuarios, key = { it.idUnico }) { usuario ->
                             Row(
                                 modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Text(
-                                    text = "${usuario.nombre}, ${usuario.email}",
-                                    style = MaterialTheme.typography.body1
-                                )
+                                Text("${usuario.nombre}, ${usuario.correo}")
                                 Row {
-                                    Button(
-                                        onClick = {
-                                            // Preparamos los campos para editar
-                                            usuarioAEditar = usuario
-                                            nuevoNombre = usuario.nombre
-                                            nuevoEmail = usuario.email
-                                            nuevoPassword = usuario.password
-                                            showEditDialog = true
-                                        },
-                                        modifier = Modifier.padding(end = 4.dp)
-                                    ) {
+                                    Button(onClick = {
+                                        usuarioAEditar = usuario
+                                        nuevoNombre = usuario.nombre
+                                        nuevoEmail = usuario.correo
+                                        nuevoPassword = usuario.contrasennia
+                                        nuevoAliasPublico = usuario.aliasPublico
+                                        nuevoAliasPrivado = usuario.aliasPrivado
+                                        nuevaDescripcion = usuario.descripcion
+                                        nuevoActivo = usuario.activo
+                                        showEditDialog = true
+                                    }) {
                                         Text("Editar")
                                     }
-                                    Button(
-                                        onClick = {
-                                            scope.launch {
-                                                eliminarUsuario(usuario.id)
-                                                cargarUsuarios()
+
+                                    Button(onClick = {
+                                        scope.launch {
+                                            try {
+                                                repo.deleteItem<Usuario>("usuario", "idunico", usuario.idUnico)
+                                                repo.getAll<Usuario>("usuario").collect {
+                                                    usuarios = it // Actualiza el estado mutable
+                                                }
+                                            } catch (e: Exception) {
+                                                errorMessage = "Error al eliminar usuario: ${e.message}"
                                             }
                                         }
-                                    ) {
+                                    }) {
                                         Text("Eliminar")
                                     }
                                 }
                             }
                         }
                     }
-                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Spacer(Modifier.height(16.dp))
                     Divider()
-                    Spacer(modifier = Modifier.height(16.dp))
                     Text("Insertar nuevo usuario", style = MaterialTheme.typography.h6)
-                    OutlinedTextField(
-                        value = nombre,
-                        onValueChange = { nombre = it },
-                        label = { Text("Nombre") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    OutlinedTextField(
-                        value = email,
-                        onValueChange = { email = it },
-                        label = { Text("Email") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    OutlinedTextField(
-                        value = password,
-                        onValueChange = { password = it },
-                        label = { Text("Password") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
+
+                    OutlinedTextField(value = nombre, onValueChange = { nombre = it }, label = { Text("Nombre") }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Correo") }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = password, onValueChange = { password = it }, label = { Text("Contraseña") }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = aliasPublico, onValueChange = { aliasPublico = it }, label = { Text("Alias Público") }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = aliasPrivado, onValueChange = { aliasPrivado = it }, label = { Text("Alias Privado") }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = descripcion, onValueChange = { descripcion = it }, label = { Text("Descripción") }, modifier = Modifier.fillMaxWidth())
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("Activo")
+                        Switch(checked = activo, onCheckedChange = { activo = it })
+                    }
+
                     Button(
                         onClick = {
                             scope.launch {
-                                insertarUsuario(nombre, email, password)
-                                // Limpiar campos y recargar la lista
-                                nombre = ""
-                                email = ""
-                                password = ""
-                                cargarUsuarios()
+                                try {
+                                    val nuevoUsuario = Usuario(
+                                        nombre = nombre,
+                                        correo = email,
+                                        contrasennia = password,
+                                        aliasPublico = aliasPublico,
+                                        aliasPrivado = aliasPrivado,
+                                        descripcion = descripcion,
+                                        activo = activo
+                                    )
+                                    repo.addItem("usuario", nuevoUsuario)
+                                    repo.getAll<Usuario>("usuario").collect {
+                                        usuarios = it // Actualiza el estado mutable
+                                    }
+
+                                    // Limpiar campos
+                                    nombre = ""
+                                    email = ""
+                                    password = ""
+                                    aliasPublico = ""
+                                    aliasPrivado = ""
+                                    descripcion = ""
+                                    activo = false
+                                } catch (e: Exception) {
+                                    errorMessage = "Error al insertar usuario: ${e.message}"
+                                }
                             }
                         },
                         modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
@@ -810,57 +899,50 @@ fun SupabaseUsuariosCRUD(navHostController: NavHostController) {
                 }
             }
 
-            // Diálogo para editar usuario
             if (showEditDialog && usuarioAEditar != null) {
                 AlertDialog(
                     onDismissRequest = { showEditDialog = false },
                     title = { Text("Editar usuario") },
                     text = {
                         Column {
-                            OutlinedTextField(
-                                value = nuevoNombre,
-                                onValueChange = { nuevoNombre = it },
-                                label = { Text("Nombre") },
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                            OutlinedTextField(
-                                value = nuevoEmail,
-                                onValueChange = { nuevoEmail = it },
-                                label = { Text("Email") },
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                            OutlinedTextField(
-                                value = nuevoPassword,
-                                onValueChange = { nuevoPassword = it },
-                                label = { Text("Password") },
-                                modifier = Modifier.fillMaxWidth()
-                            )
+                            OutlinedTextField(value = nuevoNombre, onValueChange = { nuevoNombre = it }, label = { Text("Nombre") }, modifier = Modifier.fillMaxWidth())
+                            OutlinedTextField(value = nuevoEmail, onValueChange = { nuevoEmail = it }, label = { Text("Correo") }, modifier = Modifier.fillMaxWidth())
+                            OutlinedTextField(value = nuevoPassword, onValueChange = { nuevoPassword = it }, label = { Text("Contraseña") }, modifier = Modifier.fillMaxWidth())
+                            OutlinedTextField(value = nuevoAliasPublico, onValueChange = { nuevoAliasPublico = it }, label = { Text("Alias Público") }, modifier = Modifier.fillMaxWidth())
+                            OutlinedTextField(value = nuevoAliasPrivado, onValueChange = { nuevoAliasPrivado = it }, label = { Text("Alias Privado") }, modifier = Modifier.fillMaxWidth())
+                            OutlinedTextField(value = nuevaDescripcion, onValueChange = { nuevaDescripcion = it }, label = { Text("Descripción") }, modifier = Modifier.fillMaxWidth())
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text("Activo")
+                                Switch(checked = nuevoActivo, onCheckedChange = { nuevoActivo = it })
+                            }
                         }
                     },
                     confirmButton = {
-                        Button(
-                            onClick = {
-                                scope.launch {
-                                    usuarioAEditar?.let { usuario ->
-                                        actualizarUsuario(
-                                            usuario.id,
-                                            nuevoNombre,
-                                            nuevoEmail,
-                                            nuevoPassword
-                                        )
-                                        cargarUsuarios()
-                                        showEditDialog = false
+                        Button(onClick = {
+                            scope.launch {
+                                try {
+                                    val updateData = mapOf(
+                                        "nombre" to nuevoNombre,
+                                        "correo" to nuevoEmail,
+                                        "contrasennia" to nuevoPassword,
+                                        "aliaspublico" to nuevoAliasPublico,
+                                        "aliasprivado" to nuevoAliasPrivado,
+                                        "descripcion" to nuevaDescripcion,
+                                        "activo" to nuevoActivo
+                                    )
+                                    repo.updateItem<Usuario>("usuario", updateData, "idunico", usuarioAEditar!!.idUnico)
+                                    repo.getAll<Usuario>("usuario").collect {
+                                        usuarios = it // Actualiza el estado mutable
                                     }
+                                    showEditDialog = false
+                                } catch (e: Exception) {
+                                    errorMessage = "Error al actualizar usuario: ${e.message}"
                                 }
                             }
-                        ) {
-                            Text("Guardar")
-                        }
+                        }) { Text("Guardar") }
                     },
                     dismissButton = {
-                        Button(onClick = { showEditDialog = false }) {
-                            Text("Cancelar")
-                        }
+                        Button(onClick = { showEditDialog = false }) { Text("Cancelar") }
                     }
                 )
             }
@@ -1033,88 +1115,5 @@ fun SupabaseContactosCRUD(navHostController: NavHostController) {
                 }
             }
         }
-    }
-}
-
-// Función para insertar usuario (como ya lo tienes)
-suspend fun insertarUsuario(nombre: String, correo: String, contrasennia: String) {
-    // Usamos signInAnonymously para fines de prueba (o puedes integrar Auth)
-    supabaseClient.auth.signInAnonymously(data = null, captchaToken = null)
-    val nuevoUsuario = Supausuario(
-        nombre = nombre,
-        email = correo,
-        password = contrasennia
-    )
-    try {
-        supabaseClient
-            .from("supausuarios")
-            .insert(nuevoUsuario)
-            .decodeList<Supausuario>().run {
-                println("Usuario insertado: $this")
-            }
-    } catch (e: Exception) {
-        if (e.message?.contains("Expected start of the array") == true) {
-            // Se ignora si la respuesta está vacía
-        } else {
-            throw e
-        }
-    }
-}
-
-suspend fun actualizarUsuario(id: Int, nuevoNombre: String, nuevoEmail: String, nuevoPassword: String) {
-    val updateData = mapOf(
-        "nombre" to nuevoNombre,
-        "email" to nuevoEmail,
-        "password" to nuevoPassword
-    )
-    try {
-        supabaseClient
-            .from("supausuarios")
-            .update(updateData) {
-                filter {
-                    eq("id", id)
-                }
-                select()
-            }
-            .decodeList<Supausuario>()
-            .run {
-                println("Usuario actualizado: $this")
-            }
-    } catch (e: Exception) {
-        throw Exception("Error actualizando usuario: ${e.message}")
-    }
-}
-
-suspend fun eliminarUsuario(id: Int) {
-    try {
-        val response = supabaseClient
-            .from("supausuarios")
-            .delete {
-                filter {
-                    eq("id", id)
-                }
-                select()
-            }
-            .decodeList<Supausuario>()
-
-        if (response.isNotEmpty()) {
-            println("Usuario eliminado: $response")
-        } else {
-            println("No se encontró ningún usuario con el ID proporcionado.")
-        }
-    } catch (e: Exception) {
-        throw Exception("Error eliminando usuario: ${e.message}")
-    }
-}
-
-@Serializable
-data class Supausuario(
-    val id: Int = 0,  // Se espera que sea autogenerado por Supabase
-    val nombre: String,
-    val email: String,
-    val password: String
-) {
-    override fun toString(): String {
-        return "Usuario(id='$id', nombre='$nombre', email='$email', password='$password')"
     }
 }

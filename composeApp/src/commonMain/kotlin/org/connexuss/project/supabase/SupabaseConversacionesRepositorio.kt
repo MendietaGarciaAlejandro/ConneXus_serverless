@@ -56,7 +56,7 @@ class SupabaseConversacionesRepositorio : IConversacionesRepositorio {
         val response = supabaseClient
             .from(nombreTabla)
             .insert(conversacion)
-            .decodeSingleOrNull<Supausuario>()
+            .decodeSingleOrNull<Conversacion>()
         if (response == null) {
             throw Exception("Error al agregar la conversación")
         } else {
@@ -67,8 +67,6 @@ class SupabaseConversacionesRepositorio : IConversacionesRepositorio {
     override suspend fun updateConversacion(conversacion: Conversacion) {
         val updateData = mapOf(
             "id" to conversacion.id,
-            "participants" to conversacion.participants,
-            "messages" to conversacion.messages,
             "nombre" to conversacion.nombre
         )
         try {

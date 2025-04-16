@@ -6,7 +6,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-
+/*
 @Serializable
 data class Post(
     val idPost: String = generateId(),
@@ -31,9 +31,10 @@ data class Tema(
     val nombre: String,
     val hilos: List<Hilo> = emptyList()
 )
+ */
 
 // NO BORRAR!!! Son las clases desarrolladas para implementar en la base de datos
-/*
+
 @Serializable
 data class Post(
     @SerialName("idpost")
@@ -76,4 +77,3 @@ data class Tema(
     @SerialName("nombre")
     val nombre: String
 )
- */
