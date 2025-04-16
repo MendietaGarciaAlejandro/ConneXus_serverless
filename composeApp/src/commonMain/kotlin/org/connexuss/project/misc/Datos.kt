@@ -15,13 +15,9 @@ import connexus_serverless.composeapp.generated.resources.visibilidadOff
 import connexus_serverless.composeapp.generated.resources.visibilidadOn
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.datetime.LocalDateTime
-import org.connexuss.project.comunicacion.Conversacion
-import org.connexuss.project.comunicacion.ConversacionesUsuario
 import org.connexuss.project.comunicacion.Hilo
-import org.connexuss.project.comunicacion.Mensaje
 import org.connexuss.project.comunicacion.Post
 import org.connexuss.project.comunicacion.Tema
-import org.connexuss.project.comunicacion.generateId
 import org.connexuss.project.usuario.AlmacenamientoUsuario
 import org.connexuss.project.usuario.UtilidadesUsuario
 import org.connexuss.project.usuario.Usuario
@@ -757,11 +753,12 @@ var UsuarioPrincipal: Usuario? = Usuario(
     correo = "principal@example.com",
     aliasPublico = "UsuarioPrincipal",
     aliasPrivado = "UsuarioPrincipal",
-    activo = true,
-    descripcion = "Descripción del usuario",
-    contrasennia = "123456789",
+    activo = true
+).apply {
+    descripcion = "Descripción del usuario"
+    contrasennia = "123456789"
     imagenPerfil = Res.drawable.connexus
-)
+}
 
 // Datos foro
 /*

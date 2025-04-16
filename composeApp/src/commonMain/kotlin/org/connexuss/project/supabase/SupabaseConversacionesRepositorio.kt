@@ -56,7 +56,7 @@ class SupabaseConversacionesRepositorio : IConversacionesRepositorio {
         val response = supabaseClient
             .from(nombreTabla)
             .insert(conversacion)
-            .decodeSingleOrNull<Supausuario>()
+            .decodeSingleOrNull<Conversacion>()
         if (response == null) {
             throw Exception("Error al agregar la conversación")
         } else {

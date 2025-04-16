@@ -55,7 +55,7 @@ class SupabaseMensajesRepositorio : ISupabaseMensajesRepositorio {
         val response = supabaseClient
             .from(nombreTabla)
             .insert(mensaje)
-            .decodeSingleOrNull<Supausuario>()
+            .decodeSingleOrNull<Mensaje>()
         if (response == null) {
             throw Exception("Error al agregar el mensaje")
         } else {

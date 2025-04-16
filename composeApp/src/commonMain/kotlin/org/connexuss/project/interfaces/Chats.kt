@@ -27,7 +27,6 @@ import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -61,7 +60,7 @@ import org.jetbrains.compose.resources.painterResource
 fun mostrarChat(navController: NavHostController, chatId: String?) {
     // Se asume que el UsuarioPrincipal ya está definido de forma global
     val currentUser = UsuarioPrincipal
-    val currentUserId = currentUser?.getIdUnico() ?: return
+    val currentUserId = currentUser?.getIdUnicoMio() ?: return
 
     val supabaseRepo = remember { SupabaseRepositorioGenerico() }
     var chat by remember { mutableStateOf<Conversacion?>(null) }
@@ -106,9 +105,9 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
 
     // Determinar al otro participante (se asume que siempre son 2 participantes)
     val otherParticipantId = participants.firstOrNull { it != currentUserId } ?: ""
-    val otherParticipant = UsuariosPreCreados.find { it.getIdUnico() == otherParticipantId }
-    val otherParticipantName = otherParticipant?.getNombreCompleto() ?: otherParticipantId
-    val profileImage = otherParticipant?.getImagenPerfil() ?: Res.drawable.connexus
+    val otherParticipant = UsuariosPreCreados.find { it.getIdUnicoMio() == otherParticipantId }
+    val otherParticipantName = otherParticipant?.getNombreCompletoMio() ?: otherParticipantId
+    val profileImage = otherParticipant?.getImagenPerfilMio() ?: Res.drawable.connexus
 
     Scaffold(
         topBar = {
@@ -220,7 +219,7 @@ fun mostrarChatGrupo(
     imagenesPerfil: List<Imagen>
 ) {
     val currentUser = UsuarioPrincipal
-    val currentUserId = currentUser?.getIdUnico() ?: return
+    val currentUserId = currentUser?.getIdUnicoMio() ?: return
 
     val supabaseRepo = remember { SupabaseRepositorioGenerico() }
     var chat by remember { mutableStateOf<Conversacion?>(null) }
@@ -275,9 +274,9 @@ fun mostrarChatGrupo(
                 items(messages) { mensaje ->
                     // Se utiliza 'idusuario' del mensaje para determinar el remitente
                     val isCurrentUser = mensaje.idusuario == currentUserId
-                    val senderUser = UsuariosPreCreados.find { it.getIdUnico() == mensaje.idusuario }
-                    val senderAlias = senderUser?.getAlias() ?: mensaje.idusuario
-                    val senderImageRes = senderUser?.getImagenPerfil() ?: Res.drawable.connexus
+                    val senderUser = UsuariosPreCreados.find { it.getIdUnicoMio() == mensaje.idusuario }
+                    val senderAlias = senderUser?.getAliasMio() ?: mensaje.idusuario
+                    val senderImageRes = senderUser?.getImagenPerfilMio() ?: Res.drawable.connexus
                     val imagePainter = painterResource(senderImageRes)
 
                     Row(
@@ -299,7 +298,7 @@ fun mostrarChatGrupo(
                                     .border(1.dp, Color.Gray, RoundedCornerShape(20.dp))
                                     .clickable {
                                         navController.navigate(
-                                            "mostrarPerfilUsuario/${senderUser?.getIdUnico() ?: mensaje.idusuario}"
+                                            "mostrarPerfilUsuario/${senderUser?.getIdUnicoMio() ?: mensaje.idusuario}"
                                         )
                                     }
                             )
@@ -346,7 +345,7 @@ fun mostrarChatGrupo(
                                     .padding(start = 8.dp)
                                     .clickable {
                                         navController.navigate(
-                                            "mostrarPerfilUsuario/${senderUser?.getIdUnico() ?: mensaje.idusuario}"
+                                            "mostrarPerfilUsuario/${senderUser?.getIdUnicoMio() ?: mensaje.idusuario}"
                                         )
                                     }
                             )

@@ -216,21 +216,21 @@ fun MuestraUsuariosGrupo(
                                 .fillMaxWidth()
                                 .padding(vertical = 4.dp)
                                 .clickable {
-                                    navController.navigate("mostrarPerfil/${usuario.getIdUnico()}")
+                                    navController.navigate("mostrarPerfil/${usuario.getIdUnicoMio()}")
                                 },
                             elevation = 4.dp
                         ) {
                             Column(modifier = Modifier.padding(16.dp)) {
                                 Text(
-                                    text = "${traducir("nombre_label")} ${usuario.getNombreCompleto()}",
+                                    text = "${traducir("nombre_label")} ${usuario.getNombreCompletoMio()}",
                                     style = MaterialTheme.typography.subtitle1
                                 )
                                 Text(
-                                    text = "${traducir("alias_label")} ${usuario.getAlias()}",
+                                    text = "${traducir("alias_label")} ${usuario.getAliasMio()}",
                                     style = MaterialTheme.typography.body1
                                 )
                                 Text(
-                                    text = "${traducir("alias_privado_label")} ${usuario.getAliasPrivado()}",
+                                    text = "${traducir("alias_privado_label")} ${usuario.getAliasPrivadoMio()}",
                                     style = MaterialTheme.typography.body2
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
@@ -439,15 +439,15 @@ fun muestraUsuarios(navController: NavHostController) {
                                     ) {
                                         Column(modifier = Modifier.padding(16.dp)) {
                                             Text(
-                                                text = "${traducir("nombre_label")} ${usuario.getNombreCompleto()}",
+                                                text = "${traducir("nombre_label")} ${usuario.getNombreCompletoMio()}",
                                                 style = MaterialTheme.typography.subtitle1
                                             )
                                             Text(
-                                                text = "${traducir("alias_label")} ${usuario.getAlias()}",
+                                                text = "${traducir("alias_label")} ${usuario.getAliasMio()}",
                                                 style = MaterialTheme.typography.body1
                                             )
                                             Text(
-                                                text = "${traducir("activo_label")} ${usuario.getActivo()}",
+                                                text = "${traducir("activo_label")} ${usuario.getActivoMio()}",
                                                 style = MaterialTheme.typography.body2
                                             )
                                             Spacer(modifier = Modifier.height(8.dp))
@@ -492,7 +492,7 @@ fun ChatCard(conversacion: Conversacion, navController: NavHostController) {
 // --- Chats PorDefecto ---
 @Composable
 fun muestraChats(navController: NavHostController) {
-    val currentUserId = UsuarioPrincipal?.getIdUnico() ?: return
+    val currentUserId = UsuarioPrincipal?.getIdUnicoMio() ?: return
 
     val repo = remember { SupabaseRepositorioGenerico() }
     var conversacionesUsuario by remember { mutableStateOf<List<ConversacionesUsuario>>(emptyList()) }
@@ -618,11 +618,11 @@ fun muestraContactos(navController: NavHostController) {
                             ) {
                                 Column(modifier = Modifier.padding(16.dp)) {
                                     Text(
-                                        text = "${traducir("nombre_label")}: ${usuario.getNombreCompleto()}",
+                                        text = "${traducir("nombre_label")}: ${usuario.getNombreCompletoMio()}",
                                         style = MaterialTheme.typography.subtitle1
                                     )
                                     Text(
-                                        text = "${traducir("alias_label")}: ${usuario.getAlias()}",
+                                        text = "${traducir("alias_label")}: ${usuario.getAliasMio()}",
                                         style = MaterialTheme.typography.body1
                                     )
                                 }
@@ -719,7 +719,7 @@ fun UsuCard(usuario: Usuario, onClick: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Imagen cuadrada a la izquierda
-            usuario.getImagenPerfil()?.let { painterResource(it as DrawableResource) }?.let {
+            usuario.getImagenPerfilMio()?.let { painterResource(it as DrawableResource) }?.let {
                 Image(
                     painter = it,
                     contentDescription = "Imagen de perfil",
@@ -733,15 +733,15 @@ fun UsuCard(usuario: Usuario, onClick: () -> Unit) {
             // Información del usuario en una columna
             Column {
                 Text(
-                    text = "${traducir("nombre_label")} ${usuario.getNombreCompleto()}",
+                    text = "${traducir("nombre_label")} ${usuario.getNombreCompletoMio()}",
                     style = MaterialTheme.typography.subtitle1
                 )
                 Text(
-                    text = "${traducir("alias_publico")} ${usuario.getAlias()}",
+                    text = "${traducir("alias_publico")} ${usuario.getAliasMio()}",
                     style = MaterialTheme.typography.body1
                 )
                 Text(
-                    text = "${traducir("alias_privado")} ${usuario.getAliasPrivado()}",
+                    text = "${traducir("alias_privado")} ${usuario.getAliasPrivadoMio()}",
                     style = MaterialTheme.typography.body2
                 )
             }
@@ -861,15 +861,15 @@ fun mostrarPerfil(navController: NavHostController, usuarioU: Usuario?) {
     var nuevoEmail by remember { mutableStateOf("") }
 
     // Campos del usuario
-    var aliasPrivado by remember { mutableStateOf(usuario?.getAliasPrivado() ?: "") }
-    var aliasPublico by remember { mutableStateOf(usuario?.getAlias() ?: "") }
-    var descripcion by remember { mutableStateOf(usuario?.getDescripcion() ?: "") }
-    var contrasennia by remember { mutableStateOf(usuario?.getContrasennia() ?: "") }
-    var email by remember { mutableStateOf(usuario?.getCorreo() ?: "") }
+    var aliasPrivado by remember { mutableStateOf(usuario?.getAliasPrivadoMio() ?: "") }
+    var aliasPublico by remember { mutableStateOf(usuario?.getAliasMio() ?: "") }
+    var descripcion by remember { mutableStateOf(usuario?.getDescripcionMio() ?: "") }
+    var contrasennia by remember { mutableStateOf(usuario?.getContrasenniaMio() ?: "") }
+    var email by remember { mutableStateOf(usuario?.getCorreoMio() ?: "") }
     var isNameVisible by remember { mutableStateOf(false) }
 
     // Estado para la imagen de perfil (para refrescar la UI al cambiarla)
-    val imagenPerfilState = remember { mutableStateOf(usuario?.getImagenPerfil()) }
+    val imagenPerfilState = remember { mutableStateOf(usuario?.getImagenPerfilMio()) }
 
     MaterialTheme {
         Scaffold(
@@ -923,7 +923,7 @@ fun mostrarPerfil(navController: NavHostController, usuarioU: Usuario?) {
                                 onClick = {
                                     // Genera una nueva imagen aleatoria y actualiza tanto el usuario como el estado mutable
                                     val nuevaImagen = usuario.generarImagenPerfilRandom()
-                                    usuario.setImagenPerfil(nuevaImagen)
+                                    usuario.setImagenPerfilMia(nuevaImagen)
                                     imagenPerfilState.value = nuevaImagen
                                 },
                                 modifier = Modifier.align(Alignment.CenterHorizontally)
@@ -1026,11 +1026,11 @@ fun mostrarPerfil(navController: NavHostController, usuarioU: Usuario?) {
                                 Button(
                                     onClick = {
                                         usuario.apply {
-                                            setAliasPrivado(aliasPrivado)
-                                            setAlias(aliasPublico)
-                                            setDescripcion(descripcion)
-                                            setContrasennia(contrasennia)
-                                            setCorreo(email)
+                                            setAliasPrivadoMio(aliasPrivado)
+                                            setAliasMio(aliasPublico)
+                                            setDescripcionMio(descripcion)
+                                            setContrasenniaMio(contrasennia)
+                                            setCorreoMio(email)
                                         }
                                         navController.popBackStack()
                                     }
@@ -1129,12 +1129,12 @@ fun mostrarPerfilUsuario(
     imagenesApp: List<Imagen>
 ) {
     // Busca el usuario en tu lista de usuarios (UsuariosPreCreados) según el userId
-    val usuario = UsuariosPreCreados.find { it.getIdUnico() == userId }
+    val usuario = UsuariosPreCreados.find { it.getIdUnicoMio() == userId }
 
     Scaffold(
         topBar = {
             DefaultTopBar(
-                title = usuario?.getNombreCompleto() ?: "Perfil",
+                title = usuario?.getNombreCompletoMio() ?: "Perfil",
                 navController = navController,
                 showBackButton = true,
                 irParaAtras = true,
@@ -1152,9 +1152,9 @@ fun mostrarPerfilUsuario(
                 Text("Usuario no encontrado")
             }
         } else {
-            var aliasPrivado by remember { mutableStateOf(usuario.getAliasPrivado()) }
-            var aliasPublico by remember { mutableStateOf(usuario.getAlias()) }
-            var descripcion by remember { mutableStateOf(usuario.getDescripcion()) }
+            var aliasPrivado by remember { mutableStateOf(usuario.getAliasPrivadoMio()) }
+            var aliasPublico by remember { mutableStateOf(usuario.getAliasMio()) }
+            var descripcion by remember { mutableStateOf(usuario.getDescripcionMio()) }
 
             Column(
                 modifier = Modifier
@@ -1165,10 +1165,10 @@ fun mostrarPerfilUsuario(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 // Imagen de perfil
-                usuario.getImagenPerfil()?.let { painterResource(it) }?.let {
+                usuario.getImagenPerfilMio()?.let { painterResource(it) }?.let {
                     Image(
                         painter = it,
-                        contentDescription = "Imagen de perfil de ${usuario.getNombreCompleto()}",
+                        contentDescription = "Imagen de perfil de ${usuario.getNombreCompletoMio()}",
                         modifier = Modifier
                             .size(100.dp)
                             .clip(RoundedCornerShape(8.dp))
@@ -1783,13 +1783,13 @@ fun PantallaRegistro(navController: NavHostController) {
                                     // Si no hay error, proceder a completar el usuario y enviarlo a Firestore
                                     if (errorMessage.isEmpty()) {
                                         // Seteamos los valores en el usuario
-                                        usuario.setNombreCompleto(nombre)
-                                        usuario.setCorreo(email)
-                                        usuario.setContrasennia(password)
-                                        usuario.setAliasPrivado("Privado_$nombre")
-                                        usuario.setAlias(UtilidadesUsuario().generarAliasPublico())
-                                        usuario.setDescripcion("Descripción de $nombre")
-                                        usuario.setImagenPerfil(UtilidadesUsuario().generarImagenPerfilRandom())
+                                        usuario.setNombreCompletoMio(nombre)
+                                        usuario.setCorreoMio(email)
+                                        usuario.setContrasenniaMio(password)
+                                        usuario.setAliasPrivadoMio("Privado_$nombre")
+                                        usuario.setAliasMio(UtilidadesUsuario().generarAliasPublico())
+                                        usuario.setDescripcionMio("Descripción de $nombre")
+                                        usuario.setImagenPerfilMia(UtilidadesUsuario().generarImagenPerfilRandom())
 
                                         // Agregamos el usuario a la lista local (por ejemplo, UsuariosPreCreados)
                                         UsuariosPreCreados.add(usuario)
@@ -1935,7 +1935,7 @@ fun PantallaLogin(navController: NavHostController) {
                                         errorMessage = errorEmailNingunUsuario
                                     } else {
                                         // Se encontró el usuario; comprobamos la contraseña
-                                        if (usuario.getContrasennia() != password) {
+                                        if (usuario.getContrasenniaMio() != password) {
                                             errorMessage = errorContrasenaIncorrecta
                                         } else {
                                             UsuarioPrincipal =
@@ -2032,12 +2032,12 @@ fun PantallaZonaPruebas(navController: NavHostController) {
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            Button(
-                                onClick = { navController.navigate("pruebasObjetosFIrebase") },
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Text("Debug: Ir a las pruebas con Firebase")
-                            }
+//                            Button(
+//                                onClick = { navController.navigate("pruebasObjetosFIrebase") },
+//                                modifier = Modifier.weight(1f)
+//                            ) {
+//                                Text("Debug: Ir a las pruebas con Firebase")
+//                            }
                             Button(
                                 onClick = { navController.navigate("supabasePruebas") },
                                 modifier = Modifier.weight(1f)
