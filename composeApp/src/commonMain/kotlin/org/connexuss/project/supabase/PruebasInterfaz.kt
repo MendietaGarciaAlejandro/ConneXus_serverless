@@ -863,6 +863,7 @@ fun SupabaseUsuariosCRUD(navHostController: NavHostController) {
                             scope.launch {
                                 try {
                                     val nuevoUsuario = Usuario(
+                                        idUnico = generateId(),
                                         nombre = nombre,
                                         correo = email,
                                         contrasennia = password,
@@ -886,6 +887,9 @@ fun SupabaseUsuariosCRUD(navHostController: NavHostController) {
                                     activo = false
                                 } catch (e: Exception) {
                                     errorMessage = "Error al insertar usuario: ${e.message}"
+                                    repo.getAll<Usuario>("usuario").collect {
+                                        usuarios = it // Actualiza el estado mutable
+                                    }
                                 }
                             }
                         },

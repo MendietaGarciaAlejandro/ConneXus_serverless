@@ -75,12 +75,16 @@ class SupabaseRepositorioGenerico {
 
     // Agregar un nuevo registro a la tabla
     suspend inline fun <reified T : Any> addItem(tableName: String, item: T) {
-        val response = supabaseClient
+        // 1) Insertamos y pedimos que nos devuelvan el array de filas
+        val response: List<T> = supabaseClient
             .from(tableName)
-            .insert(item)
-            .decodeList<T>()
+            .insert(item) {          // <— pasar un lambda aquí
+                select()             // <— dentro del lambda invocas select()
+            }
+            .decodeList<T>()         // ahora llega un array JSON válido
+
         if (response.isEmpty()) {
-            throw Exception("Error al insertar item en la tabla $tableName")
+            throw Exception("Error al insertar item en la tabla $tableName (no se devolvió nada)")
         } else {
             println("Item insertado: $response")
         }
