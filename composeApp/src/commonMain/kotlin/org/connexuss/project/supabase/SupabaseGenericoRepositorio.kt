@@ -12,6 +12,9 @@ import io.github.jan.supabase.storage.Storage
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
+private const val SUPABASE_URL = "https://yrpvwyewzsvxqwkacbao.supabase.co"
+private const val SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlycHZ3eWV3enN2eHF3a2FjYmFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQzOTIxMDEsImV4cCI6MjA1OTk2ODEwMX0.llu6uixyc3-VyOziE2GwdjoWcW16Jnez65GYWzX8esI"
+
 // Interfaz sin el modificador inline en deleteItemGeneric:
 //interface ISupabaseRepository<T : Any> {
 //    fun getAll(tableName: String): Flow<List<T>>
@@ -29,8 +32,8 @@ fun instanciaSupabaseClient(
     tienePostgrest: Boolean = true
 ): SupabaseClient {
     return createSupabaseClient(
-        supabaseUrl = "https://yrpvwyewzsvxqwkacbao.supabase.co",
-        supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlycHZ3eWV3enN2eHF3a2FjYmFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQzOTIxMDEsImV4cCI6MjA1OTk2ODEwMX0.llu6uixyc3-VyOziE2GwdjoWcW16Jnez65GYWzX8esI"
+        supabaseUrl = SUPABASE_URL,
+        supabaseKey = SUPABASE_KEY
     ) {
         if (tieneStorage) install(Storage)
         if (tieneAuth) install(Auth)
