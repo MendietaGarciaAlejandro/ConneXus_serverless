@@ -89,7 +89,7 @@ class SupabaseRepositorioGenerico {
     // Actualizar registros filtrando por un campo (por ejemplo, "idUnico")
     suspend inline fun <reified T : Any> updateItem(
         tableName: String,
-        updateData: Map<String, Any>,
+        updateData: T, // Cambiado de Map<String, Any> a T
         idField: String,
         idValue: Any
     ) {
