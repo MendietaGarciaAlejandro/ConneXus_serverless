@@ -23,7 +23,6 @@ import androidx.compose.material.Switch
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -34,10 +33,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.from
 import kotlinx.coroutines.launch
-import kotlinx.serialization.Serializable
 import org.connexuss.project.comunicacion.Conversacion
 import org.connexuss.project.comunicacion.ConversacionesUsuario
 import org.connexuss.project.comunicacion.Hilo
@@ -866,6 +863,7 @@ fun SupabaseUsuariosCRUD(navHostController: NavHostController) {
                             scope.launch {
                                 try {
                                     val nuevoUsuario = Usuario(
+                                        idUnico = generateId(),
                                         nombre = nombre,
                                         correo = email,
                                         contrasennia = password,
@@ -889,6 +887,9 @@ fun SupabaseUsuariosCRUD(navHostController: NavHostController) {
                                     activo = false
                                 } catch (e: Exception) {
                                     errorMessage = "Error al insertar usuario: ${e.message}"
+                                    repo.getAll<Usuario>("usuario").collect {
+                                        usuarios = it // Actualiza el estado mutable
+                                    }
                                 }
                             }
                         },
@@ -921,16 +922,17 @@ fun SupabaseUsuariosCRUD(navHostController: NavHostController) {
                         Button(onClick = {
                             scope.launch {
                                 try {
-                                    val updateData = mapOf(
-                                        "nombre" to nuevoNombre,
-                                        "correo" to nuevoEmail,
-                                        "contrasennia" to nuevoPassword,
-                                        "aliaspublico" to nuevoAliasPublico,
-                                        "aliasprivado" to nuevoAliasPrivado,
-                                        "descripcion" to nuevaDescripcion,
-                                        "activo" to nuevoActivo
+                                    val updateUser = Usuario(
+                                        idUnico = usuarioAEditar!!.idUnico, // ¡IMPORTANTE!
+                                        nombre = nuevoNombre,
+                                        correo = nuevoEmail,
+                                        contrasennia = nuevoPassword,
+                                        aliasPublico = nuevoAliasPublico,
+                                        aliasPrivado = nuevoAliasPrivado,
+                                        descripcion = nuevaDescripcion,
+                                        activo = nuevoActivo
                                     )
-                                    repo.updateItem<Usuario>("usuario", updateData, "idunico", usuarioAEditar!!.idUnico)
+                                    repo.updateItem<Usuario>("usuario", updateUser, "idunico", usuarioAEditar!!.idUnico)
                                     repo.getAll<Usuario>("usuario").collect {
                                         usuarios = it // Actualiza el estado mutable
                                     }
