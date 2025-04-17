@@ -25,6 +25,22 @@ private const val SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 //}
 
 // Funcion que servirá para instanciar el supabaseClient con los parámetros necesarios
+/*fun instanciaSupabaseClient(
+    tieneStorage: Boolean = true,
+    tieneAuth: Boolean = true,
+    tieneRealtime: Boolean = true,
+    tienePostgrest: Boolean = true
+): SupabaseClient {
+    return createSupabaseClient(
+        supabaseUrl = SUPABASE_URL,
+        supabaseKey = SUPABASE_KEY
+    ) {
+        if (tieneStorage) install(Storage)
+        if (tieneAuth) install(Auth)
+        if (tieneRealtime) install(Realtime)
+        if (tienePostgrest) install(Postgrest)
+    }
+}*/
 fun instanciaSupabaseClient(
     tieneStorage: Boolean = true,
     tieneAuth: Boolean = true,
@@ -41,6 +57,8 @@ fun instanciaSupabaseClient(
         if (tienePostgrest) install(Postgrest)
     }
 }
+
+
 
 class SupabaseRepositorioGenerico {
 

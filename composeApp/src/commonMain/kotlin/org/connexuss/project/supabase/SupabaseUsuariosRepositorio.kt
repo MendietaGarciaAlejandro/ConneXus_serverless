@@ -1,9 +1,11 @@
 package org.connexuss.project.supabase
 
+import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import org.connexuss.project.misc.Supabase
 import org.connexuss.project.usuario.Usuario
 
 // Interfaz para simular una aplicacion CRUD que comunica con Supabase
@@ -20,7 +22,7 @@ interface ISupabaseUsuariosRepositorio {
 
 class SupabaseUsuariosRepositorio : ISupabaseUsuariosRepositorio {
 
-    private val supabaseClient = instanciaSupabaseClient( tieneStorage = true, tieneAuth = false, tieneRealtime = true, tienePostgrest = true)
+    private val supabaseClient = instanciaSupabaseClient( tieneStorage = true, tieneAuth = true, tieneRealtime = true, tienePostgrest = true)
     private val nombreTabla = "usuario"
 
     override fun getUsuarios() = flow {
@@ -73,43 +75,65 @@ class SupabaseUsuariosRepositorio : ISupabaseUsuariosRepositorio {
         emit(usuario)
     }
 
-    override suspend fun addUsuario(usuario: Usuario)  {
-        // Implementación para agregar un usuario a Supabase
-        val response = supabaseClient
-            .from(nombreTabla)
-            .insert(usuario)
-            .decodeSingleOrNull<Usuario>()
-        if (response != null) {
-            println("Usuario agregado: $response")
-        } else {
-            throw Exception("Error al agregar el usuario")
+    override suspend fun addUsuario(usuario: Usuario) {
+        try {
+            val response = supabaseClient
+                .from(nombreTabla)
+                .insert(listOf(usuario))
+                .decodeSingleOrNull<Usuario>()
+
+            println("Usuario insertado: $response")
+
+            if (response == null) {
+                throw Exception("Error al agregar el usuario: la respuesta fue nula")
+            }
+
+        } catch (e: Exception) {
+            println("Error insertando usuario: ${e.message}")
+            throw e
         }
     }
+
 
     override suspend fun updateUsuario(usuario: Usuario) {
         val updateData = mapOf(
             "nombre" to usuario.getNombreCompletoMio(),
             "correo" to usuario.getCorreoMio(),
             "contrasennia" to usuario.getContrasenniaMio(),
-            "idUnico" to usuario.getIdUnicoMio()
+            "aliasprivado" to usuario.getAliasPrivadoMio(),
+            "aliaspublico" to usuario.getAliasMio(),
+            "descripcion" to usuario.getDescripcionMio(),
+            "activo" to usuario.getActivoMio()
         )
+
         try {
-            supabaseClient
+            println("updateData: $updateData")
+            println(" idunico: ${usuario.getIdUnicoMio()}")
+
+            val updated = supabaseClient
                 .from(nombreTabla)
                 .update(updateData) {
                     filter {
-                        eq("idUnico", usuario.getIdUnicoMio())
+                        eq("idunico", usuario.getIdUnicoMio()) // ¡asegúrate que es minúscula!
                     }
-                    select()
+                    select(Columns.ALL)
                 }
-                .decodeList<Usuario>()
-                .run {
-                    println("Usuario actualizado: $this")
-                }
+                .decodeSingleOrNull<Usuario>()
+
+            if (updated != null) {
+                println("Usuario actualizado correctamente: $updated")
+            } else {
+                println(" No se actualizó ningún usuario")
+            }
+
         } catch (e: Exception) {
-            throw Exception("Error actualizando usuario: ${e.message}")
+            println(" Error al actualizar usuario: ${e.message}")
+            throw e
         }
     }
+
+
+
 
     override suspend fun deleteUsuario(usuario: Usuario) {
         try {
@@ -129,4 +153,22 @@ class SupabaseUsuariosRepositorio : ISupabaseUsuariosRepositorio {
             throw Exception("Error eliminando usuario: ${e.message}")
         }
     }
+
+
+    suspend fun getUsuarioAutenticado(): Usuario {
+        val uid = Supabase.client.auth.currentUserOrNull()?.id
+            ?: throw Exception("No hay sesión activa")
+
+        return Supabase.client
+            .from("usuario")
+            .select {
+                filter {
+                    eq("idunico", uid)
+                }
+            }
+            .decodeSingle<Usuario>()
+    }
+
+
+
 }
