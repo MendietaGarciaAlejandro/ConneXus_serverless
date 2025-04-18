@@ -82,6 +82,7 @@ kotlin {
             implementation(libs.auth.kt)
             implementation(libs.realtime.kt)
             implementation(libs.functions.kt)
+            implementation("io.github.jan-tennert.supabase:gotrue-kt:1.1.1")
 
             // Dependencias de Ktor
             implementation(libs.ktorClientCore)
@@ -122,6 +123,8 @@ kotlin {
             implementation(libs.auth.kt)
             implementation(libs.realtime.kt)
             implementation(libs.functions.kt)
+            implementation("io.github.jan-tennert.supabase:gotrue-kt:1.1.1")
+
 
             // Dependencias de Ktor
             implementation(libs.ktorClientCore)
@@ -145,6 +148,8 @@ kotlin {
             implementation(libs.auth.kt)
             implementation(libs.realtime.kt)
             implementation(libs.functions.kt)
+            implementation("io.github.jan-tennert.supabase:gotrue-kt:1.1.1")
+
 
             // Dependencias de Ktor
             implementation(libs.ktorClientCore)

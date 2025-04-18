@@ -67,16 +67,24 @@ import connexus_serverless.composeapp.generated.resources.ic_foros
 import connexus_serverless.composeapp.generated.resources.usuarios
 import connexus_serverless.composeapp.generated.resources.visibilidadOff
 import connexus_serverless.composeapp.generated.resources.visibilidadOn
+import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.auth.providers.builtin.Email
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import org.connexuss.project.comunicacion.Conversacion
 import org.connexuss.project.comunicacion.ConversacionesUsuario
 import org.connexuss.project.misc.Imagen
+import org.connexuss.project.misc.PostsRepository
+import org.connexuss.project.misc.Supabase
 import org.connexuss.project.misc.UsuarioPrincipal
 import org.connexuss.project.misc.UsuariosPreCreados
 import org.connexuss.project.supabase.SupabaseRepositorioGenerico
 import org.connexuss.project.supabase.SupabaseUsuariosRepositorio
+import org.connexuss.project.supabase.instanciaSupabaseClient
+import org.connexuss.project.supabase.supabaseClient
 import org.connexuss.project.usuario.AlmacenamientoUsuario
 import org.connexuss.project.usuario.Usuario
 import org.connexuss.project.usuario.UsuarioContacto
@@ -849,10 +857,34 @@ fun muestraAjustes(navController: NavHostController = rememberNavController()) {
  * @param navController controlador de navegación.
  * @param usuarioU usuario a mostrar.
  */
+val repo = SupabaseUsuariosRepositorio()
+
 @Composable
 fun mostrarPerfil(navController: NavHostController, usuarioU: Usuario?) {
     // Se recibe el usuario
-    val usuario = usuarioU
+    //val usuario = usuarioU
+
+    //variable para actualizar datos
+    val coroutineScope = rememberCoroutineScope()
+    var usuario by remember { mutableStateOf<Usuario?>(null) }
+
+    LaunchedEffect(Unit) {
+        try {
+            val repo = SupabaseUsuariosRepositorio()
+            val uid = Supabase.client.auth.currentUserOrNull()?.id
+            println("🪪 UID actual autenticado: $uid")
+
+            usuario = repo.getUsuarioAutenticado()
+            val usuarioEncontrado = repo.getUsuarioAutenticado()
+            println("🧠 Usuario encontrado en la tabla: $usuarioEncontrado")
+
+        } catch (e: Exception) {
+            println("Error cargando usuario autenticado: ${e.message}")
+
+        }
+    }
+
+
 
     // Dialogs
     var showDialogNombre by remember { mutableStateOf(false) }
@@ -861,12 +893,24 @@ fun mostrarPerfil(navController: NavHostController, usuarioU: Usuario?) {
     var nuevoEmail by remember { mutableStateOf("") }
 
     // Campos del usuario
-    var aliasPrivado by remember { mutableStateOf(usuario?.getAliasPrivadoMio() ?: "") }
-    var aliasPublico by remember { mutableStateOf(usuario?.getAliasMio() ?: "") }
-    var descripcion by remember { mutableStateOf(usuario?.getDescripcionMio() ?: "") }
-    var contrasennia by remember { mutableStateOf(usuario?.getContrasenniaMio() ?: "") }
-    var email by remember { mutableStateOf(usuario?.getCorreoMio() ?: "") }
+    var aliasPrivado by remember { mutableStateOf("") }
+    var aliasPublico by remember { mutableStateOf("") }
+    var descripcion by remember { mutableStateOf("") }
+    var contrasennia by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
     var isNameVisible by remember { mutableStateOf(false) }
+
+    //Actualiza los campos del usuario al cargar la pantalla
+    LaunchedEffect(usuario) {
+        usuario?.let {
+            aliasPrivado = it.getAliasPrivadoMio()
+            aliasPublico = it.getAliasMio()
+            descripcion = it.getDescripcionMio()
+            contrasennia = it.getContrasenniaMio()
+            email = it.getCorreoMio()
+        }
+    }
+
 
     // Estado para la imagen de perfil (para refrescar la UI al cambiarla)
     val imagenPerfilState = remember { mutableStateOf(usuario?.getImagenPerfilMio()) }
@@ -922,9 +966,9 @@ fun mostrarPerfil(navController: NavHostController, usuarioU: Usuario?) {
                             Button(
                                 onClick = {
                                     // Genera una nueva imagen aleatoria y actualiza tanto el usuario como el estado mutable
-                                    val nuevaImagen = usuario.generarImagenPerfilRandom()
-                                    usuario.setImagenPerfilMia(nuevaImagen)
-                                    imagenPerfilState.value = nuevaImagen
+                                    //val nuevaImagen = usuario.generarImagenPerfilRandom()
+                                    //usuario.setImagenPerfilMia(nuevaImagen)
+                                    //imagenPerfilState.value = nuevaImagen
                                 },
                                 modifier = Modifier.align(Alignment.CenterHorizontally)
                             ) {
@@ -1025,16 +1069,37 @@ fun mostrarPerfil(navController: NavHostController, usuarioU: Usuario?) {
                             ) {
                                 Button(
                                     onClick = {
-                                        usuario.apply {
+                                        usuario?.apply {
                                             setAliasPrivadoMio(aliasPrivado)
                                             setAliasMio(aliasPublico)
                                             setDescripcionMio(descripcion)
                                             setContrasenniaMio(contrasennia)
                                             setCorreoMio(email)
                                         }
-                                        navController.popBackStack()
+
+                                        usuario?.let {
+                                            coroutineScope.launch {
+                                                try {
+                                                    println(" Enviando actualización a Supabase...")
+                                                    repo.updateUsuario(it)
+
+                                                    // Recarga el usuario actualizado desde Supabase
+                                                    val usuarioActualizado = repo.getUsuarioAutenticado()
+                                                    usuario = usuarioActualizado
+
+                                                    println("Usuario recargado tras actualización: $usuarioActualizado")
+
+                                                    // Navegación atrás (opcional)
+                                                    navController.popBackStack()
+                                                } catch (e: Exception) {
+                                                    println("Error al actualizar usuario: ${e.message}")
+                                                }
+                                            }
+                                        }
                                     }
-                                ) {
+
+                                )
+                                {
                                     Text(text = traducir("aplicar"))
                                 }
                                 Button(
@@ -1065,7 +1130,18 @@ fun mostrarPerfil(navController: NavHostController, usuarioU: Usuario?) {
                 TextButton(
                     onClick = {
                         email = nuevoEmail
+                        usuario?.setCorreoMio(nuevoEmail)
                         showDialogEmail = false
+
+                        usuario?.let {
+                            coroutineScope.launch {
+                                try {
+                                    repo.updateUsuario(it)
+                                } catch (e: Exception) {
+                                    //Log.e("Perfil", "Error actualizando email: ${e.message}")
+                                }
+                            }
+                        }
                     }
                 ) {
                     Text(text = traducir("guardar"))
@@ -1096,8 +1172,20 @@ fun mostrarPerfil(navController: NavHostController, usuarioU: Usuario?) {
                 TextButton(
                     onClick = {
                         contrasennia = nuevoNombre
+                        usuario?.setContrasenniaMio(nuevoNombre)
                         showDialogNombre = false
+
+                        usuario?.let {
+                            coroutineScope.launch {
+                                try {
+                                    repo.updateUsuario(it)
+                                } catch (e: Exception) {
+                                    // Manejo de error (no se por que me da error el Log)
+                                }
+                            }
+                        }
                     }
+
                 ) {
                     Text(text = traducir("guardar"))
                 }
@@ -1683,6 +1771,14 @@ fun muestraRestablecimientoContasenna(navController: NavHostController) {
     }
 }
 
+
+//metodo que comprueba correo
+fun esEmailValido(email: String): Boolean {
+    val regex = Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\$")
+    return regex.matches(email)
+}
+
+
 /**
  * Composable que muestra la pantalla de registro de usuario.
  *
@@ -1780,30 +1876,59 @@ fun PantallaRegistro(navController: NavHostController) {
                                         } else {
                                             errorContrasenas
                                         }
-                                    // Si no hay error, proceder a completar el usuario y enviarlo a Firestore
+
                                     if (errorMessage.isEmpty()) {
-                                        // Seteamos los valores en el usuario
-                                        usuario.setNombreCompletoMio(nombre)
-                                        usuario.setCorreoMio(email)
-                                        usuario.setContrasenniaMio(password)
-                                        usuario.setAliasPrivadoMio("Privado_$nombre")
-                                        usuario.setAliasMio(UtilidadesUsuario().generarAliasPublico())
-                                        usuario.setDescripcionMio("Descripción de $nombre")
-                                        usuario.setImagenPerfilMia(UtilidadesUsuario().generarImagenPerfilRandom())
-
-                                        // Agregamos el usuario a la lista local (por ejemplo, UsuariosPreCreados)
-                                        UsuariosPreCreados.add(usuario)
-
-                                        // Ejecutamos la función suspend dentro de una corrutina
                                         scope.launch {
-                                            repoSupabase.addUsuario(usuario)
-                                            // Navegamos a la pantalla de login después de agregar el usuario
-                                            navController.navigate("login") {
-                                                popUpTo("registro") { inclusive = true }
+                                            try {
+                                                val emailTrimmed = email.trim()
+
+                                                if (!esEmailValido(emailTrimmed)) {
+                                                    errorMessage = "Formato de correo inválido"
+                                                    return@launch
+                                                }
+
+                                                // 1. Registro en Supabase Auth
+                                                val authResult = Supabase.client.auth.signUpWith(Email) {
+                                                    this.email = emailTrimmed
+                                                    this.password = password
+                                                }
+
+                                                val uid = Supabase.client.auth.currentUserOrNull()?.id
+                                                    ?: throw Exception("No se pudo obtener el UID del usuario autenticado")
+
+                                                // 2. Crear objeto Usuario con el mismo ID que auth.uid()
+                                                val nuevoUsuario = Usuario(
+                                                    idUnico = uid,
+                                                    nombre = nombre,
+                                                    correo = emailTrimmed,
+                                                    aliasPublico = UtilidadesUsuario().generarAliasPublico(),
+                                                    aliasPrivado = "Privado_$nombre",
+                                                    activo = true,
+                                                    descripcion = "Descripción de $nombre",
+                                                    contrasennia = password
+                                                )
+
+                                                println("Nuevo usuario: $nuevoUsuario")
+                                                println("UID Supabase actual: $uid")
+
+
+                                                // 3. Guardar en tabla usuario
+                                                repoSupabase.addUsuario(nuevoUsuario)
+
+                                                // 4. ir al login
+                                                navController.navigate("login") {
+                                                    popUpTo("registro") { inclusive = true }
+                                                }
+
+                                            } catch (e: Exception) {
+                                                errorMessage = "Error: ${e.message}"
                                             }
                                         }
                                     }
-                                },
+                                }
+
+
+                                ,
                                 modifier = Modifier.weight(1f)
                             ) {
                                 Text(traducir("registrar"))
@@ -1831,6 +1956,7 @@ fun PantallaRegistro(navController: NavHostController) {
     }
 }
 
+
 /**
  * Composable que muestra la pantalla de inicio de sesión.
  *
@@ -1844,13 +1970,12 @@ fun PantallaLogin(navController: NavHostController) {
 
     val repoSupabase = SupabaseUsuariosRepositorio()
 
-    // Mensajes de error (debes definir estas claves en tu mapa de idiomas)
     val errorEmailNingunUsuario =
-        traducir("error_email_ningun_usuario") // Ejemplo: "No hay ningún usuario registrado con ese email"
+        traducir("error_email_ningun_usuario")
     val errorContrasenaIncorrecta =
-        traducir("error_contrasena_incorrecta") // Ejemplo: "Contraseña incorrecta"
+        traducir("error_contrasena_incorrecta")
     val porFavorCompleta =
-        traducir("por_favor_completa") // Ejemplo: "Por favor, completa todos los campos"
+        traducir("por_favor_completa")
 
     // Scope para lanzar corrutinas
     val scope = rememberCoroutineScope()
@@ -1921,34 +2046,36 @@ fun PantallaLogin(navController: NavHostController) {
                         Button(
                             onClick = {
                                 scope.launch {
-                                    // Validamos que se hayan introducido ambos campos
                                     if (email.isBlank() || password.isBlank()) {
                                         errorMessage = porFavorCompleta
                                         return@launch
                                     }
-                                    // Obtén el usuario desde Firestore a través del repositorio
-                                    val usuario =
-                                        repoSupabase.getUsuarioPorEmail(email)
-                                            .firstOrNull()
-                                    if (usuario == null) {
-                                        // No se encontró ningún usuario con ese email
-                                        errorMessage = errorEmailNingunUsuario
-                                    } else {
-                                        // Se encontró el usuario; comprobamos la contraseña
-                                        if (usuario.getContrasenniaMio() != password) {
-                                            errorMessage = errorContrasenaIncorrecta
+
+                                    try {
+                                        Supabase.client.auth.signInWith(Email) {
+                                            this.email = email.trim()
+                                            this.password = password
+                                        }
+
+                                        val usuario = repoSupabase.getUsuarioPorEmail(email.trim()).firstOrNull()
+
+                                        if (usuario == null) {
+                                            errorMessage = errorEmailNingunUsuario
                                         } else {
-                                            UsuarioPrincipal =
-                                                usuario // Asignamos el usuario encontrado a la variable global
+                                            UsuarioPrincipal = usuario
                                             errorMessage = ""
-                                            // Login exitoso; navega a "contactos"
+
                                             navController.navigate("contactos") {
                                                 popUpTo("login") { inclusive = true }
                                             }
                                         }
+
+                                    } catch (e: Exception) {
+                                        errorMessage = "Error: ${e.message}"
                                     }
                                 }
-                            },
+                            }
+                            ,
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text(traducir("acceder"))

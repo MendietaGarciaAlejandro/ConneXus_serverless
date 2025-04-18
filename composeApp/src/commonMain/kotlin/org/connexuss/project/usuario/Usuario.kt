@@ -405,7 +405,7 @@ data class Usuario(
         this.aliasPublico = aliasPublico
         this.aliasPrivado = hash(aliasPublico)
         this.activo = activo
-        this.imagenPerfil = generarImagenPerfilRandom()
+        //this.imagenPerfil = generarImagenPerfilRandom()
     }
 
     fun generarImagenPerfilRandom(): DrawableResource {
@@ -413,15 +413,17 @@ data class Usuario(
         return todasImagenes.random().resource
     }
 
-    //Debug: Contructor con idUnico
-    constructor(idUnico: String, nombre: String, correo: String, aliasPublico: String, activo: Boolean) : this() {
+    // Contructor con idUnico (el bueno creo)
+    constructor(idUnico: String, nombre: String, correo: String, aliasPublico: String, activo: Boolean, descripcion: String ,contrasennia: String) : this() {
         this.idUnico = idUnico
         this.nombre = nombre
         this.correo = correo
         this.aliasPublico = aliasPublico
         this.aliasPrivado = hash(aliasPublico)
         this.activo = activo
-        this.imagenPerfil = generarImagenPerfilRandom()
+        this.descripcion = descripcion
+        this.contrasennia = contrasennia
+        //this.imagenPerfil = generarImagenPerfilRandom()
     }
 
     // Constructor de copia
