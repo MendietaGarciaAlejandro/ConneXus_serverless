@@ -345,6 +345,7 @@ fun SupabaseConversacionesUsuarioCRUD(navHostController: NavHostController) {
     val scope = rememberCoroutineScope()
     var convUsuarioList by remember { mutableStateOf(emptyList<ConversacionesUsuario>()) }
     var idUser by remember { mutableStateOf("") }
+    var idConv by remember { mutableStateOf("") }
 
     // Nombre de la tabla para las conversaciones-usuario
     val nombreTabla = "conversaciones_usuario"
@@ -407,6 +408,12 @@ fun SupabaseConversacionesUsuarioCRUD(navHostController: NavHostController) {
                         label = { Text("ID del Usuario") },
                         modifier = Modifier.fillMaxWidth()
                     )
+                    OutlinedTextField(
+                        value = idConv,
+                        onValueChange = { idConv = it },
+                        label = { Text("ID de la Conversacion") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
                     Button(
                         onClick = {
                             scope.launch {
@@ -415,10 +422,11 @@ fun SupabaseConversacionesUsuarioCRUD(navHostController: NavHostController) {
                                     nombreTabla,
                                     ConversacionesUsuario(
                                         idusuario = idUser,
-                                        idconversacion = generateId()
+                                        idconversacion = idConv
                                     )
                                 )
                                 idUser = ""
+                                idConv = ""
                                 cargarConversacionesUsuario()
                             }
                         },
