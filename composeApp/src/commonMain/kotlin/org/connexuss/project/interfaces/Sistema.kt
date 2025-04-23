@@ -597,7 +597,6 @@ fun muestraChats(navController: NavHostController) {
         }
     }
 
-    // Unir todo para construir las cards de chat
     val chatsConDatos = listaConversaciones.map { conversacion ->
         val participantes = relacionesConversaciones
             .filter { it.idconversacion == conversacion.id }
@@ -612,7 +611,6 @@ fun muestraChats(navController: NavHostController) {
         Triple(conversacion, participantes, ultimoMensaje)
     }
 
-    // UI
     MaterialTheme {
         Scaffold(
             topBar = {
