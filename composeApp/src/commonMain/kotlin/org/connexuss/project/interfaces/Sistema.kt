@@ -26,6 +26,7 @@ import androidx.compose.material.BottomNavigation
 import androidx.compose.material.BottomNavigationItem
 import androidx.compose.material.Button
 import androidx.compose.material.Card
+import androidx.compose.material.Checkbox
 import androidx.compose.material.FloatingActionButton
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
@@ -55,6 +56,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -76,6 +78,7 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import org.connexuss.project.comunicacion.Conversacion
 import org.connexuss.project.comunicacion.ConversacionesUsuario
+import org.connexuss.project.comunicacion.Mensaje
 import org.connexuss.project.misc.Imagen
 import org.connexuss.project.misc.PostsRepository
 import org.connexuss.project.misc.Supabase
@@ -471,31 +474,84 @@ fun muestraUsuarios(navController: NavHostController) {
     }
 }
 
+
+
 // --- elemento chat ---
 //Muestra el id del usuarioPrincipal ya que no esta incluido en la lista de usuarios precreados
 @Composable
-fun ChatCard(conversacion: Conversacion, navController: NavHostController) {
-    // Se define el nombre a mostrar: si 'nombre' no es nulo o vacío se usa; de lo contrario, se usa el 'id'
-    val displayName =
-        if (!conversacion.nombre.isNullOrBlank()) conversacion.nombre else conversacion.id
+fun ChatCard(
+    conversacion: Conversacion,
+    navController: NavHostController,
+    participantes: List<Usuario>,
+    ultimoMensaje: Mensaje?
+) {
+    val currentUserId = UsuarioPrincipal?.getIdUnicoMio()
+    val esGrupo = !conversacion.nombre.isNullOrBlank()
+
+    // DEBUG: imprime IDs de participantes
+    println("👥 Participantes en la conversación ${conversacion.id}:")
+    participantes.forEach {
+        println(" - ${it.getNombreCompletoMio()} (id: ${it.getIdUnicoMio()})")
+    }
+    println("🧍 Usuario actual: $currentUserId")
+
+    val otroUsuario = participantes.firstOrNull { it.getIdUnicoMio() != currentUserId }
+
+    val displayName = if (esGrupo) {
+        conversacion.nombre!!
+    } else {
+        otroUsuario?.getNombreCompletoMio() ?: conversacion.id
+    }
+
+    val nombresParticipantes = if (esGrupo) {
+        participantes.joinToString(", ") {
+            if (it.getIdUnicoMio() == currentUserId) "Tú" else it.getNombreCompletoMio()
+        }
+    } else null
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
             .clickable {
-                // Al no disponer de propiedades para identificar grupos o participantes,
-                // simplemente navegamos a la pantalla de chat individual
-                navController.navigate("mostrarChat/${conversacion.id}")
+                val destino = if (esGrupo) {
+                    "mostrarChatGrupo/${conversacion.id}"
+                } else {
+                    "mostrarChat/${conversacion.id}"
+                }
+                navController.navigate(destino)
             },
         elevation = 4.dp
     ) {
-        // Mostramos únicamente el nombre del chat (o el id, si no hubiera nombre)
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = "Chat: $displayName")
+            Text(
+                text = displayName,
+                style = MaterialTheme.typography.h6
+            )
+
+            nombresParticipantes?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.body2,
+                    color = Color.Gray,
+                    modifier = Modifier.padding(top = 4.dp, bottom = 4.dp)
+                )
+            }
+
+            if (ultimoMensaje != null) {
+                Text(
+                    text = ultimoMensaje.content,
+                    style = MaterialTheme.typography.body1,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
         }
     }
 }
+
+
+
 
 // --- Chats PorDefecto ---
 @Composable
@@ -503,29 +559,60 @@ fun muestraChats(navController: NavHostController) {
     val currentUserId = UsuarioPrincipal?.getIdUnicoMio() ?: return
 
     val repo = remember { SupabaseRepositorioGenerico() }
-    var conversacionesUsuario by remember { mutableStateOf<List<ConversacionesUsuario>>(emptyList()) }
+
+    var relacionesConversaciones by remember { mutableStateOf<List<ConversacionesUsuario>>(emptyList()) }
     var listaConversaciones by remember { mutableStateOf<List<Conversacion>>(emptyList()) }
+    var todosLosUsuarios by remember { mutableStateOf<List<Usuario>>(emptyList()) }
+    var mensajes by remember { mutableStateOf<List<Mensaje>>(emptyList()) }
 
-    // Recupera las relaciones (conversaciones_usuario) para el UsuarioPrincipal
-    LaunchedEffect(currentUserId) {
-        repo.getAll<ConversacionesUsuario>("conversaciones_usuario")
-            .collect { convUsers ->
-                // Filtramos las relaciones para que pertenezcan al usuario actual
-                conversacionesUsuario = convUsers.filter { it.idusuario == currentUserId }
-            }
+    // 🔄 Cargar TODAS las relaciones de conversaciones_usuario (no solo las del usuario actual)
+    LaunchedEffect(Unit) {
+        repo.getAll<ConversacionesUsuario>("conversaciones_usuario").collect {
+            relacionesConversaciones = it
+        }
     }
 
-    // Una vez obtenidas las relaciones, extraemos los IDs de conversación y consultamos la tabla conversacion
-    LaunchedEffect(conversacionesUsuario) {
-        // Lista de IDs de conversación del usuario
-        val convIds = conversacionesUsuario.map { it.idconversacion }
-        repo.getAll<Conversacion>("conversacion")
-            .collect { allConversaciones ->
-                // Filtramos las conversaciones cuya id esté en convIds
-                listaConversaciones = allConversaciones.filter { it.id in convIds }
-            }
+    // Cargar todas las conversaciones en las que participa el usuario actual
+    LaunchedEffect(relacionesConversaciones) {
+        val idsDelUsuario = relacionesConversaciones
+            .filter { it.idusuario == currentUserId }
+            .map { it.idconversacion }
+
+        repo.getAll<Conversacion>("conversacion").collect { todas ->
+            listaConversaciones = todas.filter { it.id in idsDelUsuario }
+        }
     }
 
+    // Cargar todos los usuarios (para mostrar sus nombres)
+    LaunchedEffect(Unit) {
+        repo.getAll<Usuario>("usuario").collect {
+            todosLosUsuarios = it
+        }
+    }
+
+    // Cargar todos los mensajes
+    LaunchedEffect(Unit) {
+        repo.getAll<Mensaje>("mensaje").collect {
+            mensajes = it
+        }
+    }
+
+    // Unir todo para construir las cards de chat
+    val chatsConDatos = listaConversaciones.map { conversacion ->
+        val participantes = relacionesConversaciones
+            .filter { it.idconversacion == conversacion.id }
+            .mapNotNull { relacion ->
+                todosLosUsuarios.find { it.getIdUnicoMio() == relacion.idusuario }
+            }
+
+        val ultimoMensaje = mensajes
+            .filter { it.idconversacion == conversacion.id }
+            .maxByOrNull { it.fechaMensaje }
+
+        Triple(conversacion, participantes, ultimoMensaje)
+    }
+
+    // UI
     MaterialTheme {
         Scaffold(
             topBar = {
@@ -546,13 +633,17 @@ fun muestraChats(navController: NavHostController) {
                         .padding(padding)
                         .padding(16.dp)
                 ) {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        items(listaConversaciones) { conversacion ->
-                            ChatCard(conversacion = conversacion, navController = navController)
+                    LazyColumn(modifier = Modifier.fillMaxSize()) {
+                        items(chatsConDatos) { (conversacion, participantes, ultimoMensaje) ->
+                            ChatCard(
+                                conversacion = conversacion,
+                                navController = navController,
+                                participantes = participantes,
+                                ultimoMensaje = ultimoMensaje
+                            )
                         }
                     }
+
                     FloatingActionButton(
                         onClick = { navController.navigate("nuevo") },
                         modifier = Modifier
@@ -570,32 +661,44 @@ fun muestraChats(navController: NavHostController) {
     }
 }
 
+
+
+
+
 // --- Contactos ---
 @Composable
 fun muestraContactos(navController: NavHostController) {
-    // Se obtiene el id del UsuarioPrincipal (no se asume que tenga métodos de lista)
     val currentUserId = UsuarioPrincipal?.idUnico ?: return
+    println("🪪 ID usuario actual: $currentUserId")
     val repo = remember { SupabaseRepositorioGenerico() }
     val scope = rememberCoroutineScope()
 
-    // Estado que contendrá los registros de la tabla "usuario_contacto" para el UsuarioPrincipal.
     var registrosContacto by remember { mutableStateOf<List<UsuarioContacto>>(emptyList()) }
-    // A partir de esos registros, se filtrarán los usuarios precargados.
-    val contactos = UsuariosPreCreados.filter { usuario ->
-        registrosContacto.any { it.idContacto == usuario.idUnico }
-    }
+    var contactos by remember { mutableStateOf<List<Usuario>>(emptyList()) }
 
-    // Consulta a la tabla "usuario_contacto" para traer los contactos relacionados al UsuarioPrincipal.
+    var showNuevoContactoDialog by remember { mutableStateOf(false) }
+    var nuevoContactoId by remember { mutableStateOf("") }
+
+    var showNuevoChatDialog by remember { mutableStateOf(false) }
+    var contactosSeleccionados by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var nombreGrupo by remember { mutableStateOf("") }
+
     LaunchedEffect(currentUserId) {
         repo.getAll<UsuarioContacto>("usuario_contacto").collect { lista ->
-            // Se filtran solo aquellos registros donde idusuario coincida con el UsuarioPrincipal.
             registrosContacto = lista.filter { it.idUsuario == currentUserId }
         }
     }
 
-    // Estados para el AlertDialog de "Nuevo Contacto"
-    var showNuevoContactoDialog by remember { mutableStateOf(false) }
-    var nuevoContactoId by remember { mutableStateOf("") }
+    LaunchedEffect(registrosContacto) {
+        val idsDeContactos = registrosContacto.map { it.idContacto }
+        if (idsDeContactos.isNotEmpty()) {
+            repo.getAll<Usuario>("usuario").collect { usuarios ->
+                contactos = usuarios.filter { it.idUnico in idsDeContactos }
+            }
+        } else {
+            contactos = emptyList()
+        }
+    }
 
     MaterialTheme {
         Scaffold(
@@ -615,7 +718,6 @@ fun muestraContactos(navController: NavHostController) {
                     .padding(padding)
             ) {
                 Column(modifier = Modifier.fillMaxSize()) {
-                    // Lista de contactos obtenidos de la consulta.
                     LazyColumn(modifier = Modifier.weight(1f)) {
                         items(contactos) { usuario ->
                             Card(
@@ -638,18 +740,22 @@ fun muestraContactos(navController: NavHostController) {
                         }
                     }
 
-                    // Botón para agregar un nuevo contacto
-                    Button(
-                        onClick = { showNuevoContactoDialog = true },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp)
-                    ) {
-                        Text(text = traducir("nuevo_contacto"))
+                    Row(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+                        Button(
+                            onClick = { showNuevoContactoDialog = true },
+                            modifier = Modifier.weight(1f).padding(end = 8.dp)
+                        ) {
+                            Text(text = traducir("nuevo_contacto"))
+                        }
+                        Button(
+                            onClick = { showNuevoChatDialog = true },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(text = "Nuevo chat")
+                        }
                     }
                 }
 
-                // AlertDialog para agregar un nuevo contacto
                 if (showNuevoContactoDialog) {
                     AlertDialog(
                         onDismissRequest = { showNuevoContactoDialog = false },
@@ -668,20 +774,21 @@ fun muestraContactos(navController: NavHostController) {
                             TextButton(
                                 onClick = {
                                     val idContactoIngresado = nuevoContactoId.trim()
-                                    // Se verifica que el id ingresado exista en la lista de usuarios precargados.
-                                    val contactoEncontrado = UsuariosPreCreados.find { it.idUnico == idContactoIngresado }
-                                    if (contactoEncontrado != null) {
-                                        scope.launch {
-                                            // Se inserta un nuevo registro en la tabla "usuario_contacto"
+                                    println("🔹 Intentando insertar directamente el id: $idContactoIngresado")
+                                    scope.launch {
+                                        try {
                                             val nuevoRegistro = UsuarioContacto(
                                                 idUsuario = currentUserId,
                                                 idContacto = idContactoIngresado
                                             )
+                                            println("📤 Insertando en Supabase...")
                                             repo.addItem("usuario_contacto", nuevoRegistro)
-                                            // Se consulta nuevamente la tabla para actualizar el estado local.
+                                            println("✅ Insertado con éxito")
                                             repo.getAll<UsuarioContacto>("usuario_contacto").collect { lista ->
                                                 registrosContacto = lista.filter { it.idUsuario == currentUserId }
                                             }
+                                        } catch (e: Exception) {
+                                            println("❌ Error insertando contacto: ${e.message}")
                                         }
                                     }
                                     nuevoContactoId = ""
@@ -690,12 +797,88 @@ fun muestraContactos(navController: NavHostController) {
                             ) { Text(text = traducir("guardar")) }
                         },
                         dismissButton = {
-                            TextButton(
-                                onClick = {
-                                    nuevoContactoId = ""
-                                    showNuevoContactoDialog = false
+                            TextButton(onClick = {
+                                nuevoContactoId = ""
+                                showNuevoContactoDialog = false
+                            }) {
+                                Text(text = traducir("cancelar"))
+                            }
+                        }
+                    )
+                }
+
+                if (showNuevoChatDialog) {
+                    AlertDialog(
+                        onDismissRequest = {
+                            showNuevoChatDialog = false
+                            contactosSeleccionados = emptySet()
+                            nombreGrupo = ""
+                        },
+                        title = { Text(text = "Crear nuevo chat") },
+                        text = {
+                            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                                Text("Selecciona participantes:")
+                                contactos.forEach { usuario ->
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Checkbox(
+                                            checked = contactosSeleccionados.contains(usuario.idUnico),
+                                            onCheckedChange = {
+                                                contactosSeleccionados = if (it)
+                                                    contactosSeleccionados + usuario.idUnico
+                                                else
+                                                    contactosSeleccionados - usuario.idUnico
+                                            }
+                                        )
+                                        Text(text = usuario.getNombreCompletoMio())
+                                    }
                                 }
-                            ) { Text(text = traducir("cancelar")) }
+                                if (contactosSeleccionados.size > 1) {
+                                    Spacer(Modifier.height(8.dp))
+                                    OutlinedTextField(
+                                        value = nombreGrupo,
+                                        onValueChange = { nombreGrupo = it },
+                                        label = { Text("Nombre del grupo") },
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
+                            }
+                        },
+                        confirmButton = {
+                            TextButton(onClick = {
+                                scope.launch {
+                                    try {
+                                        val participantes = contactosSeleccionados + currentUserId
+                                        val nuevaConversacion = Conversacion(
+                                            nombre = if (contactosSeleccionados.size > 1) nombreGrupo else null
+                                        )
+                                        repo.addItem("conversacion", nuevaConversacion)
+
+                                        participantes.forEach { idUsuario ->
+                                            val relacion = ConversacionesUsuario(
+                                                idusuario = idUsuario,
+                                                idconversacion = nuevaConversacion.id
+                                            )
+                                            repo.addItem("conversaciones_usuario", relacion)
+                                        }
+
+                                        showNuevoChatDialog = false
+                                        contactosSeleccionados = emptySet()
+                                        nombreGrupo = ""
+
+                                    } catch (e: Exception) {
+                                        println("❌ Error creando nuevo chat: ${e.message}")
+                                    }
+                                }
+                            }) { Text("Crear") }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = {
+                                showNuevoChatDialog = false
+                                contactosSeleccionados = emptySet()
+                                nombreGrupo = ""
+                            }) {
+                                Text("Cancelar")
+                            }
                         }
                     )
                 }
@@ -703,6 +886,8 @@ fun muestraContactos(navController: NavHostController) {
         }
     }
 }
+
+
 
 
 
