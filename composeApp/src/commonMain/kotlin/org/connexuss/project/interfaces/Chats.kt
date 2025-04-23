@@ -73,10 +73,17 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
         chatId?.let { id ->
             // --- CONSULTA DE CONVERSACIÓN ---
             // Se obtiene la conversación por su id. Se asume que, para este usuario, la conversación existe.
-            supabaseRepo.getItem<Conversacion>("conversacion") { eq("id", id) }
-                .collect { conv ->
-                    chat = conv
+            supabaseRepo.getItem<Conversacion>("conversacion") {
+                scope.launch {
+                    select {
+                        filter {
+                            eq("id", id)
+                        }
+                    }
                 }
+            }.collect { conv ->
+                chat = conv
+            }
 
             // --- PARTICIPANTES ---
             // Se obtiene la lista de relaciones en conversaciones_usuario filtrando por el chatId.
@@ -230,10 +237,17 @@ fun mostrarChatGrupo(
     // Recupera datos de la conversación y sus mensajes a través del repositorio
     LaunchedEffect(chatId) {
         chatId?.let { id ->
-            supabaseRepo.getItem<Conversacion>("conversacion") { eq("id", id) }
-                .collect { conv ->
-                    chat = conv
+            supabaseRepo.getItem<Conversacion>("conversacion") {
+                scope.launch {
+                    select {
+                        filter {
+                            eq("id", id)
+                        }
+                    }
                 }
+            }.collect { conv ->
+                chat = conv
+            }
 
             supabaseRepo.getAll<Mensaje>("mensaje")
                 .collect { allMessages ->
