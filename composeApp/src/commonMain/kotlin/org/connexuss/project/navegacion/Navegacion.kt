@@ -230,8 +230,7 @@ fun Navegacion(
             if (hilo != null) {
                 HiloScreen(
                     navController = navController,
-                    hiloId = hiloId,
-                    repo = repoSupabase,
+                    hiloId = hiloId
                 )
             } else {
                 LaunchedEffect(Unit) {

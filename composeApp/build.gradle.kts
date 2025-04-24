@@ -237,6 +237,7 @@ dependencies {
 
     implementation(libs.androidx.ui.android)
     implementation(libs.material3.android)
+    implementation(libs.androidx.foundation.layout.android)
     debugImplementation(compose.uiTooling)
 }
 
