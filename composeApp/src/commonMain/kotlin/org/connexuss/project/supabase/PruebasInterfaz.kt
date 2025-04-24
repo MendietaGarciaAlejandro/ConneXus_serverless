@@ -1051,7 +1051,7 @@ fun SupabaseContactosCRUD(navHostController: NavHostController) {
     var idUsuario by remember { mutableStateOf("") }
     var idContacto by remember { mutableStateOf("") }
 
-    val nombreTabla = "usuario_contactos"
+    val nombreTabla = "usuario_contacto"
 
     suspend fun cargarContactos() {
         contactos = supabaseClient
