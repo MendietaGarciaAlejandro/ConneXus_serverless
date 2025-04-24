@@ -2104,7 +2104,8 @@ fun PantallaRegistro(navController: NavHostController) {
                                                 }
 
                                             } catch (e: Exception) {
-                                                errorMessage = "Error: ${e.message}"
+                                                //errorMessage = "Error: ${e.message}"
+                                                navController.navigate("login")
                                             }
                                         }
                                     }
