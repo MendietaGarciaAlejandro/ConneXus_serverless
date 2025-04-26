@@ -10,16 +10,15 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.material.TextFieldDefaults
@@ -36,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.annotations.SupabaseExperimental
 import io.github.jan.supabase.postgrest.from
@@ -43,7 +43,8 @@ import io.github.jan.supabase.postgrest.query.filter.FilterOperation
 import io.github.jan.supabase.realtime.selectAsFlow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
-import org.connexuss.project.interfaces.LimitaTamanioAncho
+import org.connexuss.project.interfaces.DefaultTopBar
+import kotlin.random.Random
 import kotlin.reflect.KProperty1
 
 data class Texto(
@@ -81,149 +82,131 @@ inline fun <reified T : Any, PK : Any> SupabaseClient.subscribeTableAsFlow(
 @Composable
 fun ChatScreen(
     textos: List<Texto>,
-    currentUserId: Long,
-    onSend: (String) -> Unit
+    onSend: (autor: String, mensaje: String) -> Unit    // <-- aquí dos parámetros
 ) {
-    var input by remember { mutableStateOf("") }
+    var autorInput by remember { mutableStateOf("") }
+    var mensajeInput by remember { mutableStateOf("") }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colors.background)
-    ) {
+    Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colors.background)) {
         // 1. Listado de mensajes
-        LazyColumn(
-            modifier = Modifier.weight(1f),
-            reverseLayout = true,
-            contentPadding = PaddingValues(vertical = 8.dp)
-        ) {
+        LazyColumn(modifier = Modifier.weight(1f), contentPadding = PaddingValues(vertical = 8.dp)) {
             items(textos.reversed()) { texto ->
-                MessageItem(texto, texto.autor == currentUserId.toString())
+                MessageItem(texto)
             }
         }
 
-        // 2. Campo de entrada y botón de envío
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        // 2. Inputs y botón
+        Row(modifier = Modifier.fillMaxWidth().padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
             TextField(
-                value = input,
-                onValueChange = { input = it },
-                placeholder = { Text("Escribe un mensaje…") },
-                modifier = Modifier
-                    .weight(1f)
-                    .clip(RoundedCornerShape(16.dp)),
-                colors = TextFieldDefaults.textFieldColors(
-                    backgroundColor = MaterialTheme.colors.surface
-                )
+                value = autorInput,
+                onValueChange = { autorInput = it },
+                placeholder = { Text("Tu nombre") },
+                modifier = Modifier.weight(0.3f).clip(RoundedCornerShape(16.dp)),
+                colors = TextFieldDefaults.textFieldColors(backgroundColor = MaterialTheme.colors.surface)
             )
-            IconButton(
-                onClick = {
-                    if (input.isNotBlank()) {
-                        onSend(input.trim())
-                        input = ""
-                    }
+            Spacer(Modifier.width(8.dp))
+            TextField(
+                value = mensajeInput,
+                onValueChange = { mensajeInput = it },
+                placeholder = { Text("Escribe un mensaje…") },
+                modifier = Modifier.weight(0.6f).clip(RoundedCornerShape(16.dp)),
+                colors = TextFieldDefaults.textFieldColors(backgroundColor = MaterialTheme.colors.surface)
+            )
+            Spacer(Modifier.width(8.dp))
+            IconButton(onClick = {
+                if (autorInput.isNotBlank() && mensajeInput.isNotBlank()) {
+                    onSend(autorInput.trim(), mensajeInput.trim())   // ahora coincide: dos args
+                    mensajeInput = ""
                 }
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.Send,
-                    contentDescription = "Enviar"
-                )
+            }) {
+                Icon(imageVector = Icons.AutoMirrored.Filled.Send, contentDescription = "Enviar")
             }
         }
     }
 }
 
 @Composable
-fun MessageItem(texto: Texto, isOwn: Boolean) {
+fun MessageItem(texto: Texto) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 8.dp, vertical = 4.dp),
-        horizontalArrangement = if (isOwn) Arrangement.End else Arrangement.Start
+        horizontalArrangement = Arrangement.Start        // Todas las burbujas alineadas a la izquierda :contentReference[oaicite:11]{index=11}
     ) {
-        if (!isOwn) {
-            // Avatar simulada
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colors.primary)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-        }
-
-        // Burbuja de texto
+        // Burbujas con esquina recortada
         Box(
             modifier = Modifier
-                .clip(
-                    RoundedCornerShape(
-                        topStart = 16.dp,
-                        topEnd = 16.dp,
-                        bottomStart = if (isOwn) 16.dp else 0.dp,
-                        bottomEnd = if (isOwn) 0.dp else 16.dp
-                    )
-                )
-                .background(
-                    if (isOwn)
-                        MaterialTheme.colors.primary
-                    else
-                        MaterialTheme.colors.secondary
-                )
+                .clip(RoundedCornerShape(12.dp))
+                .background(MaterialTheme.colors.secondary)
                 .padding(12.dp)
                 .widthIn(max = 280.dp)
         ) {
             Column {
                 Text(
                     text = texto.autor,
-                    style = MaterialTheme.typography.caption,
+                    style = MaterialTheme.typography.caption,    // Usamos caption en Material2 :contentReference[oaicite:12]{index=12}
                     color = MaterialTheme.colors.onSurface
                 )
                 Text(
                     text = texto.texto,
-                    style = MaterialTheme.typography.body1,
+                    style = MaterialTheme.typography.body1,      // body1 para el contenido del mensaje :contentReference[oaicite:13]{index=13}
                     color = MaterialTheme.colors.onPrimary
                 )
             }
-        }
-
-        if (isOwn) {
-            Spacer(modifier = Modifier.width(8.dp))
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colors.primary)
-            )
         }
     }
 }
 
 @Composable
-fun PantallaTextosRealtime(client: SupabaseClient, currentUserId: Long) {
+fun PantallaTextosRealtime(navHostController: NavHostController) {
+    val client = instanciaSupabaseClient(
+        tieneStorage = true,
+        tieneAuth = true,
+        tieneRealtime = true,
+        tienePostgrest = true
+    )
     val textos by client
         .subscribeTableAsFlow<Texto, Long>("texto", Texto::id)
         .collectAsState(initial = emptyList())
-    val scope = rememberCoroutineScope()
 
-    LimitaTamanioAncho {
-        ChatScreen(
-            textos = textos.filter { it.autor.toLong() != currentUserId },
-            currentUserId = currentUserId,
-            onSend = { nuevoTexto ->
-                // lógica para insertar en Supabase
-                scope.launch {
-                    client.from("texto").insert(
-                        mapOf(
-                            "autor" to currentUserId,
-                            "texto" to nuevoTexto
+    val scope = rememberCoroutineScope()               // Para lanzar inserciones :contentReference[oaicite:15]{index=15}
+
+    Scaffold(
+        topBar = {
+            DefaultTopBar(
+                title = "Chat Tiempo Real",
+                navController = navHostController,
+                irParaAtras = true,
+                showBackButton = true,
+                muestraEngranaje = true
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(16.dp)
+        ) {
+            ChatScreen(
+                textos = textos,
+                onSend = { autor, mensaje ->
+                    scope.launch {
+                        client.from("texto").insert(
+                            mapOf(
+                                "id"    to generaIdLongAleatorio(),
+                                "autor" to autor,
+                                "texto" to mensaje
+                            )
                         )
-                    )
+                    }
                 }
-            }
-        )
+            )
+        }
     }
+}
+
+fun generaIdLongAleatorio(): Long {
+    val largo = Random.nextLong()
+    return largo
 }

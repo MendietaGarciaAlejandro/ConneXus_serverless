@@ -2343,12 +2343,12 @@ fun PantallaZonaPruebas(navController: NavHostController) {
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-//                            Button(
-//                                onClick = { navController.navigate("pruebasObjetosFIrebase") },
-//                                modifier = Modifier.weight(1f)
-//                            ) {
-//                                Text("Debug: Ir a las pruebas con Firebase")
-//                            }
+                            Button(
+                                onClick = { navController.navigate("pruebasTextosRealtime") },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text("Debug: Ir a las pruebas de textos Realtime")
+                            }
                             Button(
                                 onClick = { navController.navigate("supabasePruebas") },
                                 modifier = Modifier.weight(1f)

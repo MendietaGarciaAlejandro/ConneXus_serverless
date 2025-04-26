@@ -278,11 +278,12 @@ fun Navegacion(
             val chatId = backStackEntry.arguments?.getString("chatId")
             mostrarChat(navController = navController, chatId = chatId)
         }
-
         composable("mostrarChatGrupo/{chatId}") { backStackEntry ->
             val chatId = backStackEntry.arguments?.getString("chatId")
             mostrarChatGrupo(navController = navController, chatId = chatId, imagenesPerfil = emptyList()) // puedes rellenar luego si quieres
         }
-
+        composable("pruebasTextosRealtime") {
+            PantallaTextosRealtime(navHostController = navController)
+        }
     }
 }
