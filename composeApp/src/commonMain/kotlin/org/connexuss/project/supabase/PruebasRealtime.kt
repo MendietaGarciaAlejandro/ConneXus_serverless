@@ -43,10 +43,12 @@ import io.github.jan.supabase.postgrest.query.filter.FilterOperation
 import io.github.jan.supabase.realtime.selectAsFlow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
+import kotlinx.serialization.Serializable
 import org.connexuss.project.interfaces.DefaultTopBar
 import kotlin.random.Random
 import kotlin.reflect.KProperty1
 
+@Serializable
 data class Texto(
     val id: Long,
     val autor: String,
@@ -193,10 +195,10 @@ fun PantallaTextosRealtime(navHostController: NavHostController) {
                 onSend = { autor, mensaje ->
                     scope.launch {
                         client.from("texto").insert(
-                            mapOf(
-                                "id"    to generaIdLongAleatorio(),
-                                "autor" to autor,
-                                "texto" to mensaje
+                            Texto(
+                                id = generaIdLongAleatorio(),
+                                autor =  autor,
+                                texto =  mensaje
                             )
                         )
                     }
