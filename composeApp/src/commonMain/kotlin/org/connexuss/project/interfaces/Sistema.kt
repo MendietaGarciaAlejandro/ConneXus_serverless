@@ -519,6 +519,7 @@ fun ChatCard(
                 } else {
                     "mostrarChat/${conversacion.id}"
                 }
+                println("🧭 Navegando a: $destino")
                 navController.navigate(destino)
             },
         elevation = 4.dp

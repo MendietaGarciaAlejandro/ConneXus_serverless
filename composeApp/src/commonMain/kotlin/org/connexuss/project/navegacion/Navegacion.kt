@@ -140,17 +140,17 @@ fun Navegacion(
         composable("mostrarPerfilPrincipal") {
             mostrarPerfil(navController, UsuarioPrincipal)
         }
-        composable("mostrarChat/{chatId}") {
-            backStackEntry ->
-            // Obtener chatId de los argumentos
+        composable("mostrarChat/{chatId}") { backStackEntry ->
             val chatId = backStackEntry.arguments?.getString("chatId")
-                mostrarChat(navController, chatId)
+            mostrarChat(navController, chatId)
         }
-        composable("mostrarChatGrupo/{chatId}") {
-            backStackEntry ->
+
+        // Chat grupal
+        composable("mostrarChatGrupo/{chatId}") { backStackEntry ->
             val chatId = backStackEntry.arguments?.getString("chatId")
-            mostrarChatGrupo(navController, chatId, imagenesPerfilPersona)
+            mostrarChatGrupo(navController, chatId, imagenesPerfil = emptyList())
         }
+
         composable("idiomas") {
             PantallaIdiomas(navController)
         }
@@ -255,6 +255,7 @@ fun Navegacion(
         composable("supabaseContactosCRUD") {
             SupabaseContactosCRUD(navController)
         }
+
         composable("mostrarChat/{chatId}") { backStackEntry ->
             val chatId = backStackEntry.arguments?.getString("chatId")
             mostrarChat(navController = navController, chatId = chatId)
@@ -266,5 +267,6 @@ fun Navegacion(
         composable("pruebasTextosRealtime") {
             PantallaTextosRealtime(navHostController = navController)
         }
+
     }
 }

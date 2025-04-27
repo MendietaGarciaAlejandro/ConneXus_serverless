@@ -230,4 +230,34 @@ class SupabaseRepositorioGenerico {
         }
         supabaseClient.auth.signOut()
     }
+
+    inline fun <reified T : Any> getItems(
+        tableName: String,
+        crossinline queryBlock: PostgrestQueryBuilder.() -> Unit
+    ): Flow<List<T>> = flow {
+        supabaseClient.auth.signInWith(Email) {
+            email = "connexusdam@gmail.com"
+            password = "uie027twBhutl7RI"
+        }
+
+        val session = supabaseClient.auth.currentSessionOrNull()
+        if (session != null) {
+            println("Sesión activa (via getItems): ${session.accessToken}")
+        } else {
+            println("No se pudo recuperar la sesión en getItems()")
+            return@flow
+        }
+
+        val result = supabaseClient
+            .from(tableName)
+            .apply(queryBlock)
+            .select(Columns.ALL)
+            .decodeList<T>()
+
+        emit(result)
+
+        supabaseClient.auth.signOut()
+    }
+
+
 }
