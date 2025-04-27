@@ -10,6 +10,7 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     // id("com.google.gms.google-services")
+    //kotlin("plugin.serialization") version "2.1.0"
     alias(libs.plugins.kotlinxSerialization)
 }
 
