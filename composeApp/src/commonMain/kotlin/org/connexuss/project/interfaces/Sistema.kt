@@ -1419,7 +1419,6 @@ fun mostrarPerfilUsuario(
     val repo = remember { SupabaseRepositorioGenerico() }
     var usuario by remember { mutableStateOf<Usuario?>(null) }
 
-    // 🔥 Carga segura al estilo de tus chats
     LaunchedEffect(userId) {
         if (userId == null) return@LaunchedEffect
 
@@ -1507,7 +1506,6 @@ fun mostrarPerfilUsuario(
                                 val repo = SupabaseRepositorioGenerico()
 
                                 try {
-                                    // --- Buscar relaciones en conversaciones_usuario ---
                                     val relaciones = repo.getAll<ConversacionesUsuario>("conversaciones_usuario").first()
 
                                     // IDs de conversaciones donde estén ambos
@@ -1559,7 +1557,7 @@ fun mostrarPerfilUsuario(
 
 
                 TextButton(
-                    onClick = { /* TODO: bloquear usuario */ },
+                    onClick = { /*  bloquear usuario */ },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Bloquear", color = Color.Red)
