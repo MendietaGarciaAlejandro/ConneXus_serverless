@@ -1,6 +1,7 @@
 package org.connexuss.project.misc
 
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import connexus_serverless.composeapp.generated.resources.Res
 import connexus_serverless.composeapp.generated.resources.avatar
@@ -14,6 +15,7 @@ import connexus_serverless.composeapp.generated.resources.unblock
 import connexus_serverless.composeapp.generated.resources.visibilidadOff
 import connexus_serverless.composeapp.generated.resources.visibilidadOn
 import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.auth.user.UserSession
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.datetime.LocalDateTime
 import org.connexuss.project.comunicacion.Hilo
@@ -1350,3 +1352,5 @@ object Supabase {
         )
     }
 }
+
+var sesionActualUsuario: UserSession? = null

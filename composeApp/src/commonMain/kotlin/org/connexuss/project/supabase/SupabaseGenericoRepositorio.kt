@@ -20,6 +20,7 @@ import io.github.jan.supabase.realtime.selectAsFlow
 import io.github.jan.supabase.storage.Storage
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import org.connexuss.project.misc.Supabase
 import kotlin.reflect.KProperty1
 
 private const val SUPABASE_URL = "https://yrpvwyewzsvxqwkacbao.supabase.co"
@@ -81,23 +82,22 @@ class SupabaseRepositorioGenerico {
 
     // Obtener todos los registros de una tabla
     inline fun <reified T : Any> getAll(tableName: String): Flow<List<T>> = flow {
-        supabaseClient.auth.signInWith(Email) {
-            email = "connexusdam@gmail.com"
-            password = "uie027twBhutl7RI"
-        }
-        val session = supabaseClient.auth.currentSessionOrNull()
-        if (session != null) {
-            println("Sesión activa (via getSession): ${session.accessToken}")
-        } else {
-            println("No se pudo recuperar la sesión después del login")
-            return@flow
-        }
-        val result = supabaseClient
+//        supabaseClient.auth.signInWith(Email) {
+//            email = "connexusdam@gmail.com"
+//            password = "uie027twBhutl7RI"
+//        }
+//        val session = supabaseClient.auth.currentSessionOrNull()
+//        if (session != null) {
+//            println("Sesión activa (via getSession): ${session.accessToken}")
+//        } else {
+//            println("No se pudo recuperar la sesión después del login")
+//            return@flow
+//        }
+        val result = Supabase.client
             .from(tableName)
             .select()
             .decodeList<T>()  // Se infiere T gracias a reified
         emit(result)
-        supabaseClient.auth.signOut()
     }
 
     // Obtener un solo objeto aplicando un bloque de consulta (por ejemplo, filtros)
@@ -105,45 +105,44 @@ class SupabaseRepositorioGenerico {
         tableName: String,
         crossinline queryBlock: PostgrestQueryBuilder.() -> Unit
     ): Flow<T?> = flow {
-        supabaseClient.auth.signInWith(
-            provider = Email
-        ) {
-            email = "connexusdam@gmail.com"
-            password = "uie027twBhutl7RI"
-        }
-        val session = supabaseClient.auth.currentSessionOrNull()
-        if (session != null) {
-            println("Sesión activa (via getSession): ${session.accessToken}")
-        } else {
-            println("No se pudo recuperar la sesión después del login")
-            return@flow
-        }
-        val result = supabaseClient
+//        supabaseClient.auth.signInWith(
+//            provider = Email
+//        ) {
+//            email = "connexusdam@gmail.com"
+//            password = "uie027twBhutl7RI"
+//        }
+//        val session = supabaseClient.auth.currentSessionOrNull()
+//        if (session != null) {
+//            println("Sesión activa (via getSession): ${session.accessToken}")
+//        } else {
+//            println("No se pudo recuperar la sesión después del login")
+//            return@flow
+//        }
+        val result = Supabase.client
             .from(tableName)
             .apply(queryBlock)
             .select(Columns.ALL)  // Usar Columns.ALL en vez de "*"
             .decodeSingleOrNull<T>()
         emit(result)
-        supabaseClient.auth.signOut()
     }
 
     // Agregar un nuevo registro a la tabla
     suspend inline fun <reified T : Any> addItem(tableName: String, item: T) {
-        supabaseClient.auth.signInWith(
-            provider = Email
-        ) {
-            email = "connexusdam@gmail.com"
-            password = "uie027twBhutl7RI"
-        }
-        val session = supabaseClient.auth.currentSessionOrNull()
-        if (session != null) {
-            println("Sesión activa (via getSession): ${session.accessToken}")
-        } else {
-            println("No se pudo recuperar la sesión después del login")
-            return
-        }
+//        supabaseClient.auth.signInWith(
+//            provider = Email
+//        ) {
+//            email = "connexusdam@gmail.com"
+//            password = "uie027twBhutl7RI"
+//        }
+//        val session = supabaseClient.auth.currentSessionOrNull()
+//        if (session != null) {
+//            println("Sesión activa (via getSession): ${session.accessToken}")
+//        } else {
+//            println("No se pudo recuperar la sesión después del login")
+//            return
+//        }
         // 1) Insertamos y pedimos que nos devuelvan el array de filas
-        val response: List<T> = supabaseClient
+        val response: List<T> = Supabase.client
             .from(tableName)
             .insert(item) {          // <— pasar un lambda aquí
                 select()             // <— dentro del lambda invocas select()
@@ -155,7 +154,6 @@ class SupabaseRepositorioGenerico {
         } else {
             println("Item insertado: $response")
         }
-        supabaseClient.auth.signOut()
     }
 
     // Actualizar registros filtrando por un campo (por ejemplo, "idUnico")
@@ -165,21 +163,21 @@ class SupabaseRepositorioGenerico {
         idField: String,
         idValue: Any
     ) {
-        supabaseClient.auth.signInWith(
-            provider = Email
-        ) {
-            email = "connexusdam@gmail.com"
-            password = "uie027twBhutl7RI"
-        }
-        val session = supabaseClient.auth.currentSessionOrNull()
-        if (session != null) {
-            println("Sesión activa (via getSession): ${session.accessToken}")
-        } else {
-            println("No se pudo recuperar la sesión después del login")
-            return
-        }
+//        supabaseClient.auth.signInWith(
+//            provider = Email
+//        ) {
+//            email = "connexusdam@gmail.com"
+//            password = "uie027twBhutl7RI"
+//        }
+//        val session = supabaseClient.auth.currentSessionOrNull()
+//        if (session != null) {
+//            println("Sesión activa (via getSession): ${session.accessToken}")
+//        } else {
+//            println("No se pudo recuperar la sesión después del login")
+//            return
+//        }
         try {
-            val response = supabaseClient
+            val response = Supabase.client
                 .from(tableName)
                 .update(updateData) {
                     filter {
@@ -192,7 +190,6 @@ class SupabaseRepositorioGenerico {
         } catch (e: Exception) {
             throw Exception("Error actualizando item en $tableName: ${e.message}")
         }
-        supabaseClient.auth.signOut()
     }
 
     // Eliminar registros filtrando por un campo (por ejemplo, "idUnico")
@@ -201,21 +198,21 @@ class SupabaseRepositorioGenerico {
         idField: String,
         idValue: Any
     ) {
-        supabaseClient.auth.signInWith(
-            provider = Email
-        ) {
-            email = "connexusdam@gmail.com"
-            password = "uie027twBhutl7RI"
-        }
-        val session = supabaseClient.auth.currentSessionOrNull()
-        if (session != null) {
-            println("Sesión activa (via getSession): ${session.accessToken}")
-        } else {
-            println("No se pudo recuperar la sesión después del login")
-            return
-        }
+//        supabaseClient.auth.signInWith(
+//            provider = Email
+//        ) {
+//            email = "connexusdam@gmail.com"
+//            password = "uie027twBhutl7RI"
+//        }
+//        val session = supabaseClient.auth.currentSessionOrNull()
+//        if (session != null) {
+//            println("Sesión activa (via getSession): ${session.accessToken}")
+//        } else {
+//            println("No se pudo recuperar la sesión después del login")
+//            return
+//        }
         try {
-            val response = supabaseClient
+            val response = Supabase.client
                 .from(tableName)
                 .delete {
                     filter {
@@ -228,36 +225,28 @@ class SupabaseRepositorioGenerico {
         } catch (e: Exception) {
             throw Exception("Error eliminando item en $tableName: ${e.message}")
         }
-        supabaseClient.auth.signOut()
     }
 
     inline fun <reified T : Any> getItems(
         tableName: String,
         crossinline queryBlock: PostgrestQueryBuilder.() -> Unit
     ): Flow<List<T>> = flow {
-        supabaseClient.auth.signInWith(Email) {
-            email = "connexusdam@gmail.com"
-            password = "uie027twBhutl7RI"
-        }
-
-        val session = supabaseClient.auth.currentSessionOrNull()
-        if (session != null) {
-            println("Sesión activa (via getItems): ${session.accessToken}")
-        } else {
-            println("No se pudo recuperar la sesión en getItems()")
-            return@flow
-        }
-
-        val result = supabaseClient
+//        supabaseClient.auth.signInWith(Email) {
+//            email = "connexusdam@gmail.com"
+//            password = "uie027twBhutl7RI"
+//        }
+//        val session = supabaseClient.auth.currentSessionOrNull()
+//        if (session != null) {
+//            println("Sesión activa (via getItems): ${session.accessToken}")
+//        } else {
+//            println("No se pudo recuperar la sesión en getItems()")
+//            return@flow
+//        }
+        val result = Supabase.client
             .from(tableName)
             .apply(queryBlock)
             .select(Columns.ALL)
             .decodeList<T>()
-
         emit(result)
-
-        supabaseClient.auth.signOut()
     }
-
-
 }

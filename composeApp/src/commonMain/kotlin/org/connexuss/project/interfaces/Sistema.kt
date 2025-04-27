@@ -70,6 +70,7 @@ import connexus_serverless.composeapp.generated.resources.ic_foros
 import connexus_serverless.composeapp.generated.resources.usuarios
 import connexus_serverless.composeapp.generated.resources.visibilidadOff
 import connexus_serverless.composeapp.generated.resources.visibilidadOn
+import io.github.jan.supabase.auth.SignOutScope
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.postgrest.query.filter.FilterOperation
@@ -87,6 +88,7 @@ import org.connexuss.project.misc.PostsRepository
 import org.connexuss.project.misc.Supabase
 import org.connexuss.project.misc.UsuarioPrincipal
 import org.connexuss.project.misc.UsuariosPreCreados
+import org.connexuss.project.misc.sesionActualUsuario
 import org.connexuss.project.supabase.SupabaseRepositorioGenerico
 import org.connexuss.project.supabase.SupabaseUsuariosRepositorio
 import org.connexuss.project.supabase.instanciaSupabaseClient
@@ -965,6 +967,7 @@ fun UsuCard(usuario: Usuario, onClick: () -> Unit) {
 @Preview
 fun muestraAjustes(navController: NavHostController = rememberNavController()) {
     val user = UsuarioPrincipal
+    val scope = rememberCoroutineScope()
     MaterialTheme {
         Scaffold(
             topBar = {
@@ -1036,7 +1039,18 @@ fun muestraAjustes(navController: NavHostController = rememberNavController()) {
                             Text(text = traducir("ayuda"))
                         }
                         Button(
-                            onClick = { navController.navigate("login") },
+                            onClick = {
+                                // Cerrar sesión
+                                scope.launch {
+                                    try {
+                                        Supabase.client.auth.signOut()
+                                        println("🔒 Sesión cerrada")
+                                    } catch (e: Exception) {
+                                        println("❌ Error cerrando sesión: ${e.message}")
+                                    }
+                                }
+                                // Navegar a la pantalla de inicio de sesión
+                                navController.navigate("login") },
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text(text = traducir("cerrar_sesion"))
@@ -2307,6 +2321,17 @@ fun PantallaLogin(navController: NavHostController) {
                                             errorMessage = errorEmailNingunUsuario
                                         } else {
                                             UsuarioPrincipal = usuario
+                                            println("Usuario autenticado: $UsuarioPrincipal")
+
+                                            // Iniciar sesión en Supabase
+                                            Supabase.client.auth.signInWith(Email)
+                                            {
+                                                email = UsuarioPrincipal!!.correo
+                                                password = UsuarioPrincipal!!.contrasennia
+                                            }
+
+                                            // Actualizar la sesión actual
+                                            sesionActualUsuario = Supabase.client.auth.currentSessionOrNull()
                                             errorMessage = ""
 
                                             navController.navigate("contactos") {
