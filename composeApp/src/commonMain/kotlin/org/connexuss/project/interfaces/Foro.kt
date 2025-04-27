@@ -38,19 +38,23 @@ fun ForoScreen(navController: NavHostController) {
     val scaffoldState = rememberScaffoldState()
     var showNewTopicDialog by remember { mutableStateOf(false) }
     var searchText by remember { mutableStateOf("") }
+    val refreshTrigger = remember { mutableStateOf(0) }
 
     // Tablas de temas y hilos
     val tablaTemas = "tema"
     val tablaHilos = "hilo"
+
+    val temasFlow = remember(refreshTrigger.value) {
+        repoForo.getAll<Tema>(tablaTemas)
+            .map { list -> list.filter { it.nombre.contains(searchText, ignoreCase = true) } }
+    }
 
     // Flujos de temas y hilos
     val temas by repoForo.getAll<Tema>(tablaTemas).collectAsState(initial = emptyList())
     val hilos by repoForo.getAll<Hilo>(tablaHilos).collectAsState(initial = emptyList())
 
     // Filtrar temas y contar hilos
-    val filteredTemas = remember(temas, searchText) {
-        temas.filter { it.nombre.contains(searchText, ignoreCase = true) }
-    }
+    val filteredTemas = temasFlow.collectAsState(initial = emptyList()).value
 
     Scaffold(
         scaffoldState = scaffoldState,
@@ -107,6 +111,7 @@ fun ForoScreen(navController: NavHostController) {
                     onConfirm = { nombre ->
                         scope.launch {
                             repoForo.addItem(tablaTemas, Tema(nombre = nombre))
+                            refreshTrigger.value++
                             scaffoldState.snackbarHostState.showSnackbar(
                                 "Tema '$nombre' creado",
                                 duration = SnackbarDuration.Short
@@ -127,6 +132,7 @@ fun ForoScreen(navController: NavHostController) {
 fun TemaScreen(navController: NavHostController, temaId: String) {
     val scope = rememberCoroutineScope()
     var showNewThreadDialog by remember { mutableStateOf(false) }
+    var refreshTrigger by remember { mutableStateOf(0) }
 
     // Tablas de temas y hilos
     val tablaTemas = "tema"
@@ -142,9 +148,12 @@ fun TemaScreen(navController: NavHostController, temaId: String) {
             }
         }
         .collectAsState(initial = null)
-    val hilos by repoForo.getAll<Hilo>(tablaHilos)
-        .map { list -> list.filter { it.idTema == temaId } }
-        .collectAsState(initial = emptyList())
+
+    val hilosFlow = remember(temaId, refreshTrigger) {
+        repoForo.getAll<Hilo>(tablaHilos)
+            .map { list -> list.filter { it.idTema == temaId } }
+    }
+    val hilos by hilosFlow.collectAsState(initial = emptyList())
 
     // Si el tema es nulo, mostrar un indicador de carga
     when {
@@ -206,6 +215,7 @@ fun TemaScreen(navController: NavHostController, temaId: String) {
                                 scope.launch {
                                     val nuevo = Hilo(idHilo = generateId(), nombre = titulo, idTema = temaId)
                                     repoForo.addItem(tablaHilos, nuevo)
+                                    refreshTrigger++ // Incrementamos el trigger para refrescar la lista
                                     showNewThreadDialog = false
                                 }
                             }
@@ -234,7 +244,7 @@ fun HiloScreen(navController: NavHostController, hiloId: String) {
     // Creamos el Flow dentro de un remember que observe el trigger
     val postsFlow = remember(hiloId, refreshTrigger) {
         repoForo
-            .getAll<Post>("post")
+            .getAll<Post>(tablaPosts)
             .map { list -> list.filter { it.idHilo == hiloId } }
     }
 
