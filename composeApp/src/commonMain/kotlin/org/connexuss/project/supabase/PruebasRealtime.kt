@@ -45,6 +45,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import org.connexuss.project.interfaces.DefaultTopBar
+import org.connexuss.project.misc.Supabase
 import kotlin.random.Random
 import kotlin.reflect.KProperty1
 
@@ -161,13 +162,13 @@ fun MessageItem(texto: Texto) {
 
 @Composable
 fun PantallaTextosRealtime(navHostController: NavHostController) {
-    val client = instanciaSupabaseClient(
-        tieneStorage = true,
-        tieneAuth = true,
-        tieneRealtime = true,
-        tienePostgrest = true
-    )
-    val textos by client
+//    val client = instanciaSupabaseClient(
+//        tieneStorage = true,
+//        tieneAuth = true,
+//        tieneRealtime = true,
+//        tienePostgrest = true
+//    )
+    val textos by Supabase.client
         .subscribeTableAsFlow<Texto, Long>("texto", Texto::id)
         .collectAsState(initial = emptyList())
 
@@ -194,7 +195,7 @@ fun PantallaTextosRealtime(navHostController: NavHostController) {
                 textos = textos,
                 onSend = { autor, mensaje ->
                     scope.launch {
-                        client.from("texto").insert(
+                        Supabase.client.from("texto").insert(
                             Texto(
                                 id = generaIdLongAleatorio(),
                                 autor =  autor,
