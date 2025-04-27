@@ -204,39 +204,20 @@ fun Navegacion(
         composable("foroLocal") {
             ForoScreen(navController)
         }
-        composable("tema/{temaId}") { backStackEntry ->
-            val todosTemas = remember { repoSupabase.getAll<Tema>("tema") }
-            val temaId = backStackEntry.arguments?.getString("temaId") ?: ""
-            val tema = todosTemas.collectAsState(initial = emptyList()).value.find { it.idTema == temaId }
-            if (tema != null) {
-                TemaScreen(
-                    navController = navController,
-                    temaId = temaId,
-                    /*repo = repoSupabase,*/
-                )
-            } else {
-                LaunchedEffect(Unit) {
-                    navController.popBackStack()
-                }
-            }
+        composable(
+            "tema/{temaId}",
+            arguments = listOf(navArgument("temaId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val temaId = backStackEntry.arguments!!.getString("temaId")!!
+            TemaScreen(navController, temaId)
         }
         composable(
             "hilo/{hiloId}",
             arguments = listOf(navArgument("hiloId") { type = NavType.StringType })
-        ) { backStackEntry ->
-            val hiloId = backStackEntry.arguments?.getString("hiloId") ?: ""
-            val hilo = HilosRepository.hilos.find { it.idHilo == hiloId }
-
-            if (hilo != null) {
-                HiloScreen(
-                    navController = navController,
-                    hiloId = hiloId
-                )
-            } else {
-                LaunchedEffect(Unit) {
-                    navController.popBackStack()
-                }
-            }
+        ) {
+            backStackEntry ->
+            val hiloId = backStackEntry.arguments!!.getString("hiloId")!!
+            HiloScreen(navController, hiloId)
         }
         composable("pruebasEncriptacion") {
             PantallaPruebasEncriptacion(navController)

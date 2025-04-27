@@ -132,69 +132,85 @@ fun TemaScreen(navController: NavHostController, temaId: String) {
     val tablaHilos = "hilo"
 
     // Flujo del tema y flujo de hilos filtrados
-    val tema by repoForo.getItem<Tema>(tablaTemas) {
-        scope.launch {
-            select {
-                filter { eq("idtema", temaId) }
+    val tema by repoForo
+        .getItem<Tema>(tablaTemas) {
+            scope.launch {
+                select {
+                    filter { eq("idtema", temaId) }
+                }
             }
         }
-    }.collectAsState(initial = null)
+        .collectAsState(initial = null)
     val hilos by repoForo.getAll<Hilo>(tablaHilos)
         .map { list -> list.filter { it.idTema == temaId } }
         .collectAsState(initial = emptyList())
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(tema?.nombre ?: "Tema no encontrado") },
-                navigationIcon = { BackButton(navController) },
-                actions = {
-                    IconButton(onClick = { showNewThreadDialog = true }) {
-                        Icon(Icons.Filled.Add, contentDescription = "Nuevo hilo")
-                    }
-                }
-            )
-        },
-        bottomBar = { MiBottomBar(navController) }
-    ) { padding ->
-        LimitaTamanioAncho { modifier ->
-            if (tema == null) {
-                Box(
-                    modifier = modifier
-                        .fillMaxSize()
-                        .padding(padding),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("Tema no encontrado")
-                }
-            } else {
-                LazyColumn(
-                    modifier = modifier
-                        .fillMaxSize()
-                        .padding(padding)
-                        .padding(vertical = 8.dp)
-                ) {
-                    items(hilos) { hilo ->
-                        HiloCard(hilo = hilo) {
-                            navController.navigate("hilo/${hilo.idHilo}")
-                        }
-                    }
-                }
+    // Si el tema es nulo, mostrar un indicador de carga
+    when {
+        tema == null -> {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
             }
+        }
+    }
 
-            if (showNewThreadDialog && tema != null) {
-                CrearElementoDialog(
-                    title = "Nuevo Hilo",
-                    label = "Título del hilo",
-                    onDismiss = { showNewThreadDialog = false },
-                    onConfirm = { titulo ->
-                        scope.launch {
-                            val nuevo = Hilo(idHilo = generateId(), nombre = titulo, idTema = temaId)
-                            repoForo.addItem(tablaHilos, nuevo)
-                            showNewThreadDialog = false
+    // Si el tema no es nulo, mostrar la lista de hilos
+    when {
+        tema != null -> {
+            Scaffold(
+                topBar = {
+                    TopAppBar(
+                        title = { Text(tema?.nombre ?: "Tema no encontrado") },
+                        navigationIcon = { BackButton(navController) },
+                        actions = {
+                            IconButton(onClick = { showNewThreadDialog = true }) {
+                                Icon(Icons.Filled.Add, contentDescription = "Nuevo hilo")
+                            }
+                        }
+                    )
+                },
+                bottomBar = { MiBottomBar(navController) }
+            ) { padding ->
+                LimitaTamanioAncho { modifier ->
+                    if (tema == null) {
+                        Box(
+                            modifier = modifier
+                                .fillMaxSize()
+                                .padding(padding),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("Tema no encontrado")
+                        }
+                    } else {
+                        LazyColumn(
+                            modifier = modifier
+                                .fillMaxSize()
+                                .padding(padding)
+                                .padding(vertical = 8.dp)
+                        ) {
+                            items(hilos) { hilo ->
+                                HiloCard(hilo = hilo) {
+                                    navController.navigate("hilo/${hilo.idHilo}")
+                                }
+                            }
                         }
                     }
-                )
+
+                    if (showNewThreadDialog && tema != null) {
+                        CrearElementoDialog(
+                            title = "Nuevo Hilo",
+                            label = "Título del hilo",
+                            onDismiss = { showNewThreadDialog = false },
+                            onConfirm = { titulo ->
+                                scope.launch {
+                                    val nuevo = Hilo(idHilo = generateId(), nombre = titulo, idTema = temaId)
+                                    repoForo.addItem(tablaHilos, nuevo)
+                                    showNewThreadDialog = false
+                                }
+                            }
+                        )
+                    }
+                }
             }
         }
     }
