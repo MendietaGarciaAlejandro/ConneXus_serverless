@@ -40,7 +40,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -70,12 +69,8 @@ import connexus_serverless.composeapp.generated.resources.ic_foros
 import connexus_serverless.composeapp.generated.resources.usuarios
 import connexus_serverless.composeapp.generated.resources.visibilidadOff
 import connexus_serverless.composeapp.generated.resources.visibilidadOn
-import io.github.jan.supabase.auth.SignOutScope
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
-import io.github.jan.supabase.postgrest.query.filter.FilterOperation
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
@@ -84,15 +79,11 @@ import org.connexuss.project.comunicacion.Conversacion
 import org.connexuss.project.comunicacion.ConversacionesUsuario
 import org.connexuss.project.comunicacion.Mensaje
 import org.connexuss.project.misc.Imagen
-import org.connexuss.project.misc.PostsRepository
 import org.connexuss.project.misc.Supabase
 import org.connexuss.project.misc.UsuarioPrincipal
-import org.connexuss.project.misc.UsuariosPreCreados
 import org.connexuss.project.misc.sesionActualUsuario
 import org.connexuss.project.supabase.SupabaseRepositorioGenerico
 import org.connexuss.project.supabase.SupabaseUsuariosRepositorio
-import org.connexuss.project.supabase.instanciaSupabaseClient
-import org.connexuss.project.supabase.supabaseClient
 import org.connexuss.project.usuario.AlmacenamientoUsuario
 import org.connexuss.project.usuario.Usuario
 import org.connexuss.project.usuario.UsuarioContacto
@@ -2044,7 +2035,7 @@ fun esEmailValido(email: String): Boolean {
 @Composable
 fun PantallaRegistro(navController: NavHostController) {
     var nombre by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
+    var emailInterno by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
@@ -2098,8 +2089,8 @@ fun PantallaRegistro(navController: NavHostController) {
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         OutlinedTextField(
-                            value = email,
-                            onValueChange = { email = it },
+                            value = emailInterno,
+                            onValueChange = { emailInterno = it },
                             label = { Text(traducir("email")) },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                             modifier = Modifier.fillMaxWidth()
@@ -2137,7 +2128,7 @@ fun PantallaRegistro(navController: NavHostController) {
                                     if (errorMessage.isEmpty()) {
                                         scope.launch {
                                             try {
-                                                val emailTrimmed = email.trim()
+                                                val emailTrimmed = emailInterno.trim()
 
                                                 if (!esEmailValido(emailTrimmed)) {
                                                     errorMessage = "Formato de correo inválido"
@@ -2222,8 +2213,8 @@ fun PantallaRegistro(navController: NavHostController) {
  */
 @Composable
 fun PantallaLogin(navController: NavHostController) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
+    var emailInterno by remember { mutableStateOf("") }
+    var passwordInterno by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
 
     val repoSupabase = SupabaseUsuariosRepositorio()
@@ -2268,16 +2259,16 @@ fun PantallaLogin(navController: NavHostController) {
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         OutlinedTextField(
-                            value = email,
-                            onValueChange = { email = it },
+                            value = emailInterno,
+                            onValueChange = { emailInterno = it },
                             label = { Text(traducir("email")) },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                             modifier = Modifier.fillMaxWidth()
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         OutlinedTextField(
-                            value = password,
-                            onValueChange = { password = it },
+                            value = passwordInterno,
+                            onValueChange = { passwordInterno = it },
                             label = { Text(traducir("contrasena")) },
                             visualTransformation = PasswordVisualTransformation(),
                             modifier = Modifier.fillMaxWidth()
@@ -2304,18 +2295,13 @@ fun PantallaLogin(navController: NavHostController) {
                         Button(
                             onClick = {
                                 scope.launch {
-                                    if (email.isBlank() || password.isBlank()) {
+                                    if (emailInterno.isBlank() || passwordInterno.isBlank()) {
                                         errorMessage = porFavorCompleta
                                         return@launch
                                     }
 
                                     try {
-                                        Supabase.client.auth.signInWith(Email) {
-                                            this.email = email.trim()
-                                            this.password = password
-                                        }
-
-                                        val usuario = repoSupabase.getUsuarioPorEmail(email.trim()).firstOrNull()
+                                        val usuario = repoSupabase.getUsuarioPorEmail(emailInterno.trim()).firstOrNull()
 
                                         if (usuario == null) {
                                             errorMessage = errorEmailNingunUsuario
@@ -2324,8 +2310,9 @@ fun PantallaLogin(navController: NavHostController) {
                                             println("Usuario autenticado: $UsuarioPrincipal")
 
                                             // Iniciar sesión en Supabase
-                                            Supabase.client.auth.signInWith(Email)
-                                            {
+                                            Supabase.client.auth.signInWith(
+                                                provider = Email
+                                            ) {
                                                 email = UsuarioPrincipal!!.correo
                                                 password = UsuarioPrincipal!!.contrasennia
                                             }
@@ -2338,13 +2325,11 @@ fun PantallaLogin(navController: NavHostController) {
                                                 popUpTo("login") { inclusive = true }
                                             }
                                         }
-
                                     } catch (e: Exception) {
                                         errorMessage = "Error: ${e.message}"
                                     }
                                 }
-                            }
-                            ,
+                            },
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text(traducir("acceder"))

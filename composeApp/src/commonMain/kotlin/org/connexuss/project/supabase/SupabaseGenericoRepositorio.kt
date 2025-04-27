@@ -73,12 +73,12 @@ fun instanciaSupabaseClient(
 
 class SupabaseRepositorioGenerico {
 
-    val supabaseClient = instanciaSupabaseClient(
-        tieneStorage = true,
-        tieneAuth = true,
-        tieneRealtime = true,
-        tienePostgrest = true
-    )
+//    val supabaseClient = instanciaSupabaseClient(
+//        tieneStorage = true,
+//        tieneAuth = true,
+//        tieneRealtime = true,
+//        tienePostgrest = true
+//    )
 
     // Obtener todos los registros de una tabla
     inline fun <reified T : Any> getAll(tableName: String): Flow<List<T>> = flow {
