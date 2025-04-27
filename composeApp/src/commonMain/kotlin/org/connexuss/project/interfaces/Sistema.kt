@@ -40,6 +40,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -71,9 +72,11 @@ import connexus_serverless.composeapp.generated.resources.visibilidadOff
 import connexus_serverless.composeapp.generated.resources.visibilidadOn
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
+import io.github.jan.supabase.postgrest.query.filter.FilterOperation
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import org.connexuss.project.comunicacion.Conversacion
@@ -776,13 +779,21 @@ fun muestraContactos(navController: NavHostController) {
                                     println("🔹 Intentando insertar directamente el id: $idContactoIngresado")
                                     scope.launch {
                                         try {
-                                            val nuevoRegistro = UsuarioContacto(
+                                            val nuevoRegistro1 = UsuarioContacto(
                                                 idUsuario = currentUserId,
                                                 idContacto = idContactoIngresado
                                             )
-                                            println("📤 Insertando en Supabase...")
-                                            repo.addItem("usuario_contacto", nuevoRegistro)
-                                            println("✅ Insertado con éxito")
+                                            val nuevoRegistro2 = UsuarioContacto(
+                                                idUsuario = idContactoIngresado,
+                                                idContacto = currentUserId
+                                            )
+
+                                            println("📤 Insertando registros dobles en Supabase...")
+                                            repo.addItem("usuario_contacto", nuevoRegistro1)
+                                            repo.addItem("usuario_contacto", nuevoRegistro2)
+                                            println("✅ Contactos mutuos insertados")
+
+                                            // Refrescar después de agregar
                                             repo.getAll<UsuarioContacto>("usuario_contacto").collect { lista ->
                                                 registrosContacto = lista.filter { it.idUsuario == currentUserId }
                                             }
@@ -793,8 +804,11 @@ fun muestraContactos(navController: NavHostController) {
                                     nuevoContactoId = ""
                                     showNuevoContactoDialog = false
                                 }
-                            ) { Text(text = traducir("guardar")) }
-                        },
+                            ) {
+                                Text(text = traducir("guardar"))
+                            }
+                        }
+                        ,
                         dismissButton = {
                             TextButton(onClick = {
                                 nuevoContactoId = ""
@@ -1400,8 +1414,20 @@ fun mostrarPerfilUsuario(
     userId: String?,
     imagenesApp: List<Imagen>
 ) {
-    // Busca el usuario en tu lista de usuarios (UsuariosPreCreados) según el userId
-    val usuario = UsuariosPreCreados.find { it.getIdUnicoMio() == userId }
+    val scope = rememberCoroutineScope()
+    val currentUserId = UsuarioPrincipal?.getIdUnicoMio() ?: return
+    val repo = remember { SupabaseRepositorioGenerico() }
+    var usuario by remember { mutableStateOf<Usuario?>(null) }
+
+    // 🔥 Carga segura al estilo de tus chats
+    LaunchedEffect(userId) {
+        if (userId == null) return@LaunchedEffect
+
+        val todosUsuarios = repo.getAll<Usuario>("usuario").first()
+        usuario = todosUsuarios.find { it.getIdUnicoMio() == userId }
+
+        println("🙋 Usuario cargado: ${usuario?.getNombreCompletoMio()}")
+    }
 
     Scaffold(
         topBar = {
@@ -1424,9 +1450,9 @@ fun mostrarPerfilUsuario(
                 Text("Usuario no encontrado")
             }
         } else {
-            var aliasPrivado by remember { mutableStateOf(usuario.getAliasPrivadoMio()) }
-            var aliasPublico by remember { mutableStateOf(usuario.getAliasMio()) }
-            var descripcion by remember { mutableStateOf(usuario.getDescripcionMio()) }
+            var aliasPrivado by remember { mutableStateOf(usuario?.getAliasPrivadoMio() ?: "") }
+            var aliasPublico by remember { mutableStateOf(usuario?.getAliasMio() ?: "") }
+            var descripcion by remember { mutableStateOf(usuario?.getDescripcionMio() ?: "") }
 
             Column(
                 modifier = Modifier
@@ -1436,11 +1462,10 @@ fun mostrarPerfilUsuario(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Imagen de perfil
-                usuario.getImagenPerfilMio()?.let { painterResource(it) }?.let {
+                usuario?.getImagenPerfilMio()?.let { imagenId ->
                     Image(
-                        painter = it,
-                        contentDescription = "Imagen de perfil de ${usuario.getNombreCompletoMio()}",
+                        painter = painterResource(imagenId),
+                        contentDescription = "Imagen de perfil de ${usuario?.getNombreCompletoMio()}",
                         modifier = Modifier
                             .size(100.dp)
                             .clip(RoundedCornerShape(8.dp))
@@ -1448,42 +1473,81 @@ fun mostrarPerfilUsuario(
                     )
                 }
 
-                // Alias Privado
                 OutlinedTextField(
                     value = aliasPrivado,
-                    onValueChange = { aliasPrivado = it },
+                    onValueChange = {},
                     readOnly = true,
                     label = { Text("Alias Privado") },
                     modifier = Modifier.fillMaxWidth()
-
                 )
 
-                // Alias Público
                 OutlinedTextField(
                     value = aliasPublico,
+                    onValueChange = {},
                     readOnly = true,
-                    onValueChange = { aliasPublico = it },
                     label = { Text("Alias Público") },
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                // Descripción
                 OutlinedTextField(
                     value = descripcion,
+                    onValueChange = {},
                     readOnly = true,
-                    onValueChange = { descripcion = it },
                     label = { Text("Descripción") },
                     modifier = Modifier.fillMaxWidth(),
                     maxLines = 3
                 )
 
-                // Botones
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Botón para eliminar contacto
                 TextButton(
                     onClick = {
-                        // Lógica para eliminar contacto
+                        if (usuario != null) {
+                            scope.launch {
+                                val repo = SupabaseRepositorioGenerico()
+
+                                try {
+                                    // --- Buscar relaciones en conversaciones_usuario ---
+                                    val relaciones = repo.getAll<ConversacionesUsuario>("conversaciones_usuario").first()
+
+                                    // IDs de conversaciones donde estén ambos
+                                    val conversacionesComunes = relaciones
+                                        .groupBy { it.idconversacion }
+                                        .filter { (_, users) ->
+                                            val ids = users.map { it.idusuario }
+                                            currentUserId in ids && usuario!!.getIdUnicoMio() in ids && ids.size == 2
+                                        }
+                                        .keys
+
+                                    println("🔍 Conversaciones individuales encontradas: $conversacionesComunes")
+
+                                    for (convId in conversacionesComunes) {
+                                        // Eliminar relaciones en conversaciones_usuario
+                                        repo.deleteItem<ConversacionesUsuario>(
+                                            tableName = "conversaciones_usuario",
+                                            idField = "idconversacion",
+                                            idValue = convId
+                                        )
+
+                                        // Eliminar conversación
+                                        repo.deleteItem<Conversacion>(
+                                            tableName = "conversacion",
+                                            idField = "id",
+                                            idValue = convId
+                                        )
+
+                                        println("🗑️ Eliminada conversación $convId")
+                                    }
+
+                                    //Eliminar también contacto en tabla contactos
+                                     repo.deleteItem<UsuarioContacto>("usuario_contacto", "idusuario", currentUserId)
+
+                                    navController.popBackStack() // Volver atrás
+                                } catch (e: Exception) {
+                                    println("❌ Error eliminando contacto: ${e.message}")
+                                }
+                            }
+                        }
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -1493,22 +1557,19 @@ fun mostrarPerfilUsuario(
                     )
                 }
 
-                // Botón para bloquear
+
                 TextButton(
-                    onClick = {
-                        // Lógica para bloquear
-                    },
+                    onClick = { /* TODO: bloquear usuario */ },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(
-                        text = "Bloquear",
-                        color = Color.Red
-                    )
+                    Text("Bloquear", color = Color.Red)
                 }
             }
         }
     }
 }
+
+
 
 
 // --- Home Page ---

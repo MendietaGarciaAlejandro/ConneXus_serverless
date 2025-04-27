@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
@@ -26,6 +27,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -39,6 +41,9 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import connexus_serverless.composeapp.generated.resources.Res
 import connexus_serverless.composeapp.generated.resources.connexus
+import io.github.jan.supabase.postgrest.from
+import io.github.jan.supabase.postgrest.query.filter.FilterOperation
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.connexuss.project.comunicacion.Conversacion
 import org.connexuss.project.comunicacion.ConversacionesUsuario
@@ -47,6 +52,10 @@ import org.connexuss.project.misc.UsuarioPrincipal
 import org.connexuss.project.misc.UsuariosPreCreados
 import org.connexuss.project.misc.Imagen
 import org.connexuss.project.supabase.SupabaseRepositorioGenerico
+import org.connexuss.project.supabase.instanciaSupabaseClient
+import org.connexuss.project.supabase.subscribeTableAsFlow
+import org.connexuss.project.usuario.Usuario
+import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 
 /**
@@ -58,120 +67,113 @@ import org.jetbrains.compose.resources.painterResource
  */
 @Composable
 fun mostrarChat(navController: NavHostController, chatId: String?) {
-    // Se asume que el UsuarioPrincipal ya está definido de forma global
-    val currentUser = UsuarioPrincipal
-    val currentUserId = currentUser?.getIdUnicoMio() ?: return
-
-    val supabaseRepo = remember { SupabaseRepositorioGenerico() }
-    var chat by remember { mutableStateOf<Conversacion?>(null) }
-    var participants by remember { mutableStateOf<List<String>>(emptyList()) }
-    var messages by remember { mutableStateOf<List<Mensaje>>(emptyList()) }
-    var mensajeNuevo by remember { mutableStateOf("") }
+    val currentUserId = UsuarioPrincipal?.getIdUnicoMio() ?: return
+    val supabaseClient = remember {
+        instanciaSupabaseClient(
+            tieneStorage = true,
+            tieneAuth = true,
+            tieneRealtime = true,
+            tienePostgrest = true
+        )
+    }
     val scope = rememberCoroutineScope()
 
+    var participantes by remember { mutableStateOf<List<String>>(emptyList()) }
+    var otroUsuarioNombre by remember { mutableStateOf<String?>(null) }
+    var otroUsuarioImagen by remember { mutableStateOf<DrawableResource?>(null) }
+    var mensajeNuevo by remember { mutableStateOf("") }
+
+    val todosLosMensajes by supabaseClient
+        .subscribeTableAsFlow<Mensaje, String>(
+            table = "mensaje",
+            primaryKey = Mensaje::id,
+            filter = null
+        )
+        .collectAsState(initial = emptyList())
+
+    val mensajes = todosLosMensajes.filter { it.idconversacion == chatId }
+
     LaunchedEffect(chatId) {
-        chatId?.let { id ->
-            // --- CONSULTA DE CONVERSACIÓN ---
-            // Se obtiene la conversación por su id. Se asume que, para este usuario, la conversación existe.
-            supabaseRepo.getItem<Conversacion>("conversacion") {
-                scope.launch {
-                    select {
-                        filter {
-                            eq("id", id)
-                        }
-                    }
-                }
-            }.collect { conv ->
-                chat = conv
-            }
+        if (chatId == null) return@LaunchedEffect
+        val repo = SupabaseRepositorioGenerico()
 
-            // --- PARTICIPANTES ---
-            // Se obtiene la lista de relaciones en conversaciones_usuario filtrando por el chatId.
-            supabaseRepo.getAll<ConversacionesUsuario>("conversaciones_usuario")
-                .collect { convUsuarios ->
-                    // Se considera solo las relaciones del usuario actual
-                    participants = convUsuarios
-                        .filter { it.idconversacion == id }
-                        .map { it.idusuario }
-                        .distinct()
-                    // Si no existe la relación con el UsuarioPrincipal, se sale
-                    if (currentUserId !in participants) {
-                        // Podrías mostrar un error o redireccionar
-                        return@collect
-                    }
-                }
+        val relaciones = repo.getAll<ConversacionesUsuario>("conversaciones_usuario").first()
+        participantes = relaciones
+            .filter { it.idconversacion == chatId }
+            .map { it.idusuario }
 
-            // --- MENSAJES ---
-            // Se obtienen todos los mensajes de la conversación
-            supabaseRepo.getAll<Mensaje>("mensaje")
-                .collect { allMessages ->
-                    messages = allMessages.filter { it.idconversacion == id }
-                }
+        println("👥 Participantes cargados: $participantes")
+
+        val otroUsuarioId = participantes.firstOrNull { it != currentUserId }
+        if (otroUsuarioId != null) {
+            val todosUsuarios = repo.getAll<Usuario>("usuario").first()
+            val otroUsuario = todosUsuarios.find { it.getIdUnicoMio() == otroUsuarioId }
+            otroUsuarioNombre = otroUsuario?.getNombreCompletoMio()
+            //otroUsuarioImagen = otroUsuario?.getImagenPerfilMio()
+            println("🙋 Nombre otro participante: $otroUsuarioNombre")
         }
     }
 
-    // Determinar al otro participante (se asume que siempre son 2 participantes)
-    val otherParticipantId = participants.firstOrNull { it != currentUserId } ?: ""
-    val otherParticipant = UsuariosPreCreados.find { it.getIdUnicoMio() == otherParticipantId }
-    val otherParticipantName = otherParticipant?.getNombreCompletoMio() ?: otherParticipantId
-    val profileImage = otherParticipant?.getImagenPerfilMio() ?: Res.drawable.connexus
+    if (chatId == null || participantes.isEmpty()) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
+        return
+    }
 
     Scaffold(
         topBar = {
             TopBarUsuario(
-                title = otherParticipantName,
-                profileImage = profileImage,
+                title = otroUsuarioNombre ?: "Chat",
+                profileImage = otroUsuarioImagen ?: Res.drawable.connexus,
                 navController = navController,
                 showBackButton = true,
                 irParaAtras = true,
                 muestraEngranaje = false,
                 onTitleClick = {
-                    // Navega al perfil del otro usuario
-                    navController.navigate("mostrarPerfilUsuario/$otherParticipantId")
+                    val otroUsuarioId = participantes.firstOrNull { it != currentUserId }
+                    if (otroUsuarioId != null) {
+                        navController.navigate("mostrarPerfilUsuario/$otroUsuarioId")
+                    }
                 }
             )
         }
     ) { padding ->
         Column(
-            modifier = Modifier
+            Modifier
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // --- LISTA DE MENSAJES ---
             LazyColumn(
                 modifier = Modifier
                     .weight(1f)
                     .padding(8.dp)
             ) {
-                items(messages) { mensaje ->
-                    val isCurrentUser = mensaje.idusuario == currentUserId
+                items(mensajes.sortedBy { it.fechaMensaje }) { mensaje ->
+                    val esMio = mensaje.idusuario == currentUserId
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(8.dp),
-                        contentAlignment = if (isCurrentUser) Alignment.CenterEnd else Alignment.CenterStart
+                        contentAlignment = if (esMio) Alignment.CenterEnd else Alignment.CenterStart
                     ) {
                         Box(
                             modifier = Modifier
                                 .background(
-                                    color = if (isCurrentUser) Color(0xFFC8E6C9) else Color(0xFFB2EBF2),
+                                    if (esMio) Color(0xFFC8E6C9) else Color(0xFFB2EBF2),
                                     shape = RoundedCornerShape(8.dp)
                                 )
                                 .padding(12.dp)
                                 .widthIn(max = 280.dp)
                         ) {
-                            Text(
-                                text = mensaje.content,
-                                style = MaterialTheme.typography.body1
-                            )
+                            Text(mensaje.content)
                         }
                     }
                 }
             }
 
-            // --- ENVIAR MENSAJE ---
             Row(
-                modifier = Modifier
+                Modifier
                     .fillMaxWidth()
                     .padding(8.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -180,36 +182,32 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
                     value = mensajeNuevo,
                     onValueChange = { mensajeNuevo = it },
                     modifier = Modifier.weight(1f),
-                    placeholder = { Text(text = traducir("escribe_mensaje")) }
+                    placeholder = { Text("Escribe un mensaje...") }
                 )
-                IconButton(
-                    onClick = {
-                        if (mensajeNuevo.isNotBlank() && chatId != null) {
-                            scope.launch {
-                                // Crea y envía el nuevo mensaje, vinculándolo a la conversación y al usuario actual
-                                val newMessage = Mensaje(
-                                    content = mensajeNuevo,
-                                    idusuario = currentUserId,
-                                    idconversacion = chatId
-                                )
-                                // Se agrega el mensaje a la BD
-                                supabaseRepo.addItem("mensaje", newMessage)
-                                mensajeNuevo = ""
-                                // Se refrescan los mensajes actualizando el estado
-                                supabaseRepo.getAll<Mensaje>("mensaje")
-                                    .collect { allMessages ->
-                                        messages = allMessages.filter { it.idconversacion == chatId }
-                                    }
-                            }
+                IconButton(onClick = {
+                    if (mensajeNuevo.isNotBlank()) {
+                        scope.launch {
+                            val nuevo = Mensaje(
+                                content = mensajeNuevo.trim(),
+                                idusuario = currentUserId,
+                                idconversacion = chatId
+                            )
+                            supabaseClient.from("mensaje").insert(nuevo)
+                            mensajeNuevo = ""
+                            println("📤 Mensaje enviado en realtime.")
                         }
                     }
-                ) {
-                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = traducir("enviar"))
+                }) {
+                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Enviar")
                 }
             }
         }
     }
 }
+
+
+
+
 
 /**
  * Muestra el chat grupal.
@@ -223,59 +221,68 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
 fun mostrarChatGrupo(
     navController: NavHostController,
     chatId: String?,
-    imagenesPerfil: List<Imagen>
+    imagenesPerfil: List<Imagen>   // (No se usa de momento, opcional en el futuro)
 ) {
-    val currentUser = UsuarioPrincipal
-    val currentUserId = currentUser?.getIdUnicoMio() ?: return
+    val currentUserId = UsuarioPrincipal?.getIdUnicoMio() ?: return
+    var todosUsuarios by remember { mutableStateOf<List<Usuario>>(emptyList()) }
 
-    val supabaseRepo = remember { SupabaseRepositorioGenerico() }
-    var chat by remember { mutableStateOf<Conversacion?>(null) }
-    var messages by remember { mutableStateOf<List<Mensaje>>(emptyList()) }
-    var mensajeNuevo by remember { mutableStateOf("") }
+
+    val supabaseClient = remember {
+        instanciaSupabaseClient(
+            tieneStorage = true,
+            tieneAuth = true,
+            tieneRealtime = true,
+            tienePostgrest = true
+        )
+    }
     val scope = rememberCoroutineScope()
 
-    // Recupera datos de la conversación y sus mensajes a través del repositorio
-    LaunchedEffect(chatId) {
-        chatId?.let { id ->
-            supabaseRepo.getItem<Conversacion>("conversacion") {
-                scope.launch {
-                    select {
-                        filter {
-                            eq("id", id)
-                        }
-                    }
-                }
-            }.collect { conv ->
-                chat = conv
-            }
+    var chatNombre by remember { mutableStateOf<String>("") }
+    var mensajeNuevo by remember { mutableStateOf("") }
 
-            supabaseRepo.getAll<Mensaje>("mensaje")
-                .collect { allMessages ->
-                    messages = allMessages.filter { it.idconversacion == id }
-                }
-        }
+    val todosLosMensajes by supabaseClient
+        .subscribeTableAsFlow<Mensaje, String>(
+            table = "mensaje",
+            primaryKey = Mensaje::id,
+            filter = null
+        )
+        .collectAsState(initial = emptyList())
+
+    val mensajes = todosLosMensajes.filter { it.idconversacion == chatId }
+
+    LaunchedEffect(chatId) {
+        if (chatId == null) return@LaunchedEffect
+        val repo = SupabaseRepositorioGenerico()
+        todosUsuarios = repo.getAll<Usuario>("usuario").first()
+
+        // Cargamos el nombre del grupo
+        val conversaciones = repo.getAll<Conversacion>("conversacion").first()
+        chatNombre = conversaciones.find { it.id == chatId }?.nombre ?: "Grupo"
     }
 
-    // El título del grupo se define a partir del nombre o del id de la conversación
-    val groupTitle = chat?.nombre?.takeIf { it.isNotBlank() } ?: chatId.orEmpty()
+    if (chatId == null) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
+        return
+    }
 
     Scaffold(
         topBar = {
             TopBarGrupo(
-                title = groupTitle,
+                title = chatNombre,
                 navController = navController,
                 showBackButton = true,
                 irParaAtras = true,
                 muestraEngranaje = true,
                 onUsuariosClick = {
-                    // Navega a la pantalla de participantes si se requiere:
-                    // navController.navigate("mostrarParticipantesGrupo/$chatId")
+                    navController.navigate("mostrarParticipantesGrupo/$chatId")
                 }
             )
         }
     ) { padding ->
         Column(
-            modifier = Modifier
+            Modifier
                 .fillMaxSize()
                 .padding(padding)
         ) {
@@ -285,92 +292,42 @@ fun mostrarChatGrupo(
                     .weight(1f)
                     .padding(8.dp)
             ) {
-                items(messages) { mensaje ->
-                    // Se utiliza 'idusuario' del mensaje para determinar el remitente
-                    val isCurrentUser = mensaje.idusuario == currentUserId
-                    val senderUser = UsuariosPreCreados.find { it.getIdUnicoMio() == mensaje.idusuario }
-                    val senderAlias = senderUser?.getAliasMio() ?: mensaje.idusuario
-                    val senderImageRes = senderUser?.getImagenPerfilMio() ?: Res.drawable.connexus
-                    val imagePainter = painterResource(senderImageRes)
+                items(mensajes.sortedBy { it.fechaMensaje }) { mensaje ->
+                    val esMio = mensaje.idusuario == currentUserId
+                    val senderAlias = todosUsuarios
+                        .find { it.getIdUnicoMio() == mensaje.idusuario }
+                        ?.getAliasPrivadoMio() ?: "Usuario"
 
-                    Row(
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 4.dp),
-                        horizontalArrangement = if (isCurrentUser) Arrangement.End else Arrangement.Start,
-                        verticalAlignment = Alignment.CenterVertically
+                            .padding(8.dp),
+                        contentAlignment = if (esMio) Alignment.CenterEnd else Alignment.CenterStart
                     ) {
-                        if (!isCurrentUser) {
-                            // Imagen del remitente a la izquierda, navegable a su perfil
-                            Image(
-                                painter = imagePainter,
-                                contentDescription = "Imagen de perfil",
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .padding(end = 8.dp)
-                                    .clip(RoundedCornerShape(20.dp))
-                                    .border(1.dp, Color.Gray, RoundedCornerShape(20.dp))
-                                    .clickable {
-                                        navController.navigate(
-                                            "mostrarPerfilUsuario/${senderUser?.getIdUnicoMio() ?: mensaje.idusuario}"
-                                        )
-                                    }
-                            )
-                        }
-
-                        // Caja con el mensaje y el alias del remitente
-                        Box(
+                        Column(
                             modifier = Modifier
-                                .padding(
-                                    start = if (isCurrentUser) 0.dp else 8.dp,
-                                    end = if (isCurrentUser) 8.dp else 0.dp
-                                )
-                                .widthIn(max = 250.dp)
                                 .background(
-                                    color = if (isCurrentUser) Color(0xFFC8E6C9) else Color(0xFFB2EBF2),
+                                    if (esMio) Color(0xFFC8E6C9) else Color(0xFFB2EBF2),
                                     shape = RoundedCornerShape(8.dp)
                                 )
-                                .border(
-                                    width = 1.dp,
-                                    color = if (isCurrentUser) Color(0xFFC8E6C9) else Color(0xFFB2EBF2),
-                                    shape = RoundedCornerShape(8.dp)
-                                )
+                                .padding(12.dp)
+                                .widthIn(max = 280.dp)
                         ) {
-                            Column(modifier = Modifier.padding(8.dp)) {
+                            if (!esMio) {
                                 Text(
                                     text = senderAlias,
-                                    modifier = Modifier.padding(bottom = 4.dp),
-                                    style = MaterialTheme.typography.caption
-                                )
-                                Text(
-                                    text = mensaje.content,
-                                    style = MaterialTheme.typography.body1
+                                    style = MaterialTheme.typography.caption,
+                                    color = Color.DarkGray
                                 )
                             }
-                        }
-
-                        if (isCurrentUser) {
-                            // Imagen del remitente (UsuarioPrincipal) a la derecha
-                            Image(
-                                painter = imagePainter,
-                                contentDescription = "Imagen de perfil",
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .padding(start = 8.dp)
-                                    .clickable {
-                                        navController.navigate(
-                                            "mostrarPerfilUsuario/${senderUser?.getIdUnicoMio() ?: mensaje.idusuario}"
-                                        )
-                                    }
-                            )
+                            Text(text = mensaje.content)
                         }
                     }
                 }
             }
 
-            // Barra de entrada para escribir un mensaje nuevo
             Row(
-                modifier = Modifier
+                Modifier
                     .fillMaxWidth()
                     .padding(8.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -379,38 +336,29 @@ fun mostrarChatGrupo(
                     value = mensajeNuevo,
                     onValueChange = { mensajeNuevo = it },
                     modifier = Modifier.weight(1f),
-                    placeholder = { Text(text = traducir("escribe_mensaje")) }
+                    placeholder = { Text("Escribe un mensaje...") }
                 )
-                IconButton(
-                    onClick = {
-                        if (mensajeNuevo.isNotBlank() && chatId != null) {
-                            scope.launch {
-                                // Se crea el nuevo mensaje usando 'idusuario' y 'idconversacion'
-                                val newMessage = Mensaje(
-                                    content = mensajeNuevo,
-                                    idusuario = currentUserId,
-                                    idconversacion = chatId
-                                )
-                                supabaseRepo.addItem("mensaje", newMessage)
-                                mensajeNuevo = ""
-                                // Actualiza la lista de mensajes de la conversación
-                                supabaseRepo.getAll<Mensaje>("mensaje")
-                                    .collect { allMessages ->
-                                        messages = allMessages.filter { it.idconversacion == chatId }
-                                    }
-                            }
+                IconButton(onClick = {
+                    if (mensajeNuevo.isNotBlank()) {
+                        scope.launch {
+                            val nuevo = Mensaje(
+                                content = mensajeNuevo.trim(),
+                                idusuario = currentUserId,
+                                idconversacion = chatId
+                            )
+                            supabaseClient.from("mensaje").insert(nuevo)
+                            mensajeNuevo = ""
+                            println("📤 Mensaje enviado en realtime.")
                         }
                     }
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.Send,
-                        contentDescription = traducir("enviar")
-                    )
+                }) {
+                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Enviar")
                 }
             }
         }
     }
 }
+
 
 /*
 // --- Nuevo Chat ---
