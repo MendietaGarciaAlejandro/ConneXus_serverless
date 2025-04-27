@@ -23,6 +23,7 @@ import org.connexuss.project.comunicacion.Hilo
 import org.connexuss.project.comunicacion.Post
 import org.connexuss.project.comunicacion.Tema
 import org.connexuss.project.comunicacion.generateId
+import org.connexuss.project.misc.UsuarioPrincipal
 import org.connexuss.project.supabase.SupabaseRepositorioGenerico
 
 // Repositorio genérico instanciado
@@ -132,69 +133,85 @@ fun TemaScreen(navController: NavHostController, temaId: String) {
     val tablaHilos = "hilo"
 
     // Flujo del tema y flujo de hilos filtrados
-    val tema by repoForo.getItem<Tema>(tablaTemas) {
-        scope.launch {
-            select {
-                filter { eq("idtema", temaId) }
+    val tema by repoForo
+        .getItem<Tema>(tablaTemas) {
+            scope.launch {
+                select {
+                    filter { eq("idtema", temaId) }
+                }
             }
         }
-    }.collectAsState(initial = null)
+        .collectAsState(initial = null)
     val hilos by repoForo.getAll<Hilo>(tablaHilos)
         .map { list -> list.filter { it.idTema == temaId } }
         .collectAsState(initial = emptyList())
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(tema?.nombre ?: "Tema no encontrado") },
-                navigationIcon = { BackButton(navController) },
-                actions = {
-                    IconButton(onClick = { showNewThreadDialog = true }) {
-                        Icon(Icons.Filled.Add, contentDescription = "Nuevo hilo")
-                    }
-                }
-            )
-        },
-        bottomBar = { MiBottomBar(navController) }
-    ) { padding ->
-        LimitaTamanioAncho { modifier ->
-            if (tema == null) {
-                Box(
-                    modifier = modifier
-                        .fillMaxSize()
-                        .padding(padding),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("Tema no encontrado")
-                }
-            } else {
-                LazyColumn(
-                    modifier = modifier
-                        .fillMaxSize()
-                        .padding(padding)
-                        .padding(vertical = 8.dp)
-                ) {
-                    items(hilos) { hilo ->
-                        HiloCard(hilo = hilo) {
-                            navController.navigate("hilo/${hilo.idHilo}")
-                        }
-                    }
-                }
+    // Si el tema es nulo, mostrar un indicador de carga
+    when {
+        tema == null -> {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
             }
+        }
+    }
 
-            if (showNewThreadDialog && tema != null) {
-                CrearElementoDialog(
-                    title = "Nuevo Hilo",
-                    label = "Título del hilo",
-                    onDismiss = { showNewThreadDialog = false },
-                    onConfirm = { titulo ->
-                        scope.launch {
-                            val nuevo = Hilo(idHilo = generateId(), nombre = titulo, idTema = temaId)
-                            repoForo.addItem(tablaHilos, nuevo)
-                            showNewThreadDialog = false
+    // Si el tema no es nulo, mostrar la lista de hilos
+    when {
+        tema != null -> {
+            Scaffold(
+                topBar = {
+                    TopAppBar(
+                        title = { Text(tema?.nombre ?: "Tema no encontrado") },
+                        navigationIcon = { BackButton(navController) },
+                        actions = {
+                            IconButton(onClick = { showNewThreadDialog = true }) {
+                                Icon(Icons.Filled.Add, contentDescription = "Nuevo hilo")
+                            }
+                        }
+                    )
+                },
+                bottomBar = { MiBottomBar(navController) }
+            ) { padding ->
+                LimitaTamanioAncho { modifier ->
+                    if (tema == null) {
+                        Box(
+                            modifier = modifier
+                                .fillMaxSize()
+                                .padding(padding),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("Tema no encontrado")
+                        }
+                    } else {
+                        LazyColumn(
+                            modifier = modifier
+                                .fillMaxSize()
+                                .padding(padding)
+                                .padding(vertical = 8.dp)
+                        ) {
+                            items(hilos) { hilo ->
+                                HiloCard(hilo = hilo) {
+                                    navController.navigate("hilo/${hilo.idHilo}")
+                                }
+                            }
                         }
                     }
-                )
+
+                    if (showNewThreadDialog && tema != null) {
+                        CrearElementoDialog(
+                            title = "Nuevo Hilo",
+                            label = "Título del hilo",
+                            onDismiss = { showNewThreadDialog = false },
+                            onConfirm = { titulo ->
+                                scope.launch {
+                                    val nuevo = Hilo(idHilo = generateId(), nombre = titulo, idTema = temaId)
+                                    repoForo.addItem(tablaHilos, nuevo)
+                                    showNewThreadDialog = false
+                                }
+                            }
+                        )
+                    }
+                }
             }
         }
     }
@@ -207,11 +224,19 @@ fun TemaScreen(navController: NavHostController, temaId: String) {
 fun HiloScreen(navController: NavHostController, hiloId: String) {
     val scope = rememberCoroutineScope()
     var contenido by remember { mutableStateOf("") }
+    var refreshTrigger by remember { mutableStateOf(0) }
 
     // Tablas de temas y hilos
     val tablaTemas = "tema"
     val tablaHilos = "hilo"
     val tablaPosts = "post"
+
+    // Creamos el Flow dentro de un remember que observe el trigger
+    val postsFlow = remember(hiloId, refreshTrigger) {
+        repoForo
+            .getAll<Post>("post")
+            .map { list -> list.filter { it.idHilo == hiloId } }
+    }
 
     // Flujo de hilo (opcionalmente para título) y posts
     val hilo by repoForo.getItem<Hilo>(tablaHilos) {
@@ -221,9 +246,9 @@ fun HiloScreen(navController: NavHostController, hiloId: String) {
             }
         }
     }.collectAsState(initial = null)
-    val posts by repoForo.getAll<Post>(tablaPosts)
-        .map { list -> list.filter { it.idHilo == hiloId } }
-        .collectAsState(initial = emptyList())
+
+    // Recogemos los posts del hilo
+    val posts by postsFlow.collectAsState(initial = emptyList())
 
     if (hilo == null) {
         EmptyStateMessage("Hilo no encontrado")
@@ -271,16 +296,26 @@ fun HiloScreen(navController: NavHostController, hiloId: String) {
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(onClick = {
-                        scope.launch {
-                            val post = Post(
-                                idPost = generateId(),
-                                content = contenido,
-                                idHilo = hiloId,
-                                idFirmante = "UsuarioActual",
-                                aliaspublico = "AliasPublicoActual"
+                        try {
+                            require(
+                                contenido.isNotBlank().or(contenido.isNotEmpty())
                             )
-                            repoForo.addItem(tablaPosts, post)
-                            contenido = ""
+                            scope.launch {
+                                UsuarioPrincipal?.let {
+                                    val post = Post(
+                                        idPost = generateId(),
+                                        content = contenido,
+                                        idHilo = hiloId,
+                                        idFirmante = it.idUnico,
+                                        aliaspublico = it.aliasPublico
+                                    )
+                                    repoForo.addItem(tablaPosts, post)
+                                    refreshTrigger++ // Incrementamos el trigger para refrescar la lista
+                                    contenido = ""
+                                } ?: println("Error: UsuarioPrincipal es nulo")
+                            }
+                        } catch (e: Exception) {
+                            println("Error al enviar el post: ${e.message}")
                         }
                     }) {
                         Text("Enviar")
