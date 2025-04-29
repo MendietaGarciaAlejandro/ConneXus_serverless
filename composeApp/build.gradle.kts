@@ -53,23 +53,23 @@ kotlin {
 
     jvm("desktop")
 
-    js(IR) {
-        moduleName = "composeApp"
-        browser {
-            val rootDirPath = project.rootDir.path
-            val projectDirPath = project.projectDir.path
-            commonWebpackConfig {
-                outputFileName = "composeApp.js"
-                devServer = (devServer ?: KotlinWebpackConfig.DevServer()).apply {
-                    static = (static ?: mutableListOf()).apply {
-                        add(rootDirPath)
-                        add(projectDirPath)
-                    }
-                }
-            }
-        }
-        binaries.executable()
-    }
+//    js(IR) {
+//        moduleName = "composeApp"
+//        browser {
+//            val rootDirPath = project.rootDir.path
+//            val projectDirPath = project.projectDir.path
+//            commonWebpackConfig {
+//                outputFileName = "composeApp.js"
+//                devServer = (devServer ?: KotlinWebpackConfig.DevServer()).apply {
+//                    static = (static ?: mutableListOf()).apply {
+//                        add(rootDirPath)
+//                        add(projectDirPath)
+//                    }
+//                }
+//            }
+//        }
+//        binaries.executable()
+//    }
 
     @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
@@ -128,6 +128,13 @@ kotlin {
             // Cryptography dependencies
             implementation(libs.cryptography.core)
 
+            // Persistencia multiplataforma
+            implementation(libs.multiplatform.settings)
+            implementation(libs.multiplatform.settings.coroutines)       // for Flow/StateFlow
+            implementation(libs.multiplatform.settings.serialization)   // for serializable data
+            implementation(libs.multiplatform.settings.datastore)       // optional DataStore
+            implementation(libs.multiplatform.settings.no.arg)         // no-arg init
+
             // Firebase dependencies (commented)
 //            implementation(libs.firebase.database)
 //            implementation(libs.firebase.firestore)
@@ -162,6 +169,9 @@ kotlin {
 
             // Cryptography dependencies
             implementation(libs.cryptography.provider.jdk)
+
+            // Persistencia multiplataforma
+            implementation(libs.multiplatform.settings.android)
 
             // Firebase dependencies (commented)
 //            implementation(project.dependencies.platform(libs.firebase.android.bom))
@@ -199,18 +209,18 @@ kotlin {
             implementation(libs.cryptography.provider.jdk)
         }
 
-        val jsMain by getting {
-            dependencies {
-                implementation(compose.html.core)
-
-                // Firebase dependencies (commented)
+//        val jsMain by getting {
+//            dependencies {
+//                implementation(compose.html.core)
+//
+//                // Firebase dependencies (commented)
 //                implementation(npm("libphonenumber-js", "1.10.13"))
 //                implementation(libs.firebase.database)
 //                implementation(libs.firebase.firestore)
 //                implementation(libs.firebase.auth)
 //                implementation(libs.firebase.storage)
-            }
-        }
+//            }
+//        }
 
         wasmJsMain.dependencies {
             // Supabase dependencies

@@ -55,6 +55,9 @@ ktorClientJs = "3.1.2"
 # Security versions
 cryptographyCore = "0.4.0"
 
+# Multiplatform Settings versions
+multiplatformSettings = "1.3.0"
+
 [libraries]
 # AndroidX libraries
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "androidx-activityCompose" }
@@ -78,8 +81,16 @@ kotlin-test-annotations-common = { group = "org.jetbrains.kotlin", name = "kotli
 assertk = { group = "com.willowtreeapps.assertk", name = "assertk", version.ref = "assertk" }
 
 # Navigation libraries
-navigation-compose = { group = "org.jetbrains.androidx.navigation", name = "navigation-compose", version.ref = "navigation-compose" }
 #androidx-navigation-safe-args-generator = { group = "androidx.navigation", name = "navigation-safe-args-generator", version.ref = "navigationSafeArgsGenerator" }
+
+# Multiplatform Settings libraries
+multiplatform-settings = { module = "com.russhwolf:multiplatform-settings", version.ref = "multiplatformSettings" }
+multiplatform-settings-android = { module = "com.russhwolf:multiplatform-settings-android", version.ref = "multiplatformSettings" }
+multiplatform-settings-coroutines = { module = "com.russhwolf:multiplatform-settings-coroutines", version.ref = "multiplatformSettings" }
+multiplatform-settings-datastore = { module = "com.russhwolf:multiplatform-settings-datastore", version.ref = "multiplatformSettings" }
+multiplatform-settings-no-arg = { module = "com.russhwolf:multiplatform-settings-no-arg", version.ref = "multiplatformSettings" }
+multiplatform-settings-serialization = { module = "com.russhwolf:multiplatform-settings-serialization", version.ref = "multiplatformSettings" }
+navigation-compose = { group = "org.jetbrains.androidx.navigation", name = "navigation-compose", version.ref = "navigation-compose" }
 
 # Decompose libraries
 arkivanov-decompose-v080 = { group = "com.arkivanov.decompose", name = "decompose", version.ref = "arkivanovDecompose" }
