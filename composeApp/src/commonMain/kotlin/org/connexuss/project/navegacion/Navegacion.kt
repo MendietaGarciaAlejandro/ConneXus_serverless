@@ -7,6 +7,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.russhwolf.settings.ExperimentalSettingsApi
+import kotlinx.coroutines.Dispatchers
 import org.connexuss.project.encriptacion.PantallaPruebasEncriptacion
 /*
 import org.connexuss.project.firebase.AppFirebase
@@ -57,12 +59,14 @@ import org.connexuss.project.interfaces.muestraRestablecimientoContasenna
 import org.connexuss.project.interfaces.muestraUsuarios
 import org.connexuss.project.misc.UsuarioPrincipal
 import org.connexuss.project.misc.imagenesPerfilPersona
+import org.connexuss.project.persistencia.FlowSettingsProvider
 import org.connexuss.project.persistencia.PantallaPruebasPersistencia
 import org.connexuss.project.persistencia.SettingsState
 import org.connexuss.project.persistencia.settings
 import org.connexuss.project.supabase.*
 import org.connexuss.project.usuario.Usuario
 
+@OptIn(ExperimentalSettingsApi::class)
 @Composable
 fun Navegacion(
     temaConfig: TemaConfig,
@@ -85,7 +89,8 @@ fun Navegacion(
 
     val repoSupabase = remember { SupabaseRepositorioGenerico() }
 
-    val estadoSettings = remember { SettingsState(settings) }
+    val estadoFlowSettings = remember { FlowSettingsProvider(settings, Dispatchers.Default) }
+    // val estadoSettings = remember { SettingsState(  ) }
 
     NavHost(navController = navController, startDestination = "splash") {
         composable("splash") {
@@ -269,7 +274,7 @@ fun Navegacion(
             PantallaTextosRealtime(navHostController = navController)
         }
         composable("pruebasPersistencia") {
-            PantallaPruebasPersistencia(estadoSettings)
+            PantallaPruebasPersistencia(estadoFlowSettings)
         }
     }
 }
