@@ -1,101 +1,92 @@
 package org.connexuss.project.interfaces
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.AlertDialog
-import androidx.compose.material.Button
-import androidx.compose.material.Card
-import androidx.compose.material.Divider
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.OutlinedTextField
-import androidx.compose.material.Scaffold
-import androidx.compose.material.Text
-import androidx.compose.material.TextButton
-import androidx.compose.material.TopAppBar
+import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.rememberScaffoldState
-import androidx.compose.material.SnackbarDuration
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import io.github.jan.supabase.postgrest.query.PostgrestQueryBuilder
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import org.connexuss.project.comunicacion.Hilo
 import org.connexuss.project.comunicacion.Post
 import org.connexuss.project.comunicacion.Tema
 import org.connexuss.project.comunicacion.generateId
-import org.connexuss.project.misc.*
+import org.connexuss.project.misc.UsuarioPrincipal
 import org.connexuss.project.supabase.SupabaseRepositorioGenerico
 
+// Repositorio genérico instanciado
+private val repoForo = SupabaseRepositorioGenerico()
 
+// -----------------------
+// Pantalla principal del foro
+// -----------------------
 @Composable
 fun ForoScreen(navController: NavHostController) {
     val scope = rememberCoroutineScope()
     val scaffoldState = rememberScaffoldState()
     var showNewTopicDialog by remember { mutableStateOf(false) }
     var searchText by remember { mutableStateOf("") }
+    val refreshTrigger = remember { mutableStateOf(0) }
 
-    // Obtener temas observables del repositorio
-    val allTemas = ForoRepository.obtenerTemas()
-    val filteredTemas = if (searchText.isBlank()) {
-        allTemas
-    } else {
-        allTemas.filter { it.nombre.contains(searchText, ignoreCase = true) }
+    // Tablas de temas y hilos
+    val tablaTemas = "tema"
+    val tablaHilos = "hilo"
+
+    val temasFlow = remember(refreshTrigger.value) {
+        repoForo.getAll<Tema>(tablaTemas)
+            .map { list -> list.filter { it.nombre.contains(searchText, ignoreCase = true) } }
     }
+
+    // Flujos de temas y hilos
+    val temas by repoForo.getAll<Tema>(tablaTemas).collectAsState(initial = emptyList())
+    val hilos by repoForo.getAll<Hilo>(tablaHilos).collectAsState(initial = emptyList())
+
+    // Filtrar temas y contar hilos
+    val filteredTemas = temasFlow.collectAsState(initial = emptyList()).value
 
     Scaffold(
         scaffoldState = scaffoldState,
         topBar = {
-            CommonTopBar(
-                title = "Foro General",
-                navController = navController,
-                showSearch = true,
-                searchText = searchText,
-                onSearchChanged = { searchText = it },
-                onActionClick = { showNewTopicDialog = true }
+            TopAppBar(
+                title = { Text("Foro General") },
+                actions = {
+                    OutlinedTextField(
+                        value = searchText,
+                        onValueChange = { searchText = it },
+                        placeholder = { Text("Buscar...") },
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .width(150.dp)
+                    )
+                    IconButton(onClick = { showNewTopicDialog = true }) {
+                        Icon(Icons.Filled.Add, contentDescription = "Nuevo tema")
+                    }
+                }
             )
         },
         bottomBar = { MiBottomBar(navController) }
     ) { padding ->
-        Box(modifier = Modifier.padding(padding)) {
+        Box(modifier = Modifier
+            .padding(padding)
+            .fillMaxSize()) {
             LimitaTamanioAncho { modifier ->
                 when {
                     filteredTemas.isEmpty() && searchText.isBlank() ->
                         EmptyStateMessage("Presiona el + para crear un nuevo tema")
-
                     filteredTemas.isEmpty() ->
                         EmptyStateMessage("No se encontraron temas")
-
                     else -> LazyColumn(
                         modifier = modifier.fillMaxSize(),
                         contentPadding = PaddingValues(16.dp),
@@ -104,231 +95,256 @@ fun ForoScreen(navController: NavHostController) {
                         items(filteredTemas) { tema ->
                             TemaCard(
                                 tema = tema,
-                                hilosCount = HilosRepository.obtenerHilosPorTema(tema.idTema).size,
-                                onTemaClick = {
-                                    navController.navigate("tema/${tema.idTema}")
-                                }
+                                hilosCount = hilos.count { it.idTema == tema.idTema },
+                                onTemaClick = { navController.navigate("tema/${tema.idTema}") }
                             )
                         }
                     }
                 }
             }
 
-            // Dialogo para nuevo tema
             if (showNewTopicDialog) {
                 CrearElementoDialog(
+                    title = "Nuevo Tema",
+                    label = "Nombre del tema",
                     onDismiss = { showNewTopicDialog = false },
                     onConfirm = { nombre ->
                         scope.launch {
-                            try {
-                                val nuevoTema = Tema(nombre = nombre)
-                                ForoRepository.agregarTema(nuevoTema)
-                                scaffoldState.snackbarHostState.showSnackbar(
-                                    "Tema '${nombre}' creado",
-                                    duration = SnackbarDuration.Short
-                                )
-                            } catch (e: Exception) {
-                                scaffoldState.snackbarHostState.showSnackbar(
-                                    "Error al crear tema: ${e.message}",
-                                    duration = SnackbarDuration.Long
-                                )
-                            }
+                            repoForo.addItem(tablaTemas, Tema(nombre = nombre))
+                            refreshTrigger.value++
+                            scaffoldState.snackbarHostState.showSnackbar(
+                                "Tema '$nombre' creado",
+                                duration = SnackbarDuration.Short
+                            )
                             showNewTopicDialog = false
                         }
-                    },
-                    title = "Nuevo Tema",
-                    label = "Introduce el nombre del tema",
-                    confirmText = "Crear",
-                    cancelText = "Cancelar"
+                    }
                 )
             }
         }
     }
 }
 
-fun PostgrestQueryBuilder.eq(column: String, value: Any): PostgrestQueryBuilder {
-    // Aquí se utiliza el método filter pasando "eq" como operador de igualdad.
-    return this.filter(column, value)
-}
-
-fun PostgrestQueryBuilder.filter(
-    column: String,
-    value: Any
-): PostgrestQueryBuilder {
-    // Aquí se implementa la lógica para filtrar los resultados.
-    return this.eq(column, value)
-}
-
+// -----------------------
+// Pantalla de un tema y sus hilos
+// -----------------------
 @Composable
 fun TemaScreen(navController: NavHostController, temaId: String) {
     val scope = rememberCoroutineScope()
-    val repo = SupabaseRepositorioGenerico()
-    var tema by remember { mutableStateOf<Tema?>(null) }
-    var hilos by remember { mutableStateOf<List<Hilo>>(emptyList()) }
     var showNewThreadDialog by remember { mutableStateOf(false) }
+    var refreshTrigger by remember { mutableStateOf(0) }
 
-    // Cargar tema y sus hilos al iniciar la pantalla
-    LaunchedEffect(temaId) {
-        // Obtener el tema específico
-        repo.getItem<Tema>("temas") {
-            eq("idtema", temaId)
-        }.collect { result ->
-            // Aquí asignas el resultado a la variable 'tema'
-            tema = result
+    // Tablas de temas y hilos
+    val tablaTemas = "tema"
+    val tablaHilos = "hilo"
+
+    // Flujo del tema y flujo de hilos filtrados
+    val tema by repoForo
+        .getItem<Tema>(tablaTemas) {
+            scope.launch {
+                select {
+                    filter { eq("idtema", temaId) }
+                }
+            }
         }
+        .collectAsState(initial = null)
 
-        // Obtener todos los hilos y filtrar por el tema actual
-        repo.getAll<Hilo>("hilo").collect { allHilos ->
-            hilos = allHilos.filter { it.idTema == temaId }
+    val hilosFlow = remember(temaId, refreshTrigger) {
+        repoForo.getAll<Hilo>(tablaHilos)
+            .map { list -> list.filter { it.idTema == temaId } }
+    }
+    val hilos by hilosFlow.collectAsState(initial = emptyList())
+
+    // Si el tema es nulo, mostrar un indicador de carga
+    when {
+        tema == null -> {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
         }
     }
 
-    Scaffold(
-        topBar = {
-            CommonTopBar(
-                title = tema?.nombre ?: "Tema no encontrado",
-                navController = navController,
-                showBackButton = true,
-                onActionClick = { showNewThreadDialog = true }
-            )
-        },
-        bottomBar = { MiBottomBar(navController) }
-    ) { padding ->
-        LimitaTamanioAncho { modifier ->
-            if (tema == null) {
-                Box(
-                    modifier = modifier
-                        .fillMaxSize()
-                        .padding(padding),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "Tema no encontrado",
-                        style = MaterialTheme.typography.h6,
-                        color = MaterialTheme.colors.onSurface.copy(alpha = 0.6f)
+    // Si el tema no es nulo, mostrar la lista de hilos
+    when {
+        tema != null -> {
+            Scaffold(
+                topBar = {
+                    TopAppBar(
+                        title = { Text(tema?.nombre ?: "Tema no encontrado") },
+                        navigationIcon = { BackButton(navController) },
+                        actions = {
+                            IconButton(onClick = { showNewThreadDialog = true }) {
+                                Icon(Icons.Filled.Add, contentDescription = "Nuevo hilo")
+                            }
+                        }
                     )
-                }
-            } else {
-                Column(
-                    modifier = modifier
-                        .fillMaxSize()
-                        .padding(padding)
-                ) {
-                    LazyColumn(
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(16.dp),
-                        contentPadding = PaddingValues(vertical = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        items(hilos) { hilo ->
-                            HiloCard(hilo = hilo) {
-                                navController.navigate("hilo/${hilo.idHilo}")
+                },
+                bottomBar = { MiBottomBar(navController) }
+            ) { padding ->
+                LimitaTamanioAncho { modifier ->
+                    if (tema == null) {
+                        Box(
+                            modifier = modifier
+                                .fillMaxSize()
+                                .padding(padding),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("Tema no encontrado")
+                        }
+                    } else {
+                        LazyColumn(
+                            modifier = modifier
+                                .fillMaxSize()
+                                .padding(padding)
+                                .padding(vertical = 8.dp)
+                        ) {
+                            items(hilos) { hilo ->
+                                HiloCard(hilo = hilo) {
+                                    navController.navigate("hilo/${hilo.idHilo}")
+                                }
                             }
                         }
                     }
-                }
-            }
 
-            if (showNewThreadDialog && tema != null) {
-                CrearElementoDialog(
-                    onDismiss = { showNewThreadDialog = false },
-                    onConfirm = { titulo ->
-                        scope.launch {
-                            val nuevoHilo = Hilo(
-                                idHilo = generateId(),
-                                nombre = titulo,
-                                idTema = tema!!.idTema
-                            )
-                            repo.addItem("hilo", nuevoHilo)
-                            hilos = hilos + nuevoHilo
-                            showNewThreadDialog = false
-                        }
-                    },
-                    title = "Crear nuevo hilo",
-                    label = "Título del hilo"
-                )
+                    if (showNewThreadDialog && tema != null) {
+                        CrearElementoDialog(
+                            title = "Nuevo Hilo",
+                            label = "Título del hilo",
+                            onDismiss = { showNewThreadDialog = false },
+                            onConfirm = { titulo ->
+                                scope.launch {
+                                    val nuevo = Hilo(idHilo = generateId(), nombre = titulo, idTema = temaId)
+                                    repoForo.addItem(tablaHilos, nuevo)
+                                    refreshTrigger++ // Incrementamos el trigger para refrescar la lista
+                                    showNewThreadDialog = false
+                                }
+                            }
+                        )
+                    }
+                }
             }
         }
     }
 }
 
+// -----------------------
+// Pantalla de un hilo y sus posts
+// -----------------------
 @Composable
-fun HiloScreen(navController: NavHostController, hiloId: String, repo: SupabaseRepositorioGenerico) {
-    val hilos = remember { mutableStateListOf<Hilo>() }
-    val hilo by remember { mutableStateOf(HilosRepository.hilos.find { it.idHilo == hiloId }) }
-    val postsDelHilo by remember { mutableStateOf(PostsRepository.obtenerPostsPorHilo(hiloId)) }
-    val posts = remember { mutableStateListOf<Post>() }
+fun HiloScreen(navController: NavHostController, hiloId: String) {
+    val scope = rememberCoroutineScope()
+    var contenido by remember { mutableStateOf("") }
+    var refreshTrigger by remember { mutableStateOf(0) }
 
-    // Filtrar el hilo actual basado en hiloId
-    val hiloActual = hilos.find { it.idHilo == hiloId }
+    // Tablas de temas y hilos
+    val tablaTemas = "tema"
+    val tablaHilos = "hilo"
+    val tablaPosts = "post"
 
-    // Cargar los hilos y posts desde Supabase
-    LaunchedEffect(Unit) {
-        // Obtener el hilo específico
-        repo.getItem<Hilo>("hilo") {
-            eq("idhilo", hiloId)
-        }.collect {
-            hiloActual?.let {
-                hilos.add(it)
-            }
-        }
+    // Creamos el Flow dentro de un remember que observe el trigger
+    val postsFlow = remember(hiloId, refreshTrigger) {
+        repoForo
+            .getAll<Post>(tablaPosts)
+            .map { list -> list.filter { it.idHilo == hiloId } }
     }
 
+    // Flujo de hilo (opcionalmente para título) y posts
+    val hilo by repoForo.getItem<Hilo>(tablaHilos) {
+        scope.launch {
+            select {
+                filter { eq("idhilo", hiloId) }
+            }
+        }
+    }.collectAsState(initial = null)
 
-    if (hiloActual == null) {
+    // Recogemos los posts del hilo
+    val posts by postsFlow.collectAsState(initial = emptyList())
+
+    if (hilo == null) {
         EmptyStateMessage("Hilo no encontrado")
         return
     }
 
     Scaffold(
         topBar = {
-            CommonTopBar(
-                title = hiloActual.nombre ?: "Hilo",
-                navController = navController,
-                showBackButton = true
+            TopAppBar(
+                title = { Text(hilo!!.nombre ?: "Hilo") },
+                navigationIcon = { BackButton(navController) }
             )
         },
         bottomBar = { MiBottomBar(navController) }
     ) { padding ->
         LimitaTamanioAncho { modifier ->
-            Column(modifier = modifier.fillMaxSize().padding(padding)) {
+            Column(
+                modifier = modifier
+                    .fillMaxSize()
+                    .padding(padding)
+            ) {
                 LazyColumn(
-                    modifier = Modifier.weight(1f).padding(16.dp),
-                    contentPadding = PaddingValues(vertical = 8.dp)
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(posts.filter { it.idHilo == hiloId }) { post ->
+                    items(posts) { post ->
                         PostItem(post = post)
-                        Spacer(modifier = Modifier.height(8.dp))
                     }
                 }
                 Divider()
-                NuevoPostSection(
-                    hiloId = hiloId,
-                    onNuevoPost = { contenido ->
-                        val nuevoPost = Post(
-                            idPost = generateId(),
-                            content = contenido,
-                            idHilo = hiloId,
-                            idFirmante = "UsuarioActual",
-                            aliaspublico = "AliasPublicoActual"
-                        )
-                        repo.addItem("posts", nuevoPost)
+                // Sección para nuevo post
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedTextField(
+                        value = contenido,
+                        onValueChange = { contenido = it },
+                        label = { Text("Nuevo mensaje") },
+                        modifier = Modifier.weight(1f)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(onClick = {
+                        try {
+                            require(
+                                contenido.isNotBlank().or(contenido.isNotEmpty())
+                            )
+                            scope.launch {
+                                UsuarioPrincipal?.let {
+                                    val post = Post(
+                                        idPost = generateId(),
+                                        content = contenido,
+                                        idHilo = hiloId,
+                                        idFirmante = it.idUnico,
+                                        aliaspublico = it.aliasPublico
+                                    )
+                                    repoForo.addItem(tablaPosts, post)
+                                    refreshTrigger++ // Incrementamos el trigger para refrescar la lista
+                                    contenido = ""
+                                } ?: println("Error: UsuarioPrincipal es nulo")
+                            }
+                        } catch (e: Exception) {
+                            println("Error al enviar el post: ${e.message}")
+                        }
+                    }) {
+                        Text("Enviar")
                     }
-                )
+                }
             }
         }
     }
 }
 
+// -----------------------
+// Diálogo reutilizable
+// -----------------------
 @Composable
 fun CrearElementoDialog(
-    onDismiss: () -> Unit,
-    onConfirm: (String) -> Unit,
     title: String,
     label: String,
-    confirmText: String = "Crear",
-    cancelText: String = "Cancelar"
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit
 ) {
     var text by remember { mutableStateOf("") }
     AlertDialog(
@@ -343,77 +359,34 @@ fun CrearElementoDialog(
         },
         confirmButton = {
             Button(
-                onClick = {
-                    if (text.isNotBlank()) onConfirm(text)
-                },
+                onClick = { if (text.isNotBlank()) onConfirm(text) },
                 enabled = text.isNotBlank()
-            ) {
-                Text(confirmText)
-            }
+            ) { Text("Crear") }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(cancelText)
-            }
+            TextButton(onClick = onDismiss) { Text("Cancelar") }
         }
     )
 }
 
+// -----------------------
+// Componentes UI reutilizables
+// -----------------------
 @Composable
-fun CommonTopBar(
-    title: String,
-    navController: NavHostController,
-    showBackButton: Boolean = false,
-    showSearch: Boolean = false,
-    searchText: String = "",
-    onSearchChanged: (String) -> Unit = {},
-    onActionClick: () -> Unit = {}
-) {
-    TopAppBar(
-        title = { Text(title) },
-        navigationIcon = {
-            if (showBackButton) BackButton(navController)
-        },
-        actions = {
-            if (showSearch) {
-                OutlinedTextField(
-                    value = searchText,
-                    onValueChange = onSearchChanged,
-                    placeholder = { Text("Buscar...") },
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .width(150.dp)
-                )
-            }
-            IconButton(onClick = onActionClick) {
-                Icon(Icons.Filled.Add, contentDescription = "Nuevo tema")
-            }
-        }
-    )
-}
-
-@Composable
-fun TemaCard(
-    tema: Tema,
-    hilosCount: Int,
-    onTemaClick: () -> Unit
-) {
+fun TemaCard(tema: Tema, hilosCount: Int, onTemaClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onTemaClick),
-        elevation = 4.dp
+        elevation = 4.dp,
+        shape = RoundedCornerShape(8.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
+            Text(text = tema.nombre, style = MaterialTheme.typography.h6)
+            Spacer(Modifier.height(4.dp))
             Text(
-                text = tema.nombre,
-                style = MaterialTheme.typography.h6
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "$hilosCount ${if (hilosCount == 1) "hilo" else "hilos"}",
-                style = MaterialTheme.typography.caption,
-                color = MaterialTheme.colors.secondaryVariant
+                text = "$hilosCount ${if (hilosCount==1) "hilo" else "hilos"}",
+                style = MaterialTheme.typography.caption
             )
         }
     }
@@ -429,18 +402,9 @@ fun HiloCard(hilo: Hilo, onClick: () -> Unit) {
         shape = RoundedCornerShape(8.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            // Se muestra el nombre del hilo o un mensaje por defecto si es nulo
-            Text(
-                text = hilo.nombre ?: "Hilo sin título",
-                style = MaterialTheme.typography.subtitle1
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            // Se muestra, por ejemplo, el id del tema relacionado.
-            Text(
-                text = "Tema: ${hilo.idTema}",
-                style = MaterialTheme.typography.caption,
-                color = MaterialTheme.colors.onSurface.copy(alpha = 0.7f)
-            )
+            Text(text = hilo.nombre ?: "Hilo sin título", style = MaterialTheme.typography.subtitle1)
+            Spacer(Modifier.height(2.dp))
+            Text(text = "ID Tema: ${hilo.idTema}", style = MaterialTheme.typography.caption)
         }
     }
 }
@@ -454,65 +418,14 @@ fun PostItem(post: Post) {
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Default.AccountCircle,
-                    contentDescription = "Avatar",
-                    modifier = Modifier.size(24.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = post.idFirmante,
-                    style = MaterialTheme.typography.subtitle2,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.weight(1f))
-                Text(
-                    text = post.fechaPost.toString(),
-                    style = MaterialTheme.typography.caption
-                )
+                Icon(Icons.Default.AccountCircle, contentDescription = null, modifier = Modifier.size(24.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(text = post.aliaspublico, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.weight(1f))
+                Text(text = post.fechaPost.toString(), style = MaterialTheme.typography.caption)
             }
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(Modifier.height(8.dp))
             Text(text = post.content, style = MaterialTheme.typography.body1)
-        }
-    }
-}
-
-@Composable
-fun NuevoPostSection(hiloId: String, onNuevoPost: suspend (String) -> Unit) {
-    var contenido by remember { mutableStateOf("") }
-    val scope = rememberCoroutineScope()
-    val repo = SupabaseRepositorioGenerico()
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        OutlinedTextField(
-            value = contenido,
-            onValueChange = { contenido = it },
-            label = { Text("Nuevo mensaje") },
-            modifier = Modifier.weight(1f)
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        Button(
-            onClick = {
-                scope.launch {
-                    val nuevoPost = Post(
-                        idPost = generateId(),
-                        content = contenido,
-                        idHilo = hiloId,  // Ahora se utiliza el parámetro
-                        idFirmante = "UsuarioActual",
-                        aliaspublico = "AliasPublicoActual"
-                    )
-                    repo.addItem("posts", nuevoPost)
-                    contenido = "" // Limpiar el campo de texto
-                }
-            },
-            modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
-        ) {
-            Text("Insertar Post")
         }
     }
 }
@@ -526,14 +439,7 @@ fun BackButton(navController: NavHostController) {
 
 @Composable
 fun EmptyStateMessage(message: String) {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = message,
-            style = MaterialTheme.typography.h6,
-            color = MaterialTheme.colors.onSurface.copy(alpha = 0.6f)
-        )
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Text(text = message, style = MaterialTheme.typography.h6, color = MaterialTheme.colors.onSurface.copy(alpha = 0.6f))
     }
 }

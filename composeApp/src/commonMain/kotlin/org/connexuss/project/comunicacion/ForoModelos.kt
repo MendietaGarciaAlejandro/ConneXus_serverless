@@ -63,10 +63,10 @@ data class Hilo(
     val idHilo: String = generateId(),
 
     @SerialName("nombre")
-    val nombre: String? = null,
+    val nombre: String? = "",
 
     @SerialName("idtema")
-    val idTema: String,
+    val idTema: String? = ""
 )
 
 @Serializable

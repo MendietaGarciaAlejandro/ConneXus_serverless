@@ -154,15 +154,16 @@ fun PantallaAjustesAyuda(navController: NavHostController) {
             }
         ) { padding ->
             Box(
-                modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+                modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
                 LimitaTamanioAncho { modifier ->
                     Column(
                         modifier = modifier
+                            .fillMaxSize()
                             .padding(padding)
                             .padding(16.dp)
-                            .verticalScroll(rememberScrollState())
+                            //.verticalScroll(rememberScrollState())
                     ) {
                         LazyColumn(
                             modifier = Modifier

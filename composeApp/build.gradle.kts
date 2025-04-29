@@ -1,3 +1,4 @@
+import org.jetbrains.compose.ExperimentalComposeLibrary
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
@@ -8,9 +9,39 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
-
     // id("com.google.gms.google-services")
-    kotlin("plugin.serialization") version "2.1.0"
+    //kotlin("plugin.serialization") version "2.1.0"
+    alias(libs.plugins.kotlinxSerialization)
+}
+
+android {
+    namespace = "org.connexuss.project"
+    compileSdk = libs.versions.android.compileSdk.get().toInt()
+
+    defaultConfig {
+        applicationId = "org.connexuss.project"
+        minSdk = libs.versions.android.minSdk.get().toInt()
+        targetSdk = libs.versions.android.targetSdk.get().toInt()
+        versionCode = 1
+        versionName = "1.0"
+    }
+
+    buildTypes {
+        getByName("release") {
+            isMinifyEnabled = false
+        }
+    }
+
+    packaging {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
+    }
 }
 
 kotlin {
@@ -19,24 +50,32 @@ kotlin {
             jvmTarget.set(JvmTarget.JVM_21)
         }
     }
+
+
     jvm("desktop")
-    js(IR) {
-        moduleName = "composeApp"
-        browser {
-            val rootDirPath = project.rootDir.path
-            val projectDirPath = project.projectDir.path
-            commonWebpackConfig {
-                outputFileName = "composeApp.js"
-                devServer = (devServer ?: KotlinWebpackConfig.DevServer()).apply {
-                    static = (static ?: mutableListOf()).apply {
-                        add(rootDirPath)
-                        add(projectDirPath)
-                    }
-                }
-            }
-        }
-        binaries.executable()
-    }
+
+//    js(IR) {
+//        moduleName = "composeApp"
+//        browser {
+//            val rootDirPath = project.rootDir.path
+//            val projectDirPath = project.projectDir.path
+//            commonWebpackConfig {
+//                outputFileName = "composeApp.js"
+//                devServer = (devServer ?: KotlinWebpackConfig.DevServer()).apply {
+//                    static = (static ?: mutableListOf()).apply {
+//                        add(rootDirPath)
+//                        add(projectDirPath)
+//                    }
+//                }
+//            }
+//        }
+//        binaries.executable()
+//    // Configura todas las compilaciones del target JS/IR
+//    compilations.all {
+//        kotlinOptions.freeCompilerArgs += "-Xwasm-use-new-exception-proposal"
+//    }
+//    }
+
     @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
         moduleName = "composeApp"
@@ -53,45 +92,17 @@ kotlin {
                 }
             }
         }
+        compilerOptions {
+            freeCompilerArgs.add("-Xwasm-use-new-exception-proposal")
+        }
         binaries.executable()
     }
+
     sourceSets {
         val desktopMain by getting
 
-        androidMain.dependencies {
-            implementation(compose.preview)
-            implementation(libs.androidx.activity.compose)
-            implementation(libs.arkivanov.decompose.v080)
-            implementation(libs.decompose.extensions.compose.jetpack.v080)
-            implementation(libs.kotlinx.serialization)
-
-            // Dependencies for Firebase
-//            implementation(project.dependencies.platform(libs.firebase.android.bom))
-//            implementation(libs.firebase.database)
-//            implementation(libs.firebase.firestore)
-//            implementation(libs.firebase.auth)
-//            implementation(libs.firebase.functions)
-//            implementation(libs.firebase.messaging)
-//            implementation(libs.firebase.storage)
-
-            // Dependencies for Supabase
-            //implementation(libs.bom)
-            implementation(libs.supabase.kt)
-            implementation(libs.storage.kt)
-            implementation(libs.supabase.postgrest.kt)
-            implementation(libs.auth.kt)
-            implementation(libs.realtime.kt)
-            implementation(libs.functions.kt)
-
-            // Dependencias de Ktor
-            implementation(libs.ktorClientCore)
-            implementation(libs.ktor.client.okhttp)
-            implementation(libs.ktor.serialization.kotlinx.json)
-
-            // Dependencias encriptación
-            implementation(libs.cryptography.provider.jdk)
-        }
         commonMain.dependencies {
+            // Compose dependencies
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.material)
@@ -100,21 +111,62 @@ kotlin {
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
 
+            // AndroidX & Kotlin dependencies
             implementation(libs.androidx.lifecycle.viewmodel)
             implementation(libs.androidx.lifecycle.runtime.compose)
             implementation(libs.kotlinx.datetime)
             implementation(libs.navigation.compose)
             implementation(libs.kotlinx.serialization)
 
-            // Dependencies for Firebase
+            // Ktor dependencies
+            implementation(libs.ktorClientCore)
+            implementation(libs.ktor.client.content.negotiation)
+            implementation(libs.ktor.serialization.kotlinx.json)
+
+            // Supabase dependencies
+            //implementation(libs.bom)
+            implementation(libs.supabase.kt)
+            implementation(libs.storage.kt)
+            implementation(libs.supabase.postgrest.kt)
+            implementation(libs.auth.kt)
+            implementation(libs.realtime.kt)
+            implementation(libs.functions.kt)
+            //implementation("io.github.jan-tennert.supabase:gotrue-kt:1.1.1")
+
+            // Cryptography dependencies
+            implementation(libs.cryptography.core)
+
+            // Persistencia multiplataforma
+            implementation(libs.multiplatform.settings)
+            implementation(libs.multiplatform.settings.coroutines)       // for Flow/StateFlow
+            implementation(libs.multiplatform.settings.serialization)   // for serializable data
+            //implementation(libs.multiplatform.settings.datastore)       // optional DataStore
+            implementation(libs.multiplatform.settings.no.arg)         // no-arg init
+            implementation(libs.multiplatform.settings.make.observable)
+
+            // Firebase dependencies (commented)
 //            implementation(libs.firebase.database)
 //            implementation(libs.firebase.firestore)
 //            implementation(libs.firebase.auth)
 //            implementation(libs.firebase.functions)
 //            implementation(libs.firebase.messaging)
 //            implementation(libs.firebase.storage)
+        }
 
-            // Dependencies for Supabase
+        androidMain.dependencies {
+            // Compose & AndroidX dependencies
+            implementation(compose.preview)
+            implementation(libs.androidx.activity.compose)
+            implementation(libs.arkivanov.decompose.v080)
+            implementation(libs.decompose.extensions.compose.jetpack.v080)
+            implementation(libs.kotlinx.serialization)
+
+            // Ktor dependencies
+            implementation(libs.ktorClientCore)
+            implementation(libs.ktor.client.okhttp)
+            implementation(libs.ktor.serialization.kotlinx.json)
+
+            // Supabase dependencies
             //implementation(libs.bom)
             implementation(libs.supabase.kt)
             implementation(libs.storage.kt)
@@ -122,22 +174,37 @@ kotlin {
             implementation(libs.auth.kt)
             implementation(libs.realtime.kt)
             implementation(libs.functions.kt)
+            //implementation("io.github.jan-tennert.supabase:gotrue-kt:1.1.1")
 
-            // Dependencias de Ktor
-            implementation(libs.ktorClientCore)
-            implementation(libs.ktor.client.content.negotiation)
-            implementation(libs.ktor.serialization.kotlinx.json)
+            // Cryptography dependencies
+            implementation(libs.cryptography.provider.jdk)
 
-            // Dependencias encriptación
-            implementation(libs.cryptography.core)
+            // Persistencia multiplataforma
+            //implementation(libs.multiplatform.settings.android)
+
+            // Firebase dependencies (commented)
+//            implementation(project.dependencies.platform(libs.firebase.android.bom))
+//            implementation(libs.firebase.database)
+//            implementation(libs.firebase.firestore)
+//            implementation(libs.firebase.auth)
+//            implementation(libs.firebase.functions)
+//            implementation(libs.firebase.messaging)
+//            implementation(libs.firebase.storage)
         }
+
         desktopMain.dependencies {
+            // Compose & Kotlin dependencies
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutines.swing)
             implementation(libs.arkivanov.decompose.v080)
             implementation(libs.decompose.jetbrains)
 
-            // Dependencies for Supabase
+            // Ktor dependencies
+            implementation(libs.ktorClientCore)
+            implementation(libs.ktor.client.okhttp)
+            implementation(libs.ktor.serialization.kotlinx.json)
+
+            // Supabase dependencies
             //implementation(libs.bom)
             implementation(libs.supabase.kt)
             implementation(libs.storage.kt)
@@ -145,29 +212,27 @@ kotlin {
             implementation(libs.auth.kt)
             implementation(libs.realtime.kt)
             implementation(libs.functions.kt)
+            //implementation("io.github.jan-tennert.supabase:gotrue-kt:1.1.1")
 
-            // Dependencias de Ktor
-            implementation(libs.ktorClientCore)
-            implementation(libs.ktor.client.okhttp)
-            implementation(libs.ktor.serialization.kotlinx.json)
-
-            // Dependencias encriptación
+            // Cryptography dependencies
             implementation(libs.cryptography.provider.jdk)
         }
-        val jsMain by getting {
-            dependencies {
-                implementation(compose.html.core)
 
-                // Dependencies for Firebase
+//        val jsMain by getting {
+//            dependencies {
+//                implementation(compose.html.core)
+//
+//                // Firebase dependencies (commented)
 //                implementation(npm("libphonenumber-js", "1.10.13"))
 //                implementation(libs.firebase.database)
 //                implementation(libs.firebase.firestore)
 //                implementation(libs.firebase.auth)
 //                implementation(libs.firebase.storage)
-            }
-        }
+//            }
+//        }
+
         wasmJsMain.dependencies {
-            // Dependencies for Supabase
+            // Supabase dependencies
             //implementation(libs.bom)
             implementation(libs.supabase.kt)
             implementation(libs.storage.kt)
@@ -175,63 +240,51 @@ kotlin {
             implementation(libs.auth.kt)
             implementation(libs.realtime.kt)
             implementation(libs.functions.kt)
+            //implementation("io.github.jan-tennert.supabase:gotrue-kt:1.1.1")
 
-            // Dependencias de Ktor
+            // Ktor dependencies
             implementation(libs.ktorClientCore)
             implementation(libs.ktor.client.js)
             implementation(libs.ktor.serialization.kotlinx.json)
 
-            // Dependencias encriptación
+            // Cryptography dependencies
             implementation(libs.cryptography.provider.webcrypto)
-        }
-    }
-}
 
-android {
-    namespace = "org.connexuss.project"
-    compileSdk = libs.versions.android.compileSdk.get().toInt()
+            // Persistencia multiplataforma para WASM
+            implementation(libs.multiplatform.settings.wasm.js)
+        }
 
-    defaultConfig {
-        applicationId = "org.connexuss.project"
-        minSdk = libs.versions.android.minSdk.get().toInt()
-        targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 1
-        versionName = "1.0"
-    }
-    packaging {
-        resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        commonTest.dependencies {
+            implementation(libs.kotlin.test)
+            implementation(libs.kotlin.test.annotations.common)
+            implementation(libs.assertk)
+
+            @OptIn(ExperimentalComposeLibrary::class)
+            implementation(compose.uiTest)
         }
-    }
-    buildTypes {
-        getByName("release") {
-            isMinifyEnabled = false
-        }
-    }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_21
-        targetCompatibility = JavaVersion.VERSION_21
     }
 }
 
 dependencies {
-    implementation(libs.kotlinx.datetime)
+    // AndroidX dependencies
     implementation(libs.androidx.foundation.android)
     implementation(libs.androidx.animation.core.lint)
     implementation(libs.androidx.material3.android)
     implementation(libs.androidx.ui.graphics.android)
-    implementation(libs.kotlinx.serialization)
     implementation(libs.androidx.ui.text.android)
+    implementation(libs.androidx.ui.android)
+    implementation(libs.androidx.material3.android)
+    implementation(libs.androidx.foundation.layout.android)
     implementation(libs.androidx.core.i18n)
 
-    // Dependencies for Firebase
+    // Kotlin dependencies
+    implementation(libs.kotlinx.datetime)
+    implementation(libs.kotlinx.serialization)
+
+    // Firebase dependencies (commented)
 //    implementation(platform(libs.firebase.android.bom))
 //    implementation(libs.firebase.analytics)
 //    implementation(libs.firebase.firestore.ktx)
-
-    implementation(libs.androidx.ui.android)
-    implementation(libs.material3.android)
-    debugImplementation(compose.uiTooling)
 }
 
 compose.desktop {

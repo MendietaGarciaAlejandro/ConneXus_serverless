@@ -1,6 +1,7 @@
 package org.connexuss.project.misc
 
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import connexus_serverless.composeapp.generated.resources.Res
 import connexus_serverless.composeapp.generated.resources.avatar
@@ -13,11 +14,14 @@ import connexus_serverless.composeapp.generated.resources.*
 import connexus_serverless.composeapp.generated.resources.unblock
 import connexus_serverless.composeapp.generated.resources.visibilidadOff
 import connexus_serverless.composeapp.generated.resources.visibilidadOn
+import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.auth.user.UserSession
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.datetime.LocalDateTime
 import org.connexuss.project.comunicacion.Hilo
 import org.connexuss.project.comunicacion.Post
 import org.connexuss.project.comunicacion.Tema
+import org.connexuss.project.supabase.instanciaSupabaseClient
 import org.connexuss.project.usuario.AlmacenamientoUsuario
 import org.connexuss.project.usuario.UtilidadesUsuario
 import org.connexuss.project.usuario.Usuario
@@ -1333,4 +1337,20 @@ object PostsRepository {
     fun eliminarPost(idPost: String) {
         posts.removeAll { it.idPost == idPost }
     }
+
+
+
 }
+
+object Supabase {
+    val client: SupabaseClient by lazy {
+        instanciaSupabaseClient(
+            tieneStorage = true,
+            tieneAuth = true,
+            tieneRealtime = true,
+            tienePostgrest = true
+        )
+    }
+}
+
+var sesionActualUsuario: UserSession? = null

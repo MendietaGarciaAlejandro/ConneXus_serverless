@@ -1,15 +1,14 @@
 package org.connexuss.project.navegacion
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import org.connexuss.project.comunicacion.Tema
+import com.russhwolf.settings.ExperimentalSettingsApi
+import kotlinx.coroutines.Dispatchers
 import org.connexuss.project.encriptacion.PantallaPruebasEncriptacion
 /*
 import org.connexuss.project.firebase.AppFirebase
@@ -58,12 +57,16 @@ import org.connexuss.project.interfaces.muestraContactos
 import org.connexuss.project.interfaces.muestraHomePage
 import org.connexuss.project.interfaces.muestraRestablecimientoContasenna
 import org.connexuss.project.interfaces.muestraUsuarios
-import org.connexuss.project.misc.HilosRepository
 import org.connexuss.project.misc.UsuarioPrincipal
 import org.connexuss.project.misc.imagenesPerfilPersona
+import org.connexuss.project.persistencia.FlowSettingsProvider
+import org.connexuss.project.persistencia.PantallaPruebasPersistencia
+import org.connexuss.project.persistencia.SettingsState
+import org.connexuss.project.persistencia.settings
 import org.connexuss.project.supabase.*
 import org.connexuss.project.usuario.Usuario
 
+@OptIn(ExperimentalSettingsApi::class)
 @Composable
 fun Navegacion(
     temaConfig: TemaConfig,
@@ -85,6 +88,9 @@ fun Navegacion(
      */
 
     val repoSupabase = remember { SupabaseRepositorioGenerico() }
+
+    val estadoFlowSettings = remember { FlowSettingsProvider(settings, Dispatchers.Default) }
+    // val estadoSettings = remember { SettingsState(  ) }
 
     NavHost(navController = navController, startDestination = "splash") {
         composable("splash") {
@@ -140,17 +146,17 @@ fun Navegacion(
         composable("mostrarPerfilPrincipal") {
             mostrarPerfil(navController, UsuarioPrincipal)
         }
-        composable("mostrarChat/{chatId}") {
-            backStackEntry ->
-            // Obtener chatId de los argumentos
+        composable("mostrarChat/{chatId}") { backStackEntry ->
             val chatId = backStackEntry.arguments?.getString("chatId")
-                mostrarChat(navController, chatId)
+            mostrarChat(navController, chatId)
         }
-        composable("mostrarChatGrupo/{chatId}") {
-            backStackEntry ->
+
+        // Chat grupal
+        composable("mostrarChatGrupo/{chatId}") { backStackEntry ->
             val chatId = backStackEntry.arguments?.getString("chatId")
-            mostrarChatGrupo(navController, chatId, imagenesPerfilPersona)
+            mostrarChatGrupo(navController, chatId, imagenesPerfil = emptyList())
         }
+
         composable("idiomas") {
             PantallaIdiomas(navController)
         }
@@ -204,40 +210,20 @@ fun Navegacion(
         composable("foroLocal") {
             ForoScreen(navController)
         }
-        composable("tema/{temaId}") { backStackEntry ->
-            val todosTemas = remember { repoSupabase.getAll<Tema>("tema") }
-            val temaId = backStackEntry.arguments?.getString("temaId") ?: ""
-            val tema = todosTemas.collectAsState(initial = emptyList()).value.find { it.idTema == temaId }
-            if (tema != null) {
-                TemaScreen(
-                    navController = navController,
-                    temaId = temaId,
-                    /*repo = repoSupabase,*/
-                )
-            } else {
-                LaunchedEffect(Unit) {
-                    navController.popBackStack()
-                }
-            }
+        composable(
+            "tema/{temaId}",
+            arguments = listOf(navArgument("temaId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val temaId = backStackEntry.arguments!!.getString("temaId")!!
+            TemaScreen(navController, temaId)
         }
         composable(
             "hilo/{hiloId}",
             arguments = listOf(navArgument("hiloId") { type = NavType.StringType })
-        ) { backStackEntry ->
-            val hiloId = backStackEntry.arguments?.getString("hiloId") ?: ""
-            val hilo = HilosRepository.hilos.find { it.idHilo == hiloId }
-
-            if (hilo != null) {
-                HiloScreen(
-                    navController = navController,
-                    hiloId = hiloId,
-                    repo = repoSupabase,
-                )
-            } else {
-                LaunchedEffect(Unit) {
-                    navController.popBackStack()
-                }
-            }
+        ) {
+            backStackEntry ->
+            val hiloId = backStackEntry.arguments!!.getString("hiloId")!!
+            HiloScreen(navController, hiloId)
         }
         composable("pruebasEncriptacion") {
             PantallaPruebasEncriptacion(navController)
@@ -274,6 +260,21 @@ fun Navegacion(
         }
         composable("supabaseContactosCRUD") {
             SupabaseContactosCRUD(navController)
+        }
+
+        composable("mostrarChat/{chatId}") { backStackEntry ->
+            val chatId = backStackEntry.arguments?.getString("chatId")
+            mostrarChat(navController = navController, chatId = chatId)
+        }
+        composable("mostrarChatGrupo/{chatId}") { backStackEntry ->
+            val chatId = backStackEntry.arguments?.getString("chatId")
+            mostrarChatGrupo(navController = navController, chatId = chatId, imagenesPerfil = emptyList()) // puedes rellenar luego si quieres
+        }
+        composable("pruebasTextosRealtime") {
+            PantallaTextosRealtime(navHostController = navController)
+        }
+        composable("pruebasPersistencia") {
+            PantallaPruebasPersistencia(estadoFlowSettings, navController)
         }
     }
 }
