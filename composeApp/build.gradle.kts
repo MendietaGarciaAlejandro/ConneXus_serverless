@@ -291,7 +291,7 @@ compose.desktop {
     application {
         mainClass = "org.connexuss.project.MainKt"
         nativeDistributions {
-            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
+            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Exe, TargetFormat.Deb, TargetFormat.AppImage, TargetFormat.Rpm)
             packageName = "org.connexuss.project"
             packageVersion = "1.0.0"
         }
