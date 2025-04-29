@@ -51,6 +51,7 @@ kotlin {
         }
     }
 
+
     jvm("desktop")
 
 //    js(IR) {
@@ -86,6 +87,9 @@ kotlin {
                     }
                 }
             }
+        }
+        compilerOptions {
+            freeCompilerArgs.add("-Xwasm-use-new-exception-proposal")
         }
         binaries.executable()
     }
@@ -132,7 +136,7 @@ kotlin {
             implementation(libs.multiplatform.settings)
             implementation(libs.multiplatform.settings.coroutines)       // for Flow/StateFlow
             implementation(libs.multiplatform.settings.serialization)   // for serializable data
-            implementation(libs.multiplatform.settings.datastore)       // optional DataStore
+            //implementation(libs.multiplatform.settings.datastore)       // optional DataStore
             implementation(libs.multiplatform.settings.no.arg)         // no-arg init
 
             // Firebase dependencies (commented)
@@ -171,7 +175,7 @@ kotlin {
             implementation(libs.cryptography.provider.jdk)
 
             // Persistencia multiplataforma
-            implementation(libs.multiplatform.settings.android)
+            //implementation(libs.multiplatform.settings.android)
 
             // Firebase dependencies (commented)
 //            implementation(project.dependencies.platform(libs.firebase.android.bom))

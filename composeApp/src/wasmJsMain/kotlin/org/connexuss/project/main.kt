@@ -16,7 +16,11 @@ val client = HttpClient {
 
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() {
-    ComposeViewport(document.body!!) {
-        App()
+    try {
+        ComposeViewport(document.body!!) {
+            App()
+        }
+    } catch (e: Exception) {
+        println(e.printStackTrace())
     }
 }

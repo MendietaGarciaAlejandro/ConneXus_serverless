@@ -274,7 +274,7 @@ fun Navegacion(
             PantallaTextosRealtime(navHostController = navController)
         }
         composable("pruebasPersistencia") {
-            PantallaPruebasPersistencia(estadoFlowSettings)
+            PantallaPruebasPersistencia(estadoFlowSettings, navController)
         }
     }
 }
