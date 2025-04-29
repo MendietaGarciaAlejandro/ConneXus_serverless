@@ -30,12 +30,12 @@ import com.russhwolf.settings.ObservableSettings
 import com.russhwolf.settings.Settings
 import com.russhwolf.settings.coroutines.FlowSettings
 import com.russhwolf.settings.coroutines.toFlowSettings
+import com.russhwolf.settings.observable.makeObservable
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import org.connexuss.project.interfaces.DefaultTopBar
 import org.connexuss.project.interfaces.LimitaTamanioAncho
-
 
 expect val settings: Settings
 
@@ -43,8 +43,8 @@ class FlowSettingsProvider(
     settings: Settings,
     dispatcher: CoroutineDispatcher // ← ahora recibe dispatcher
 ) {
-    private val observable: ObservableSettings = settings as ObservableSettings
-
+    @OptIn(ExperimentalSettingsApi::class)
+    val observable: ObservableSettings = settings.makeObservable()
     @OptIn(ExperimentalSettingsApi::class)
     val flowSettings: FlowSettings =
         observable.toFlowSettings(dispatcher) // usa el dispatcher aquí
@@ -85,6 +85,8 @@ class SettingsState @OptIn(ExperimentalSettingsApi::class) constructor(
     @OptIn(ExperimentalSettingsApi::class)
     suspend fun incrementLaunchCount() = flowSettings.putLong("launch_count", flowSettings.getLong("launch_count", 0L) + 1)
 }
+
+expect fun provideObservableSettings(): ObservableSettings
 
 @OptIn(ExperimentalSettingsApi::class)
 @Composable

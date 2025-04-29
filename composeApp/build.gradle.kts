@@ -70,6 +70,10 @@ kotlin {
 //            }
 //        }
 //        binaries.executable()
+//    // Configura todas las compilaciones del target JS/IR
+//    compilations.all {
+//        kotlinOptions.freeCompilerArgs += "-Xwasm-use-new-exception-proposal"
+//    }
 //    }
 
     @OptIn(ExperimentalWasmDsl::class)
@@ -138,6 +142,7 @@ kotlin {
             implementation(libs.multiplatform.settings.serialization)   // for serializable data
             //implementation(libs.multiplatform.settings.datastore)       // optional DataStore
             implementation(libs.multiplatform.settings.no.arg)         // no-arg init
+            implementation(libs.multiplatform.settings.make.observable)
 
             // Firebase dependencies (commented)
 //            implementation(libs.firebase.database)
@@ -244,6 +249,9 @@ kotlin {
 
             // Cryptography dependencies
             implementation(libs.cryptography.provider.webcrypto)
+
+            // Persistencia multiplataforma para WASM
+            implementation(libs.multiplatform.settings.wasm.js)
         }
 
         commonTest.dependencies {
