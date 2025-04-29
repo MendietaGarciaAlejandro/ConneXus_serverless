@@ -1,15 +1,12 @@
 package org.connexuss.project.navegacion
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import org.connexuss.project.comunicacion.Tema
 import org.connexuss.project.encriptacion.PantallaPruebasEncriptacion
 /*
 import org.connexuss.project.firebase.AppFirebase
@@ -58,9 +55,11 @@ import org.connexuss.project.interfaces.muestraContactos
 import org.connexuss.project.interfaces.muestraHomePage
 import org.connexuss.project.interfaces.muestraRestablecimientoContasenna
 import org.connexuss.project.interfaces.muestraUsuarios
-import org.connexuss.project.misc.HilosRepository
 import org.connexuss.project.misc.UsuarioPrincipal
 import org.connexuss.project.misc.imagenesPerfilPersona
+import org.connexuss.project.persistencia.PantallaPruebasPersistencia
+import org.connexuss.project.persistencia.SettingsState
+import org.connexuss.project.persistencia.settings
 import org.connexuss.project.supabase.*
 import org.connexuss.project.usuario.Usuario
 
@@ -85,6 +84,8 @@ fun Navegacion(
      */
 
     val repoSupabase = remember { SupabaseRepositorioGenerico() }
+
+    val estadoSettings = remember { SettingsState(settings) }
 
     NavHost(navController = navController, startDestination = "splash") {
         composable("splash") {
@@ -267,6 +268,8 @@ fun Navegacion(
         composable("pruebasTextosRealtime") {
             PantallaTextosRealtime(navHostController = navController)
         }
-
+        composable("pruebasPersistencia") {
+            PantallaPruebasPersistencia(estadoSettings)
+        }
     }
 }

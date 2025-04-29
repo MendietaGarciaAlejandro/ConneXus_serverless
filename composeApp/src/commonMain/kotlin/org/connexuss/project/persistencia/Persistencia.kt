@@ -1,162 +1,159 @@
 package org.connexuss.project.persistencia
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.material.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.Button
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.OutlinedTextField
+import androidx.compose.material.Slider
+import androidx.compose.material.Switch
+import androidx.compose.material.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.russhwolf.settings.ExperimentalSettingsApi
 import com.russhwolf.settings.ObservableSettings
 import com.russhwolf.settings.Settings
-import com.russhwolf.settings.boolean
-import com.russhwolf.settings.coroutines.getBooleanStateFlow
-import com.russhwolf.settings.double
-import com.russhwolf.settings.float
-import com.russhwolf.settings.int
-import com.russhwolf.settings.long
-import com.russhwolf.settings.string
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
+import com.russhwolf.settings.coroutines.FlowSettings
+import com.russhwolf.settings.coroutines.toFlowSettings
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 
 
 expect val settings: Settings
 
-//class SettingsState(
-//    settings: Settings,
-//    private val scope: CoroutineScope = MainScope() // o tu propio scope
-//) {
-//    // Delegate primitivo
-//    var isDarkMode: Boolean by settings.boolean("dark_mode", defaultValue = false)
-//
-//    // Observación reactiva con StateFlow
-//    private val observable: ObservableSettings = settings as ObservableSettings
-//
-//    @OptIn(ExperimentalSettingsApi::class)
-//    val onboardingShownFlow: StateFlow<Boolean> =
-//        observable.getBooleanStateFlow(
-//            scope,
-//            key = "onboarding_shown",
-//            defaultValue = false,
-//            sharingStarted = SharingStarted.Lazily
-//        )
-//}
-
-class SettingsState(
+class FlowSettingsProvider(
     settings: Settings,
-    scope: CoroutineScope = MainScope()
+    dispatcher: CoroutineDispatcher // ← ahora recibe dispatcher
 ) {
-    // Delegados para tipos primitivos
-    var isDarkMode: Boolean by settings.boolean("dark_mode", defaultValue = false)
-    var onboardingShown: Boolean by settings.boolean("onboarding_shown", defaultValue = false)  // ← Aquí :contentReference[oaicite:2]{index=2}
-    var counter: Int by settings.int("counter", defaultValue = 0)
-    var launchCount: Long by settings.long("launch_count", defaultValue = 0L)
-    var rating: Float by settings.float("rating", defaultValue = 0f)
-    var threshold: Double by settings.double("threshold", defaultValue = 0.0)
-    var userName: String by settings.string("user_name", defaultValue = "")
+    private val observable: ObservableSettings = settings as ObservableSettings
 
-    // Para el flujo reactivo: StateFlow directamente, sin 'by' como delegado
-    private val observable = settings as ObservableSettings
     @OptIn(ExperimentalSettingsApi::class)
-    val onboardingShownFlow: StateFlow<Boolean> =
-        observable.getBooleanStateFlow(
-            coroutineScope = scope,
-            key = "onboarding_shown",
-            defaultValue = false,
-            sharingStarted = SharingStarted.Lazily
-        )  // Extensión en multiplatform-settings-coroutines :contentReference[oaicite:3]{index=3}
+    val flowSettings: FlowSettings =
+        observable.toFlowSettings(dispatcher) // usa el dispatcher aquí
 }
 
+class SettingsState @OptIn(ExperimentalSettingsApi::class) constructor(
+    private val flowSettings: FlowSettings
+) {
+    // Leer flujos de preferencia
+    @OptIn(ExperimentalSettingsApi::class)
+    val isDarkModeFlow: Flow<Boolean> = flowSettings.getBooleanFlow("dark_mode", defaultValue = false)
+    @OptIn(ExperimentalSettingsApi::class)
+    val onboardingShownFlow: Flow<Boolean> = flowSettings.getBooleanFlow("onboarding_shown", defaultValue = false)
+    @OptIn(ExperimentalSettingsApi::class)
+    val counterFlow: Flow<Int> = flowSettings.getIntFlow("counter", defaultValue = 0)
+    @OptIn(ExperimentalSettingsApi::class)
+    val userNameFlow: Flow<String> = flowSettings.getStringFlow("user_name", defaultValue = "")
+    @OptIn(ExperimentalSettingsApi::class)
+    val ratingFlow: Flow<Float> = flowSettings.getFloatFlow("rating", defaultValue = 0f)
+    @OptIn(ExperimentalSettingsApi::class)
+    val thresholdFlow: Flow<Double> = flowSettings.getDoubleFlow("threshold", defaultValue = 0.0)
+    @OptIn(ExperimentalSettingsApi::class)
+    val launchCountFlow: Flow<Long> = flowSettings.getLongFlow("launch_count", defaultValue = 0L)
+
+    // Funciones suspend para escritura
+    @OptIn(ExperimentalSettingsApi::class)
+    suspend fun setDarkMode(value: Boolean) = flowSettings.putBoolean("dark_mode", value)
+    @OptIn(ExperimentalSettingsApi::class)
+    suspend fun toggleOnboarding(shown: Boolean) = flowSettings.putBoolean("onboarding_shown", shown)
+    @OptIn(ExperimentalSettingsApi::class)
+    suspend fun incrementCounter() = flowSettings.putInt("counter", flowSettings.getInt("counter", 0) + 1)
+    @OptIn(ExperimentalSettingsApi::class)
+    suspend fun updateUserName(name: String) = flowSettings.putString("user_name", name)
+    @OptIn(ExperimentalSettingsApi::class)
+    suspend fun setRating(value: Float) = flowSettings.putFloat("rating", value)
+    @OptIn(ExperimentalSettingsApi::class)
+    suspend fun setThreshold(value: Double) = flowSettings.putDouble("threshold", value)
+    @OptIn(ExperimentalSettingsApi::class)
+    suspend fun incrementLaunchCount() = flowSettings.putLong("launch_count", flowSettings.getLong("launch_count", 0L) + 1)
+}
+
+@OptIn(ExperimentalSettingsApi::class)
 @Composable
-fun SettingsDemoScreen(settingsState: SettingsState) {
-    // Collect Flow-based state
-    val onboardingShown by settingsState.onboardingShownFlow.collectAsState()
-    val coroutineScope = rememberCoroutineScope()
+fun PantallaPruebasPersistencia(flowSettingsProvider: FlowSettingsProvider) {
+    // Proveemos SettingsState con FlowSettings y un scope
+    val scope = rememberCoroutineScope()
+    val settingsState = remember { SettingsState(flowSettingsProvider.flowSettings) }
+
+    // Convertimos Flow<T> en State<T> para Compose
+    val isDarkMode by settingsState.isDarkModeFlow.collectAsState(initial = false)     // :contentReference[oaicite:7]{index=7}
+    val onboardingShown by settingsState.onboardingShownFlow.collectAsState(initial = false)
+    val counter by settingsState.counterFlow.collectAsState(initial = 0)
+    val userName by settingsState.userNameFlow.collectAsState(initial = "")
+    val rating by settingsState.ratingFlow.collectAsState(initial = 0f)
+    val threshold by settingsState.thresholdFlow.collectAsState(initial = 0.0)
+    val launchCount by settingsState.launchCountFlow.collectAsState(initial = 0L)
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(24.dp)
+        Modifier.fillMaxSize().padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Text(
-            text = "💾 Demo de Persistencia Multiplatform",
-            style = MaterialTheme.typography.h6
-        )
+        Text("💾 Persistencia con FlowSettings", style = MaterialTheme.typography.h6)
 
-        // Boolean: Dark Mode
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(text = "Dark Mode:", modifier = Modifier.weight(1f))
+        // Switch Dark Mode
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text("Dark Mode:", Modifier.weight(1f))
             Switch(
-                checked = settingsState.isDarkMode,
-                onCheckedChange = { settingsState.isDarkMode = it }
+                checked = isDarkMode,
+                onCheckedChange = { scope.launch { settingsState.setDarkMode(it) } }
             )
         }
 
-        // Boolean (Flow): Onboarding showed
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(text = "Onboarding mostrado:", modifier = Modifier.weight(1f))
-            Text(text = onboardingShown.toString())
-            Spacer(modifier = Modifier.width(8.dp))
-            Button(onClick = {
-                // Toggle value
-                coroutineScope.launch {
-                    settingsState.onboardingShown = !onboardingShown
-                }
-            }) {
+        // Onboarding
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text("Onboarding mostrado:", Modifier.weight(1f))
+            Text(onboardingShown.toString())
+            Spacer(Modifier.width(8.dp))
+            Button(onClick = { scope.launch { settingsState.toggleOnboarding(!onboardingShown) } }) {
                 Text("Toggle")
             }
         }
 
-        // Int: Contador
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(text = "Contador:", modifier = Modifier.weight(1f))
-            Text(text = settingsState.counter.toString())
-            Spacer(modifier = Modifier.width(8.dp))
-            Button(onClick = { settingsState.counter += 1 }) { Text("+") }
-            Spacer(modifier = Modifier.width(4.dp))
-            Button(onClick = { settingsState.counter = settingsState.counter.coerceAtLeast(1) - 1 }) { Text("-") }
-        }
+        // Contador
+        Text("Contador: $counter")
+        Button(onClick = { scope.launch { settingsState.incrementCounter() } }) { Text("+") }
 
-        // String: Nombre de usuario
+        // TextField
         OutlinedTextField(
-            value = settingsState.userName,
-            onValueChange = { settingsState.userName = it },
-            label = { Text("Nombre de usuario") },
-            singleLine = true,
+            value = userName,
+            onValueChange = { scope.launch { settingsState.updateUserName(it) } },
+            label = { Text("Usuario") },
             modifier = Modifier.fillMaxWidth()
         )
 
-        // Float: Rating
-        Column {
-            Text(text = "Rating: ${settingsState.rating}")
-            Slider(
-                value = settingsState.rating,
-                onValueChange = { settingsState.rating = it },
-                valueRange = 0f..5f,
-                steps = 4
-            )
-        }
+        // Slider Rating
+        Text("Rating: $rating")
+        Slider(
+            value = rating,
+            onValueChange = { scope.launch { settingsState.setRating(it) } },
+            valueRange = 0f..5f, steps = 4
+        )
 
-        // Double: Threshold
-        Column {
-            Text(text = "Threshold: ${settingsState.threshold}")
-            Slider(
-                value = settingsState.threshold.toFloat(),
-                onValueChange = { settingsState.threshold = it.toDouble() },
-                valueRange = 0f..100f
-            )
-        }
+        // Slider Threshold
+        Text("Threshold: $threshold")
+        Slider(
+            value = threshold.toFloat(),
+            onValueChange = { scope.launch { settingsState.setThreshold(it.toDouble()) } },
+            valueRange = 0f..100f
+        )
 
-        // Long: Launch Count
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(text = "Launch Count:", modifier = Modifier.weight(1f))
-            Text(text = settingsState.launchCount.toString())
-            Spacer(modifier = Modifier.width(8.dp))
-            Button(onClick = { settingsState.launchCount += 1L }) { Text("+") }
+        // Launch Count
+        Text("Launch Count: $launchCount")
+        Button(onClick = { scope.launch { settingsState.incrementLaunchCount() } }) {
+            Text("Launch")
         }
     }
 }
