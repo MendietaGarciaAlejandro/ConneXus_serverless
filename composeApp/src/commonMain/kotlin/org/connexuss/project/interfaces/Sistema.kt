@@ -2205,7 +2205,6 @@ fun PantallaRegistro(navController: NavHostController) {
     }
 }
 
-
 /**
  * Composable que muestra la pantalla de inicio de sesión.
  *
@@ -2217,14 +2216,16 @@ fun PantallaLogin(navController: NavHostController) {
     var passwordInterno by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
 
+    // Estados para el botón Debug oculto
+    var showDebug by remember { mutableStateOf(false) }
+    var logoTapCount by remember { mutableStateOf(0) }
+    val tapsToReveal = 5  // Número de toques necesarios para mostrar Debug
+
     val repoSupabase = SupabaseUsuariosRepositorio()
 
-    val errorEmailNingunUsuario =
-        traducir("error_email_ningun_usuario")
-    val errorContrasenaIncorrecta =
-        traducir("error_contrasena_incorrecta")
-    val porFavorCompleta =
-        traducir("por_favor_completa")
+    val errorEmailNingunUsuario = traducir("error_email_ningun_usuario")
+    val errorContrasenaIncorrecta = traducir("error_contrasena_incorrecta")
+    val porFavorCompleta = traducir("por_favor_completa")
 
     // Scope para lanzar corrutinas
     val scope = rememberCoroutineScope()
@@ -2252,11 +2253,20 @@ fun PantallaLogin(navController: NavHostController) {
                             .padding(16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
+                        // Logo con área clickable oculta para revelar Debug
                         Image(
                             painter = painterResource(Res.drawable.connexus),
                             contentDescription = traducir("icono_app"),
-                            modifier = Modifier.size(100.dp)
+                            modifier = Modifier
+                                .size(100.dp)
+                                .clickable {
+                                    logoTapCount++
+                                    if (logoTapCount >= tapsToReveal) {
+                                        showDebug = true
+                                    }
+                                }
                         )
+
                         Spacer(modifier = Modifier.height(16.dp))
                         OutlinedTextField(
                             value = emailInterno,
@@ -2335,19 +2345,22 @@ fun PantallaLogin(navController: NavHostController) {
                             Text(traducir("acceder"))
                         }
                         Spacer(modifier = Modifier.height(16.dp))
-                        Column(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Button(
-                                onClick = { navController.navigate("zonaPruebas") },
-                                modifier = Modifier.fillMaxWidth()
+
+                        // Botón Debug solo visible tras suficientes toques
+                        if (showDebug) {
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                Text(
-                                    text = "Debug: Ir a la zona de pruebas"
-                                )
+                                Button(
+                                    onClick = { navController.navigate("zonaPruebas") },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text(text = "Debug: Ir a la zona de pruebas")
+                                }
                             }
                         }
+
                         if (errorMessage.isNotEmpty()) {
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
