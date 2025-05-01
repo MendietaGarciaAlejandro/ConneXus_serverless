@@ -258,7 +258,7 @@ kotlin {
 
             // Persistencia multiplataforma para WASM
             implementation(libs.multiplatform.settings.wasm.js)
-            implementation("org.jetbrains.skiko:skiko-wasm-js:0.9.4")
+            //implementation(libs.skiko.wasm.js)
         }
 
         commonTest.dependencies {
