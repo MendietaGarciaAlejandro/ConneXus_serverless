@@ -7,9 +7,8 @@ import com.russhwolf.settings.StorageSettings
 import com.russhwolf.settings.observable.makeObservable
 import kotlinx.browser.window
 
-actual val settings: Settings = Settings() // localStorage
+//val settings: Settings = Settings() // localStorage
 
 @OptIn(ExperimentalSettingsApi::class)
 actual fun provideObservableSettings(): ObservableSettings =
-    StorageSettings(window.localStorage) // StorageSettings no es ObservableSettings
-        .makeObservable()
+    settings.makeObservable()

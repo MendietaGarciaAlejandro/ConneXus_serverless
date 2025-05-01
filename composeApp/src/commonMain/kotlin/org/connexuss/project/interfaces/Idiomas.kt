@@ -12,6 +12,8 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.Saver
@@ -22,6 +24,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import org.connexuss.project.persistencia.SettingsState
+import org.connexuss.project.persistencia.getIdiomaFlow
 
 @Composable
 fun PantallaIdiomas(navController: NavHostController) {
@@ -91,12 +95,14 @@ val LocalIdiomaState = staticCompositionLocalOf<MutableState<Idioma>> {
 }
 
 @Composable
-fun ProveedorDeIdioma(content: @Composable () -> Unit) {
-    val idiomaState = rememberSaveable(stateSaver = IdiomaSaver) { mutableStateOf(espannol) }
-    CompositionLocalProvider(LocalIdiomaState provides idiomaState) {
+fun ProveedorDeIdioma(settingsState: SettingsState, content: @Composable ()->Unit) {
+    val idiomaKey by settingsState.getIdiomaFlow().collectAsState(initial = "es")
+    val idioma = if (idiomaKey=="es") espannol else ingles
+    CompositionLocalProvider(LocalIdiomaState provides mutableStateOf(idioma)) {
         content()
     }
 }
+
 
 // Estado del idioma
 @Composable

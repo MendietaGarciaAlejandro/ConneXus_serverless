@@ -8,18 +8,32 @@ import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.russhwolf.settings.ExperimentalSettingsApi
+import io.github.jan.supabase.auth.auth
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.launch
 import org.connexuss.project.interfaces.TemaConfig
 import org.connexuss.project.interfaces.TemaConfigSaver
 import org.connexuss.project.interfaces.getColorsForTheme
 import org.connexuss.project.interfaces.AppTheme
 import org.connexuss.project.interfaces.ProveedorDeFuente
 import org.connexuss.project.interfaces.ProveedorDeIdioma
+import org.connexuss.project.misc.Supabase
 import org.connexuss.project.navegacion.Navegacion
+import org.connexuss.project.persistencia.SettingsState
+import org.connexuss.project.persistencia.flowSettings
+import org.connexuss.project.persistencia.getSessionFlow
+import org.connexuss.project.persistencia.getTemaConfigFlow
+import org.connexuss.project.persistencia.setTemaConfig
 import org.connexuss.project.usuario.Usuario
 
 // Declara la variable con setter privado si no quieres que se modifique desde fuera
@@ -40,8 +54,19 @@ fun actualizarUsuariosGrupoGeneral(nuevaLista: List<Usuario>) {
  * Función principal de la aplicación Compose.
  * Envuelve la aplicación en proveedores de idioma y fuente, y configura el tema.
  */
+@OptIn(ExperimentalSettingsApi::class)
 @Composable
 fun App() {
+    val settingsState = remember { SettingsState(flowSettings) }
+    val scope = rememberCoroutineScope()
+
+    // Restaurar sesión Supabase
+    LaunchedEffect(Unit) {
+        settingsState.getSessionFlow().firstOrNull()?.let {
+            Supabase.client.auth.importSession(it)
+        }
+    }
+
     // Contenedor raíz que protege de notch + barras de sistema
     Box(
         modifier = Modifier
@@ -52,11 +77,13 @@ fun App() {
             .windowInsetsPadding(WindowInsets.displayCutout)
     ) {
         // Estado para la configuración del tema
-        var temaConfig by rememberSaveable(stateSaver = TemaConfigSaver) { mutableStateOf(TemaConfig()) }
+        //var temaConfig by rememberSaveable(stateSaver = TemaConfigSaver) { mutableStateOf(TemaConfig()) }
 
         // Envuelve la app en el proveedor de idioma y fuente, según tu implementación
-        ProveedorDeIdioma {
-            ProveedorDeFuente {
+        ProveedorDeIdioma(settingsState) {
+            ProveedorDeFuente((settingsState)) {
+                val temaConfig by settingsState.getTemaConfigFlow().collectAsState(initial = TemaConfig())
+
                 AppTheme {
                     // Calcula la paleta de colores según el estado actual
                     MaterialTheme(
@@ -68,12 +95,16 @@ fun App() {
                         Navegacion(
                             temaConfig = temaConfig,
                             onToggleTheme = {
-                                temaConfig = temaConfig.copy(
-                                    temaClaro = !temaConfig.temaClaro
-                                )
+                                // Cambia entre tema claro y oscuro
+                                scope.launch {
+                                    settingsState.setTemaConfig(temaConfig.copy(temaClaro = !temaConfig.temaClaro))
+                                }
                             },
                             onColorChange = { nuevoKey ->
-                                temaConfig = temaConfig.copy(colorTemaKey = nuevoKey)
+                                // Cambia el color del tema
+                                scope.launch {
+                                    settingsState.setTemaConfig(temaConfig.copy(colorTemaKey = nuevoKey))
+                                }
                             },
                             listaUsuariosGrupo = usuariosGrupoGeneral,
                         )

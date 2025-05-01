@@ -16,15 +16,20 @@ import androidx.compose.material.Typography
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import org.connexuss.project.persistencia.SettingsState
+import org.connexuss.project.persistencia.getFontFlow
 
 /**
  * CompositionLocal that holds the mutable state of the current FontFamily.
@@ -39,9 +44,10 @@ val LocalFontState = staticCompositionLocalOf<MutableState<FontFamily>> {
  * @param content Composable lambda that will use the font state.
  */
 @Composable
-fun ProveedorDeFuente(content: @Composable () -> Unit) {
-    val fontState = remember { mutableStateOf<FontFamily>(FontFamily.Default) }
-    CompositionLocalProvider(LocalFontState provides fontState) {
+fun ProveedorDeFuente(settingsState: SettingsState, content: @Composable ()->Unit) {
+    val fontName by settingsState.getFontFlow().collectAsState(initial = FontFamily.Default.toString())
+    val fontFamily = remember(fontName) { FontFamily(Font(fontName.toIntOrNull() ?: 0)) }
+    CompositionLocalProvider(LocalFontState provides mutableStateOf(fontFamily)) {
         content()
     }
 }
