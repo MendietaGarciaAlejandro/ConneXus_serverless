@@ -1,5 +1,6 @@
 package org.connexuss.project.interfaces
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,9 +24,11 @@ import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,6 +39,12 @@ import connexus_serverless.composeapp.generated.resources.Res
 import connexus_serverless.composeapp.generated.resources.avatar
 import connexus_serverless.composeapp.generated.resources.ic_email
 import connexus_serverless.composeapp.generated.resources.unblock
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import org.connexuss.project.misc.UsuarioPrincipal
+import org.connexuss.project.supabase.SupabaseRepositorioGenerico
+import org.connexuss.project.usuario.Usuario
+import org.connexuss.project.usuario.UsuarioBloqueado
 import org.jetbrains.compose.resources.painterResource
 
 /**
@@ -44,70 +53,100 @@ import org.jetbrains.compose.resources.painterResource
  * Genera una lista de cuentas de ejemplo y las muestra en tarjetas dentro de un LazyColumn.
  *
  * @param navController Controlador de navegación para gestionar la navegación en la aplicación.
- */
-@Composable
+ */@Composable
 fun PantallaAjustesControlCuentas(navController: NavHostController) {
-    // Inicializa la pantalla de control de cuentas utilizando MaterialTheme y Scaffold.
-    // Lista de cuentas de ejemplo
-    val cuentas = generaUsuariosAleatorios()
+    val currentUserId = UsuarioPrincipal?.getIdUnicoMio() ?: return
+    val repo = remember { SupabaseRepositorioGenerico() }
+    val scope = rememberCoroutineScope()
 
-    MaterialTheme {
-        // Aplica MaterialTheme para definir los estilos visuales de la pantalla.
-        Scaffold(
-            topBar = {
-                DefaultTopBar(
-                    title = traducir("ajustes_control_cuentas"),
-                    navController = navController,
-                    showBackButton = true,
-                    muestraEngranaje = true,
-                    irParaAtras = true
-                )
-            }
-        ) { padding ->
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                LimitaTamanioAncho { modifier ->
-                    Column(
-                        modifier = modifier
-                            .padding(padding)
-                            .padding(16.dp)
-                            //.verticalScroll(rememberScrollState())
+    var bloqueados by remember { mutableStateOf<List<Usuario>>(emptyList()) }
+
+    LaunchedEffect(Unit) {
+        // Paso 1: Obtener bloqueos
+        val bloqueos = repo.getAll<UsuarioBloqueado>("usuario_bloqueados").first()
+            .filter { it.idUsuario == currentUserId }
+
+        val idsBloqueados = bloqueos.map { it.idBloqueado }
+
+        // Paso 2: Obtener usuarios bloqueados
+        val todosUsuarios = repo.getAll<Usuario>("usuario").first()
+        bloqueados = todosUsuarios.filter { it.idUnico in idsBloqueados }
+    }
+
+    Scaffold(
+        topBar = {
+            DefaultTopBar(
+                title = traducir("ajustes_control_cuentas"),
+                navController = navController,
+                showBackButton = true,
+                muestraEngranaje = true,
+                irParaAtras = true
+            )
+        }
+    ) { padding ->
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            LimitaTamanioAncho { modifier ->
+                Column(
+                    modifier = modifier
+                        .padding(padding)
+                        .padding(16.dp)
+                ) {
+                    Text(traducir("lista_de_cuentas"), style = MaterialTheme.typography.h6)
+
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(traducir("lista_de_cuentas"), style = MaterialTheme.typography.h6)
-                        LazyColumn(
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            items(cuentas) { cuenta ->
-                                Card(
-                                    backgroundColor = Color(0xFFE1BEE7),
-                                    elevation = 2.dp,
-                                    modifier = Modifier.fillMaxWidth()
+                        items(bloqueados) { usuario ->
+                            Card(
+                                backgroundColor = Color(0xFFE1BEE7),
+                                elevation = 2.dp,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(8.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.SpaceBetween
-                                    ) {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Icon(
-                                                painter = painterResource(Res.drawable.avatar),
-                                                contentDescription = traducir("avatar"),
-                                                modifier = Modifier.size(40.dp)
-                                            )
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Text(cuenta)
-                                        }
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
                                         Icon(
-                                            painter = painterResource(Res.drawable.unblock),
-                                            contentDescription = traducir("persona"),
-                                            modifier = Modifier.size(32.dp)
+                                            painter = painterResource(Res.drawable.avatar),
+                                            contentDescription = traducir("avatar"),
+                                            modifier = Modifier.size(40.dp)
                                         )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(usuario.getNombreCompletoMio())
                                     }
+
+                                    // Desbloquear
+                                    Icon(
+                                        painter = painterResource(Res.drawable.unblock),
+                                        contentDescription = traducir("desbloquear"),
+                                        modifier = Modifier
+                                            .size(32.dp)
+                                            .clickable {
+                                                scope.launch {
+                                                    try {
+                                                        repo.deleteItemMulti<UsuarioBloqueado>(
+                                                            tableName = "usuario_bloqueados",
+                                                            conditions = mapOf(
+                                                                "idusuario" to currentUserId,
+                                                                "idbloqueado" to usuario.idUnico
+                                                            )
+                                                        )
+                                                        bloqueados = bloqueados.filterNot { it.idUnico == usuario.idUnico }
+                                                        println("Usuario desbloqueado")
+                                                    } catch (e: Exception) {
+                                                        println("Error desbloqueando: ${e.message}")
+                                                    }
+                                                }
+                                            }
+                                    )
                                 }
                             }
                         }
@@ -117,6 +156,7 @@ fun PantallaAjustesControlCuentas(navController: NavHostController) {
         }
     }
 }
+
 
 /**
  * Muestra la pantalla de Ayuda (Ajustes).

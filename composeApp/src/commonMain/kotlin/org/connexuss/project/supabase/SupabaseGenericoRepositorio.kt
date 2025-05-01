@@ -249,4 +249,26 @@ class SupabaseRepositorioGenerico {
             .decodeList<T>()
         emit(result)
     }
+
+    suspend inline fun <reified T : Any> deleteItemMulti(
+        tableName: String,
+        conditions: Map<String, Any>
+    ) {
+        try {
+            val query = supabaseClient.from(tableName).delete {
+                filter {
+                    conditions.forEach { (field, value) ->
+                        eq(field, value)
+                    }
+                }
+                select()
+            }.decodeList<T>()
+            println("🗑️ Registros eliminados: $query")
+        } catch (e: Exception) {
+            println("❌ Error al eliminar múltiples: ${e.message}")
+        }
+    }
+
+
+
 }
