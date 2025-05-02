@@ -94,6 +94,7 @@ import org.connexuss.project.supabase.SupabaseRepositorioGenerico
 import org.connexuss.project.supabase.SupabaseUsuariosRepositorio
 import org.connexuss.project.usuario.AlmacenamientoUsuario
 import org.connexuss.project.usuario.Usuario
+import org.connexuss.project.usuario.UsuarioBloqueado
 import org.connexuss.project.usuario.UsuarioContacto
 import org.connexuss.project.usuario.UtilidadesUsuario
 import org.jetbrains.compose.resources.DrawableResource
@@ -487,12 +488,12 @@ fun ChatCard(
     conversacion: Conversacion,
     navController: NavHostController,
     participantes: List<Usuario>,
-    ultimoMensaje: Mensaje?
+    ultimoMensaje: Mensaje?,
+    bloqueados: Set<String> = emptySet()
 ) {
     val currentUserId = UsuarioPrincipal?.getIdUnicoMio()
     val esGrupo = !conversacion.nombre.isNullOrBlank()
 
-    // DEBUG: imprime IDs de participantes
     println("👥 Participantes en la conversación ${conversacion.id}:")
     participantes.forEach {
         println(" - ${it.getNombreCompletoMio()} (id: ${it.getIdUnicoMio()})")
@@ -500,6 +501,7 @@ fun ChatCard(
     println("🧍 Usuario actual: $currentUserId")
 
     val otroUsuario = participantes.firstOrNull { it.getIdUnicoMio() != currentUserId }
+    val estaBloqueado = otroUsuario?.getIdUnicoMio() in bloqueados
 
     val displayName = if (esGrupo) {
         conversacion.nombre!!
@@ -513,32 +515,37 @@ fun ChatCard(
         }
     } else null
 
+    val destino = if (esGrupo) {
+        "mostrarChatGrupo/${conversacion.id}"
+    } else {
+        "mostrarChat/${conversacion.id}"
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
-            .clickable {
-                val destino = if (esGrupo) {
-                    "mostrarChatGrupo/${conversacion.id}"
-                } else {
-                    "mostrarChat/${conversacion.id}"
-                }
-                println("🧭 Navegando a: $destino")
-                navController.navigate(destino)
-            },
-        elevation = 4.dp
+            .then(
+                if (!estaBloqueado) Modifier.clickable {
+                    println("🧭 Navegando a: $destino")
+                    navController.navigate(destino)
+                } else Modifier
+            ),
+        elevation = 4.dp,
+        backgroundColor = if (estaBloqueado) Color.Red.copy(alpha = 0.2f) else MaterialTheme.colors.surface
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
                 text = displayName,
-                style = MaterialTheme.typography.h6
+                style = MaterialTheme.typography.h6,
+                color = if (estaBloqueado) Color.Red else MaterialTheme.colors.onSurface
             )
 
             nombresParticipantes?.let {
                 Text(
                     text = it,
                     style = MaterialTheme.typography.body2,
-                    color = Color.Gray,
+                    color = if (estaBloqueado) Color.Red else Color.Gray,
                     modifier = Modifier.padding(top = 4.dp, bottom = 4.dp)
                 )
             }
@@ -547,6 +554,7 @@ fun ChatCard(
                 Text(
                     text = ultimoMensaje.content,
                     style = MaterialTheme.typography.body1,
+                    color = if (estaBloqueado) Color.Red else MaterialTheme.colors.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -554,7 +562,6 @@ fun ChatCard(
         }
     }
 }
-
 
 
 
@@ -569,15 +576,15 @@ fun muestraChats(navController: NavHostController) {
     var listaConversaciones by remember { mutableStateOf<List<Conversacion>>(emptyList()) }
     var todosLosUsuarios by remember { mutableStateOf<List<Usuario>>(emptyList()) }
     var mensajes by remember { mutableStateOf<List<Mensaje>>(emptyList()) }
+    var usuariosBloqueados by remember { mutableStateOf<Set<String>>(emptySet()) }
 
-    // 🔄 Cargar TODAS las relaciones de conversaciones_usuario (no solo las del usuario actual)
     LaunchedEffect(Unit) {
         repo.getAll<ConversacionesUsuario>("conversaciones_usuario").collect {
             relacionesConversaciones = it
         }
     }
 
-    // Cargar todas las conversaciones en las que participa el usuario actual
+    // Convers activas
     LaunchedEffect(relacionesConversaciones) {
         val idsDelUsuario = relacionesConversaciones
             .filter { it.idusuario == currentUserId }
@@ -588,17 +595,27 @@ fun muestraChats(navController: NavHostController) {
         }
     }
 
-    // Cargar todos los usuarios (para mostrar sus nombres)
+    // usuarios
     LaunchedEffect(Unit) {
         repo.getAll<Usuario>("usuario").collect {
             todosLosUsuarios = it
         }
     }
 
-    // Cargar todos los mensajes
+    // Mensajes
     LaunchedEffect(Unit) {
         repo.getAll<Mensaje>("mensaje").collect {
             mensajes = it
+        }
+    }
+
+    //  Usuarios bloqueados
+    LaunchedEffect(Unit) {
+        repo.getAll<UsuarioBloqueado>("usuario_bloqueados").collect { lista ->
+            usuariosBloqueados = lista
+                .filter { it.idUsuario == currentUserId }
+                .map { it.idBloqueado }
+                .toSet()
         }
     }
 
@@ -642,7 +659,8 @@ fun muestraChats(navController: NavHostController) {
                                 conversacion = conversacion,
                                 navController = navController,
                                 participantes = participantes,
-                                ultimoMensaje = ultimoMensaje
+                                ultimoMensaje = ultimoMensaje,
+                                bloqueados = usuariosBloqueados
                             )
                         }
                     }
@@ -678,6 +696,8 @@ fun muestraContactos(navController: NavHostController) {
 
     var registrosContacto by remember { mutableStateOf<List<UsuarioContacto>>(emptyList()) }
     var contactos by remember { mutableStateOf<List<Usuario>>(emptyList()) }
+    var usuariosBloqueados by remember { mutableStateOf<Set<String>>(emptySet()) }
+
 
     var showNuevoContactoDialog by remember { mutableStateOf(false) }
     var nuevoContactoId by remember { mutableStateOf("") }
@@ -703,6 +723,16 @@ fun muestraContactos(navController: NavHostController) {
         }
     }
 
+    LaunchedEffect(currentUserId) {
+        repo.getAll<UsuarioBloqueado>("usuario_bloqueados").collect { lista ->
+            usuariosBloqueados = lista
+                .filter { it.idUsuario == currentUserId }
+                .map { it.idBloqueado }
+                .toSet()
+        }
+    }
+
+
     MaterialTheme {
         Scaffold(
             topBar = {
@@ -723,21 +753,40 @@ fun muestraContactos(navController: NavHostController) {
                 Column(modifier = Modifier.fillMaxSize()) {
                     LazyColumn(modifier = Modifier.weight(1f)) {
                         items(contactos) { usuario ->
+                            val estaBloqueado = usuario.idUnico in usuariosBloqueados
+
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(8.dp),
-                                elevation = 4.dp
+                                    .padding(8.dp)
+                                    .then(
+                                        if (!estaBloqueado)
+                                            Modifier.clickable {
+                                                navController.navigate("mostrarPerfilUsuario/${usuario.idUnico}")
+                                            }
+                                        else Modifier // no clickable
+                                    ),
+                                elevation = 4.dp,
+                                backgroundColor = if (estaBloqueado) Color.Red.copy(alpha = 0.2f) else Color.White
                             ) {
                                 Column(modifier = Modifier.padding(16.dp)) {
                                     Text(
                                         text = "${traducir("nombre_label")}: ${usuario.getNombreCompletoMio()}",
-                                        style = MaterialTheme.typography.subtitle1
+                                        style = MaterialTheme.typography.subtitle1,
+                                        color = if (estaBloqueado) Color.Red else Color.Unspecified
                                     )
                                     Text(
                                         text = "${traducir("alias_label")}: ${usuario.getAliasMio()}",
-                                        style = MaterialTheme.typography.body1
+                                        style = MaterialTheme.typography.body1,
+                                        color = if (estaBloqueado) Color.Red else Color.Unspecified
                                     )
+                                    if (estaBloqueado) {
+                                        Text(
+                                            text = "Bloqueado",
+                                            style = MaterialTheme.typography.caption,
+                                            color = Color.Red
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -765,45 +814,60 @@ fun muestraContactos(navController: NavHostController) {
                         title = { Text(text = traducir("nuevo_contacto")) },
                         text = {
                             Column {
-                                Text(text = "Introduce el idUnico del usuario:")
+                                Text(text = "Introduce el alias privado del usuario:")
                                 OutlinedTextField(
                                     value = nuevoContactoId,
                                     onValueChange = { nuevoContactoId = it },
-                                    label = { Text(text = "idUnico") }
+                                    label = { Text(text = "Alias Privado") }
                                 )
                             }
                         },
                         confirmButton = {
                             TextButton(
                                 onClick = {
-                                    val idContactoIngresado = nuevoContactoId.trim()
-                                    println("🔹 Intentando insertar directamente el id: $idContactoIngresado")
+                                    val aliasBuscado = nuevoContactoId.trim()
+                                    println("🔍 Buscando usuario con alias privado: $aliasBuscado")
+
                                     scope.launch {
                                         try {
-                                            val nuevoRegistro1 = UsuarioContacto(
-                                                idUsuario = currentUserId,
-                                                idContacto = idContactoIngresado
-                                            )
-                                            val nuevoRegistro2 = UsuarioContacto(
-                                                idUsuario = idContactoIngresado,
-                                                idContacto = currentUserId
-                                            )
+                                            val todosUsuarios = repo.getAll<Usuario>("usuario").first()
+                                            val usuarioEncontrado = todosUsuarios.find { it.getAliasPrivadoMio() == aliasBuscado }
 
-                                            println("📤 Insertando registros dobles en Supabase...")
-                                            repo.addItem("usuario_contacto", nuevoRegistro1)
-                                            repo.addItem("usuario_contacto", nuevoRegistro2)
-                                            println("✅ Contactos mutuos insertados")
+                                            if (usuarioEncontrado != null) {
+                                                val idEncontrado = usuarioEncontrado.idUnico
+                                                if (idEncontrado == currentUserId) {
+                                                    println("⚠️ No puedes agregarte a ti mismo como contacto")
+                                                    return@launch
+                                                }
 
-                                            // Refrescar después de agregar
-                                            repo.getAll<UsuarioContacto>("usuario_contacto").collect { lista ->
-                                                registrosContacto = lista.filter { it.idUsuario == currentUserId }
+                                                val nuevoRegistro1 = UsuarioContacto(
+                                                    idUsuario = currentUserId,
+                                                    idContacto = idEncontrado
+                                                )
+                                                val nuevoRegistro2 = UsuarioContacto(
+                                                    idUsuario = idEncontrado,
+                                                    idContacto = currentUserId
+                                                )
+
+                                                println("📤 Insertando registros mutuos...")
+                                                repo.addItem("usuario_contacto", nuevoRegistro1)
+                                                repo.addItem("usuario_contacto", nuevoRegistro2)
+                                                println("✅ Contactos agregados")
+
+                                                repo.getAll<UsuarioContacto>("usuario_contacto").collect { lista ->
+                                                    registrosContacto = lista.filter { it.idUsuario == currentUserId }
+                                                }
+                                            } else {
+                                                println("❌ No se encontró usuario con ese alias privado")
                                             }
+
                                         } catch (e: Exception) {
-                                            println("❌ Error insertando contacto: ${e.message}")
+                                            println("❌ Error buscando o agregando contacto: ${e.message}")
                                         }
+
+                                        nuevoContactoId = ""
+                                        showNuevoContactoDialog = false
                                     }
-                                    nuevoContactoId = ""
-                                    showNuevoContactoDialog = false
                                 }
                             ) {
                                 Text(text = traducir("guardar"))
@@ -1026,7 +1090,7 @@ fun muestraAjustes(navController: NavHostController = rememberNavController(), s
                             Text(text = traducir("eliminar_chats"))
                         }
                         Button(
-                            onClick = { /* Control de Cuentas */ },
+                            onClick = { navController.navigate("ajustesControlCuentas") },
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text(text = traducir("control_de_cuentas"))
@@ -1563,7 +1627,21 @@ fun mostrarPerfilUsuario(
                                     }
 
                                     //Eliminar también contacto en tabla contactos
-                                     repo.deleteItem<UsuarioContacto>("usuario_contacto", "idusuario", currentUserId)
+                                    repo.deleteItemMulti<UsuarioContacto>(
+                                        tableName = "usuario_contacto",
+                                        conditions = mapOf(
+                                            "idusuario" to currentUserId,
+                                            "idcontacto" to usuario!!.getIdUnicoMio()
+                                        )
+                                    )
+
+                                    repo.deleteItemMulti<UsuarioContacto>(
+                                        tableName = "usuario_contacto",
+                                        conditions = mapOf(
+                                            "idusuario" to usuario!!.getIdUnicoMio(),
+                                            "idcontacto" to currentUserId
+                                        )
+                                    )
 
                                     navController.popBackStack() // Volver atrás
                                 } catch (e: Exception) {
@@ -1582,11 +1660,28 @@ fun mostrarPerfilUsuario(
 
 
                 TextButton(
-                    onClick = { /*  bloquear usuario */ },
+                    onClick = {
+                        if (usuario != null) {
+                            scope.launch {
+                                try {
+                                    val nuevoBloqueo = UsuarioBloqueado(
+                                        idUsuario = currentUserId,
+                                        idBloqueado = usuario!!.getIdUnicoMio()
+                                    )
+                                    repo.addItem("usuario_bloqueados", nuevoBloqueo)
+                                    println("🚫 Usuario bloqueado correctamente")
+                                    navController.popBackStack()
+                                } catch (e: Exception) {
+                                    println("❌ Error al bloquear usuario: ${e.message}")
+                                }
+                            }
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Bloquear", color = Color.Red)
                 }
+
             }
         }
     }

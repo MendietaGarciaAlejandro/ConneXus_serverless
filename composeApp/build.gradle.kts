@@ -98,6 +98,7 @@ kotlin {
         }
         compilerOptions {
             freeCompilerArgs.add("-Xwasm-use-new-exception-proposal")
+            //freeCompilerArgs.add("-Xwasm-use-traps-instead-of-exceptions")
         }
         binaries.executable()
 
@@ -259,6 +260,8 @@ kotlin {
             // Persistencia multiplataforma para WASM
             implementation(libs.multiplatform.settings.wasm.js)
             //implementation(libs.skiko.wasm.js)
+            //implementation(libs.multiplatform.settings.make.observable.js)
+
         }
 
         commonTest.dependencies {
