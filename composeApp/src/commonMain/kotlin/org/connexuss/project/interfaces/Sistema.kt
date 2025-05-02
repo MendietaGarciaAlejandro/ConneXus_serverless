@@ -42,11 +42,13 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -75,6 +77,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
 import org.connexuss.project.comunicacion.Conversacion
 import org.connexuss.project.comunicacion.ConversacionesUsuario
 import org.connexuss.project.comunicacion.Mensaje
@@ -82,6 +85,11 @@ import org.connexuss.project.misc.Imagen
 import org.connexuss.project.misc.Supabase
 import org.connexuss.project.misc.UsuarioPrincipal
 import org.connexuss.project.misc.sesionActualUsuario
+import org.connexuss.project.persistencia.SettingsState
+import org.connexuss.project.persistencia.clearSession
+import org.connexuss.project.persistencia.getRestoredSessionFlow
+import org.connexuss.project.persistencia.getSessionFlow
+import org.connexuss.project.persistencia.saveSession
 import org.connexuss.project.supabase.SupabaseRepositorioGenerico
 import org.connexuss.project.supabase.SupabaseUsuariosRepositorio
 import org.connexuss.project.usuario.AlmacenamientoUsuario
@@ -1020,7 +1028,7 @@ fun UsuCard(usuario: Usuario, onClick: () -> Unit) {
  */
 @Composable
 @Preview
-fun muestraAjustes(navController: NavHostController = rememberNavController()) {
+fun muestraAjustes(navController: NavHostController = rememberNavController(), settingsState: SettingsState) {
     val user = UsuarioPrincipal
     val scope = rememberCoroutineScope()
     MaterialTheme {
@@ -1098,14 +1106,26 @@ fun muestraAjustes(navController: NavHostController = rememberNavController()) {
                                 // Cerrar sesión
                                 scope.launch {
                                     try {
+                                        // 1) Cerrar sesión en Supabase (limpia el cliente)
                                         Supabase.client.auth.signOut()
-                                        println("🔒 Sesión cerrada")
+
+                                        // 2) Limpiar almacenamiento local de tokens y usuario
+                                        settingsState.clearSession()
+
+                                        // 3) Reiniciar variables globales
+                                        sesionActualUsuario = null
+                                        UsuarioPrincipal   = null
+
+                                        println("🔒 Sesión local y remota cerrada")
                                     } catch (e: Exception) {
                                         println("❌ Error cerrando sesión: ${e.message}")
                                     }
                                 }
                                 // Navegar a la pantalla de inicio de sesión
-                                navController.navigate("login") },
+                                navController.navigate("login") {
+                                    popUpTo("splash") { inclusive = true }
+                                }
+                            },
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text(text = traducir("cerrar_sesion"))
@@ -1747,12 +1767,42 @@ fun muestraHomePage(navController: NavHostController) {
  * @param navController controlador de navegación.
  */
 @Composable
-fun SplashScreen(navController: NavHostController) {
+fun SplashScreen(navController: NavHostController, settingsState: SettingsState) {
+
+    // 1) Convertimos el Flow<UserSession?> en State
+//    val session by settingsState
+//        .getSessionFlow()
+//        .collectAsState(initial = null)
+
     // Efecto para esperar 2 segundos y navegar a "home"
+    // Efecto que corre **una sola vez** en el lanzamiento del Composable
     LaunchedEffect(Unit) {
         delay(2000)
-        navController.navigate("login") {
-            popUpTo("splash") { inclusive = true }
+        // 1) Leemos tokens + usuario de forma atómica
+        val restored = settingsState
+            .getRestoredSessionFlow()        // Flow<Pair<UserSession,Usuario>?>
+            .firstOrNull()                   // primer valor emitido
+
+        if (restored != null) {
+            // 2) Si existe, desestructura
+            val (session, usuario) = restored
+
+            // 3) Importar al cliente Supabase
+            Supabase.client.auth.importSession(session)
+
+            // 4) Reasignar globals para toda la app
+            sesionActualUsuario = session
+            UsuarioPrincipal   = usuario
+
+            // 5) Navegar a contactos, pop splash
+            navController.navigate("contactos") {
+                popUpTo("splash") { inclusive = true }
+            }
+        } else {
+            // 6) No había sesión: ir a login
+            navController.navigate("login") {
+                popUpTo("splash") { inclusive = true }
+            }
         }
     }
 
@@ -2306,7 +2356,7 @@ fun PantallaRegistro(navController: NavHostController) {
  * @param navController controlador de navegación.
  */
 @Composable
-fun PantallaLogin(navController: NavHostController) {
+fun PantallaLogin(navController: NavHostController, settingsState: SettingsState) {
     var emailInterno by remember { mutableStateOf("") }
     var passwordInterno by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
@@ -2321,6 +2371,8 @@ fun PantallaLogin(navController: NavHostController) {
     val errorEmailNingunUsuario = traducir("error_email_ningun_usuario")
     val errorContrasenaIncorrecta = traducir("error_contrasena_incorrecta")
     val porFavorCompleta = traducir("por_favor_completa")
+
+    var rememberMe by rememberSaveable { mutableStateOf(false) }
 
     // Scope para lanzar corrutinas
     val scope = rememberCoroutineScope()
@@ -2378,6 +2430,21 @@ fun PantallaLogin(navController: NavHostController) {
                             visualTransformation = PasswordVisualTransformation(),
                             modifier = Modifier.fillMaxWidth()
                         )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(vertical = 8.dp)
+                        ) {
+                            Checkbox(
+                                checked = rememberMe,
+                                onCheckedChange = { rememberMe = it }
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = traducir("recuerdame"),
+                                style = MaterialTheme.typography.body1
+                            )
+                        }
                         Spacer(modifier = Modifier.height(16.dp))
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -2425,6 +2492,12 @@ fun PantallaLogin(navController: NavHostController) {
                                             // Actualizar la sesión actual
                                             sesionActualUsuario = Supabase.client.auth.currentSessionOrNull()
                                             errorMessage = ""
+
+                                            // Persistir solo si rememberMe=true
+                                            if (rememberMe && sesionActualUsuario != null) {
+                                                val userJson = Json.encodeToString(Usuario.serializer(), usuario)
+                                                settingsState.saveSession(sesionActualUsuario!!, UsuarioPrincipal!!)
+                                            }
 
                                             navController.navigate("contactos") {
                                                 popUpTo("login") { inclusive = true }
