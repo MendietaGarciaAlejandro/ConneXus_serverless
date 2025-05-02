@@ -1,7 +1,6 @@
 package org.connexuss.project.interfaces
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,66 +10,69 @@ import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.SaverScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.staticCompositionLocalOf
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import com.russhwolf.settings.ExperimentalSettingsApi
+import kotlinx.coroutines.launch
 import org.connexuss.project.persistencia.SettingsState
-import org.connexuss.project.persistencia.getIdiomaFlow
+import org.connexuss.project.persistencia.getIdiomaKeyFlow
+import org.connexuss.project.persistencia.setIdiomaKey
 
 @Composable
-fun PantallaIdiomas(navController: NavHostController) {
-    // Obtén el estado global del idioma desde el CompositionLocal
-    val idiomaState = LocalIdiomaState.current
+fun PantallaIdiomas(
+    navController: NavHostController,
+    settingsState: SettingsState
+) {
+    val scope = rememberCoroutineScope()
+    val idiomas = listOf(
+        LanguageOption("es", "espanol", espannol),
+        LanguageOption("en", "ingles",  ingles),
+        LanguageOption("pt", "portugues", portugues),
+        LanguageOption("fr", "frances",   frances),
+        LanguageOption("de", "aleman",    aleman),
+        LanguageOption("it", "italiano",  italiano)
+    )
 
     Scaffold(
         topBar = {
             DefaultTopBar(
-                title = traducir("idiomas"),
+                title = traducir("cambiar_idioma"),
                 navController = navController,
                 showBackButton = true,
-                muestraEngranaje = false,
-                irParaAtras = true
+                irParaAtras = true,
+                muestraEngranaje = false
             )
         }
     ) { padding ->
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            LimitaTamanioAncho { modifier ->
-                Column(
-                    modifier = modifier
-                        .padding(padding)
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    val idiomas = listOf(
-                        "espanol" to espannol,
-                        "ingles" to ingles,
-                        "portugues" to portugues,
-                        "frances" to frances,
-                        "aleman" to aleman,
-                        "italiano" to italiano
-                    )
-
-                    idiomas.forEach { (clave, idioma) ->
-                        Button(
-                            onClick = { cambiarIdioma(idiomaState, idioma) },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(text = traducir(clave))
-                        }
+        LimitaTamanioAncho { modifier ->
+            Column(
+                modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                idiomas.forEach { option ->
+                    Button(
+                        onClick = {
+                            // Guardas el código en Settings
+                            scope.launch { settingsState.setIdiomaKey(option.code) }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        // Mostramos la traducción de “espanol”, “ingles”, …
+                        Text(text = traducir(option.labelKey))
                     }
                 }
             }
@@ -79,6 +81,12 @@ fun PantallaIdiomas(navController: NavHostController) {
 }
 
 data class Idioma(val palabras: Map<String, String>)
+
+data class LanguageOption(
+    val code: String,
+    val labelKey: String,
+    val idioma: Idioma
+)
 
 val IdiomaSaver: Saver<Idioma, Map<String, String>> = object : Saver<Idioma, Map<String, String>> {
     override fun restore(value: Map<String, String>): Idioma {
@@ -94,15 +102,38 @@ val LocalIdiomaState = staticCompositionLocalOf<MutableState<Idioma>> {
     error("No se ha proporcionado un estado de idioma")
 }
 
+@OptIn(ExperimentalSettingsApi::class)
 @Composable
-fun ProveedorDeIdioma(settingsState: SettingsState, content: @Composable ()->Unit) {
-    val idiomaKey by settingsState.getIdiomaFlow().collectAsState(initial = "es")
-    val idioma = if (idiomaKey=="es") espannol else ingles
-    CompositionLocalProvider(LocalIdiomaState provides mutableStateOf(idioma)) {
+fun ProveedorDeIdioma(
+    settingsState: SettingsState,
+    content: @Composable () -> Unit
+) {
+    // 1) Leemos la clave guardada
+    val idiomaKey by settingsState.getIdiomaKeyFlow().collectAsState(initial = "es")
+
+    // 2) La mapeamos a un objeto Idioma
+    val idioma = remember(idiomaKey) {
+        when (idiomaKey) {
+            "es" -> espannol
+            "en" -> ingles
+            "pt" -> portugues
+            "fr" -> frances
+            "de" -> aleman
+            "it" -> italiano
+            else -> espannol
+        }
+    }
+
+    // 3) Mantener un MutableState<Idioma> y actualizarlo cuando cambie idioma
+    val idiomaState = remember { mutableStateOf(idioma) }
+    LaunchedEffect(idioma) {
+        idiomaState.value = idioma
+    }
+
+    CompositionLocalProvider(LocalIdiomaState provides idiomaState) {
         content()
     }
 }
-
 
 // Estado del idioma
 @Composable

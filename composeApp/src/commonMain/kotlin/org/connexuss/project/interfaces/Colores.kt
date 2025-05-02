@@ -18,6 +18,9 @@ import androidx.compose.material.Text
 import androidx.compose.material.darkColors
 import androidx.compose.material.lightColors
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,6 +28,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import com.russhwolf.settings.ExperimentalSettingsApi
+import kotlinx.coroutines.launch
+import org.connexuss.project.persistencia.SettingsState
+import org.connexuss.project.persistencia.getTemaConfigFlow
+import org.connexuss.project.persistencia.setTemaConfig
 
 /**
  * Selecciona el esquema de colores en función del parámetro temaClaro.
@@ -55,7 +63,7 @@ data class TemaConfig(
  * @param colorTemaKey Clave que representa el conjunto de colores a utilizar.
  * @return Esquema de colores seleccionado.
  */
-fun getColorsForTheme(temaClaro: Boolean, colorTemaKey: String): androidx.compose.material.Colors {
+fun getColorsForTheme(temaClaro: Boolean, colorTemaKey: String): Colors {
     return when (colorTemaKey) {
         "azul" -> if (temaClaro) coloresAzulClaro else coloresAzulOscuro
         "amarillo" -> if (temaClaro) coloresAmarilloClaro else coloresAmarilloOscuro
@@ -95,6 +103,26 @@ val TemaConfigSaver: Saver<TemaConfig, List<Any>> = Saver(
     }
 )
 
+@OptIn(ExperimentalSettingsApi::class)
+@Composable
+fun AppThemeWrapper(settingsState: SettingsState, content: @Composable () -> Unit) {
+    // 1) Recoge TemaConfig como State
+    val temaConfig by settingsState
+        .getTemaConfigFlow()
+        .collectAsState(initial = TemaConfig())
+
+    // 2) Extrae Boolean y String
+    val isLight = temaConfig.temaClaro
+    val colorKey = temaConfig.colorTemaKey
+
+    // 3) Pásalos a getColorsForTheme
+    MaterialTheme(
+        colors = getColorsForTheme(isLight, colorKey)
+    ) {
+        content()
+    }
+}
+
 /**
  * Pantalla para cambiar el tema de la aplicación.
  *
@@ -106,95 +134,67 @@ val TemaConfigSaver: Saver<TemaConfig, List<Any>> = Saver(
 @Composable
 fun PantallaCambiarTema(
     navController: NavHostController,
-    temaConfig: TemaConfig,
-    onToggleTheme: () -> Unit,
-    onColorChange: (String) -> Unit  // Espera una clave (String)
+    settingsState: SettingsState
 ) {
+    val scope = rememberCoroutineScope()
+    val temaConfig by settingsState.getTemaConfigFlow().collectAsState(initial = TemaConfig())
+
     Scaffold(
         topBar = {
             DefaultTopBar(
-                title = traducir("ajustes_tema"),
+                title = traducir("cambiar_tema"),
                 navController = navController,
                 showBackButton = true,
-                muestraEngranaje = false,
-                irParaAtras = true
+                irParaAtras = true,
+                muestraEngranaje = false
             )
         }
     ) { padding ->
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            LimitaTamanioAncho { modifier ->
-                Column(
-                    modifier = modifier
-                        .padding(padding)
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        traducir("modo"),
-                        style = MaterialTheme.typography.h6.copy(textAlign = TextAlign.Center),
-                        modifier = Modifier.fillMaxWidth()
+        LimitaTamanioAncho { modifier ->
+            Column(
+                modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Switch claro/oscuro
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text(traducir("modo_claro"))
+                    Switch(
+                        checked = !temaConfig.temaClaro,
+                        onCheckedChange = {
+                            scope.launch {
+                                settingsState.setTemaConfig(
+                                    temaConfig.copy(temaClaro = !temaConfig.temaClaro)
+                                )
+                            }
+                        }
                     )
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(traducir("modo_claro"), style = MaterialTheme.typography.body1)
-                        val isDarkMode = !temaConfig.temaClaro
-                        Switch(checked = isDarkMode, onCheckedChange = { onToggleTheme() })
-                        Text(traducir("modo_oscuro"), style = MaterialTheme.typography.body1)
-                    }
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        traducir("colores"),
-                        style = MaterialTheme.typography.h6.copy(textAlign = TextAlign.Center),
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                    Text(traducir("modo_oscuro"))
+                }
+                Spacer(Modifier.height(16.dp))
+                // Botones de color
+                listOf(
+                    "azul",
+                    "amarillo",
+                    "verde",
+                    "rojo",
+                    "morado",
+                    "gris",
+                    "naranja"
+                ).forEach { keyColor ->
                     Button(
-                        onClick = { onColorChange("azul") },
+                        onClick = {
+                            scope.launch {
+                                settingsState.setTemaConfig(
+                                    temaConfig.copy(colorTemaKey = keyColor)
+                                )
+                            }
+                        },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(traducir("cambiar_a_tema_azul"))
-                    }
-                    Button(
-                        onClick = { onColorChange("amarillo") },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(traducir("cambiar_a_tema_amarillo"))
-                    }
-                    Button(
-                        onClick = { onColorChange("verde") },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(traducir("cambiar_a_tema_verde"))
-                    }
-                    Button(
-                        onClick = { onColorChange("rojo") },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(traducir("cambiar_a_tema_rojo"))
-                    }
-                    Button(
-                        onClick = { onColorChange("morado") },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(traducir("cambiar_a_tema_morado"))
-                    }
-                    Button(
-                        onClick = { onColorChange("gris") },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(traducir("cambiar_a_tema_gris"))
-                    }
-                    Button(
-                        onClick = { onColorChange("naranja") },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(traducir("cambiar_a_tema_naranja"))
+                        Text(traducir("tema_$keyColor"))
                     }
                 }
             }

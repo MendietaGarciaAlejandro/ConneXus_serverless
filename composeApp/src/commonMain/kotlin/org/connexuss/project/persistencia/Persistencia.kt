@@ -53,12 +53,12 @@ val flowSettings = observable.toFlowSettings(Dispatchers.Default)
 const val KEY_IDIOMA = "idioma"
 
 @OptIn(ExperimentalSettingsApi::class)
-fun SettingsState.getIdiomaFlow(): Flow<String> =
+fun SettingsState.getIdiomaKeyFlow(): Flow<String> =
     flowSettings.getStringFlow(KEY_IDIOMA, defaultValue = "es")
 
 @OptIn(ExperimentalSettingsApi::class)
-suspend fun SettingsState.setIdioma(value: String) =
-    flowSettings.putString(KEY_IDIOMA, value)
+suspend fun SettingsState.setIdiomaKey(key: String) =
+    flowSettings.putString(KEY_IDIOMA, key)
 
 const val KEY_TEMA_CLARO = "temaClaro"
 const val KEY_COLOR_TEMA = "colorTemaKey"
@@ -66,8 +66,10 @@ const val KEY_COLOR_TEMA = "colorTemaKey"
 @OptIn(ExperimentalSettingsApi::class)
 fun SettingsState.getTemaConfigFlow(): Flow<TemaConfig> =
     flowSettings.getBooleanFlow(KEY_TEMA_CLARO, true)
-        .combine(flowSettings.getStringFlow(KEY_COLOR_TEMA, "claro")) { claro, key ->
-            TemaConfig(claro, key)
+        .combine(
+            flowSettings.getStringFlow(KEY_COLOR_TEMA, "claro")
+        ) { claro, colorKey ->
+            TemaConfig(temaClaro = claro, colorTemaKey = colorKey)
         }
 
 @OptIn(ExperimentalSettingsApi::class)
@@ -78,13 +80,22 @@ suspend fun SettingsState.setTemaConfig(config: TemaConfig) {
 
 const val KEY_FONT = "fontFamily"
 
-@OptIn(ExperimentalSettingsApi::class)
-fun SettingsState.getFontFlow(): Flow<String> =
-    flowSettings.getStringFlow(KEY_FONT, FontFamily.Default.toString())
+// Las claves que usaremos para identificar cada fuente
+object FontKeys {
+    const val DEFAULT    = "default"
+    const val SERIF      = "serif"
+    const val MONOSPACE  = "monospace"
+    const val CURSIVE    = "cursive"
+    const val SANS_SERIF = "sans_serif"
+}
 
 @OptIn(ExperimentalSettingsApi::class)
-suspend fun SettingsState.setFont(familyName: String) =
-    flowSettings.putString(KEY_FONT, familyName)
+fun SettingsState.getFontKeyFlow(): Flow<String> =
+    flowSettings.getStringFlow(KEY_FONT, FontKeys.DEFAULT)
+
+@OptIn(ExperimentalSettingsApi::class)
+suspend fun SettingsState.setFontKey(key: String) =
+    flowSettings.putString(KEY_FONT, key)
 
 class FlowSettingsProvider(
     settings: Settings,

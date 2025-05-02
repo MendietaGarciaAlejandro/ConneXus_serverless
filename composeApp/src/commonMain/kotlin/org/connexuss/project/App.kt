@@ -19,12 +19,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.russhwolf.settings.ExperimentalSettingsApi
 import io.github.jan.supabase.auth.auth
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import org.connexuss.project.interfaces.TemaConfig
 import org.connexuss.project.interfaces.TemaConfigSaver
 import org.connexuss.project.interfaces.getColorsForTheme
 import org.connexuss.project.interfaces.AppTheme
+import org.connexuss.project.interfaces.AppThemeWrapper
 import org.connexuss.project.interfaces.ProveedorDeFuente
 import org.connexuss.project.interfaces.ProveedorDeIdioma
 import org.connexuss.project.misc.Supabase
@@ -86,12 +88,7 @@ fun App() {
 
                 AppTheme {
                     // Calcula la paleta de colores según el estado actual
-                    MaterialTheme(
-                        colors = getColorsForTheme(
-                            temaConfig.temaClaro,
-                            temaConfig.colorTemaKey
-                        )
-                    ) {
+                    AppThemeWrapper(settingsState) {
                         Navegacion(
                             temaConfig = temaConfig,
                             onToggleTheme = {
@@ -107,6 +104,7 @@ fun App() {
                                 }
                             },
                             listaUsuariosGrupo = usuariosGrupoGeneral,
+                            settingsState = settingsState
                         )
                     }
                 }
