@@ -95,19 +95,19 @@ fun Navegacion(
 
     NavHost(navController = navController, startDestination = "splash") {
         composable("splash") {
-            SplashScreen(navController)
+            SplashScreen(navController, settingsState)
         }
         composable("home") {
             muestraHomePage(navController)
         }
         composable("login") {
-            PantallaLogin(navController)
+            PantallaLogin(navController, settingsState)
         }
         composable("registro") {
             PantallaRegistro(navController)
         }
         composable("ajustes") {
-            muestraAjustes(navController)
+            muestraAjustes(navController, settingsState)
         }
         composable("contactos") {
             muestraChats(navController)

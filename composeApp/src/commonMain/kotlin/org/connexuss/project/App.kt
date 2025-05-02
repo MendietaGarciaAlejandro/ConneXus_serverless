@@ -17,6 +17,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.navigation.compose.rememberNavController
 import com.russhwolf.settings.ExperimentalSettingsApi
 import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.flow.first
@@ -60,14 +61,28 @@ fun actualizarUsuariosGrupoGeneral(nuevaLista: List<Usuario>) {
 @Composable
 fun App() {
     val settingsState = remember { SettingsState(flowSettings) }
+    //val navController  = rememberNavController()
     val scope = rememberCoroutineScope()
 
     // Restaurar sesión Supabase
-    LaunchedEffect(Unit) {
-        settingsState.getSessionFlow().firstOrNull()?.let {
-            Supabase.client.auth.importSession(it)
-        }
-    }
+//    LaunchedEffect(Unit) {
+//        settingsState.getSessionFlow().firstOrNull()?.let {
+//            Supabase.client.auth.importSession(it)
+//        }
+//    }
+
+//    LaunchedEffect(Unit) {
+//        settingsState.getSessionFlow()
+//            .firstOrNull()
+//            ?.let { session ->
+//                // Importamos la sesión en Supabase
+//                Supabase.client.auth.importSession(session)
+//                // Navegamos directamente al listado de contactos
+//                navController.navigate("contactos") {
+//                    popUpTo("login") { inclusive = true }
+//                }
+//            }
+//    }
 
     // Contenedor raíz que protege de notch + barras de sistema
     Box(

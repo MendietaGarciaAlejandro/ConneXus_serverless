@@ -37,10 +37,13 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
 import org.connexuss.project.interfaces.DefaultTopBar
 import org.connexuss.project.interfaces.LimitaTamanioAncho
 import org.connexuss.project.interfaces.TemaConfig
+import org.connexuss.project.usuario.Usuario
 
 val settings: Settings = Settings() // SharedPreferences en Android, Preferences.userRoot() en Desktop, localStorage en JS
 
@@ -112,14 +115,47 @@ const val KEY_ACCESS  = "access_token"
 const val KEY_REFRESH = "refresh_token"
 const val KEY_EXPIRES  = "expires_in"
 const val KEY_USER    = "user_data"
+const val KEY_USER_JSON = "user_data_json"
 
 @OptIn(ExperimentalSettingsApi::class)
-suspend fun SettingsState.saveSession(session: UserSession, userJson: String) {
-    flowSettings.putString(KEY_ACCESS, session.accessToken)
-    flowSettings.putString(KEY_REFRESH, session.refreshToken)
-    flowSettings.putLong(KEY_EXPIRES, session.expiresIn.toLong())
-    flowSettings.putString(KEY_USER, userJson)
+suspend fun SettingsState.clearSession() {
+    flowSettings.remove(KEY_ACCESS)
+    flowSettings.remove(KEY_REFRESH)
+    flowSettings.remove(KEY_EXPIRES)
+    flowSettings.remove(KEY_USER_JSON)
 }
+
+@OptIn(ExperimentalSettingsApi::class)
+suspend fun SettingsState.saveSession(
+    session: UserSession,
+    usuario: Usuario
+) {
+    flowSettings.putString(KEY_ACCESS,  session.accessToken)
+    flowSettings.putString(KEY_REFRESH, session.refreshToken)
+    flowSettings.putLong(  KEY_EXPIRES, session.expiresIn.toLong())
+    // Serializa tu Usuario a JSON
+    val userJson = Json.encodeToString(Usuario.serializer(), usuario)
+    flowSettings.putString(KEY_USER_JSON, userJson)
+}
+
+@OptIn(ExperimentalSettingsApi::class)
+fun SettingsState.getUserJsonFlow(): Flow<String?> =
+    flowSettings.getStringFlow(KEY_USER_JSON, defaultValue = "")
+        .map { it.ifBlank { null } }
+
+@OptIn(ExperimentalSettingsApi::class)
+fun SettingsState.getRestoredSessionFlow(): Flow<Pair<UserSession, Usuario>?> =
+    combine(
+        getSessionFlow(),             // Flow<UserSession?>
+        getUserJsonFlow()             // Flow<String?>
+    ) { session, userJson ->
+        if (session == null || userJson == null) null
+        else {
+            val usuario = Json.decodeFromString(Usuario.serializer(), userJson)
+            session to usuario
+        }
+    }
+
 
 @OptIn(ExperimentalSettingsApi::class)
 fun SettingsState.getSessionFlow(): Flow<UserSession?> = combine(
