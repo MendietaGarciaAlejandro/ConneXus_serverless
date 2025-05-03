@@ -5,14 +5,18 @@ import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import org.connexuss.project.encriptacion.CredencialesUsuario
 import org.connexuss.project.misc.Supabase
 import org.connexuss.project.usuario.Usuario
 
 // Interfaz para simular una aplicacion CRUD que comunica con Supabase
 interface ISupabaseUsuariosRepositorio {
     fun getUsuarios(): Flow<List<Usuario>>
+    fun getCredenciales(): Flow<List<CredencialesUsuario>>
     fun getUsuarioPorId(id: String): Flow<Usuario?>
     fun getUsuarioPorIdBis(nombre: String): Flow<Usuario?>
+    fun getCredencialesByUserId(userId: String): Flow<CredencialesUsuario?>
+    suspend fun addCredenciales(credenciales: CredencialesUsuario)
     suspend fun getUsuarioPorEmail(email: String): Flow<Usuario?>
     suspend fun getUsuarioPorEmailBis(email: String): Flow<Usuario?>
     suspend fun addUsuario(usuario: Usuario)
@@ -30,6 +34,14 @@ class SupabaseUsuariosRepositorio : ISupabaseUsuariosRepositorio {
             .from(nombreTabla)
             .select()
             .decodeList<Usuario>()
+        emit(response)
+    }
+
+    override fun getCredenciales() = flow {
+        val response = Supabase.client
+            .from("credenciales_usuario")
+            .select()
+            .decodeList<CredencialesUsuario>()
         emit(response)
     }
 
@@ -75,6 +87,17 @@ class SupabaseUsuariosRepositorio : ISupabaseUsuariosRepositorio {
         emit(usuario)
     }
 
+    override fun getCredencialesByUserId(userId: String) = flow {
+        // Recojo todasl las credenciales
+        val response = Supabase.client
+            .from("credenciales_usuario")
+            .select()
+            .decodeList<CredencialesUsuario>()
+        // FFiltro por id de entre todas las credenciales
+        val credenciales = response.find { it.idUsuario == userId }
+        emit(credenciales)
+    }
+
     override suspend fun addUsuario(usuario: Usuario) {
         try {
             val response = Supabase.client
@@ -94,6 +117,23 @@ class SupabaseUsuariosRepositorio : ISupabaseUsuariosRepositorio {
         }
     }
 
+    override suspend fun addCredenciales(credenciales: CredencialesUsuario) {
+        try {
+            val response = Supabase.client
+                .from("credenciales_usuario")
+                .insert(listOf(credenciales))
+                .decodeSingleOrNull<CredencialesUsuario>()
+
+            println("Credenciales insertadas: $response")
+
+            if (response == null) {
+                throw Exception("Error al agregar las credenciales: la respuesta fue nula")
+            }
+        } catch (e: Exception) {
+            println("Error insertando credenciales: ${e.message}")
+            throw e
+        }
+    }
 
     override suspend fun updateUsuario(usuario: Usuario) {
         val updateData = mapOf(

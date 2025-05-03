@@ -9,6 +9,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.russhwolf.settings.ExperimentalSettingsApi
 import kotlinx.coroutines.Dispatchers
+import org.connexuss.project.encriptacion.PantallaMigracionCredenciales
 import org.connexuss.project.encriptacion.PantallaPruebasEncriptacion
 /*
 import org.connexuss.project.firebase.AppFirebase
@@ -89,6 +90,7 @@ fun Navegacion(
      */
 
     val repoSupabase = remember { SupabaseRepositorioGenerico() }
+    val repoUsuarios = remember { SupabaseUsuariosRepositorio() }
 
     val estadoFlowSettings = remember { FlowSettingsProvider(settings, Dispatchers.Default) }
     // val estadoSettings = remember { SettingsState(  ) }
@@ -273,6 +275,9 @@ fun Navegacion(
         }
         composable("pruebasPersistencia") {
             PantallaPruebasPersistencia(estadoFlowSettings, navController)
+        }
+        composable("migracionCredenciales") {
+            PantallaMigracionCredenciales(navController, repoUsuarios)
         }
     }
 }

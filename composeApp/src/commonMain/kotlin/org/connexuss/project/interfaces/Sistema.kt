@@ -81,6 +81,7 @@ import kotlinx.serialization.json.Json
 import org.connexuss.project.comunicacion.Conversacion
 import org.connexuss.project.comunicacion.ConversacionesUsuario
 import org.connexuss.project.comunicacion.Mensaje
+import org.connexuss.project.encriptacion.CredencialesUsuario
 import org.connexuss.project.misc.Imagen
 import org.connexuss.project.misc.Supabase
 import org.connexuss.project.misc.UsuarioPrincipal
@@ -88,7 +89,7 @@ import org.connexuss.project.misc.sesionActualUsuario
 import org.connexuss.project.persistencia.SettingsState
 import org.connexuss.project.persistencia.clearSession
 import org.connexuss.project.persistencia.getRestoredSessionFlow
-import org.connexuss.project.persistencia.getSessionFlow
+import org.connexuss.project.encriptacion.derivePasswordHash
 import org.connexuss.project.persistencia.saveSession
 import org.connexuss.project.supabase.SupabaseRepositorioGenerico
 import org.connexuss.project.supabase.SupabaseUsuariosRepositorio
@@ -100,6 +101,9 @@ import org.connexuss.project.usuario.UtilidadesUsuario
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import dev.whyoleg.cryptography.random.CryptographyRandom
+import org.connexuss.project.encriptacion.hexToByteArray
+import kotlinx.coroutines.flow.Flow
 
 @Composable
 fun DefaultTopBar(
@@ -2289,6 +2293,22 @@ fun PantallaRegistro(navController: NavHostController) {
                                                 val uid = Supabase.client.auth.currentUserOrNull()?.id
                                                     ?: throw Exception("No se pudo obtener el UID del usuario autenticado")
 
+                                                // 2) Generar salt
+                                                val saltBytes: ByteArray = CryptographyRandom.nextBytes(16)
+                                                val saltHex:    String    = saltBytes.joinToString("") { b ->
+                                                    (b.toInt() and 0xFF).toString(16).padStart(2, '0')
+                                                }
+
+                                                // 3) Derivar hash PBKDF2
+                                                val hashBytes = derivePasswordHash(password, saltBytes)
+                                                val hashHex = hashBytes.joinToString("") { b: Byte ->
+                                                    (b.toInt() and 0xFF).toString(16).padStart(2, '0')
+                                                }
+
+                                                // 4) Crear y guardar CredencialesUsuario
+                                                val creds = CredencialesUsuario(idUsuario = uid, saltHex = saltHex, hashHex = hashHex)
+                                                repoSupabase.addCredenciales(creds)
+
                                                 // 2. Crear objeto Usuario con el mismo ID que auth.uid()
                                                 val nuevoUsuario = Usuario(
                                                     idUnico = uid,
@@ -2474,12 +2494,39 @@ fun PantallaLogin(navController: NavHostController, settingsState: SettingsState
 
                                     try {
                                         val usuario = repoSupabase.getUsuarioPorEmail(emailInterno.trim()).firstOrNull()
+                                            //?: run { errorMessage = errorEmailNingunUsuario; return@launch }
 
                                         if (usuario == null) {
                                             errorMessage = errorEmailNingunUsuario
                                         } else {
                                             UsuarioPrincipal = usuario
                                             println("Usuario autenticado: $UsuarioPrincipal")
+
+                                            val credsFlow: Flow<CredencialesUsuario?> =
+                                                repoSupabase.getCredencialesByUserId(usuario.idUnico)
+
+                                            // 2) "Recolectar" el valor actual
+                                            val creds: CredencialesUsuario? = credsFlow.firstOrNull()
+
+                                            // 3) Comprobar que no sea null
+                                            val actualCreds = creds
+                                                ?: run {
+                                                    errorMessage = errorEmailNingunUsuario
+                                                    return@launch
+                                                }
+
+                                            // Ahora sí puedes leer:
+                                            val saltHex   = actualCreds.saltHex.hexToByteArray()
+                                            val hashHex   = actualCreds.hashHex.hexToByteArray()
+
+                                            // 3) Derivar el hash candidato
+                                            val candidate = derivePasswordHash(passwordInterno, saltHex)
+
+                                            // 4) Comparar en tiempo constante
+                                            if (!candidate.contentEquals(hashHex)) {
+                                                errorMessage = errorContrasenaIncorrecta
+                                                return@launch
+                                            }
 
                                             // Iniciar sesión en Supabase
                                             Supabase.client.auth.signInWith(

@@ -2,11 +2,14 @@ package org.connexuss.project.encriptacion
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Button
@@ -26,15 +29,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import dev.whyoleg.cryptography.BinarySize.Companion.bytes
 import dev.whyoleg.cryptography.CryptographyProvider
 import dev.whyoleg.cryptography.algorithms.AES
 import dev.whyoleg.cryptography.algorithms.EC
 import dev.whyoleg.cryptography.algorithms.ECDSA
 import dev.whyoleg.cryptography.algorithms.HMAC
+import dev.whyoleg.cryptography.algorithms.PBKDF2
 import dev.whyoleg.cryptography.algorithms.SHA512
+import dev.whyoleg.cryptography.random.CryptographyRandom
+import io.ktor.utils.io.core.toByteArray
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
+import kotlinx.io.bytestring.ByteString
+import kotlinx.serialization.Serializable
 import org.connexuss.project.interfaces.DefaultTopBar
 import org.connexuss.project.interfaces.LimitaTamanioAncho
+import org.connexuss.project.supabase.SupabaseUsuariosRepositorio
 
 /**
  * Calcula el hash SHA-512 de un texto.
@@ -589,6 +600,158 @@ fun PantallaPruebasEncriptacion(navController: NavHostController) {
                                 textAlign = TextAlign.Center,
                                 modifier = Modifier.fillMaxWidth()
                             )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Deriva un hash PBKDF2-HMAC-SHA512 de la contraseña.
+ *
+ * @param password Texto de la contraseña.
+ * @param saltBytes Lista de bytes aleatorios (salt) de al menos 16 bytes.
+ * @param iterations Nº de iteraciones (por defecto 100 000).
+ * @return El resultado como ByteString (derivado de 32 bytes).
+ */
+suspend fun derivePasswordHash(
+    password: String,
+    saltBytes: ByteArray,
+    iterations: Int = 100_000
+): ByteArray {
+    val provider = CryptographyProvider.Default
+    val derivation = provider
+        .get(PBKDF2)
+        .secretDerivation(
+            digest     = SHA512,
+            iterations = iterations,
+            outputSize = 32.bytes,
+            salt       = saltBytes
+        )
+    return derivation.deriveSecretBlocking(password.toByteArray()).toByteArray()
+}
+
+@Serializable
+data class CredencialesUsuario(
+    val idUsuario: String,
+    val saltHex: String,   // 32 hex chars = 16 bytes
+    val hashHex: String    // 64 hex chars = 32 bytes
+)
+
+suspend fun migrarCredencialesExistentes(repoUsuario: SupabaseUsuariosRepositorio) {
+    // 1. Obtenemos todos los usuarios
+    val usuarios = repoUsuario.getUsuarios()  // asume Flow<List<Usuario>> o similar
+        .firstOrNull() ?: emptyList()
+
+    for (usuario in usuarios) {
+        val plain = usuario.contrasennia
+        if (plain.isNullOrBlank()) {
+            // O bien saltarnos usuarios sin password, o marcar para reset de contraseña
+            continue
+        }
+
+        // 2. Generar salt y hash
+        val saltBytes = CryptographyRandom.nextBytes(16)
+        val hashBytes = derivePasswordHash(plain, saltBytes)
+
+        val saltHex = saltBytes.joinToString("") { b ->
+            (b.toInt() and 0xFF).toString(16).padStart(2, '0')
+        }
+        val hashHex = hashBytes.joinToString("") { b ->
+            (b.toInt() and 0xFF).toString(16).padStart(2, '0')
+        }
+
+        // 3. Crear CredencialesUsuario y guardarlas
+        val creds = CredencialesUsuario(
+            idUsuario = usuario.idUnico,
+            saltHex   = saltHex,
+            hashHex   = hashHex
+        )
+        repoUsuario.addCredenciales(creds)
+    }
+
+    // 4. (Opcional) Vaciar o eliminar contrasennia de usuario
+    //repoUsuario.clearAllPasswords()
+}
+
+@Composable
+fun PantallaMigracionCredenciales(
+    navController: NavHostController,
+    userRepo: SupabaseUsuariosRepositorio = SupabaseUsuariosRepositorio()
+) {
+    var credentials by remember { mutableStateOf<List<CredencialesUsuario>>(emptyList()) }
+    var isMigrated by remember { mutableStateOf(false) }
+    var loading by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
+
+    MaterialTheme {
+        Scaffold(
+            topBar = {
+                DefaultTopBar(
+                    title = "Migrar Credenciales",
+                    navController = navController,
+                    showBackButton = true,
+                    irParaAtras = true
+                )
+            }
+        ) { padding ->
+            LimitaTamanioAncho { modifier ->
+                Column(
+                    modifier = modifier
+                        .fillMaxSize()
+                        .padding(padding)
+                        .padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Button(
+                        onClick = {
+                            scope.launch {
+                                loading = true
+                                error = null
+                                try {
+                                    // Ejecuta migración
+                                    migrarCredencialesExistentes(userRepo)
+                                    isMigrated = true
+                                    // Carga resultado
+                                    credentials =
+                                        userRepo.getCredenciales().firstOrNull() ?: emptyList()
+                                } catch (e: Exception) {
+                                    error = e.message
+                                } finally {
+                                    loading = false
+                                }
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(if (loading) "Migrando..." else "Iniciar migración")
+                    }
+
+                    if (error != null) {
+                        Text("Error: $error", color = MaterialTheme.colors.error)
+                    }
+
+                    if (isMigrated) {
+                        Text("Credenciales migradas:", style = MaterialTheme.typography.h6)
+                        LazyColumn(
+                            modifier = Modifier.fillMaxWidth(),
+                            contentPadding = PaddingValues(vertical = 8.dp)
+                        ) {
+                            items(credentials) { cred ->
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp)
+                                ) {
+                                    Text("Usuario: ${cred.idUsuario}")
+                                    Text("Salt: ${cred.saltHex}")
+                                    Text("Hash: ${cred.hashHex}")
+                                }
+                            }
                         }
                     }
                 }
