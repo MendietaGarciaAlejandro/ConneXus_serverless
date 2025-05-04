@@ -787,7 +787,7 @@ data class ClavesUsuario(
     val idUsuario:         String,
     val pubKeyMsgHex:      String, // ECDH clave pública mensajes (DER→hex)
     val pubKeyPostHex:     String, // ECDH clave pública posts
-    val pubKeyMsgSignHex:  String  // ECDSA clave pública firma mensajes
+    //val pubKeyMsgSignHex:  String  // ECDSA clave pública firma mensajes
 )
 
 // Queda aun aclarar la diferencia entre claves de mensajes y posts y la implementación de ambos sistemas
