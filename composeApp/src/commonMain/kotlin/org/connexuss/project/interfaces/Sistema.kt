@@ -42,7 +42,6 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -89,7 +88,7 @@ import org.connexuss.project.misc.sesionActualUsuario
 import org.connexuss.project.persistencia.SettingsState
 import org.connexuss.project.persistencia.clearSession
 import org.connexuss.project.persistencia.getRestoredSessionFlow
-import org.connexuss.project.encriptacion.derivePasswordHash
+import org.connexuss.project.encriptacion.derivePasswordEmailHash
 import org.connexuss.project.persistencia.saveSession
 import org.connexuss.project.supabase.SupabaseRepositorioGenerico
 import org.connexuss.project.supabase.SupabaseUsuariosRepositorio
@@ -2300,13 +2299,21 @@ fun PantallaRegistro(navController: NavHostController) {
                                                 }
 
                                                 // 3) Derivar hash PBKDF2
-                                                val hashBytes = derivePasswordHash(password, saltBytes)
+                                                val hashBytes = derivePasswordEmailHash(password, saltBytes)
+                                                val emailHashBytes = derivePasswordEmailHash(emailTrimmed, saltBytes)
+
                                                 val hashHex = hashBytes.joinToString("") { b: Byte ->
                                                     (b.toInt() and 0xFF).toString(16).padStart(2, '0')
                                                 }
+                                                val emailHashHex = emailHashBytes.joinToString("") { b -> (b.toInt() and 0xFF)
+                                                    .toString(16).padStart(2, '0') }
 
                                                 // 4) Crear y guardar CredencialesUsuario
-                                                val creds = CredencialesUsuario(idUsuario = uid, saltHex = saltHex, hashHex = hashHex)
+                                                val creds = CredencialesUsuario(
+                                                    idUsuario = uid,
+                                                    saltHex = saltHex,
+                                                    hashHex = hashHex,
+                                                    emailHex  = emailHashHex)
                                                 repoSupabase.addCredenciales(creds)
 
                                                 // 2. Crear objeto Usuario con el mismo ID que auth.uid()
@@ -2502,28 +2509,32 @@ fun PantallaLogin(navController: NavHostController, settingsState: SettingsState
                                             UsuarioPrincipal = usuario
                                             println("Usuario autenticado: $UsuarioPrincipal")
 
-                                            val credsFlow: Flow<CredencialesUsuario?> =
-                                                repoSupabase.getCredencialesByUserId(usuario.idUnico)
+                                            // 2) Recuperar todas las credenciales
+                                            val allCreds = repoSupabase
+                                                .getCredenciales()             // Flow<List<CredencialesUsuario>>
+                                                .firstOrNull()
+                                                ?: emptyList()
 
-                                            // 2) "Recolectar" el valor actual
-                                            val creds: CredencialesUsuario? = credsFlow.firstOrNull()
+                                            // 3) Buscar cuál salt hace derivar el mismo emailHash
+                                            val matchingCred = allCreds.firstOrNull { cred ->
+                                                val saltBytes = cred.saltHex.hexToByteArray()
+                                                // deriveHash = tu PBKDF2
+                                                val candidate = derivePasswordEmailHash(emailInterno.trim(), saltBytes)
+                                                // comparamos ByteArray contra el hashHex almacenado
+                                                candidate.contentEquals(cred.emailHex.hexToByteArray())
+                                            }
 
-                                            // 3) Comprobar que no sea null
-                                            val actualCreds = creds
-                                                ?: run {
-                                                    errorMessage = errorEmailNingunUsuario
-                                                    return@launch
-                                                }
+                                            if (matchingCred == null) {
+                                                errorMessage = errorEmailNingunUsuario
+                                                return@launch
+                                            }
 
-                                            // Ahora sí puedes leer:
-                                            val saltHex   = actualCreds.saltHex.hexToByteArray()
-                                            val hashHex   = actualCreds.hashHex.hexToByteArray()
+                                            // 4) Con la cred seleccionada, verificamos la contraseña
+                                            val saltBytes = matchingCred.saltHex.hexToByteArray()
+                                            val storedPwd = matchingCred.hashHex.hexToByteArray()
+                                            val candidatePwd = derivePasswordEmailHash(passwordInterno, saltBytes)
 
-                                            // 3) Derivar el hash candidato
-                                            val candidate = derivePasswordHash(passwordInterno, saltHex)
-
-                                            // 4) Comparar en tiempo constante
-                                            if (!candidate.contentEquals(hashHex)) {
+                                            if (!candidatePwd.contentEquals(storedPwd)) {
                                                 errorMessage = errorContrasenaIncorrecta
                                                 return@launch
                                             }

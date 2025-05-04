@@ -41,7 +41,6 @@ import dev.whyoleg.cryptography.random.CryptographyRandom
 import io.ktor.utils.io.core.toByteArray
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
-import kotlinx.io.bytestring.ByteString
 import kotlinx.serialization.Serializable
 import org.connexuss.project.interfaces.DefaultTopBar
 import org.connexuss.project.interfaces.LimitaTamanioAncho
@@ -616,7 +615,7 @@ fun PantallaPruebasEncriptacion(navController: NavHostController) {
  * @param iterations Nº de iteraciones (por defecto 100 000).
  * @return El resultado como ByteString (derivado de 32 bytes).
  */
-suspend fun derivePasswordHash(
+suspend fun derivePasswordEmailHash(
     password: String,
     saltBytes: ByteArray,
     iterations: Int = 100_000
@@ -637,7 +636,8 @@ suspend fun derivePasswordHash(
 data class CredencialesUsuario(
     val idUsuario: String,
     val saltHex: String,   // 32 hex chars = 16 bytes
-    val hashHex: String    // 64 hex chars = 32 bytes
+    val hashHex: String,   // 64 hex chars = 32 bytes
+    val emailHex:  String   // email hash (determinístico)
 )
 
 suspend fun migrarCredencialesExistentes(repoUsuario: SupabaseUsuariosRepositorio) {
@@ -646,28 +646,26 @@ suspend fun migrarCredencialesExistentes(repoUsuario: SupabaseUsuariosRepositori
         .firstOrNull() ?: emptyList()
 
     for (usuario in usuarios) {
-        val plain = usuario.contrasennia
-        if (plain.isNullOrBlank()) {
+        val plainPwd = usuario.contrasennia
+        val plainEmail = usuario.correo
+        if (plainPwd.isNullOrBlank() || plainEmail.isNullOrBlank()) {
             // O bien saltarnos usuarios sin password, o marcar para reset de contraseña
             continue
         }
 
-        // 2. Generar salt y hash
-        val saltBytes = CryptographyRandom.nextBytes(16)
-        val hashBytes = derivePasswordHash(plain, saltBytes)
+        // 1) mismo salt+hash para cada usuario
+        val saltBytes      = CryptographyRandom.nextBytes(16)
+        val saltHex        = saltBytes.toHex()
 
-        val saltHex = saltBytes.joinToString("") { b ->
-            (b.toInt() and 0xFF).toString(16).padStart(2, '0')
-        }
-        val hashHex = hashBytes.joinToString("") { b ->
-            (b.toInt() and 0xFF).toString(16).padStart(2, '0')
-        }
+        // 2) derivar
+        val pwdHashHex     = derivePasswordEmailHash(plainPwd,   saltBytes).toHex()
+        val emailHashHex   = derivePasswordEmailHash(plainEmail, saltBytes).toHex()
 
-        // 3. Crear CredencialesUsuario y guardarlas
         val creds = CredencialesUsuario(
             idUsuario = usuario.idUnico,
             saltHex   = saltHex,
-            hashHex   = hashHex
+            hashHex   = pwdHashHex,
+            emailHex  = emailHashHex
         )
         repoUsuario.addCredenciales(creds)
     }
