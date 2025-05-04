@@ -784,200 +784,182 @@ data class EncryptedMessage(
 
 @Serializable
 data class ClavesUsuario(
-    val idUsuario: String,
-    val pubKeyMsgHex: String,
-    val pubKeyPostHex: String
+    val idUsuario:         String,
+    val pubKeyMsgHex:      String, // ECDH clave pública mensajes (DER→hex)
+    val pubKeyPostHex:     String, // ECDH clave pública posts
+    val pubKeyMsgSignHex:  String  // ECDSA clave pública firma mensajes
 )
 
+// Queda aun aclarar la diferencia entre claves de mensajes y posts y la implementación de ambos sistemas
+
+// --------------------------------------------------
+// Data classes for encrypted payloads
+// --------------------------------------------------
+
+@Serializable
+data class EncryptedPayload(
+    val id: String,
+    val ephemeralPubHex: String,
+    val ivHex: String,
+    val ciphertextHex: String
+)
+
+// --------------------------------------------------
+// Core ECIES + AES-GCM utilities
+// --------------------------------------------------
+
 /**
- * Cifra un Post con ECIES (ECDH + AES-GCM):
+ * Derives a shared AES key for ECIES using ECDH.
  */
-suspend fun encryptECIESPost(
-    post: Post,
-    receiverPubKey: ECDH.PublicKey
-): EncryptedPost {
+suspend fun deriveAesKey(
+    myPriv: ECDH.PrivateKey,
+    theirPub: ECDH.PublicKey
+): AES.GCM.Key {
+    val provider = CryptographyProvider.Default
+    val shared   = myPriv
+        .sharedSecretGenerator()
+        .generateSharedSecretToByteArray(theirPub)
+    return provider.get(AES.GCM)
+        .keyDecoder()
+        .decodeFromByteArray(AES.Key.Format.RAW, shared)
+}
+
+/**
+ * Encrypts a UTF-8 string using AES-GCM; returns IV and ciphertext.
+ */
+suspend fun AES.GCM.Key.encryptContent(plaintext: ByteArray): Pair<ByteArray, ByteArray> {
+    val encryptedAll = this.cipher().encrypt(plaintext)
+    val iv           = encryptedAll.sliceArray(0 until 12)
+    val ciphertext   = encryptedAll.sliceArray(12 until encryptedAll.size)
+    return iv to ciphertext
+}
+
+/**
+ * Decrypts AES-GCM cipher with given IV.
+ */
+suspend fun AES.GCM.Key.decryptContent(iv: ByteArray, ciphertext: ByteArray): ByteArray {
+    val combined = iv + ciphertext
+    return this.cipher().decrypt(ciphertext = combined)
+}
+
+// --------------------------------------------------
+// Generic encrypt/decrypt for content
+// --------------------------------------------------
+
+/**
+ * Encrypts arbitrary text for a receiver's public key.
+ */
+suspend fun encryptFor(
+    content: String,
+    receiverPub: ECDH.PublicKey
+): EncryptedPayload {
     val provider    = CryptographyProvider.Default
     val ecdh        = provider.get(ECDH)
     val ephemeralKP = ecdh.keyPairGenerator(EC.Curve.P256).generateKey()
 
-    // Derivar secreto compartido
-    val sharedBytes: ByteArray = ephemeralKP.privateKey
-        .sharedSecretGenerator()
-        .generateSharedSecretToByteArray(receiverPubKey)
+    val aesKey      = deriveAesKey(ephemeralKP.privateKey, receiverPub)
+    val (iv, ct)    = aesKey.encryptContent(content.encodeToByteArray())
 
-    // Interpreta el secreto directo como clave RAW AES-256
-    val aesKey = provider.get(AES.GCM)
-        .keyDecoder()
-        .decodeFromByteArray(AES.Key.Format.RAW, sharedBytes)
-
-    // Cifrar con AES-GCM (auto-genera IV y lo antepone)
-    val encryptedAll = aesKey.cipher()
-        .encrypt(post.content.encodeToByteArray())
-
-    // Extraer IV y ciphertext+tag
-    val ivBytes = encryptedAll.sliceArray(0 until 12)
-    val ctBytes = encryptedAll.sliceArray(12 until encryptedAll.size)
-
-    return EncryptedPost(
-        postId          = post.idPost,
-        ephemeralPubHex = ephemeralKP.publicKey
+    return EncryptedPayload(
+        id               = "", // to be set by caller
+        ephemeralPubHex  = ephemeralKP.publicKey
             .encodeToByteArray(EC.PublicKey.Format.DER)
             .toHex(),
-        ivHex           = ivBytes.toHex(),
-        ciphertextHex   = ctBytes.toHex()
+        ivHex            = iv.toHex(),
+        ciphertextHex    = ct.toHex()
     )
 }
 
 /**
- * Desencripta un EncryptedPost generado por encryptECIESPost.
+ * Decrypts previously encrypted payload with user's private key.
  */
-suspend fun decryptECIESPost(
-    encrypted: EncryptedPost,
-    receiverPrivKey: ECDH.PrivateKey
+suspend fun decryptWith(
+    encrypted: EncryptedPayload,
+    myPriv: ECDH.PrivateKey
 ): String {
-    val provider    = CryptographyProvider.Default
-    val ecdh        = provider.get(ECDH)
+    val provider = CryptographyProvider.Default
+    val ecdh     = provider.get(ECDH)
 
-    // Reconstruir clave pública efímera
-    val ephemeralPK = ecdh.publicKeyDecoder(EC.Curve.P256)
+    val ephPub   = ecdh.publicKeyDecoder(EC.Curve.P256)
         .decodeFromByteArray(EC.PublicKey.Format.DER, encrypted.ephemeralPubHex.hexToByteArray())
 
-    // Derivar secreto compartido con la misma API antigua
-    val sharedBytes = receiverPrivKey
-        .sharedSecretGenerator()
-        .generateSharedSecretToByteArray(ephemeralPK)
+    val aesKey   = deriveAesKey(myPriv, ephPub)
+    val iv       = encrypted.ivHex.hexToByteArray()
+    val ct       = encrypted.ciphertextHex.hexToByteArray()
 
-    // Construir clave AES para desencriptar
-    val aesKey = provider.get(AES.GCM)
-        .keyDecoder()
-        .decodeFromByteArray(AES.Key.Format.RAW, sharedBytes)
-
-    // Reconstruir datos cifrados (IV + ciphertext+tag)
-    val ivBytes = encrypted.ivHex.hexToByteArray()
-    val ctBytes = encrypted.ciphertextHex.hexToByteArray()
-    val encryptedAll = ivBytes + ctBytes
-
-    // Desencriptar y retornar texto
-    val plainBytes = aesKey.cipher().decrypt(ciphertext = encryptedAll)
-    return plainBytes.decodeToString()
+    return aesKey.decryptContent(iv, ct).decodeToString()
 }
 
+// --------------------------------------------------
+// Public APIs for Posts and Messages
+// --------------------------------------------------
+
 /**
- * Encrypt a Post for a receiver (by userId).
- * Fetches the receiver's public post key, then uses ECIES + AES-GCM.
+ * Encrypts a Post for a given receiverId.
  */
 suspend fun encryptPostFor(
     post: Post,
     receiverId: String,
     clavesRepo: ClavesUsuarioRepositorio
-): EncryptedPost {
-    // 1) load receiver’s keys
-    val claves = clavesRepo.getClavesByUserId(receiverId).firstOrNull()
-        ?: throw IllegalStateException("No public keys for user \$receiverId")
-
-    // 2) decode public key
-    val provider = CryptographyProvider.Default
-    val ecdh     = provider.get(ECDH)
-    val pubBytes = claves.pubKeyPostHex.hexToByteArray()
-    val receiverPub = ecdh.publicKeyDecoder(EC.Curve.P256)
+): EncryptedPayload {
+    val claves       = clavesRepo.getClavesByUserId(receiverId).firstOrNull()
+        ?: throw IllegalStateException("No public keys for user $receiverId")
+    val pubBytes     = claves.pubKeyPostHex.hexToByteArray()
+    val receiverPub  = CryptographyProvider.Default.get(ECDH)
+        .publicKeyDecoder(EC.Curve.P256)
         .decodeFromByteArray(EC.PublicKey.Format.DER, pubBytes)
 
-    // 3) encrypt
-    return encryptECIESPost(post, receiverPub)
+    return encryptFor(post.content, receiverPub).copy(id = post.idPost)
 }
 
 /**
- * Decrypt a previously encrypted Post, using this user's private post key stored locally.
+ * Decrypts an EncryptedPayload representing a Post using local private key.
  */
 suspend fun decryptPostWith(
-    encrypted: EncryptedPost,
+    encrypted: EncryptedPayload,
     settings: SettingsState
 ): String {
-    // 1) load private key hex
     val privHex = settings.privPostKeyFlow.firstOrNull()
         ?: throw IllegalStateException("No private post key stored")
-    val privBytes = privHex.hexToByteArray()
+    val privKey = CryptographyProvider.Default.get(ECDH)
+        .privateKeyDecoder(EC.Curve.P256)
+        .decodeFromByteArray(EC.PrivateKey.Format.DER, privHex.hexToByteArray())
 
-    // 2) decode private key
-    val provider = CryptographyProvider.Default
-    val ecdh     = provider.get(ECDH)
-    val privKey  = ecdh.privateKeyDecoder(EC.Curve.P256)
-        .decodeFromByteArray(EC.PrivateKey.Format.DER, privBytes)
-
-    // 3) decrypt
-    return decryptECIESPost(encrypted, privKey)
+    return decryptWith(encrypted, privKey)
 }
 
 /**
- * Encrypt a Message for a receiver (by userId).
+ * Encrypts a Mensaje for a given receiverId.
  */
 suspend fun encryptMessageFor(
     message: Mensaje,
     receiverId: String,
     clavesRepo: ClavesUsuarioRepositorio
-): EncryptedMessage {
-    val claves = clavesRepo.getClavesByUserId(receiverId).firstOrNull()
-        ?: throw IllegalStateException("No public keys for user \$receiverId")
-    val provider = CryptographyProvider.Default
-    val ecdh     = provider.get(ECDH)
-    val pubBytes = claves.pubKeyMsgHex.hexToByteArray()
-    val receiverPub = ecdh.publicKeyDecoder(EC.Curve.P256)
+): EncryptedPayload {
+    val claves       = clavesRepo.getClavesByUserId(receiverId).firstOrNull()
+        ?: throw IllegalStateException("No public keys for user $receiverId")
+    val pubBytes     = claves.pubKeyMsgHex.hexToByteArray()
+    val receiverPub  = CryptographyProvider.Default.get(ECDH)
+        .publicKeyDecoder(EC.Curve.P256)
         .decodeFromByteArray(EC.PublicKey.Format.DER, pubBytes)
 
-    // ephemeral key
-    val ephKP = ecdh.keyPairGenerator(EC.Curve.P256).generateKey()
-    val shared = ephKP.privateKey.sharedSecretGenerator()
-        .generateSharedSecretToByteArray(receiverPub)
-    val aesKey = provider.get(AES.GCM)
-        .keyDecoder()
-        .decodeFromByteArray(AES.Key.Format.RAW, shared)
-
-    // encrypt
-    val encryptedAll = aesKey.cipher()
-        .encrypt(message.content.encodeToByteArray())
-    val ivBytes = encryptedAll.sliceArray(0 until 12)
-    val ctBytes = encryptedAll.sliceArray(12 until encryptedAll.size)
-
-    return EncryptedMessage(
-        messageId       = message.id,
-        ephemeralPubHex = ephKP.publicKey.encodeToByteArray(EC.PublicKey.Format.DER).toHex(),
-        ivHex           = ivBytes.toHex(),
-        ciphertextHex   = ctBytes.toHex()
-    )
+    return encryptFor(message.content, receiverPub).copy(id = message.id)
 }
 
 /**
- * Decrypt an EncryptedMessage using this user's private message key.
+ * Decrypts an EncryptedPayload representing a Mensaje using local private key.
  */
 suspend fun decryptMessageWith(
-    encrypted: EncryptedMessage,
+    encrypted: EncryptedPayload,
     settings: SettingsState
 ): String {
     val privHex = settings.privMsgKeyFlow.firstOrNull()
         ?: throw IllegalStateException("No private message key stored")
-    val privBytes = privHex.hexToByteArray()
-    val provider = CryptographyProvider.Default
-    val ecdh     = provider.get(ECDH)
-    val privKey  = ecdh.privateKeyDecoder(EC.Curve.P256)
-        .decodeFromByteArray(EC.PrivateKey.Format.DER, privBytes)
+    val privKey = CryptographyProvider.Default.get(ECDH)
+        .privateKeyDecoder(EC.Curve.P256)
+        .decodeFromByteArray(EC.PrivateKey.Format.DER, privHex.hexToByteArray())
 
-    // reconstruct ephemeral public key
-    val ephPub = ecdh.publicKeyDecoder(EC.Curve.P256)
-        .decodeFromByteArray(EC.PublicKey.Format.DER, encrypted.ephemeralPubHex.hexToByteArray())
-
-    // shared secret
-    val shared = privKey.sharedSecretGenerator()
-        .generateSharedSecretToByteArray(ephPub)
-    val aesKey = provider.get(AES.GCM)
-        .keyDecoder()
-        .decodeFromByteArray(AES.Key.Format.RAW, shared)
-
-    // decrypt
-    val ivBytes = encrypted.ivHex.hexToByteArray()
-    val ctBytes = encrypted.ciphertextHex.hexToByteArray()
-    val all     = ivBytes + ctBytes
-    val plain   = aesKey.cipher().decrypt(ciphertext = all)
-    return plain.decodeToString()
+    return decryptWith(encrypted, privKey)
 }
 
 @Composable
