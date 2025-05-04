@@ -44,6 +44,7 @@ import io.ktor.utils.io.core.toByteArray
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
+import org.connexuss.project.comunicacion.Mensaje
 import org.connexuss.project.comunicacion.Post
 import org.connexuss.project.interfaces.DefaultTopBar
 import org.connexuss.project.interfaces.LimitaTamanioAncho
@@ -765,16 +766,17 @@ fun PantallaMigracionCredenciales(
 
 // Encriptacion Posts
 
-/**
- * Datos cifrados de un post ECIES + AES-GCM:
- * - postId: ID de post original
- * - ephemeralPubHex: clave pública efímera DER→hex
- * - ivHex: IV de 12 bytes hex
- * - ciphertextHex: ciphertext+tag hex
- */
 @Serializable
 data class EncryptedPost(
     val postId: String,
+    val ephemeralPubHex: String,
+    val ivHex: String,
+    val ciphertextHex: String
+)
+
+@Serializable
+data class EncryptedMessage(
+    val messageId: String,
     val ephemeralPubHex: String,
     val ivHex: String,
     val ciphertextHex: String
@@ -860,6 +862,124 @@ suspend fun decryptECIESPost(
     return plainBytes.decodeToString()
 }
 
+/**
+ * Encrypt a Post for a receiver (by userId).
+ * Fetches the receiver's public post key, then uses ECIES + AES-GCM.
+ */
+suspend fun encryptPostFor(
+    post: Post,
+    receiverId: String,
+    clavesRepo: ClavesUsuarioRepositorio
+): EncryptedPost {
+    // 1) load receiver’s keys
+    val claves = clavesRepo.getClavesByUserId(receiverId).firstOrNull()
+        ?: throw IllegalStateException("No public keys for user \$receiverId")
+
+    // 2) decode public key
+    val provider = CryptographyProvider.Default
+    val ecdh     = provider.get(ECDH)
+    val pubBytes = claves.pubKeyPostHex.hexToByteArray()
+    val receiverPub = ecdh.publicKeyDecoder(EC.Curve.P256)
+        .decodeFromByteArray(EC.PublicKey.Format.DER, pubBytes)
+
+    // 3) encrypt
+    return encryptECIESPost(post, receiverPub)
+}
+
+/**
+ * Decrypt a previously encrypted Post, using this user's private post key stored locally.
+ */
+suspend fun decryptPostWith(
+    encrypted: EncryptedPost,
+    settings: SettingsState
+): String {
+    // 1) load private key hex
+    val privHex = settings.privPostKeyFlow.firstOrNull()
+        ?: throw IllegalStateException("No private post key stored")
+    val privBytes = privHex.hexToByteArray()
+
+    // 2) decode private key
+    val provider = CryptographyProvider.Default
+    val ecdh     = provider.get(ECDH)
+    val privKey  = ecdh.privateKeyDecoder(EC.Curve.P256)
+        .decodeFromByteArray(EC.PrivateKey.Format.DER, privBytes)
+
+    // 3) decrypt
+    return decryptECIESPost(encrypted, privKey)
+}
+
+/**
+ * Encrypt a Message for a receiver (by userId).
+ */
+suspend fun encryptMessageFor(
+    message: Mensaje,
+    receiverId: String,
+    clavesRepo: ClavesUsuarioRepositorio
+): EncryptedMessage {
+    val claves = clavesRepo.getClavesByUserId(receiverId).firstOrNull()
+        ?: throw IllegalStateException("No public keys for user \$receiverId")
+    val provider = CryptographyProvider.Default
+    val ecdh     = provider.get(ECDH)
+    val pubBytes = claves.pubKeyMsgHex.hexToByteArray()
+    val receiverPub = ecdh.publicKeyDecoder(EC.Curve.P256)
+        .decodeFromByteArray(EC.PublicKey.Format.DER, pubBytes)
+
+    // ephemeral key
+    val ephKP = ecdh.keyPairGenerator(EC.Curve.P256).generateKey()
+    val shared = ephKP.privateKey.sharedSecretGenerator()
+        .generateSharedSecretToByteArray(receiverPub)
+    val aesKey = provider.get(AES.GCM)
+        .keyDecoder()
+        .decodeFromByteArray(AES.Key.Format.RAW, shared)
+
+    // encrypt
+    val encryptedAll = aesKey.cipher()
+        .encrypt(message.content.encodeToByteArray())
+    val ivBytes = encryptedAll.sliceArray(0 until 12)
+    val ctBytes = encryptedAll.sliceArray(12 until encryptedAll.size)
+
+    return EncryptedMessage(
+        messageId       = message.id,
+        ephemeralPubHex = ephKP.publicKey.encodeToByteArray(EC.PublicKey.Format.DER).toHex(),
+        ivHex           = ivBytes.toHex(),
+        ciphertextHex   = ctBytes.toHex()
+    )
+}
+
+/**
+ * Decrypt an EncryptedMessage using this user's private message key.
+ */
+suspend fun decryptMessageWith(
+    encrypted: EncryptedMessage,
+    settings: SettingsState
+): String {
+    val privHex = settings.privMsgKeyFlow.firstOrNull()
+        ?: throw IllegalStateException("No private message key stored")
+    val privBytes = privHex.hexToByteArray()
+    val provider = CryptographyProvider.Default
+    val ecdh     = provider.get(ECDH)
+    val privKey  = ecdh.privateKeyDecoder(EC.Curve.P256)
+        .decodeFromByteArray(EC.PrivateKey.Format.DER, privBytes)
+
+    // reconstruct ephemeral public key
+    val ephPub = ecdh.publicKeyDecoder(EC.Curve.P256)
+        .decodeFromByteArray(EC.PublicKey.Format.DER, encrypted.ephemeralPubHex.hexToByteArray())
+
+    // shared secret
+    val shared = privKey.sharedSecretGenerator()
+        .generateSharedSecretToByteArray(ephPub)
+    val aesKey = provider.get(AES.GCM)
+        .keyDecoder()
+        .decodeFromByteArray(AES.Key.Format.RAW, shared)
+
+    // decrypt
+    val ivBytes = encrypted.ivHex.hexToByteArray()
+    val ctBytes = encrypted.ciphertextHex.hexToByteArray()
+    val all     = ivBytes + ctBytes
+    val plain   = aesKey.cipher().decrypt(ciphertext = all)
+    return plain.decodeToString()
+}
+
 @Composable
 fun PantallaClavesUsuario(
     navController: NavHostController,
@@ -880,34 +1000,48 @@ fun PantallaClavesUsuario(
         .privPostKeyFlow
         .collectAsState(initial = null)
 
-    Column(modifier = Modifier
-        .fillMaxSize()
-        .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        // Sección de claves públicas
-        Text("Claves Públicas:", style = MaterialTheme.typography.h6)
-        val msgPubText = pubClaves?.pubKeyMsgHex ?: "(no configurada)"
-        val postPubText = pubClaves?.pubKeyPostHex ?: "(no configurada)"
-        Text("Mensajes: $msgPubText")
-        Text("Posts:    $postPubText")
-
-        Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = {
-            scope.launch {
-                // TODO: Generar nuevo par de claves y llamar a clavesRepo.upsertClaves(...)
-            }
-        }, modifier = Modifier.fillMaxWidth()) {
-            Text("Regenerar claves")
+    Scaffold(
+        topBar = {
+            DefaultTopBar(
+                title = "Claves de Usuario",
+                navController = navController,
+                showBackButton = true,
+                irParaAtras = true
+            )
         }
+    ) { padding ->
+        LimitaTamanioAncho { modifier ->
+            Column(
+                modifier = modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Sección de claves públicas
+                Text("Claves Públicas:", style = MaterialTheme.typography.h6)
+                val msgPubText = pubClaves?.pubKeyMsgHex ?: "(no configurada)"
+                val postPubText = pubClaves?.pubKeyPostHex ?: "(no configurada)"
+                Text("Mensajes: $msgPubText")
+                Text("Posts:    $postPubText")
 
-        Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(onClick = {
+                    scope.launch {
+                        // TODO: Generar nuevo par de claves y llamar a clavesRepo.upsertClaves(...)
+                    }
+                }, modifier = Modifier.fillMaxWidth()) {
+                    Text("Regenerar claves")
+                }
 
-        // Sección de claves privadas
-        Text("Claves Privadas (guardadas localmente):", style = MaterialTheme.typography.h6)
-        val msgPrivText = privMsgKey ?: "(no existe)"
-        val postPrivText = privPostKey ?: "(no existe)"
-        Text("Mensajes: $msgPrivText")
-        Text("Posts:    $postPrivText")
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Sección de claves privadas
+                Text("Claves Privadas (guardadas localmente):", style = MaterialTheme.typography.h6)
+                val msgPrivText = privMsgKey ?: "(no existe)"
+                val postPrivText = privPostKey ?: "(no existe)"
+                Text("Mensajes: $msgPrivText")
+                Text("Posts:    $postPrivText")
+            }
+        }
     }
 }
