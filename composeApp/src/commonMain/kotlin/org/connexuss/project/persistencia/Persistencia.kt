@@ -116,6 +116,8 @@ const val KEY_REFRESH = "refresh_token"
 const val KEY_EXPIRES  = "expires_in"
 const val KEY_USER    = "user_data"
 const val KEY_USER_JSON = "user_data_json"
+private const val KEY_PRIV_MSG = "private_key_messages_hex"
+private const val KEY_PRIV_POST = "private_key_posts_hex"
 
 @OptIn(ExperimentalSettingsApi::class)
 suspend fun SettingsState.clearSession() {
@@ -185,6 +187,36 @@ class SettingsState @OptIn(ExperimentalSettingsApi::class) constructor(
     val thresholdFlow: Flow<Double> = flowSettings.getDoubleFlow("threshold", defaultValue = 0.0)
     @OptIn(ExperimentalSettingsApi::class)
     val launchCountFlow: Flow<Long> = flowSettings.getLongFlow("launch_count", defaultValue = 0L)
+
+    // Parte encriptacion y claves privadas
+    /** Flow de la clave privada de mensajes (hex) */
+    @OptIn(ExperimentalSettingsApi::class)
+    val privMsgKeyFlow: Flow<String?> =
+        flowSettings.getStringFlow(KEY_PRIV_MSG, defaultValue = "")
+            .map { it.ifBlank { null } }
+
+    /** Flow de la clave privada de posts (hex) */
+    @OptIn(ExperimentalSettingsApi::class)
+    val privPostKeyFlow: Flow<String?> =
+        flowSettings.getStringFlow(KEY_PRIV_POST, defaultValue = "")
+            .map { it.ifBlank { null } }
+
+    /** Guarda la clave privada de mensajes (hex) */
+    @OptIn(ExperimentalSettingsApi::class)
+    suspend fun savePrivateMsgKey(hex: String) =
+        flowSettings.putString(KEY_PRIV_MSG, hex)
+
+    /** Guarda la clave privada de posts (hex) */
+    @OptIn(ExperimentalSettingsApi::class)
+    suspend fun savePrivatePostKey(hex: String) =
+        flowSettings.putString(KEY_PRIV_POST, hex)
+
+    /** Elimina ambas claves privadas */
+    @OptIn(ExperimentalSettingsApi::class)
+    suspend fun clearPrivateKeys() {
+        flowSettings.remove(KEY_PRIV_MSG)
+        flowSettings.remove(KEY_PRIV_POST)
+    }
 
     // Funciones suspend para escritura
     @OptIn(ExperimentalSettingsApi::class)

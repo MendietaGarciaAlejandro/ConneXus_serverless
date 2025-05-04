@@ -13,6 +13,7 @@ androidx-lifecycle = "2.8.4"
 foundationAndroid = "1.8.0"
 foundationLayoutAndroid = "1.8.0"
 animationCoreLint = "1.8.0"
+indispensable = "3.16.1"
 material3Android = "1.3.2"
 skikoWasmJs = "0.9.4"
 uiGraphicsAndroid = "1.8.0"
@@ -74,6 +75,11 @@ androidx-ui-android = { group = "androidx.compose.ui", name = "ui-android", vers
 androidx-foundation-layout-android = { group = "androidx.compose.foundation", name = "foundation-layout-android", version.ref = "foundationLayoutAndroid" }
 
 # Kotlin libraries
+indispensable = { module = "at.asitplus.signum:indispensable", version.ref = "indispensable" }
+indispensable-asn1-wasm-js = { module = "at.asitplus.signum:indispensable-asn1-wasm-js", version.ref = "indispensable" }
+indispensable-cosef-wasm-js = { module = "at.asitplus.signum:indispensable-cosef-wasm-js", version.ref = "indispensable" }
+indispensable-josef-wasm-js = { module = "at.asitplus.signum:indispensable-josef-wasm-js", version.ref = "indispensable" }
+indispensable-js = { module = "at.asitplus.signum:indispensable-js", version.ref = "indispensable" }
 kotlinx-coroutines-swing = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-swing", version.ref = "kotlinx-coroutines" }
 kotlinx-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version.ref = "kotlinxDatetime" }
 kotlinx-serialization = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerialization" }

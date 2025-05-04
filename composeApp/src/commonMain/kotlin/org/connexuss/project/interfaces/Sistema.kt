@@ -70,6 +70,9 @@ import connexus_serverless.composeapp.generated.resources.ic_foros
 import connexus_serverless.composeapp.generated.resources.usuarios
 import connexus_serverless.composeapp.generated.resources.visibilidadOff
 import connexus_serverless.composeapp.generated.resources.visibilidadOn
+import dev.whyoleg.cryptography.CryptographyProvider
+import dev.whyoleg.cryptography.algorithms.EC
+import dev.whyoleg.cryptography.algorithms.ECDH
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
 import kotlinx.coroutines.delay
@@ -103,6 +106,9 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 import dev.whyoleg.cryptography.random.CryptographyRandom
 import org.connexuss.project.encriptacion.hexToByteArray
 import kotlinx.coroutines.flow.Flow
+import org.connexuss.project.encriptacion.ClavesUsuario
+import org.connexuss.project.encriptacion.toHex
+import org.connexuss.project.supabase.SupabaseClavesRepo
 
 @Composable
 fun DefaultTopBar(
@@ -2181,7 +2187,7 @@ fun esEmailValido(email: String): Boolean {
  * @param navController controlador de navegación.
  */
 @Composable
-fun PantallaRegistro(navController: NavHostController) {
+fun PantallaRegistro(navController: NavHostController, settingsState: SettingsState) {
     var nombre by remember { mutableStateOf("") }
     var emailInterno by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -2189,6 +2195,7 @@ fun PantallaRegistro(navController: NavHostController) {
     var errorMessage by remember { mutableStateOf("") }
 
     val repoSupabase = SupabaseUsuariosRepositorio()
+    val clavesUsuarioRepo = SupabaseClavesRepo()
 
     val errorContrasenas = traducir("error_contrasenas")
     val errorEmailYaRegistrado =
@@ -2291,6 +2298,38 @@ fun PantallaRegistro(navController: NavHostController) {
 
                                                 val uid = Supabase.client.auth.currentUserOrNull()?.id
                                                     ?: throw Exception("No se pudo obtener el UID del usuario autenticado")
+
+                                                // ——————————————
+                                                // 2. GENERAR PARES DE CLAVES
+                                                val provider    = CryptographyProvider.Default
+                                                val ecdhAlg     = provider.get(ECDH)
+                                                // Par para mensajes
+                                                val msgKP   = ecdhAlg.keyPairGenerator(EC.Curve.P256).generateKey()
+                                                // Par para posts
+                                                val postKP  = ecdhAlg.keyPairGenerator(EC.Curve.P256).generateKey()
+
+                                                // 3. SERIALIZAR CLAVES PÚBLICAS
+                                                val msgPubHex  = msgKP.publicKey
+                                                    .encodeToByteArray(EC.PublicKey.Format.DER).toHex()
+                                                val postPubHex = postKP.publicKey
+                                                    .encodeToByteArray(EC.PublicKey.Format.DER).toHex()
+
+                                                // 4. GUARDAR EN BD (claves_usuario)
+                                                val claves = ClavesUsuario(
+                                                    idUsuario     = uid,
+                                                    pubKeyMsgHex  = msgPubHex,
+                                                    pubKeyPostHex = postPubHex
+                                                )
+                                                clavesUsuarioRepo.upsertClaves(claves)
+
+                                                // 5. PERSISTIR CLAVES PRIVADAS en Settings
+                                                settingsState.savePrivateMsgKey(
+                                                    msgKP.privateKey.encodeToByteArray(EC.PrivateKey.Format.DER).toHex()
+                                                )
+                                                settingsState.savePrivatePostKey(
+                                                    postKP.privateKey.encodeToByteArray(EC.PrivateKey.Format.DER).toHex()
+                                                )
+                                                // ——————————————
 
                                                 // 2) Generar salt
                                                 val saltBytes: ByteArray = CryptographyRandom.nextBytes(16)

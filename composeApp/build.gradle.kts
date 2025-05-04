@@ -158,6 +158,9 @@ kotlin {
 //            implementation(libs.firebase.messaging)
 //            implementation(libs.firebase.storage)
             implementation(compose.components.resources)
+
+            // Encriptacion 2.0
+//            implementation(libs.indispensable)
         }
 
         androidMain.dependencies {
@@ -262,6 +265,11 @@ kotlin {
             //implementation(libs.skiko.wasm.js)
             //implementation(libs.multiplatform.settings.make.observable.js)
 
+            // Encriptacion 2.0
+//            implementation(libs.indispensable.asn1.wasm.js)
+//            implementation(libs.indispensable.cosef.wasm.js)
+//            implementation(libs.indispensable.josef.wasm.js)
+//            implementation(libs.indispensable.js)
         }
 
         commonTest.dependencies {

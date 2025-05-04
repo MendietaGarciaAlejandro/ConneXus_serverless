@@ -106,7 +106,7 @@ fun Navegacion(
             PantallaLogin(navController, settingsState)
         }
         composable("registro") {
-            PantallaRegistro(navController)
+            PantallaRegistro(navController, settingsState)
         }
         composable("ajustes") {
             muestraAjustes(navController, settingsState)

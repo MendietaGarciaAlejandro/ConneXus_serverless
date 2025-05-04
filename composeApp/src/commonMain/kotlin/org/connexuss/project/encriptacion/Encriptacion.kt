@@ -19,6 +19,7 @@ import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -33,6 +34,7 @@ import dev.whyoleg.cryptography.BinarySize.Companion.bytes
 import dev.whyoleg.cryptography.CryptographyProvider
 import dev.whyoleg.cryptography.algorithms.AES
 import dev.whyoleg.cryptography.algorithms.EC
+import dev.whyoleg.cryptography.algorithms.ECDH
 import dev.whyoleg.cryptography.algorithms.ECDSA
 import dev.whyoleg.cryptography.algorithms.HMAC
 import dev.whyoleg.cryptography.algorithms.PBKDF2
@@ -42,8 +44,11 @@ import io.ktor.utils.io.core.toByteArray
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
+import org.connexuss.project.comunicacion.Post
 import org.connexuss.project.interfaces.DefaultTopBar
 import org.connexuss.project.interfaces.LimitaTamanioAncho
+import org.connexuss.project.persistencia.SettingsState
+import org.connexuss.project.supabase.ClavesUsuarioRepositorio
 import org.connexuss.project.supabase.SupabaseUsuariosRepositorio
 
 /**
@@ -755,5 +760,154 @@ fun PantallaMigracionCredenciales(
                 }
             }
         }
+    }
+}
+
+// Encriptacion Posts
+
+/**
+ * Datos cifrados de un post ECIES + AES-GCM:
+ * - postId: ID de post original
+ * - ephemeralPubHex: clave pública efímera DER→hex
+ * - ivHex: IV de 12 bytes hex
+ * - ciphertextHex: ciphertext+tag hex
+ */
+@Serializable
+data class EncryptedPost(
+    val postId: String,
+    val ephemeralPubHex: String,
+    val ivHex: String,
+    val ciphertextHex: String
+)
+
+@Serializable
+data class ClavesUsuario(
+    val idUsuario: String,
+    val pubKeyMsgHex: String,
+    val pubKeyPostHex: String
+)
+
+/**
+ * Cifra un Post con ECIES (ECDH + AES-GCM):
+ */
+suspend fun encryptECIESPost(
+    post: Post,
+    receiverPubKey: ECDH.PublicKey
+): EncryptedPost {
+    val provider    = CryptographyProvider.Default
+    val ecdh        = provider.get(ECDH)
+    val ephemeralKP = ecdh.keyPairGenerator(EC.Curve.P256).generateKey()
+
+    // Derivar secreto compartido
+    val sharedBytes: ByteArray = ephemeralKP.privateKey
+        .sharedSecretGenerator()
+        .generateSharedSecretToByteArray(receiverPubKey)
+
+    // Interpreta el secreto directo como clave RAW AES-256
+    val aesKey = provider.get(AES.GCM)
+        .keyDecoder()
+        .decodeFromByteArray(AES.Key.Format.RAW, sharedBytes)
+
+    // Cifrar con AES-GCM (auto-genera IV y lo antepone)
+    val encryptedAll = aesKey.cipher()
+        .encrypt(post.content.encodeToByteArray())
+
+    // Extraer IV y ciphertext+tag
+    val ivBytes = encryptedAll.sliceArray(0 until 12)
+    val ctBytes = encryptedAll.sliceArray(12 until encryptedAll.size)
+
+    return EncryptedPost(
+        postId          = post.idPost,
+        ephemeralPubHex = ephemeralKP.publicKey
+            .encodeToByteArray(EC.PublicKey.Format.DER)
+            .toHex(),
+        ivHex           = ivBytes.toHex(),
+        ciphertextHex   = ctBytes.toHex()
+    )
+}
+
+/**
+ * Desencripta un EncryptedPost generado por encryptECIESPost.
+ */
+suspend fun decryptECIESPost(
+    encrypted: EncryptedPost,
+    receiverPrivKey: ECDH.PrivateKey
+): String {
+    val provider    = CryptographyProvider.Default
+    val ecdh        = provider.get(ECDH)
+
+    // Reconstruir clave pública efímera
+    val ephemeralPK = ecdh.publicKeyDecoder(EC.Curve.P256)
+        .decodeFromByteArray(EC.PublicKey.Format.DER, encrypted.ephemeralPubHex.hexToByteArray())
+
+    // Derivar secreto compartido con la misma API antigua
+    val sharedBytes = receiverPrivKey
+        .sharedSecretGenerator()
+        .generateSharedSecretToByteArray(ephemeralPK)
+
+    // Construir clave AES para desencriptar
+    val aesKey = provider.get(AES.GCM)
+        .keyDecoder()
+        .decodeFromByteArray(AES.Key.Format.RAW, sharedBytes)
+
+    // Reconstruir datos cifrados (IV + ciphertext+tag)
+    val ivBytes = encrypted.ivHex.hexToByteArray()
+    val ctBytes = encrypted.ciphertextHex.hexToByteArray()
+    val encryptedAll = ivBytes + ctBytes
+
+    // Desencriptar y retornar texto
+    val plainBytes = aesKey.cipher().decrypt(ciphertext = encryptedAll)
+    return plainBytes.decodeToString()
+}
+
+@Composable
+fun PantallaClavesUsuario(
+    navController: NavHostController,
+    settingsState: SettingsState,
+    clavesRepo: ClavesUsuarioRepositorio,
+    userId: String
+) {
+    val scope = rememberCoroutineScope()
+
+    // Colectamos los Flows como estados Compose
+    val pubClaves by clavesRepo
+        .getClavesByUserId(userId)
+        .collectAsState(initial = null)
+    val privMsgKey by settingsState
+        .privMsgKeyFlow
+        .collectAsState(initial = null)
+    val privPostKey by settingsState
+        .privPostKeyFlow
+        .collectAsState(initial = null)
+
+    Column(modifier = Modifier
+        .fillMaxSize()
+        .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        // Sección de claves públicas
+        Text("Claves Públicas:", style = MaterialTheme.typography.h6)
+        val msgPubText = pubClaves?.pubKeyMsgHex ?: "(no configurada)"
+        val postPubText = pubClaves?.pubKeyPostHex ?: "(no configurada)"
+        Text("Mensajes: $msgPubText")
+        Text("Posts:    $postPubText")
+
+        Spacer(modifier = Modifier.height(16.dp))
+        Button(onClick = {
+            scope.launch {
+                // TODO: Generar nuevo par de claves y llamar a clavesRepo.upsertClaves(...)
+            }
+        }, modifier = Modifier.fillMaxWidth()) {
+            Text("Regenerar claves")
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Sección de claves privadas
+        Text("Claves Privadas (guardadas localmente):", style = MaterialTheme.typography.h6)
+        val msgPrivText = privMsgKey ?: "(no existe)"
+        val postPrivText = privPostKey ?: "(no existe)"
+        Text("Mensajes: $msgPrivText")
+        Text("Posts:    $postPrivText")
     }
 }
