@@ -1966,10 +1966,9 @@ fun PantallaEmailEnElSistema(navController: NavHostController) {
 @Composable
 fun PantallaRestablecer(navController: NavHostController) {
     var email by remember { mutableStateOf("") }
-    var errorMessage by remember { mutableStateOf("") }
-
-    // Realiza la traducción fuera del bloque onClick
-    val errorCorreoVacio = traducir("error_correo_vacio")
+    var mensaje by remember { mutableStateOf("") }
+    var error by remember { mutableStateOf("") }
+    val scope = rememberCoroutineScope()
 
     MaterialTheme {
         Scaffold(
@@ -1978,84 +1977,88 @@ fun PantallaRestablecer(navController: NavHostController) {
                     title = traducir("restablecer_contrasena"),
                     navController = navController,
                     showBackButton = true,
-                    muestraEngranaje = true,
+                    muestraEngranaje = false,
                     irParaAtras = true
                 )
             }
         ) { padding ->
             Box(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
                 contentAlignment = Alignment.Center
             ) {
                 LimitaTamanioAncho { modifier ->
                     Column(
-                        modifier = modifier
-                            .padding(padding)
-                            .padding(16.dp),
+                        modifier = modifier.padding(16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Image(
                             painter = painterResource(Res.drawable.connexus),
-                            contentDescription = traducir("icono_app"),
+                            contentDescription = "Logo",
                             modifier = Modifier.size(100.dp)
                         )
-                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Spacer(Modifier.height(16.dp))
+
                         OutlinedTextField(
                             value = email,
                             onValueChange = { email = it },
-                            label = { Text(traducir("email")) },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                            modifier = Modifier.fillMaxWidth()
+                            label = { Text("Correo electrónico") },
+                            modifier = Modifier.fillMaxWidth(),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
                         )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            Button(
-                                onClick = {
-                                    errorMessage = if (email.isNotBlank()) {
-                                        ""
-                                    } else {
-                                        errorCorreoVacio
+
+                        Spacer(Modifier.height(16.dp))
+
+                        Button(
+                            onClick = {
+                                scope.launch {
+                                    if (email.isBlank()) {
+                                        error = "Introduce tu correo"
+                                        return@launch
                                     }
-                                },
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Text(traducir("enviar_correo"))
-                            }
-                            Button(
-                                onClick = { navController.navigate("login") },
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Text(traducir("cancelar"))
-                            }
-                        }
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+
+                                    try {
+                                        Supabase.client.auth.resetPasswordForEmail(email)
+                                        mensaje = "📧 Se ha enviado un correo para restablecer tu contraseña. Ábrelo desde tu navegador y sigue los pasos."
+                                        error = ""
+                                    } catch (e: Exception) {
+                                        error = "❌ Error al enviar el correo: ${e.message}"
+                                    }
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Button(
-                                onClick = { navController.navigate("emailEnSistema") },
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Text(traducir("degug_restablecer_ok"))
-                            }
-                            Button(
-                                onClick = { navController.navigate("emailNoEnSistema") },
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Text(traducir("degug_restablecer_fail"))
-                            }
+                            Text("Enviar correo de restablecimiento")
                         }
-                        if (errorMessage.isNotEmpty()) {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                errorMessage,
-                                color = MaterialTheme.colors.error,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.fillMaxWidth()
-                            )
+
+                        Spacer(Modifier.height(16.dp))
+
+                        if (mensaje.isNotEmpty()) {
+                            Text(mensaje, color = Color.Green, textAlign = TextAlign.Center)
+                        }
+
+                        if (error.isNotEmpty()) {
+                            Text(error, color = MaterialTheme.colors.error, textAlign = TextAlign.Center)
+                        }
+
+                        Spacer(Modifier.height(24.dp))
+
+                        Text(
+                            "Una vez restablezcas tu contraseña desde el navegador, vuelve a esta app y entra con tu nueva clave.",
+                            style = MaterialTheme.typography.body2,
+                            color = Color.Gray,
+                            textAlign = TextAlign.Center
+                        )
+
+                        Spacer(Modifier.height(32.dp))
+
+                        Button(
+                            onClick = { navController.navigate("login") },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Volver al login")
                         }
                     }
                 }
@@ -2063,6 +2066,8 @@ fun PantallaRestablecer(navController: NavHostController) {
         }
     }
 }
+
+
 
 // Pantalla de de restablecer contraseña ingresando la nueva contraseña
 /**
@@ -2075,8 +2080,10 @@ fun muestraRestablecimientoContasenna(navController: NavHostController) {
     var contrasenna by remember { mutableStateOf("") }
     var confirmarContrasenna by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
+    var mensaje by remember { mutableStateOf("") }
+    val scope = rememberCoroutineScope()
+    val repo = remember { SupabaseUsuariosRepositorio() }
 
-    // Realiza la traducción fuera del bloque onClick
     val errorContrasenas = traducir("error_contrasenas")
 
     MaterialTheme {
@@ -2086,20 +2093,20 @@ fun muestraRestablecimientoContasenna(navController: NavHostController) {
                     title = traducir("restablecer_contrasena"),
                     navController = navController,
                     showBackButton = true,
-                    muestraEngranaje = true,
-                    irParaAtras = true
+                    muestraEngranaje = false,
+                    irParaAtras = false
                 )
             }
         ) { padding ->
             Box(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
                 contentAlignment = Alignment.Center
             ) {
                 LimitaTamanioAncho { modifier ->
                     Column(
-                        modifier = modifier
-                            .padding(padding)
-                            .padding(16.dp),
+                        modifier = modifier.padding(16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Image(
@@ -2107,7 +2114,9 @@ fun muestraRestablecimientoContasenna(navController: NavHostController) {
                             contentDescription = traducir("icono_app"),
                             modifier = Modifier.size(100.dp)
                         )
-                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Spacer(Modifier.height(16.dp))
+
                         OutlinedTextField(
                             value = contrasenna,
                             onValueChange = { contrasenna = it },
@@ -2115,7 +2124,9 @@ fun muestraRestablecimientoContasenna(navController: NavHostController) {
                             visualTransformation = PasswordVisualTransformation(),
                             modifier = Modifier.fillMaxWidth()
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Spacer(Modifier.height(8.dp))
+
                         OutlinedTextField(
                             value = confirmarContrasenna,
                             onValueChange = { confirmarContrasenna = it },
@@ -2123,39 +2134,61 @@ fun muestraRestablecimientoContasenna(navController: NavHostController) {
                             visualTransformation = PasswordVisualTransformation(),
                             modifier = Modifier.fillMaxWidth()
                         )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            Button(
-                                onClick = {
-                                    errorMessage =
-                                        if (contrasenna == confirmarContrasenna && contrasenna.isNotBlank()) {
-                                            ""
-                                        } else {
-                                            errorContrasenas
+
+                        Spacer(Modifier.height(16.dp))
+
+                        Button(
+                            onClick = {
+                                if (contrasenna != confirmarContrasenna || contrasenna.isBlank()) {
+                                    errorMessage = errorContrasenas
+                                    return@Button
+                                }
+
+                                scope.launch {
+                                    try {
+                                        val user = Supabase.client.auth.currentUserOrNull()
+                                        if (user == null) {
+                                            errorMessage = "⚠️ No hay sesión activa para actualizar."
+                                            return@launch
                                         }
-                                },
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Text(traducir("restablecer"))
-                            }
-                            Button(
-                                onClick = { navController.navigate("login") },
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Text(traducir("cancelar"))
-                            }
+
+                                        // 1. Actualizar en Auth
+                                        Supabase.client.auth.updateUser {
+                                            password = contrasenna
+                                        }
+
+                                        // 2. Actualizar también en la tabla usuario
+                                        repo.updateCampo(
+                                            tabla = "usuario",
+                                            campo = "contrasennia",
+                                            valor = contrasenna,
+                                            idCampo = "idunico",
+                                            idValor = user.id
+                                        )
+
+                                        mensaje = "✅ Contraseña restablecida con éxito."
+                                        errorMessage = ""
+                                        navController.navigate("login") {
+                                            popUpTo("restablecerNueva") { inclusive = true }
+                                        }
+                                    } catch (e: Exception) {
+                                        errorMessage = "❌ Error: ${e.message}"
+                                    }
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(traducir("restablecer"))
                         }
+
+                        if (mensaje.isNotEmpty()) {
+                            Spacer(Modifier.height(8.dp))
+                            Text(mensaje, color = Color.Green)
+                        }
+
                         if (errorMessage.isNotEmpty()) {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                errorMessage,
-                                color = MaterialTheme.colors.error,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.fillMaxWidth()
-                            )
+                            Spacer(Modifier.height(8.dp))
+                            Text(errorMessage, color = MaterialTheme.colors.error)
                         }
                     }
                 }
@@ -2163,6 +2196,8 @@ fun muestraRestablecimientoContasenna(navController: NavHostController) {
         }
     }
 }
+
+
 
 
 //metodo que comprueba correo
@@ -2191,10 +2226,8 @@ fun PantallaRegistro(navController: NavHostController) {
     val errorEmailYaRegistrado =
         traducir("error_email_ya_registrado") // Falta implementar y mete en los mapas de idiomas
 
-    // Instanciamos un usuario vacío que se completará si el registro es correcto
     val usuario = Usuario()
 
-    // Usamos un scope para lanzar corrutinas
     val scope = rememberCoroutineScope()
 
     MaterialTheme {
@@ -2280,7 +2313,7 @@ fun PantallaRegistro(navController: NavHostController) {
                                                     return@launch
                                                 }
 
-                                                // 1. Registro en Supabase Auth
+                                                // Registro en Supabase Auth
                                                 val authResult = Supabase.client.auth.signUpWith(Email) {
                                                     this.email = emailTrimmed
                                                     this.password = password
@@ -2289,7 +2322,7 @@ fun PantallaRegistro(navController: NavHostController) {
                                                 val uid = Supabase.client.auth.currentUserOrNull()?.id
                                                     ?: throw Exception("No se pudo obtener el UID del usuario autenticado")
 
-                                                // 2. Crear objeto Usuario con el mismo ID que auth.uid()
+                                                // Crear objeto Usuario con el mismo ID que auth.uid()
                                                 val nuevoUsuario = Usuario(
                                                     idUnico = uid,
                                                     nombre = nombre,
@@ -2304,18 +2337,19 @@ fun PantallaRegistro(navController: NavHostController) {
                                                 println("Nuevo usuario: $nuevoUsuario")
                                                 println("UID Supabase actual: $uid")
 
-
-                                                // 3. Guardar en tabla usuario
+                                                /*
                                                 repoSupabase.addUsuario(nuevoUsuario)
 
-                                                // 4. ir al login
+
                                                 navController.navigate("login") {
                                                     popUpTo("registro") { inclusive = true }
-                                                }
+                                                }*/
+                                                navController.navigate("registroVerificaCorreo/${emailTrimmed}/${nombre}/${password}")
+
 
                                             } catch (e: Exception) {
-                                                //errorMessage = "Error: ${e.message}"
-                                                navController.navigate("login")
+                                                errorMessage = "❌ Error al registrar: ${e.message}"
+                                                //navController.navigate("login")
                                             }
                                         }
                                     }
@@ -2349,6 +2383,123 @@ fun PantallaRegistro(navController: NavHostController) {
         }
     }
 }
+
+/**
+ * Composable que muestra la pantalla de verificación de correo.
+ *
+ * @param navController controlador de navegación.
+ */
+
+@Composable
+fun PantallaVerificaCorreo(
+    navController: NavHostController,
+    email: String?,
+    nombre: String?,
+    password: String?
+) {
+    val scope = rememberCoroutineScope()
+    val repo = remember { SupabaseUsuariosRepositorio() }
+
+    var mensaje by remember { mutableStateOf("") }
+
+    Scaffold(
+        topBar = {
+            DefaultTopBar(
+                title = "Verificación de correo",
+                navController = navController,
+                showBackButton = false,
+                muestraEngranaje = false,
+                irParaAtras = false
+            )
+        }
+    ) { padding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("Hemos enviado un correo de verificación a:")
+                Text(email ?: "", style = MaterialTheme.typography.h6)
+                Spacer(Modifier.height(16.dp))
+                Text("Verifica tu cuenta, y luego pulsa el botón para continuar.")
+                Spacer(Modifier.height(24.dp))
+
+                Button(onClick = {
+                    scope.launch {
+                        try {
+                            // 🛡Reautenticación
+                            if (!email.isNullOrBlank() && !password.isNullOrBlank()) {
+                                Supabase.client.auth.signInWith(Email) {
+                                    this.email = email
+                                    this.password = password
+                                }
+                            }
+
+                            val usuarioActual = Supabase.client.auth.currentUserOrNull()
+
+                            if (usuarioActual?.emailConfirmedAt != null) {
+                                val nuevoUsuario = Usuario(
+                                    idUnico = usuarioActual.id,
+                                    correo = email ?: "",
+                                    nombre = nombre ?: "",
+                                    aliasPrivado = "Privado_$nombre",
+                                    aliasPublico = UtilidadesUsuario().generarAliasPublico(),
+                                    activo = true,
+                                    descripcion = "Perfil creado automáticamente",
+                                    contrasennia = password ?: ""
+                                )
+
+                                repo.addUsuario(nuevoUsuario)
+
+                                navController.navigate("login") {
+                                    popUpTo("registroVerificaCorreo") { inclusive = true }
+                                }
+                            } else {
+                                mensaje = "❗ Tu correo aún no está verificado."
+                            }
+                        } catch (e: Exception) {
+                            //mensaje = "❌ Error: ${e.message}"
+                            navController.navigate("login")
+                        }
+                    }
+                }) {
+                    Text("Ya lo he verificado")
+                }
+
+                Spacer(Modifier.height(12.dp))
+
+                Button(onClick = {
+                    scope.launch {
+                        try {
+                            if (!email.isNullOrBlank() && !password.isNullOrBlank()) {
+                                Supabase.client.auth.signUpWith(Email) {
+                                    this.email = email
+                                    this.password = password
+                                }
+                                mensaje = "📧 Correo reenviado correctamente."
+                            } else {
+                                mensaje = "⚠️ Falta información para reenviar el correo."
+                            }
+                        } catch (e: Exception) {
+                            mensaje = "❌ Error al reenviar: ${e.message}"
+                        }
+                    }
+                }) {
+                    Text("Reenviar correo")
+                }
+
+                if (mensaje.isNotEmpty()) {
+                    Spacer(Modifier.height(12.dp))
+                    Text(mensaje, color = MaterialTheme.colors.error)
+                }
+            }
+        }
+    }
+}
+
+
 
 /**
  * Composable que muestra la pantalla de inicio de sesión.
@@ -2493,11 +2644,15 @@ fun PantallaLogin(navController: NavHostController, settingsState: SettingsState
                                             sesionActualUsuario = Supabase.client.auth.currentSessionOrNull()
                                             errorMessage = ""
 
+
+
+
                                             // Persistir solo si rememberMe=true
                                             if (rememberMe && sesionActualUsuario != null) {
                                                 val userJson = Json.encodeToString(Usuario.serializer(), usuario)
                                                 settingsState.saveSession(sesionActualUsuario!!, UsuarioPrincipal!!)
                                             }
+
 
                                             navController.navigate("contactos") {
                                                 popUpTo("login") { inclusive = true }
