@@ -1,13 +1,16 @@
 package org.connexuss.project.navegacion
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.russhwolf.settings.ExperimentalSettingsApi
+import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.Dispatchers
 import org.connexuss.project.encriptacion.PantallaPruebasEncriptacion
 /*
@@ -43,6 +46,7 @@ import org.connexuss.project.interfaces.PantallaIdiomas
 import org.connexuss.project.interfaces.PantallaLogin
 import org.connexuss.project.interfaces.PantallaRegistro
 import org.connexuss.project.interfaces.PantallaRestablecer
+import org.connexuss.project.interfaces.PantallaVerificaCorreo
 import org.connexuss.project.interfaces.PantallaZonaPruebas
 import org.connexuss.project.interfaces.SplashScreen
 import org.connexuss.project.interfaces.TemaConfig
@@ -57,6 +61,7 @@ import org.connexuss.project.interfaces.muestraContactos
 import org.connexuss.project.interfaces.muestraHomePage
 import org.connexuss.project.interfaces.muestraRestablecimientoContasenna
 import org.connexuss.project.interfaces.muestraUsuarios
+import org.connexuss.project.misc.Supabase
 import org.connexuss.project.misc.UsuarioPrincipal
 import org.connexuss.project.misc.imagenesPerfilPersona
 import org.connexuss.project.persistencia.FlowSettingsProvider
@@ -116,6 +121,9 @@ fun Navegacion(
         }
         composable("restablecer") {
             PantallaRestablecer(navController)
+        }
+        composable("restablecerNueva") {
+            muestraRestablecimientoContasenna(navController)
         }
         composable("usuarios") {
             muestraUsuarios(navController)
@@ -276,5 +284,20 @@ fun Navegacion(
         composable("pruebasPersistencia") {
             PantallaPruebasPersistencia(estadoFlowSettings, navController)
         }
+        composable(
+            "registroVerificaCorreo/{email}/{nombre}/{password}",
+            arguments = listOf(
+                navArgument("email") { type = NavType.StringType },
+                navArgument("nombre") { type = NavType.StringType },
+                navArgument("password") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val email = backStackEntry.arguments?.getString("email")
+            val nombre = backStackEntry.arguments?.getString("nombre")
+            val password = backStackEntry.arguments?.getString("password")
+            PantallaVerificaCorreo(navController, email, nombre, password)
+        }
+
+
     }
 }
