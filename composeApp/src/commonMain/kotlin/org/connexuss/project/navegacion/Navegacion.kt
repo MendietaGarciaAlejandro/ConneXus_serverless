@@ -77,7 +77,8 @@ fun Navegacion(
     temaConfig: TemaConfig,
     onToggleTheme: () -> Unit,
     onColorChange: (String) -> Unit,
-    listaUsuariosGrupo: List<Usuario>
+    listaUsuariosGrupo: List<Usuario>,
+    settingsState: SettingsState
 ) {
     val navController = rememberNavController()
 
@@ -99,19 +100,19 @@ fun Navegacion(
 
     NavHost(navController = navController, startDestination = "splash") {
         composable("splash") {
-            SplashScreen(navController)
+            SplashScreen(navController, settingsState)
         }
         composable("home") {
             muestraHomePage(navController)
         }
         composable("login") {
-            PantallaLogin(navController)
+            PantallaLogin(navController, settingsState)
         }
         composable("registro") {
             PantallaRegistro(navController)
         }
         composable("ajustes") {
-            muestraAjustes(navController)
+            muestraAjustes(navController, settingsState)
         }
         composable("contactos") {
             muestraChats(navController)
@@ -146,9 +147,7 @@ fun Navegacion(
         composable("cambiarTema") {
             PantallaCambiarTema(
                 navController = navController,
-                temaConfig = temaConfig,
-                onToggleTheme = onToggleTheme,
-                onColorChange = onColorChange // Pasa la función directamente
+                settingsState = settingsState
             )
         }
         composable("mostrarPerfilPrincipal") {
@@ -164,12 +163,11 @@ fun Navegacion(
             val chatId = backStackEntry.arguments?.getString("chatId")
             mostrarChatGrupo(navController, chatId, imagenesPerfil = emptyList())
         }
-
         composable("idiomas") {
-            PantallaIdiomas(navController)
+            PantallaIdiomas(navController, settingsState)
         }
         composable("cambiaFuente") {
-            PantallaCambiarFuente(navController)
+            PantallaCambiarFuente(navController, settingsState)
         }
         composable("mostrarPerfilUsuario/{userId}") { backStackEntry ->
             val userId = backStackEntry.arguments?.getString("userId")
