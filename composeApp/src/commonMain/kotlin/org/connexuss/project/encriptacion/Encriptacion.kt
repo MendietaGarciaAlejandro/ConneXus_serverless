@@ -915,18 +915,18 @@ suspend fun encryptPostFor(
 /**
  * Decrypts an EncryptedPayload representing a Post using local private key.
  */
-suspend fun decryptPostWith(
-    encrypted: EncryptedPayload,
-    settings: SettingsState
-): String {
-    val privHex = settings.privPostKeyFlow.firstOrNull()
-        ?: throw IllegalStateException("No private post key stored")
-    val privKey = CryptographyProvider.Default.get(ECDH)
-        .privateKeyDecoder(EC.Curve.P256)
-        .decodeFromByteArray(EC.PrivateKey.Format.DER, privHex.hexToByteArray())
-
-    return decryptWith(encrypted, privKey)
-}
+//suspend fun decryptPostWith(
+//    encrypted: EncryptedPayload,
+//    settings: SettingsState
+//): String {
+//    val privHex = settings.privPostKeyFlow.firstOrNull()
+//        ?: throw IllegalStateException("No private post key stored")
+//    val privKey = CryptographyProvider.Default.get(ECDH)
+//        .privateKeyDecoder(EC.Curve.P256)
+//        .decodeFromByteArray(EC.PrivateKey.Format.DER, privHex.hexToByteArray())
+//
+//    return decryptWith(encrypted, privKey)
+//}
 
 /**
  * Encrypts a Mensaje for a given receiverId.
@@ -978,9 +978,9 @@ fun PantallaClavesUsuario(
     val privMsgKey by settingsState
         .privMsgKeyFlow
         .collectAsState(initial = null)
-    val privPostKey by settingsState
-        .privPostKeyFlow
-        .collectAsState(initial = null)
+//    val privPostKey by settingsState
+//        .privPostKeyFlow
+//        .collectAsState(initial = null)
 
     Scaffold(
         topBar = {
@@ -1020,9 +1020,9 @@ fun PantallaClavesUsuario(
                 // Sección de claves privadas
                 Text("Claves Privadas (guardadas localmente):", style = MaterialTheme.typography.h6)
                 val msgPrivText = privMsgKey ?: "(no existe)"
-                val postPrivText = privPostKey ?: "(no existe)"
+//                val postPrivText = privPostKey ?: "(no existe)"
                 Text("Mensajes: $msgPrivText")
-                Text("Posts:    $postPrivText")
+//                Text("Posts:    $postPrivText")
             }
         }
     }

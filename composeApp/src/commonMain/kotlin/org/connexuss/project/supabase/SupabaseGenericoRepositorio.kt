@@ -23,8 +23,13 @@ import kotlinx.coroutines.flow.flow
 import org.connexuss.project.misc.Supabase
 import kotlin.reflect.KProperty1
 
-private const val SUPABASE_URL = "https://yrpvwyewzsvxqwkacbao.supabase.co"
-private const val SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlycHZ3eWV3enN2eHF3a2FjYmFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQzOTIxMDEsImV4cCI6MjA1OTk2ODEwMX0.llu6uixyc3-VyOziE2GwdjoWcW16Jnez65GYWzX8esI"
+// Credenciales de Supabase Connexus
+//private const val SUPABASE_URL = "https://yrpvwyewzsvxqwkacbao.supabase.co"
+//private const val SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlycHZ3eWV3enN2eHF3a2FjYmFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQzOTIxMDEsImV4cCI6MjA1OTk2ODEwMX0.llu6uixyc3-VyOziE2GwdjoWcW16Jnez65GYWzX8esI"
+
+// Credenciales de Base de datos Supabase de prueba
+private const val SUPABASE_URL = "https://aitsngvbqluaisjzunwv.supabase.co"
+private const val SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFpdHNuZ3ZicWx1YWlzanp1bnd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY0NjQ5ODgsImV4cCI6MjA2MjA0MDk4OH0.vjC5_8eEb9_N_hcwBg9WU6IRbXUW3_WBiFaXYUR6TKU"
 
 // Interfaz sin el modificador inline en deleteItemGeneric:
 //interface ISupabaseRepository<T : Any> {

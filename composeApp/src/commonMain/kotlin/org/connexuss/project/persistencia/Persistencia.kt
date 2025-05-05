@@ -23,7 +23,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.russhwolf.settings.ExperimentalSettingsApi
@@ -37,12 +36,14 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import org.connexuss.project.interfaces.DefaultTopBar
 import org.connexuss.project.interfaces.LimitaTamanioAncho
 import org.connexuss.project.interfaces.TemaConfig
+import org.connexuss.project.misc.UsuarioPrincipal
 import org.connexuss.project.usuario.Usuario
 
 val settings: Settings = Settings() // SharedPreferences en Android, Preferences.userRoot() en Desktop, localStorage en JS
@@ -116,8 +117,9 @@ const val KEY_REFRESH = "refresh_token"
 const val KEY_EXPIRES  = "expires_in"
 const val KEY_USER    = "user_data"
 const val KEY_USER_JSON = "user_data_json"
-private const val KEY_PRIV_MSG = "private_key_messages_hex"
-private const val KEY_PRIV_POST = "private_key_posts_hex"
+var KEY_PRIV_MSG: String? = null
+//private const val KEY_PRIV_MSG = "private_key_messages_hex"
+//private const val KEY_PRIV_POST = "private_key_posts_hex"
 
 @OptIn(ExperimentalSettingsApi::class)
 suspend fun SettingsState.clearSession() {
@@ -192,30 +194,31 @@ class SettingsState @OptIn(ExperimentalSettingsApi::class) constructor(
     /** Flow de la clave privada de mensajes (hex) */
     @OptIn(ExperimentalSettingsApi::class)
     val privMsgKeyFlow: Flow<String?> =
-        flowSettings.getStringFlow(KEY_PRIV_MSG, defaultValue = "")
-            .map { it.ifBlank { null } }
+        KEY_PRIV_MSG?.let { flowSettings.getStringFlow(it, defaultValue = "") }
+            ?.map { it.ifBlank { null } }
+            ?: flow { emit(null) }
 
     /** Flow de la clave privada de posts (hex) */
-    @OptIn(ExperimentalSettingsApi::class)
-    val privPostKeyFlow: Flow<String?> =
-        flowSettings.getStringFlow(KEY_PRIV_POST, defaultValue = "")
-            .map { it.ifBlank { null } }
+//    @OptIn(ExperimentalSettingsApi::class)
+//    val privPostKeyFlow: Flow<String?> =
+//        flowSettings.getStringFlow(KEY_PRIV_POST, defaultValue = "")
+//            .map { it.ifBlank { null } }
 
     /** Guarda la clave privada de mensajes (hex) */
     @OptIn(ExperimentalSettingsApi::class)
     suspend fun savePrivateMsgKey(hex: String) =
-        flowSettings.putString(KEY_PRIV_MSG, hex)
+        KEY_PRIV_MSG?.let { flowSettings.putString(it, hex) }
 
     /** Guarda la clave privada de posts (hex) */
-    @OptIn(ExperimentalSettingsApi::class)
-    suspend fun savePrivatePostKey(hex: String) =
-        flowSettings.putString(KEY_PRIV_POST, hex)
+//    @OptIn(ExperimentalSettingsApi::class)
+//    suspend fun savePrivatePostKey(hex: String) =
+//        flowSettings.putString(KEY_PRIV_POST, hex)
 
     /** Elimina ambas claves privadas */
     @OptIn(ExperimentalSettingsApi::class)
     suspend fun clearPrivateKeys() {
-        flowSettings.remove(KEY_PRIV_MSG)
-        flowSettings.remove(KEY_PRIV_POST)
+        KEY_PRIV_MSG?.let { flowSettings.remove(it) }
+        //flowSettings.remove(KEY_PRIV_POST)
     }
 
     // Funciones suspend para escritura

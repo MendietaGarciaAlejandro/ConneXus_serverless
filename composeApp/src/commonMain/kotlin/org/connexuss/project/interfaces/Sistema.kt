@@ -108,6 +108,7 @@ import org.connexuss.project.encriptacion.hexToByteArray
 import kotlinx.coroutines.flow.Flow
 import org.connexuss.project.encriptacion.ClavesUsuario
 import org.connexuss.project.encriptacion.toHex
+import org.connexuss.project.persistencia.KEY_PRIV_MSG
 import org.connexuss.project.supabase.SupabaseClavesRepo
 
 @Composable
@@ -2289,7 +2290,7 @@ fun PantallaRegistro(navController: NavHostController, settingsState: SettingsSt
                                                     errorMessage = "Formato de correo inválido"
                                                     return@launch
                                                 }
-
+                                                KEY_PRIV_MSG = emailTrimmed
                                                 // 1. Registro en Supabase Auth
                                                 val authResult = Supabase.client.auth.signUpWith(Email) {
                                                     this.email = emailTrimmed
@@ -2326,9 +2327,9 @@ fun PantallaRegistro(navController: NavHostController, settingsState: SettingsSt
                                                 settingsState.savePrivateMsgKey(
                                                     msgKP.privateKey.encodeToByteArray(EC.PrivateKey.Format.DER).toHex()
                                                 )
-                                                settingsState.savePrivatePostKey(
-                                                    postKP.privateKey.encodeToByteArray(EC.PrivateKey.Format.DER).toHex()
-                                                )
+//                                                settingsState.savePrivatePostKey(
+//                                                    postKP.privateKey.encodeToByteArray(EC.PrivateKey.Format.DER).toHex()
+//                                                )
                                                 // ——————————————
 
                                                 // 2) Generar salt
