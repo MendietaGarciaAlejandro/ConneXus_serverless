@@ -786,7 +786,7 @@ data class EncryptedMessage(
 data class ClavesUsuario(
     val idUsuario:         String,
     val pubKeyMsgHex:      String, // ECDH clave pública mensajes (DER→hex)
-    val pubKeyPostHex:     String, // ECDH clave pública posts
+    //val pubKeyPostHex:     String, // ECDH clave pública posts
     //val pubKeyMsgSignHex:  String  // ECDSA clave pública firma mensajes
 )
 
@@ -897,20 +897,20 @@ suspend fun decryptWith(
 /**
  * Encrypts a Post for a given receiverId.
  */
-suspend fun encryptPostFor(
-    post: Post,
-    receiverId: String,
-    clavesRepo: ClavesUsuarioRepositorio
-): EncryptedPayload {
-    val claves       = clavesRepo.getClavesByUserId(receiverId).firstOrNull()
-        ?: throw IllegalStateException("No public keys for user $receiverId")
-    val pubBytes     = claves.pubKeyPostHex.hexToByteArray()
-    val receiverPub  = CryptographyProvider.Default.get(ECDH)
-        .publicKeyDecoder(EC.Curve.P256)
-        .decodeFromByteArray(EC.PublicKey.Format.DER, pubBytes)
-
-    return encryptFor(post.content, receiverPub).copy(id = post.idPost)
-}
+//suspend fun encryptPostFor(
+//    post: Post,
+//    receiverId: String,
+//    clavesRepo: ClavesUsuarioRepositorio
+//): EncryptedPayload {
+//    val claves       = clavesRepo.getClavesByUserId(receiverId).firstOrNull()
+//        ?: throw IllegalStateException("No public keys for user $receiverId")
+//    val pubBytes     = claves.pubKeyPostHex.hexToByteArray()
+//    val receiverPub  = CryptographyProvider.Default.get(ECDH)
+//        .publicKeyDecoder(EC.Curve.P256)
+//        .decodeFromByteArray(EC.PublicKey.Format.DER, pubBytes)
+//
+//    return encryptFor(post.content, receiverPub).copy(id = post.idPost)
+//}
 
 /**
  * Decrypts an EncryptedPayload representing a Post using local private key.
@@ -1002,9 +1002,9 @@ fun PantallaClavesUsuario(
                 // Sección de claves públicas
                 Text("Claves Públicas:", style = MaterialTheme.typography.h6)
                 val msgPubText = pubClaves?.pubKeyMsgHex ?: "(no configurada)"
-                val postPubText = pubClaves?.pubKeyPostHex ?: "(no configurada)"
+                //val postPubText = pubClaves?.pubKeyPostHex ?: "(no configurada)"
                 Text("Mensajes: $msgPubText")
-                Text("Posts:    $postPubText")
+                //Text("Posts:    $postPubText")
 
                 Spacer(modifier = Modifier.height(16.dp))
                 Button(onClick = {

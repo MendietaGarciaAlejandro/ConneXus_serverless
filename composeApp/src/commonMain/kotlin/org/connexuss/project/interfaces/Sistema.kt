@@ -2291,6 +2291,33 @@ fun PantallaRegistro(navController: NavHostController, settingsState: SettingsSt
                                                     return@launch
                                                 }
                                                 KEY_PRIV_MSG = emailTrimmed
+
+                                                // 1) Verificar si el email ya está registrado
+                                                val existingUser = repoSupabase.getUsuarioPorEmail(emailTrimmed).firstOrNull()
+                                                if (existingUser != null) {
+                                                    errorMessage = errorEmailYaRegistrado
+                                                    return@launch
+                                                }
+                                                // 2) Si no está registrado, continuar con el registro
+                                                // 1.1) Trim y validación de email
+                                                if (emailTrimmed.isBlank()) {
+                                                    errorMessage = "El correo no puede estar vacío"
+                                                    return@launch
+                                                }
+                                                if (!esEmailValido(emailTrimmed)) {
+                                                    errorMessage = "Formato de correo inválido"
+                                                    return@launch
+                                                }
+                                                // 1.2) Trim y validación de contraseña
+                                                if (password.isBlank()) {
+                                                    errorMessage = "La contraseña no puede estar vacía"
+                                                    return@launch
+                                                }
+                                                if (password.length < 5) {
+                                                    errorMessage = "La contraseña debe tener al menos 5 caracteres"
+                                                    return@launch
+                                                }
+
                                                 // 1. Registro en Supabase Auth
                                                 val authResult = Supabase.client.auth.signUpWith(Email) {
                                                     this.email = emailTrimmed
@@ -2319,7 +2346,7 @@ fun PantallaRegistro(navController: NavHostController, settingsState: SettingsSt
                                                 val claves = ClavesUsuario(
                                                     idUsuario     = uid,
                                                     pubKeyMsgHex  = msgPubHex,
-                                                    pubKeyPostHex = postPubHex
+                                                    //pubKeyPostHex = postPubHex
                                                 )
                                                 clavesUsuarioRepo.upsertClaves(claves)
 
@@ -2537,6 +2564,16 @@ fun PantallaLogin(navController: NavHostController, settingsState: SettingsState
                                     if (emailInterno.isBlank() || passwordInterno.isBlank()) {
                                         errorMessage = porFavorCompleta
                                         return@launch
+                                    }
+
+                                    val existingUser = repoSupabase.getUsuarioPorEmail(emailInterno.trim()).firstOrNull()
+                                    if (existingUser != null) {
+                                        if (existingUser.contrasennia != passwordInterno) {
+                                            errorMessage = "La contraseña no es correcta"
+                                            return@launch
+                                        } else {
+                                            errorMessage = ""
+                                        }
                                     }
 
                                     try {
