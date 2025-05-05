@@ -298,6 +298,7 @@ dependencies {
     // Kotlin dependencies
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.serialization)
+    implementation(libs.androidx.runtime.android)
 
     // Firebase dependencies (commented)
 //    implementation(platform(libs.firebase.android.bom))
