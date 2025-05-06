@@ -51,8 +51,12 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import dev.whyoleg.cryptography.CryptographyProvider
 import dev.whyoleg.cryptography.algorithms.AES
+import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.postgrest.result.PostgrestResult
+import io.github.jan.supabase.postgrest.rpc
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.put
 import org.connexuss.project.comunicacion.Hilo
 import org.connexuss.project.comunicacion.Post
 import org.connexuss.project.comunicacion.Tema
@@ -61,6 +65,8 @@ import org.connexuss.project.encriptacion.SecretRecord
 import org.connexuss.project.encriptacion.generaClaveAES
 import org.connexuss.project.encriptacion.pruebasEncriptacionAES
 import org.connexuss.project.encriptacion.toHex
+import org.connexuss.project.misc.Supabase
+import org.connexuss.project.misc.SupabaseAdmin
 import org.connexuss.project.misc.UsuarioPrincipal
 import org.connexuss.project.supabase.SecretsRepositorio
 import org.connexuss.project.supabase.SupabaseRepositorioGenerico
@@ -167,17 +173,26 @@ fun ForoScreen(navController: NavHostController) {
 
                             val temaId = generateId()
 
-                            // 1) Creamos el SecretRecord y lo upserteamos en vault.secrets
-                            secretsRepo.upsertSecretAdmin(
-                                SecretRecord(
-                                    id          = temaId,
-                                    name        = "tema_$temaId",
-                                    description = "Clave AES para tema $temaId",
-                                    secret      = claveSimHex,
-                                    keyId       = "<vault-key-uuid>",
-                                    nonceHex    = ""
-                                )
+                            val result: PostgrestResult = SupabaseAdmin.client.postgrest.rpc(
+                                function = "insert_secret",
+                                parameters = kotlinx.serialization.json.buildJsonObject {
+                                    put("name", temaId)
+                                    put("secret", claveSimHex)
+                                }
                             )
+                            println("Resultado de la función insert_secret: $result")
+
+                            // 1) Creamos el SecretRecord y lo upserteamos en vault.secrets
+//                            secretsRepo.upsertSecretAdmin(
+//                                SecretRecord(
+//                                    id          = temaId,
+//                                    name        = "tema_$temaId",
+//                                    description = "Clave AES para tema $temaId",
+//                                    secret      = claveSimHex,
+//                                    keyId       = "<vault-key-uuid>",
+//                                    nonceHex    = ""
+//                                )
+//                            )
 
                             // 2) Insertamos el Tema (solo con nombre cifrado)
                             repoForo.addItem(
