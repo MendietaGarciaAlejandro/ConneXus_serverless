@@ -279,6 +279,9 @@ fun Navegacion(
         composable("pruebasTextosRealtime") {
             PantallaTextosRealtime(navHostController = navController)
         }
+        composable("zonaReportes") {
+            PantallaReportesRealtime(navHostController = navController)
+        }
         composable("pruebasPersistencia") {
             PantallaPruebasPersistencia(estadoFlowSettings, navController)
         }

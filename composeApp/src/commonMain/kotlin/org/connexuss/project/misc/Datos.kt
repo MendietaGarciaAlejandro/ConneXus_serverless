@@ -1363,10 +1363,10 @@ var sesionActualUsuario: UserSession? = null
 
 @Serializable
 data class Reporte(
-    @SerialName("idreporte")
+    @SerialName("idReporte")
     val idReporte: String,
 
-    @SerialName("idusuario")
+    @SerialName("idUsuario")
     val idUsuario: String,
 
     @SerialName("motivo")

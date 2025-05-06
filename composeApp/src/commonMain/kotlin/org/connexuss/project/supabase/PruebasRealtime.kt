@@ -46,10 +46,12 @@ import io.github.jan.supabase.postgrest.query.filter.FilterOperation
 import io.github.jan.supabase.realtime.selectAsFlow
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import org.connexuss.project.interfaces.DefaultTopBar
+import org.connexuss.project.interfaces.LimitaTamanioAncho
 import org.connexuss.project.misc.Reporte
 import org.connexuss.project.misc.Supabase
 import org.connexuss.project.usuario.Usuario
@@ -215,6 +217,7 @@ fun PantallaTextosRealtime(navHostController: NavHostController) {
         }
     }
 }
+
 @Composable
 fun PantallaReportesRealtime(navHostController: NavHostController) {
     // Suscripción a lista de reportes en tiempo real
@@ -222,13 +225,13 @@ fun PantallaReportesRealtime(navHostController: NavHostController) {
         Supabase.client
             .subscribeTableAsFlow<Reporte, String>("reporte", Reporte::idReporte)
     }
-    val reportes by reportesFlow.collectAsState(initial = emptyList(), context = Dispatchers.Default)
+    val reportes by reportesFlow.collectAsState(initial = emptyList())
     val scope = rememberCoroutineScope()
 
     Scaffold(
         topBar = {
             DefaultTopBar(
-                title = "Chat Tiempo Real",
+                title = "Reportes del sistema",
                 navController = navHostController,
                 irParaAtras = true,
                 showBackButton = true,
@@ -236,28 +239,30 @@ fun PantallaReportesRealtime(navHostController: NavHostController) {
             )
         }
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(16.dp)
-        ) {
-            ReportesScreen(
-                reportes = reportes,
-                onBuscarUsuario = { idUsuario ->
-                    scope.launch {
-                        // Lógica para buscar usuario con repositorio
-                        try {
-                            val usuario = SupabaseUsuariosRepositorio().getUsuarioPorId(idUsuario)
-                            // Puedes mostrar detalles o manejar el usuario aquí si lo deseas
-                            // Por ejemplo, enviar evento de analytics:
-                            // Analytics.logUserLookup(idUsuario)
-                        } catch (e: Exception) {
-                            // Manejo de error en la búsqueda de usuario
+        LimitaTamanioAncho { modifier ->
+            Column(
+                modifier = modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(16.dp)
+            ) {
+                ReportesScreen(
+                    reportes = reportes,
+                    onBuscarUsuario = { idUsuario ->
+                        scope.launch {
+                            try {
+                                // Ejemplo: buscar usuario y manejarlo en la pantalla padre
+                                val usuario = SupabaseUsuariosRepositorio()
+                                    .getUsuarioPorId(idUsuario)
+                                    .first()
+                                // Usar usuario si se requiere: analytics, navegación...
+                            } catch (e: Exception) {
+                                // Manejo de error
+                            }
                         }
                     }
-                }
-            )
+                )
+            }
         }
     }
 }
@@ -291,11 +296,14 @@ fun ReportesScreen(
                         reporteSeleccionado = reporte
                         scope.launch {
                             try {
-                                usuario = repoUsuario.getUsuarioPorId(reporte.idUsuario).firstOrNull()
-                                onBuscarUsuario(reporte.idUsuario)
+                                // Obtener el Usuario directamente desde el Flow
+                                usuario = repoUsuario
+                                    .getUsuarioPorId(reporte.idUsuario)  // Flow<Usuario?>
+                                    .first()                            // Usuario?
                             } catch (e: Exception) {
                                 usuario = null
                             }
+                            onBuscarUsuario(reporte.idUsuario)
                             dialogoVisible = true
                         }
                     }
@@ -315,17 +323,17 @@ fun ReportesScreen(
             text = {
                 Column {
                     Text("ID Usuario: ${reporteSeleccionado!!.idUsuario}")
-                    usuario?.let {
-                        Text("Nombre: ${it.nombre}")
-                        Text("Correo: ${it.correo}")
-                        Text("Alias Público: ${it.aliasPublico}")
-                        Text("Alias Privado: ${it.aliasPrivado}")
-                        Text("Activo: ${it.activo}")
-                        Text("Descripción: ${it.descripcion}")
-                    } ?: Text("Error al cargar datos del usuario")
+//                    usuario?.let {
+//                        Text("Nombre: ${it.nombre}")
+//                        Text("Correo: ${it.correo}")
+//                        Text("Alias Público: ${it.aliasPublico}")
+//                        Text("Alias Privado: ${it.aliasPrivado}")
+//                        Text("Activo: ${it.activo}")
+//                        Text("Descripción: ${it.descripcion}")
+//                    } ?: Text("Error al cargar datos del usuario")
 
                     Text("Motivo del reporte: ${reporteSeleccionado!!.motivo}")
-                    Text("Respuesta Admin: ${reporteSeleccionado!!.respuestaAdmin ?: "Sin respuesta"}")
+                    //Text("Respuesta Admin: ${reporteSeleccionado!!.respuestaAdmin ?: "Sin respuesta"}")
                     Text("Fecha: ${reporteSeleccionado!!.fecha}")
                 }
             },
@@ -375,6 +383,7 @@ fun ReporteItem(
         }
     }
 }
+
 
 fun generaIdLongAleatorio(): Long {
     val largo = Random.nextLong()
