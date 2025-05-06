@@ -168,4 +168,28 @@ class SupabaseUsuariosRepositorio : ISupabaseUsuariosRepositorio {
             }
             .decodeSingle<Usuario>()
     }
+
+    suspend fun updateCampo(
+        tabla: String,
+        campo: String,
+        valor: Any,
+        idCampo: String,
+        idValor: Any
+    ) {
+        try {
+            Supabase.client
+                .from(tabla)
+                .update(mapOf(campo to valor)) {
+                    filter {
+                        eq(idCampo, idValor)
+                    }
+                    select()
+                }
+            println("✅ Campo '$campo' actualizado correctamente en $tabla")
+        } catch (e: Exception) {
+            println("❌ Error actualizando campo: ${e.message}")
+            throw e
+        }
+    }
+
 }

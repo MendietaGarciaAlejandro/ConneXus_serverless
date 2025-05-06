@@ -1,5 +1,6 @@
 import org.jetbrains.compose.ExperimentalComposeLibrary
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+import org.jetbrains.compose.web.tasks.UnpackSkikoWasmRuntimeTask
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
@@ -13,7 +14,9 @@ plugins {
     //kotlin("plugin.serialization") version "2.1.0"
     alias(libs.plugins.kotlinxSerialization)
 }
-
+tasks.withType<UnpackSkikoWasmRuntimeTask> {
+    enabled = true
+}
 android {
     namespace = "org.connexuss.project"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
@@ -83,6 +86,7 @@ kotlin {
             val rootDirPath = project.rootDir.path
             val projectDirPath = project.projectDir.path
             commonWebpackConfig {
+                mode = org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig.Mode.DEVELOPMENT
                 outputFileName = "composeApp.js"
                 devServer = (devServer ?: KotlinWebpackConfig.DevServer()).apply {
                     static = (static ?: mutableListOf()).apply {
@@ -94,8 +98,10 @@ kotlin {
         }
         compilerOptions {
             freeCompilerArgs.add("-Xwasm-use-new-exception-proposal")
+            //freeCompilerArgs.add("-Xwasm-use-traps-instead-of-exceptions")
         }
         binaries.executable()
+
     }
 
     sourceSets {
@@ -151,6 +157,7 @@ kotlin {
 //            implementation(libs.firebase.functions)
 //            implementation(libs.firebase.messaging)
 //            implementation(libs.firebase.storage)
+            implementation(compose.components.resources)
         }
 
         androidMain.dependencies {
@@ -252,6 +259,9 @@ kotlin {
 
             // Persistencia multiplataforma para WASM
             implementation(libs.multiplatform.settings.wasm.js)
+            //implementation(libs.skiko.wasm.js)
+            //implementation(libs.multiplatform.settings.make.observable.js)
+
         }
 
         commonTest.dependencies {
@@ -291,7 +301,7 @@ compose.desktop {
     application {
         mainClass = "org.connexuss.project.MainKt"
         nativeDistributions {
-            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
+            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Exe, TargetFormat.Deb, TargetFormat.AppImage, TargetFormat.Rpm)
             packageName = "org.connexuss.project"
             packageVersion = "1.0.0"
         }

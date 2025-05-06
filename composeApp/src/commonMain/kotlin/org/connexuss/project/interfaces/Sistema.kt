@@ -42,11 +42,13 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -75,6 +77,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
 import org.connexuss.project.comunicacion.Conversacion
 import org.connexuss.project.comunicacion.ConversacionesUsuario
 import org.connexuss.project.comunicacion.Mensaje
@@ -82,10 +85,16 @@ import org.connexuss.project.misc.Imagen
 import org.connexuss.project.misc.Supabase
 import org.connexuss.project.misc.UsuarioPrincipal
 import org.connexuss.project.misc.sesionActualUsuario
+import org.connexuss.project.persistencia.SettingsState
+import org.connexuss.project.persistencia.clearSession
+import org.connexuss.project.persistencia.getRestoredSessionFlow
+import org.connexuss.project.persistencia.getSessionFlow
+import org.connexuss.project.persistencia.saveSession
 import org.connexuss.project.supabase.SupabaseRepositorioGenerico
 import org.connexuss.project.supabase.SupabaseUsuariosRepositorio
 import org.connexuss.project.usuario.AlmacenamientoUsuario
 import org.connexuss.project.usuario.Usuario
+import org.connexuss.project.usuario.UsuarioBloqueado
 import org.connexuss.project.usuario.UsuarioContacto
 import org.connexuss.project.usuario.UtilidadesUsuario
 import org.jetbrains.compose.resources.DrawableResource
@@ -479,12 +488,12 @@ fun ChatCard(
     conversacion: Conversacion,
     navController: NavHostController,
     participantes: List<Usuario>,
-    ultimoMensaje: Mensaje?
+    ultimoMensaje: Mensaje?,
+    bloqueados: Set<String> = emptySet()
 ) {
     val currentUserId = UsuarioPrincipal?.getIdUnicoMio()
     val esGrupo = !conversacion.nombre.isNullOrBlank()
 
-    // DEBUG: imprime IDs de participantes
     println("👥 Participantes en la conversación ${conversacion.id}:")
     participantes.forEach {
         println(" - ${it.getNombreCompletoMio()} (id: ${it.getIdUnicoMio()})")
@@ -492,6 +501,7 @@ fun ChatCard(
     println("🧍 Usuario actual: $currentUserId")
 
     val otroUsuario = participantes.firstOrNull { it.getIdUnicoMio() != currentUserId }
+    val estaBloqueado = otroUsuario?.getIdUnicoMio() in bloqueados
 
     val displayName = if (esGrupo) {
         conversacion.nombre!!
@@ -505,32 +515,37 @@ fun ChatCard(
         }
     } else null
 
+    val destino = if (esGrupo) {
+        "mostrarChatGrupo/${conversacion.id}"
+    } else {
+        "mostrarChat/${conversacion.id}"
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
-            .clickable {
-                val destino = if (esGrupo) {
-                    "mostrarChatGrupo/${conversacion.id}"
-                } else {
-                    "mostrarChat/${conversacion.id}"
-                }
-                println("🧭 Navegando a: $destino")
-                navController.navigate(destino)
-            },
-        elevation = 4.dp
+            .then(
+                if (!estaBloqueado) Modifier.clickable {
+                    println("🧭 Navegando a: $destino")
+                    navController.navigate(destino)
+                } else Modifier
+            ),
+        elevation = 4.dp,
+        backgroundColor = if (estaBloqueado) Color.Red.copy(alpha = 0.2f) else MaterialTheme.colors.surface
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
                 text = displayName,
-                style = MaterialTheme.typography.h6
+                style = MaterialTheme.typography.h6,
+                color = if (estaBloqueado) Color.Red else MaterialTheme.colors.onSurface
             )
 
             nombresParticipantes?.let {
                 Text(
                     text = it,
                     style = MaterialTheme.typography.body2,
-                    color = Color.Gray,
+                    color = if (estaBloqueado) Color.Red else Color.Gray,
                     modifier = Modifier.padding(top = 4.dp, bottom = 4.dp)
                 )
             }
@@ -539,6 +554,7 @@ fun ChatCard(
                 Text(
                     text = ultimoMensaje.content,
                     style = MaterialTheme.typography.body1,
+                    color = if (estaBloqueado) Color.Red else MaterialTheme.colors.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -546,7 +562,6 @@ fun ChatCard(
         }
     }
 }
-
 
 
 
@@ -561,15 +576,15 @@ fun muestraChats(navController: NavHostController) {
     var listaConversaciones by remember { mutableStateOf<List<Conversacion>>(emptyList()) }
     var todosLosUsuarios by remember { mutableStateOf<List<Usuario>>(emptyList()) }
     var mensajes by remember { mutableStateOf<List<Mensaje>>(emptyList()) }
+    var usuariosBloqueados by remember { mutableStateOf<Set<String>>(emptySet()) }
 
-    // 🔄 Cargar TODAS las relaciones de conversaciones_usuario (no solo las del usuario actual)
     LaunchedEffect(Unit) {
         repo.getAll<ConversacionesUsuario>("conversaciones_usuario").collect {
             relacionesConversaciones = it
         }
     }
 
-    // Cargar todas las conversaciones en las que participa el usuario actual
+    // Convers activas
     LaunchedEffect(relacionesConversaciones) {
         val idsDelUsuario = relacionesConversaciones
             .filter { it.idusuario == currentUserId }
@@ -580,17 +595,27 @@ fun muestraChats(navController: NavHostController) {
         }
     }
 
-    // Cargar todos los usuarios (para mostrar sus nombres)
+    // usuarios
     LaunchedEffect(Unit) {
         repo.getAll<Usuario>("usuario").collect {
             todosLosUsuarios = it
         }
     }
 
-    // Cargar todos los mensajes
+    // Mensajes
     LaunchedEffect(Unit) {
         repo.getAll<Mensaje>("mensaje").collect {
             mensajes = it
+        }
+    }
+
+    //  Usuarios bloqueados
+    LaunchedEffect(Unit) {
+        repo.getAll<UsuarioBloqueado>("usuario_bloqueados").collect { lista ->
+            usuariosBloqueados = lista
+                .filter { it.idUsuario == currentUserId }
+                .map { it.idBloqueado }
+                .toSet()
         }
     }
 
@@ -634,7 +659,8 @@ fun muestraChats(navController: NavHostController) {
                                 conversacion = conversacion,
                                 navController = navController,
                                 participantes = participantes,
-                                ultimoMensaje = ultimoMensaje
+                                ultimoMensaje = ultimoMensaje,
+                                bloqueados = usuariosBloqueados
                             )
                         }
                     }
@@ -670,6 +696,8 @@ fun muestraContactos(navController: NavHostController) {
 
     var registrosContacto by remember { mutableStateOf<List<UsuarioContacto>>(emptyList()) }
     var contactos by remember { mutableStateOf<List<Usuario>>(emptyList()) }
+    var usuariosBloqueados by remember { mutableStateOf<Set<String>>(emptySet()) }
+
 
     var showNuevoContactoDialog by remember { mutableStateOf(false) }
     var nuevoContactoId by remember { mutableStateOf("") }
@@ -695,6 +723,16 @@ fun muestraContactos(navController: NavHostController) {
         }
     }
 
+    LaunchedEffect(currentUserId) {
+        repo.getAll<UsuarioBloqueado>("usuario_bloqueados").collect { lista ->
+            usuariosBloqueados = lista
+                .filter { it.idUsuario == currentUserId }
+                .map { it.idBloqueado }
+                .toSet()
+        }
+    }
+
+
     MaterialTheme {
         Scaffold(
             topBar = {
@@ -715,21 +753,40 @@ fun muestraContactos(navController: NavHostController) {
                 Column(modifier = Modifier.fillMaxSize()) {
                     LazyColumn(modifier = Modifier.weight(1f)) {
                         items(contactos) { usuario ->
+                            val estaBloqueado = usuario.idUnico in usuariosBloqueados
+
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(8.dp),
-                                elevation = 4.dp
+                                    .padding(8.dp)
+                                    .then(
+                                        if (!estaBloqueado)
+                                            Modifier.clickable {
+                                                navController.navigate("mostrarPerfilUsuario/${usuario.idUnico}")
+                                            }
+                                        else Modifier // no clickable
+                                    ),
+                                elevation = 4.dp,
+                                backgroundColor = if (estaBloqueado) Color.Red.copy(alpha = 0.2f) else Color.White
                             ) {
                                 Column(modifier = Modifier.padding(16.dp)) {
                                     Text(
                                         text = "${traducir("nombre_label")}: ${usuario.getNombreCompletoMio()}",
-                                        style = MaterialTheme.typography.subtitle1
+                                        style = MaterialTheme.typography.subtitle1,
+                                        color = if (estaBloqueado) Color.Red else Color.Unspecified
                                     )
                                     Text(
                                         text = "${traducir("alias_label")}: ${usuario.getAliasMio()}",
-                                        style = MaterialTheme.typography.body1
+                                        style = MaterialTheme.typography.body1,
+                                        color = if (estaBloqueado) Color.Red else Color.Unspecified
                                     )
+                                    if (estaBloqueado) {
+                                        Text(
+                                            text = "Bloqueado",
+                                            style = MaterialTheme.typography.caption,
+                                            color = Color.Red
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -757,45 +814,60 @@ fun muestraContactos(navController: NavHostController) {
                         title = { Text(text = traducir("nuevo_contacto")) },
                         text = {
                             Column {
-                                Text(text = "Introduce el idUnico del usuario:")
+                                Text(text = "Introduce el alias privado del usuario:")
                                 OutlinedTextField(
                                     value = nuevoContactoId,
                                     onValueChange = { nuevoContactoId = it },
-                                    label = { Text(text = "idUnico") }
+                                    label = { Text(text = "Alias Privado") }
                                 )
                             }
                         },
                         confirmButton = {
                             TextButton(
                                 onClick = {
-                                    val idContactoIngresado = nuevoContactoId.trim()
-                                    println("🔹 Intentando insertar directamente el id: $idContactoIngresado")
+                                    val aliasBuscado = nuevoContactoId.trim()
+                                    println("🔍 Buscando usuario con alias privado: $aliasBuscado")
+
                                     scope.launch {
                                         try {
-                                            val nuevoRegistro1 = UsuarioContacto(
-                                                idUsuario = currentUserId,
-                                                idContacto = idContactoIngresado
-                                            )
-                                            val nuevoRegistro2 = UsuarioContacto(
-                                                idUsuario = idContactoIngresado,
-                                                idContacto = currentUserId
-                                            )
+                                            val todosUsuarios = repo.getAll<Usuario>("usuario").first()
+                                            val usuarioEncontrado = todosUsuarios.find { it.getAliasPrivadoMio() == aliasBuscado }
 
-                                            println("📤 Insertando registros dobles en Supabase...")
-                                            repo.addItem("usuario_contacto", nuevoRegistro1)
-                                            repo.addItem("usuario_contacto", nuevoRegistro2)
-                                            println("✅ Contactos mutuos insertados")
+                                            if (usuarioEncontrado != null) {
+                                                val idEncontrado = usuarioEncontrado.idUnico
+                                                if (idEncontrado == currentUserId) {
+                                                    println("⚠️ No puedes agregarte a ti mismo como contacto")
+                                                    return@launch
+                                                }
 
-                                            // Refrescar después de agregar
-                                            repo.getAll<UsuarioContacto>("usuario_contacto").collect { lista ->
-                                                registrosContacto = lista.filter { it.idUsuario == currentUserId }
+                                                val nuevoRegistro1 = UsuarioContacto(
+                                                    idUsuario = currentUserId,
+                                                    idContacto = idEncontrado
+                                                )
+                                                val nuevoRegistro2 = UsuarioContacto(
+                                                    idUsuario = idEncontrado,
+                                                    idContacto = currentUserId
+                                                )
+
+                                                println("📤 Insertando registros mutuos...")
+                                                repo.addItem("usuario_contacto", nuevoRegistro1)
+                                                repo.addItem("usuario_contacto", nuevoRegistro2)
+                                                println("✅ Contactos agregados")
+
+                                                repo.getAll<UsuarioContacto>("usuario_contacto").collect { lista ->
+                                                    registrosContacto = lista.filter { it.idUsuario == currentUserId }
+                                                }
+                                            } else {
+                                                println("❌ No se encontró usuario con ese alias privado")
                                             }
+
                                         } catch (e: Exception) {
-                                            println("❌ Error insertando contacto: ${e.message}")
+                                            println("❌ Error buscando o agregando contacto: ${e.message}")
                                         }
+
+                                        nuevoContactoId = ""
+                                        showNuevoContactoDialog = false
                                     }
-                                    nuevoContactoId = ""
-                                    showNuevoContactoDialog = false
                                 }
                             ) {
                                 Text(text = traducir("guardar"))
@@ -956,7 +1028,7 @@ fun UsuCard(usuario: Usuario, onClick: () -> Unit) {
  */
 @Composable
 @Preview
-fun muestraAjustes(navController: NavHostController = rememberNavController()) {
+fun muestraAjustes(navController: NavHostController = rememberNavController(), settingsState: SettingsState) {
     val user = UsuarioPrincipal
     val scope = rememberCoroutineScope()
     MaterialTheme {
@@ -1018,7 +1090,7 @@ fun muestraAjustes(navController: NavHostController = rememberNavController()) {
                             Text(text = traducir("eliminar_chats"))
                         }
                         Button(
-                            onClick = { /* Control de Cuentas */ },
+                            onClick = { navController.navigate("ajustesControlCuentas") },
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text(text = traducir("control_de_cuentas"))
@@ -1034,14 +1106,26 @@ fun muestraAjustes(navController: NavHostController = rememberNavController()) {
                                 // Cerrar sesión
                                 scope.launch {
                                     try {
+                                        // 1) Cerrar sesión en Supabase (limpia el cliente)
                                         Supabase.client.auth.signOut()
-                                        println("🔒 Sesión cerrada")
+
+                                        // 2) Limpiar almacenamiento local de tokens y usuario
+                                        settingsState.clearSession()
+
+                                        // 3) Reiniciar variables globales
+                                        sesionActualUsuario = null
+                                        UsuarioPrincipal   = null
+
+                                        println("🔒 Sesión local y remota cerrada")
                                     } catch (e: Exception) {
                                         println("❌ Error cerrando sesión: ${e.message}")
                                     }
                                 }
                                 // Navegar a la pantalla de inicio de sesión
-                                navController.navigate("login") },
+                                navController.navigate("login") {
+                                    popUpTo("splash") { inclusive = true }
+                                }
+                            },
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text(text = traducir("cerrar_sesion"))
@@ -1543,7 +1627,21 @@ fun mostrarPerfilUsuario(
                                     }
 
                                     //Eliminar también contacto en tabla contactos
-                                     repo.deleteItem<UsuarioContacto>("usuario_contacto", "idusuario", currentUserId)
+                                    repo.deleteItemMulti<UsuarioContacto>(
+                                        tableName = "usuario_contacto",
+                                        conditions = mapOf(
+                                            "idusuario" to currentUserId,
+                                            "idcontacto" to usuario!!.getIdUnicoMio()
+                                        )
+                                    )
+
+                                    repo.deleteItemMulti<UsuarioContacto>(
+                                        tableName = "usuario_contacto",
+                                        conditions = mapOf(
+                                            "idusuario" to usuario!!.getIdUnicoMio(),
+                                            "idcontacto" to currentUserId
+                                        )
+                                    )
 
                                     navController.popBackStack() // Volver atrás
                                 } catch (e: Exception) {
@@ -1562,11 +1660,28 @@ fun mostrarPerfilUsuario(
 
 
                 TextButton(
-                    onClick = { /*  bloquear usuario */ },
+                    onClick = {
+                        if (usuario != null) {
+                            scope.launch {
+                                try {
+                                    val nuevoBloqueo = UsuarioBloqueado(
+                                        idUsuario = currentUserId,
+                                        idBloqueado = usuario!!.getIdUnicoMio()
+                                    )
+                                    repo.addItem("usuario_bloqueados", nuevoBloqueo)
+                                    println("🚫 Usuario bloqueado correctamente")
+                                    navController.popBackStack()
+                                } catch (e: Exception) {
+                                    println("❌ Error al bloquear usuario: ${e.message}")
+                                }
+                            }
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Bloquear", color = Color.Red)
                 }
+
             }
         }
     }
@@ -1652,12 +1767,42 @@ fun muestraHomePage(navController: NavHostController) {
  * @param navController controlador de navegación.
  */
 @Composable
-fun SplashScreen(navController: NavHostController) {
+fun SplashScreen(navController: NavHostController, settingsState: SettingsState) {
+
+    // 1) Convertimos el Flow<UserSession?> en State
+//    val session by settingsState
+//        .getSessionFlow()
+//        .collectAsState(initial = null)
+
     // Efecto para esperar 2 segundos y navegar a "home"
+    // Efecto que corre **una sola vez** en el lanzamiento del Composable
     LaunchedEffect(Unit) {
         delay(2000)
-        navController.navigate("login") {
-            popUpTo("splash") { inclusive = true }
+        // 1) Leemos tokens + usuario de forma atómica
+        val restored = settingsState
+            .getRestoredSessionFlow()        // Flow<Pair<UserSession,Usuario>?>
+            .firstOrNull()                   // primer valor emitido
+
+        if (restored != null) {
+            // 2) Si existe, desestructura
+            val (session, usuario) = restored
+
+            // 3) Importar al cliente Supabase
+            Supabase.client.auth.importSession(session)
+
+            // 4) Reasignar globals para toda la app
+            sesionActualUsuario = session
+            UsuarioPrincipal   = usuario
+
+            // 5) Navegar a contactos, pop splash
+            navController.navigate("contactos") {
+                popUpTo("splash") { inclusive = true }
+            }
+        } else {
+            // 6) No había sesión: ir a login
+            navController.navigate("login") {
+                popUpTo("splash") { inclusive = true }
+            }
         }
     }
 
@@ -1821,10 +1966,9 @@ fun PantallaEmailEnElSistema(navController: NavHostController) {
 @Composable
 fun PantallaRestablecer(navController: NavHostController) {
     var email by remember { mutableStateOf("") }
-    var errorMessage by remember { mutableStateOf("") }
-
-    // Realiza la traducción fuera del bloque onClick
-    val errorCorreoVacio = traducir("error_correo_vacio")
+    var mensaje by remember { mutableStateOf("") }
+    var error by remember { mutableStateOf("") }
+    val scope = rememberCoroutineScope()
 
     MaterialTheme {
         Scaffold(
@@ -1833,84 +1977,88 @@ fun PantallaRestablecer(navController: NavHostController) {
                     title = traducir("restablecer_contrasena"),
                     navController = navController,
                     showBackButton = true,
-                    muestraEngranaje = true,
+                    muestraEngranaje = false,
                     irParaAtras = true
                 )
             }
         ) { padding ->
             Box(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
                 contentAlignment = Alignment.Center
             ) {
                 LimitaTamanioAncho { modifier ->
                     Column(
-                        modifier = modifier
-                            .padding(padding)
-                            .padding(16.dp),
+                        modifier = modifier.padding(16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Image(
                             painter = painterResource(Res.drawable.connexus),
-                            contentDescription = traducir("icono_app"),
+                            contentDescription = "Logo",
                             modifier = Modifier.size(100.dp)
                         )
-                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Spacer(Modifier.height(16.dp))
+
                         OutlinedTextField(
                             value = email,
                             onValueChange = { email = it },
-                            label = { Text(traducir("email")) },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                            modifier = Modifier.fillMaxWidth()
+                            label = { Text("Correo electrónico") },
+                            modifier = Modifier.fillMaxWidth(),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
                         )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            Button(
-                                onClick = {
-                                    errorMessage = if (email.isNotBlank()) {
-                                        ""
-                                    } else {
-                                        errorCorreoVacio
+
+                        Spacer(Modifier.height(16.dp))
+
+                        Button(
+                            onClick = {
+                                scope.launch {
+                                    if (email.isBlank()) {
+                                        error = "Introduce tu correo"
+                                        return@launch
                                     }
-                                },
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Text(traducir("enviar_correo"))
-                            }
-                            Button(
-                                onClick = { navController.navigate("login") },
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Text(traducir("cancelar"))
-                            }
-                        }
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+
+                                    try {
+                                        Supabase.client.auth.resetPasswordForEmail(email)
+                                        mensaje = "📧 Se ha enviado un correo para restablecer tu contraseña. Ábrelo desde tu navegador y sigue los pasos."
+                                        error = ""
+                                    } catch (e: Exception) {
+                                        error = "❌ Error al enviar el correo: ${e.message}"
+                                    }
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Button(
-                                onClick = { navController.navigate("emailEnSistema") },
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Text(traducir("degug_restablecer_ok"))
-                            }
-                            Button(
-                                onClick = { navController.navigate("emailNoEnSistema") },
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Text(traducir("degug_restablecer_fail"))
-                            }
+                            Text("Enviar correo de restablecimiento")
                         }
-                        if (errorMessage.isNotEmpty()) {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                errorMessage,
-                                color = MaterialTheme.colors.error,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.fillMaxWidth()
-                            )
+
+                        Spacer(Modifier.height(16.dp))
+
+                        if (mensaje.isNotEmpty()) {
+                            Text(mensaje, color = Color.Green, textAlign = TextAlign.Center)
+                        }
+
+                        if (error.isNotEmpty()) {
+                            Text(error, color = MaterialTheme.colors.error, textAlign = TextAlign.Center)
+                        }
+
+                        Spacer(Modifier.height(24.dp))
+
+                        Text(
+                            "Una vez restablezcas tu contraseña desde el navegador, vuelve a esta app y entra con tu nueva clave.",
+                            style = MaterialTheme.typography.body2,
+                            color = Color.Gray,
+                            textAlign = TextAlign.Center
+                        )
+
+                        Spacer(Modifier.height(32.dp))
+
+                        Button(
+                            onClick = { navController.navigate("login") },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Volver al login")
                         }
                     }
                 }
@@ -1918,6 +2066,8 @@ fun PantallaRestablecer(navController: NavHostController) {
         }
     }
 }
+
+
 
 // Pantalla de de restablecer contraseña ingresando la nueva contraseña
 /**
@@ -1930,8 +2080,10 @@ fun muestraRestablecimientoContasenna(navController: NavHostController) {
     var contrasenna by remember { mutableStateOf("") }
     var confirmarContrasenna by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
+    var mensaje by remember { mutableStateOf("") }
+    val scope = rememberCoroutineScope()
+    val repo = remember { SupabaseUsuariosRepositorio() }
 
-    // Realiza la traducción fuera del bloque onClick
     val errorContrasenas = traducir("error_contrasenas")
 
     MaterialTheme {
@@ -1941,20 +2093,20 @@ fun muestraRestablecimientoContasenna(navController: NavHostController) {
                     title = traducir("restablecer_contrasena"),
                     navController = navController,
                     showBackButton = true,
-                    muestraEngranaje = true,
-                    irParaAtras = true
+                    muestraEngranaje = false,
+                    irParaAtras = false
                 )
             }
         ) { padding ->
             Box(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
                 contentAlignment = Alignment.Center
             ) {
                 LimitaTamanioAncho { modifier ->
                     Column(
-                        modifier = modifier
-                            .padding(padding)
-                            .padding(16.dp),
+                        modifier = modifier.padding(16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Image(
@@ -1962,7 +2114,9 @@ fun muestraRestablecimientoContasenna(navController: NavHostController) {
                             contentDescription = traducir("icono_app"),
                             modifier = Modifier.size(100.dp)
                         )
-                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Spacer(Modifier.height(16.dp))
+
                         OutlinedTextField(
                             value = contrasenna,
                             onValueChange = { contrasenna = it },
@@ -1970,7 +2124,9 @@ fun muestraRestablecimientoContasenna(navController: NavHostController) {
                             visualTransformation = PasswordVisualTransformation(),
                             modifier = Modifier.fillMaxWidth()
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Spacer(Modifier.height(8.dp))
+
                         OutlinedTextField(
                             value = confirmarContrasenna,
                             onValueChange = { confirmarContrasenna = it },
@@ -1978,39 +2134,61 @@ fun muestraRestablecimientoContasenna(navController: NavHostController) {
                             visualTransformation = PasswordVisualTransformation(),
                             modifier = Modifier.fillMaxWidth()
                         )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            Button(
-                                onClick = {
-                                    errorMessage =
-                                        if (contrasenna == confirmarContrasenna && contrasenna.isNotBlank()) {
-                                            ""
-                                        } else {
-                                            errorContrasenas
+
+                        Spacer(Modifier.height(16.dp))
+
+                        Button(
+                            onClick = {
+                                if (contrasenna != confirmarContrasenna || contrasenna.isBlank()) {
+                                    errorMessage = errorContrasenas
+                                    return@Button
+                                }
+
+                                scope.launch {
+                                    try {
+                                        val user = Supabase.client.auth.currentUserOrNull()
+                                        if (user == null) {
+                                            errorMessage = "⚠️ No hay sesión activa para actualizar."
+                                            return@launch
                                         }
-                                },
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Text(traducir("restablecer"))
-                            }
-                            Button(
-                                onClick = { navController.navigate("login") },
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Text(traducir("cancelar"))
-                            }
+
+                                        // 1. Actualizar en Auth
+                                        Supabase.client.auth.updateUser {
+                                            password = contrasenna
+                                        }
+
+                                        // 2. Actualizar también en la tabla usuario
+                                        repo.updateCampo(
+                                            tabla = "usuario",
+                                            campo = "contrasennia",
+                                            valor = contrasenna,
+                                            idCampo = "idunico",
+                                            idValor = user.id
+                                        )
+
+                                        mensaje = "✅ Contraseña restablecida con éxito."
+                                        errorMessage = ""
+                                        navController.navigate("login") {
+                                            popUpTo("restablecerNueva") { inclusive = true }
+                                        }
+                                    } catch (e: Exception) {
+                                        errorMessage = "❌ Error: ${e.message}"
+                                    }
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(traducir("restablecer"))
                         }
+
+                        if (mensaje.isNotEmpty()) {
+                            Spacer(Modifier.height(8.dp))
+                            Text(mensaje, color = Color.Green)
+                        }
+
                         if (errorMessage.isNotEmpty()) {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                errorMessage,
-                                color = MaterialTheme.colors.error,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.fillMaxWidth()
-                            )
+                            Spacer(Modifier.height(8.dp))
+                            Text(errorMessage, color = MaterialTheme.colors.error)
                         }
                     }
                 }
@@ -2018,6 +2196,8 @@ fun muestraRestablecimientoContasenna(navController: NavHostController) {
         }
     }
 }
+
+
 
 
 //metodo que comprueba correo
@@ -2046,10 +2226,8 @@ fun PantallaRegistro(navController: NavHostController) {
     val errorEmailYaRegistrado =
         traducir("error_email_ya_registrado") // Falta implementar y mete en los mapas de idiomas
 
-    // Instanciamos un usuario vacío que se completará si el registro es correcto
     val usuario = Usuario()
 
-    // Usamos un scope para lanzar corrutinas
     val scope = rememberCoroutineScope()
 
     MaterialTheme {
@@ -2135,7 +2313,7 @@ fun PantallaRegistro(navController: NavHostController) {
                                                     return@launch
                                                 }
 
-                                                // 1. Registro en Supabase Auth
+                                                // Registro en Supabase Auth
                                                 val authResult = Supabase.client.auth.signUpWith(Email) {
                                                     this.email = emailTrimmed
                                                     this.password = password
@@ -2144,7 +2322,7 @@ fun PantallaRegistro(navController: NavHostController) {
                                                 val uid = Supabase.client.auth.currentUserOrNull()?.id
                                                     ?: throw Exception("No se pudo obtener el UID del usuario autenticado")
 
-                                                // 2. Crear objeto Usuario con el mismo ID que auth.uid()
+                                                // Crear objeto Usuario con el mismo ID que auth.uid()
                                                 val nuevoUsuario = Usuario(
                                                     idUnico = uid,
                                                     nombre = nombre,
@@ -2159,18 +2337,19 @@ fun PantallaRegistro(navController: NavHostController) {
                                                 println("Nuevo usuario: $nuevoUsuario")
                                                 println("UID Supabase actual: $uid")
 
-
-                                                // 3. Guardar en tabla usuario
+                                                /*
                                                 repoSupabase.addUsuario(nuevoUsuario)
 
-                                                // 4. ir al login
+
                                                 navController.navigate("login") {
                                                     popUpTo("registro") { inclusive = true }
-                                                }
+                                                }*/
+                                                navController.navigate("registroVerificaCorreo/${emailTrimmed}/${nombre}/${password}")
+
 
                                             } catch (e: Exception) {
-                                                //errorMessage = "Error: ${e.message}"
-                                                navController.navigate("login")
+                                                errorMessage = "❌ Error al registrar: ${e.message}"
+                                                //navController.navigate("login")
                                             }
                                         }
                                     }
@@ -2205,6 +2384,122 @@ fun PantallaRegistro(navController: NavHostController) {
     }
 }
 
+/**
+ * Composable que muestra la pantalla de verificación de correo.
+ *
+ * @param navController controlador de navegación.
+ */
+
+@Composable
+fun PantallaVerificaCorreo(
+    navController: NavHostController,
+    email: String?,
+    nombre: String?,
+    password: String?
+) {
+    val scope = rememberCoroutineScope()
+    val repo = remember { SupabaseUsuariosRepositorio() }
+
+    var mensaje by remember { mutableStateOf("") }
+
+    Scaffold(
+        topBar = {
+            DefaultTopBar(
+                title = "Verificación de correo",
+                navController = navController,
+                showBackButton = false,
+                muestraEngranaje = false,
+                irParaAtras = false
+            )
+        }
+    ) { padding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("Hemos enviado un correo de verificación a:")
+                Text(email ?: "", style = MaterialTheme.typography.h6)
+                Spacer(Modifier.height(16.dp))
+                Text("Verifica tu cuenta, y luego pulsa el botón para continuar.")
+                Spacer(Modifier.height(24.dp))
+
+                Button(onClick = {
+                    scope.launch {
+                        try {
+                            // 🛡Reautenticación
+                            if (!email.isNullOrBlank() && !password.isNullOrBlank()) {
+                                Supabase.client.auth.signInWith(Email) {
+                                    this.email = email
+                                    this.password = password
+                                }
+                            }
+
+                            val usuarioActual = Supabase.client.auth.currentUserOrNull()
+
+                            if (usuarioActual?.emailConfirmedAt != null) {
+                                val nuevoUsuario = Usuario(
+                                    idUnico = usuarioActual.id,
+                                    correo = email ?: "",
+                                    nombre = nombre ?: "",
+                                    aliasPrivado = "Privado_$nombre",
+                                    aliasPublico = UtilidadesUsuario().generarAliasPublico(),
+                                    activo = true,
+                                    descripcion = "Perfil creado automáticamente",
+                                    contrasennia = password ?: ""
+                                )
+
+                                repo.addUsuario(nuevoUsuario)
+
+                                navController.navigate("login") {
+                                    popUpTo("registroVerificaCorreo") { inclusive = true }
+                                }
+                            } else {
+                                mensaje = "❗ Tu correo aún no está verificado."
+                            }
+                        } catch (e: Exception) {
+                            //mensaje = "❌ Error: ${e.message}"
+                            navController.navigate("login")
+                        }
+                    }
+                }) {
+                    Text("Ya lo he verificado")
+                }
+
+                Spacer(Modifier.height(12.dp))
+
+                Button(onClick = {
+                    scope.launch {
+                        try {
+                            if (!email.isNullOrBlank() && !password.isNullOrBlank()) {
+                                Supabase.client.auth.signUpWith(Email) {
+                                    this.email = email
+                                    this.password = password
+                                }
+                                mensaje = "📧 Correo reenviado correctamente."
+                            } else {
+                                mensaje = "⚠️ Falta información para reenviar el correo."
+                            }
+                        } catch (e: Exception) {
+                            mensaje = "❌ Error al reenviar: ${e.message}"
+                        }
+                    }
+                }) {
+                    Text("Reenviar correo")
+                }
+
+                if (mensaje.isNotEmpty()) {
+                    Spacer(Modifier.height(12.dp))
+                    Text(mensaje, color = MaterialTheme.colors.error)
+                }
+            }
+        }
+    }
+}
+
+
 
 /**
  * Composable que muestra la pantalla de inicio de sesión.
@@ -2212,19 +2507,23 @@ fun PantallaRegistro(navController: NavHostController) {
  * @param navController controlador de navegación.
  */
 @Composable
-fun PantallaLogin(navController: NavHostController) {
+fun PantallaLogin(navController: NavHostController, settingsState: SettingsState) {
     var emailInterno by remember { mutableStateOf("") }
     var passwordInterno by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
 
+    // Estados para el botón Debug oculto
+    var showDebug by remember { mutableStateOf(false) }
+    var logoTapCount by remember { mutableStateOf(0) }
+    val tapsToReveal = 5  // Número de toques necesarios para mostrar Debug
+
     val repoSupabase = SupabaseUsuariosRepositorio()
 
-    val errorEmailNingunUsuario =
-        traducir("error_email_ningun_usuario")
-    val errorContrasenaIncorrecta =
-        traducir("error_contrasena_incorrecta")
-    val porFavorCompleta =
-        traducir("por_favor_completa")
+    val errorEmailNingunUsuario = traducir("error_email_ningun_usuario")
+    val errorContrasenaIncorrecta = traducir("error_contrasena_incorrecta")
+    val porFavorCompleta = traducir("por_favor_completa")
+
+    var rememberMe by rememberSaveable { mutableStateOf(false) }
 
     // Scope para lanzar corrutinas
     val scope = rememberCoroutineScope()
@@ -2252,11 +2551,20 @@ fun PantallaLogin(navController: NavHostController) {
                             .padding(16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
+                        // Logo con área clickable oculta para revelar Debug
                         Image(
                             painter = painterResource(Res.drawable.connexus),
                             contentDescription = traducir("icono_app"),
-                            modifier = Modifier.size(100.dp)
+                            modifier = Modifier
+                                .size(100.dp)
+                                .clickable {
+                                    logoTapCount++
+                                    if (logoTapCount >= tapsToReveal) {
+                                        showDebug = true
+                                    }
+                                }
                         )
+
                         Spacer(modifier = Modifier.height(16.dp))
                         OutlinedTextField(
                             value = emailInterno,
@@ -2273,6 +2581,21 @@ fun PantallaLogin(navController: NavHostController) {
                             visualTransformation = PasswordVisualTransformation(),
                             modifier = Modifier.fillMaxWidth()
                         )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(vertical = 8.dp)
+                        ) {
+                            Checkbox(
+                                checked = rememberMe,
+                                onCheckedChange = { rememberMe = it }
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = traducir("recuerdame"),
+                                style = MaterialTheme.typography.body1
+                            )
+                        }
                         Spacer(modifier = Modifier.height(16.dp))
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -2321,6 +2644,16 @@ fun PantallaLogin(navController: NavHostController) {
                                             sesionActualUsuario = Supabase.client.auth.currentSessionOrNull()
                                             errorMessage = ""
 
+
+
+
+                                            // Persistir solo si rememberMe=true
+                                            if (rememberMe && sesionActualUsuario != null) {
+                                                val userJson = Json.encodeToString(Usuario.serializer(), usuario)
+                                                settingsState.saveSession(sesionActualUsuario!!, UsuarioPrincipal!!)
+                                            }
+
+
                                             navController.navigate("contactos") {
                                                 popUpTo("login") { inclusive = true }
                                             }
@@ -2335,19 +2668,22 @@ fun PantallaLogin(navController: NavHostController) {
                             Text(traducir("acceder"))
                         }
                         Spacer(modifier = Modifier.height(16.dp))
-                        Column(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Button(
-                                onClick = { navController.navigate("zonaPruebas") },
-                                modifier = Modifier.fillMaxWidth()
+
+                        // Botón Debug solo visible tras suficientes toques
+                        if (showDebug) {
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                Text(
-                                    text = "Debug: Ir a la zona de pruebas"
-                                )
+                                Button(
+                                    onClick = { navController.navigate("zonaPruebas") },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text(text = "Debug: Ir a la zona de pruebas")
+                                }
                             }
                         }
+
                         if (errorMessage.isNotEmpty()) {
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
@@ -2439,6 +2775,13 @@ fun PantallaZonaPruebas(navController: NavHostController) {
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text("Debug: Ir a las pruebas de persistencia de datos")
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(
+                            onClick = { navController.navigate("zonaReportes") },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("ADMIN: Ir a la zona de reportes")
                         }
                     }
                 }

@@ -23,6 +23,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.russhwolf.settings.ExperimentalSettingsApi
@@ -31,13 +32,73 @@ import com.russhwolf.settings.Settings
 import com.russhwolf.settings.coroutines.FlowSettings
 import com.russhwolf.settings.coroutines.toFlowSettings
 import com.russhwolf.settings.observable.makeObservable
+import io.github.jan.supabase.auth.user.UserSession
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
 import org.connexuss.project.interfaces.DefaultTopBar
 import org.connexuss.project.interfaces.LimitaTamanioAncho
+import org.connexuss.project.interfaces.TemaConfig
+import org.connexuss.project.usuario.Usuario
 
-expect val settings: Settings
+val settings: Settings = Settings() // SharedPreferences en Android, Preferences.userRoot() en Desktop, localStorage en JS
+
+@OptIn(ExperimentalSettingsApi::class)
+val observable = settings.makeObservable()
+
+@OptIn(ExperimentalSettingsApi::class)
+val flowSettings = observable.toFlowSettings(Dispatchers.Default)
+
+const val KEY_IDIOMA = "idioma"
+
+@OptIn(ExperimentalSettingsApi::class)
+fun SettingsState.getIdiomaKeyFlow(): Flow<String> =
+    flowSettings.getStringFlow(KEY_IDIOMA, defaultValue = "es")
+
+@OptIn(ExperimentalSettingsApi::class)
+suspend fun SettingsState.setIdiomaKey(key: String) =
+    flowSettings.putString(KEY_IDIOMA, key)
+
+const val KEY_TEMA_CLARO = "temaClaro"
+const val KEY_COLOR_TEMA = "colorTemaKey"
+
+@OptIn(ExperimentalSettingsApi::class)
+fun SettingsState.getTemaConfigFlow(): Flow<TemaConfig> =
+    flowSettings.getBooleanFlow(KEY_TEMA_CLARO, true)
+        .combine(
+            flowSettings.getStringFlow(KEY_COLOR_TEMA, "claro")
+        ) { claro, colorKey ->
+            TemaConfig(temaClaro = claro, colorTemaKey = colorKey)
+        }
+
+@OptIn(ExperimentalSettingsApi::class)
+suspend fun SettingsState.setTemaConfig(config: TemaConfig) {
+    flowSettings.putBoolean(KEY_TEMA_CLARO, config.temaClaro)
+    flowSettings.putString(KEY_COLOR_TEMA, config.colorTemaKey)
+}
+
+const val KEY_FONT = "fontFamily"
+
+// Las claves que usaremos para identificar cada fuente
+object FontKeys {
+    const val DEFAULT    = "default"
+    const val SERIF      = "serif"
+    const val MONOSPACE  = "monospace"
+    const val CURSIVE    = "cursive"
+    const val SANS_SERIF = "sans_serif"
+}
+
+@OptIn(ExperimentalSettingsApi::class)
+fun SettingsState.getFontKeyFlow(): Flow<String> =
+    flowSettings.getStringFlow(KEY_FONT, FontKeys.DEFAULT)
+
+@OptIn(ExperimentalSettingsApi::class)
+suspend fun SettingsState.setFontKey(key: String) =
+    flowSettings.putString(KEY_FONT, key)
 
 class FlowSettingsProvider(
     settings: Settings,
@@ -48,6 +109,62 @@ class FlowSettingsProvider(
     @OptIn(ExperimentalSettingsApi::class)
     val flowSettings: FlowSettings =
         observable.toFlowSettings(dispatcher) // usa el dispatcher aquí
+}
+
+const val KEY_ACCESS  = "access_token"
+const val KEY_REFRESH = "refresh_token"
+const val KEY_EXPIRES  = "expires_in"
+const val KEY_USER    = "user_data"
+const val KEY_USER_JSON = "user_data_json"
+
+@OptIn(ExperimentalSettingsApi::class)
+suspend fun SettingsState.clearSession() {
+    flowSettings.remove(KEY_ACCESS)
+    flowSettings.remove(KEY_REFRESH)
+    flowSettings.remove(KEY_EXPIRES)
+    flowSettings.remove(KEY_USER_JSON)
+}
+
+@OptIn(ExperimentalSettingsApi::class)
+suspend fun SettingsState.saveSession(
+    session: UserSession,
+    usuario: Usuario
+) {
+    flowSettings.putString(KEY_ACCESS,  session.accessToken)
+    flowSettings.putString(KEY_REFRESH, session.refreshToken)
+    flowSettings.putLong(  KEY_EXPIRES, session.expiresIn.toLong())
+    // Serializa tu Usuario a JSON
+    val userJson = Json.encodeToString(Usuario.serializer(), usuario)
+    flowSettings.putString(KEY_USER_JSON, userJson)
+}
+
+@OptIn(ExperimentalSettingsApi::class)
+fun SettingsState.getUserJsonFlow(): Flow<String?> =
+    flowSettings.getStringFlow(KEY_USER_JSON, defaultValue = "")
+        .map { it.ifBlank { null } }
+
+@OptIn(ExperimentalSettingsApi::class)
+fun SettingsState.getRestoredSessionFlow(): Flow<Pair<UserSession, Usuario>?> =
+    combine(
+        getSessionFlow(),             // Flow<UserSession?>
+        getUserJsonFlow()             // Flow<String?>
+    ) { session, userJson ->
+        if (session == null || userJson == null) null
+        else {
+            val usuario = Json.decodeFromString(Usuario.serializer(), userJson)
+            session to usuario
+        }
+    }
+
+
+@OptIn(ExperimentalSettingsApi::class)
+fun SettingsState.getSessionFlow(): Flow<UserSession?> = combine(
+    flowSettings.getStringFlow(KEY_ACCESS, ""),
+    flowSettings.getStringFlow(KEY_REFRESH, ""),
+    flowSettings.getLongFlow(KEY_EXPIRES, 0L)
+) { access, refresh, exp ->
+    if (access.isBlank() || refresh.isBlank()) null
+    else UserSession(accessToken = access, refreshToken = refresh, expiresIn = exp.toInt().toLong(), tokenType = "Bearer", user = null)
 }
 
 class SettingsState @OptIn(ExperimentalSettingsApi::class) constructor(
