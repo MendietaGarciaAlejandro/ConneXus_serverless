@@ -57,11 +57,14 @@ import org.connexuss.project.comunicacion.Hilo
 import org.connexuss.project.comunicacion.Post
 import org.connexuss.project.comunicacion.Tema
 import org.connexuss.project.comunicacion.generateId
+import org.connexuss.project.encriptacion.SecretRecord
 import org.connexuss.project.encriptacion.generaClaveAES
 import org.connexuss.project.encriptacion.pruebasEncriptacionAES
 import org.connexuss.project.encriptacion.toHex
 import org.connexuss.project.misc.UsuarioPrincipal
+import org.connexuss.project.supabase.SecretsRepositorio
 import org.connexuss.project.supabase.SupabaseRepositorioGenerico
+import org.connexuss.project.supabase.SupabaseSecretsRepo
 
 // Repositorio genérico instanciado
 private val repoForo = SupabaseRepositorioGenerico()
@@ -92,6 +95,8 @@ fun ForoScreen(navController: NavHostController) {
 
     // Filtrar temas y contar hilos
     val filteredTemas = temasFlow.collectAsState(initial = emptyList()).value
+
+    val secretsRepo = remember { SupabaseSecretsRepo() }
 
     Scaffold(
         scaffoldState = scaffoldState,
@@ -160,14 +165,26 @@ fun ForoScreen(navController: NavHostController) {
                                 .encodeToByteArray(AES.Key.Format.RAW)
                                 .toHex()
 
-                            // insertar usando Strings hex
-                            repoForo.addItem(
-                                tablaTemas,
-                                Tema(
-                                    nombre         = nombreCifradoHex,
-                                    claveSimetrica = claveSimHex
+                            val temaId = generateId()
+
+                            // 1) Creamos el SecretRecord y lo upserteamos en vault.secrets
+                            secretsRepo.upsertSecret(
+                                SecretRecord(
+                                    id          = temaId,
+                                    name        = "tema_$temaId",
+                                    description = "Clave AES para tema $temaId",
+                                    secret      = claveSimHex,
+                                    keyId       = "<vault-key-uuid>",
+                                    nonceHex    = ""
                                 )
                             )
+
+                            // 2) Insertamos el Tema (solo con nombre cifrado)
+                            repoForo.addItem(
+                                tablaTemas,
+                                Tema(idTema = temaId, nombre = nombreCifradoHex)
+                            )
+
                             refreshTrigger.value++
                             scaffoldState.snackbarHostState.showSnackbar(
                                 "Tema '$nombre' creado",
@@ -189,7 +206,9 @@ fun ForoScreen(navController: NavHostController) {
 @Composable
 fun TemaScreen(
     navController: NavHostController,
-    temaId: String
+    temaId: String,
+    repoForo: SupabaseRepositorioGenerico,
+    secretsRepo: SecretsRepositorio
 ) {
     val scope = rememberCoroutineScope()
     var showNewThreadDialog by remember { mutableStateOf(false) }
@@ -198,41 +217,46 @@ fun TemaScreen(
     val tablaTemas = "tema"
     val tablaHilos = "hilo"
 
-    // 1) Flujo para Tema cifrado
+    // 1) Obtener el Tema cifrado
     val tema by repoForo
         .getAll<Tema>(tablaTemas)
         .map { list -> list.firstOrNull { it.idTema == temaId } }
         .collectAsState(initial = null)
 
-    // 2) AES key y nombre desencriptado
+    // 2) Obtener la SecretRecord con la clave simétrica desde vault.secrets
+    val secret by secretsRepo
+        .getSecretByName("tema_$temaId")
+        .collectAsState(initial = null)
+
+    // 3) Reconstruir AES Key y desencriptar nombre
     var aesKey by remember { mutableStateOf<AES.GCM.Key?>(null) }
     var nombrePlano by remember { mutableStateOf("(cargando...)") }
 
-    LaunchedEffect(tema) {
-        tema?.let {
-            // Reconstruir clave AES de Tema
-            val rawKey = it.claveSimetrica?.hexToByteArray()
-            aesKey = rawKey?.let { it1 ->
-                CryptographyProvider.Default.get(AES.GCM)
-                    .keyDecoder()
-                    .decodeFromByteArray(AES.Key.Format.RAW, it1)
-            }
-            // Desencriptar nombre
+    LaunchedEffect(secret, tema) {
+        if (secret != null && tema != null) {
+            // Decodificar clave simétrica hex -> bytes
+            val rawKey = secret!!.secret.hexToByteArray()
+            aesKey = CryptographyProvider.Default
+                .get(AES.GCM)
+                .keyDecoder()
+                .decodeFromByteArray(AES.Key.Format.RAW, rawKey)
+
+            // Desencriptar el nombre cifrado
             aesKey?.let { key ->
-                val cipher = it.nombre.hexToByteArray()
-                nombrePlano = key.cipher()
-                    .decrypt(ciphertext = cipher)
-                    .decodeToString()
+                val cipher = tema!!.nombre.hexToByteArray()
+                val plain = key.cipher().decrypt(ciphertext = cipher)
+                nombrePlano = plain.decodeToString()
             }
         }
     }
 
-    // 3) Flujo de Hilos
+    // 4) Flujos de hilos filtrados
     val hilos by remember(temaId, refreshTrigger) {
         repoForo.getAll<Hilo>(tablaHilos)
             .map { list -> list.filter { it.idTema == temaId } }
     }.collectAsState(initial = emptyList())
 
+    // Carga inicial
     if (tema == null) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
@@ -276,7 +300,7 @@ fun TemaScreen(
                     onDismiss = { showNewThreadDialog = false },
                     onConfirm = { titulo ->
                         scope.launch {
-                            // Cifrar el título con la misma clave del tema
+                            // Cifrar con la misma clave simétrica recuperada
                             aesKey?.let { key ->
                                 val cipherBytes = pruebasEncriptacionAES(titulo, key)
                                 val tituloHex = cipherBytes.toHex()
@@ -462,34 +486,45 @@ fun CrearElementoDialog(
 //    }
 //}
 
+/**
+ * Tarjeta para mostrar un Tema cifrado.
+ * Obtiene la clave simétrica desde vault.secrets y desencripta el nombre.
+ */
 @OptIn(ExperimentalStdlibApi::class)
 @Composable
 fun TemaCard(
     tema: Tema,
     hilosCount: Int,
-    onTemaClick: () -> Unit
+    onTemaClick: () -> Unit,
+    secretsRepo: SecretsRepositorio = remember { SupabaseSecretsRepo() }
 ) {
-    // Estados para la clave AES y el nombre desencriptado
+    val scope = rememberCoroutineScope()
+
+    // Estado para la clave AES reconstruida y nombre desencriptado
     var aesKey by remember { mutableStateOf<AES.GCM.Key?>(null) }
     var nombrePlano by remember { mutableStateOf("(cargando...)") }
 
-    // Reconstruir la clave AES desde el hex almacenado
-    LaunchedEffect(tema.claveSimetrica) {
-        val rawKey = tema.claveSimetrica?.hexToByteArray()
-        aesKey = rawKey?.let {
-            CryptographyProvider.Default
-                .get(AES.GCM)
-                .keyDecoder()
-                .decodeFromByteArray(AES.Key.Format.RAW, it)
-        }
+    // 1) Recuperar SecretRecord de vault.secrets
+    LaunchedEffect(tema.idTema) {
+        secretsRepo.getSecretByName("tema_\${tema.idTema}")
+            .collect { secret ->
+                secret?.let {
+                    // Reconstruir AES Key
+                    val rawKey = it.secret.hexToByteArray()
+                    aesKey = CryptographyProvider.Default
+                        .get(AES.GCM)
+                        .keyDecoder()
+                        .decodeFromByteArray(AES.Key.Format.RAW, rawKey)
+                }
+            }
     }
 
-    // Desencriptar el nombre cuando tengamos la clave
-    LaunchedEffect(aesKey) {
+    // 2) Desencriptar el nombre cuando tengamos la clave y el cipher text
+    LaunchedEffect(aesKey, tema.nombre) {
         aesKey?.let { key ->
             val cipherBytes = tema.nombre.hexToByteArray()
-            val decrypted = key.cipher().decrypt(ciphertext = cipherBytes)
-            nombrePlano = decrypted.decodeToString()
+            val plainBytes  = key.cipher().decrypt(ciphertext = cipherBytes)
+            nombrePlano    = plainBytes.decodeToString()
         }
     }
 
@@ -500,40 +535,44 @@ fun TemaCard(
         elevation = 4.dp
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = nombrePlano, style = MaterialTheme.typography.h6)
+            Text(
+                text = nombrePlano,
+                style = MaterialTheme.typography.h6
+            )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "$hilosCount ${if (hilosCount == 1) "hilo" else "hilos"}",
+                text = "\$hilosCount ${if (hilosCount == 1) "hilo" else "hilos"}",
                 style = MaterialTheme.typography.caption
             )
         }
     }
 }
 
+/**
+ * Tarjeta para mostrar un hilo cifrado.
+ * Carga la clave simétrica desde vault.secrets y desencripta el nombre del hilo.
+ */
 @OptIn(ExperimentalStdlibApi::class)
 @Composable
 fun HiloCard(
     hilo: Hilo,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    secretsRepo: SecretsRepositorio = remember { SupabaseSecretsRepo() }
 ) {
-    // Suponemos que tienes un repoForo global o inyectado
-    val repoForo = remember { SupabaseRepositorioGenerico() }
-    val tablaTemas = "tema"
-
-    // 1) Traer el Tema correspondiente y extraer su claveSimetrica
-    val tema by repoForo
-        .getAll<Tema>(tablaTemas)
-        .map { list -> list.firstOrNull { it.idTema == hilo.idTema } }
+    // Flow del SecretRecord de este hilo (clave del tema padre)
+    val secretRecord by secretsRepo
+        .getSecretByName("tema_${hilo.idTema}")
         .collectAsState(initial = null)
 
-    // 2) Estado para la clave AES y el nombre desencriptado
+    // Estado para la clave AES reconstruida
     var aesKey by remember { mutableStateOf<AES.GCM.Key?>(null) }
+    // Estado para el nombre desencriptado
     var nombrePlano by remember { mutableStateOf("(cargando...)") }
 
-    // 3) Cuando tengamos tema.claveSimetrica, reconstruir la AES Key
-    LaunchedEffect(tema?.claveSimetrica) {
-        tema?.claveSimetrica?.let { hexKey ->
-            val rawKey = hexKey.hexToByteArray()
+    // Reconstruir la clave AES cuando se obtenga el SecretRecord
+    LaunchedEffect(secretRecord) {
+        secretRecord?.let { secret ->
+            val rawKey = secret.secret.hexToByteArray()
             aesKey = CryptographyProvider.Default
                 .get(AES.GCM)
                 .keyDecoder()
@@ -541,18 +580,17 @@ fun HiloCard(
         }
     }
 
-    // 4) Cuando tengamos aesKey y el nombre cifrado, desencriptarlo
+    // Desencriptar el nombre del hilo
     LaunchedEffect(aesKey, hilo.nombre) {
-        aesKey?.let { key ->
+        if (aesKey != null) {
             val cipherBytes = hilo.nombre?.hexToByteArray()
-            val plainBytes  = cipherBytes?.let { key.cipher().decrypt(ciphertext = it) }
+            val plainBytes  = cipherBytes?.let { aesKey!!.cipher().decrypt(ciphertext = it) }
             if (plainBytes != null) {
                 nombrePlano    = plainBytes.decodeToString()
             }
         }
     }
 
-    // 5) Render UI con el nombre en claro
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -562,7 +600,6 @@ fun HiloCard(
         Column(modifier = Modifier.padding(16.dp)) {
             Text(text = nombrePlano, style = MaterialTheme.typography.h6)
             Spacer(modifier = Modifier.height(4.dp))
-            //Text(text = "ID Tema: ${hilo.idTema}", style = MaterialTheme.typography.caption)
         }
     }
 }

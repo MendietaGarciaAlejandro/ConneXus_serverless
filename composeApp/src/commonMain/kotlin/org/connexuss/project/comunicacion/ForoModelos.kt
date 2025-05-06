@@ -77,6 +77,6 @@ data class Tema(
     @SerialName("nombre")
     val nombre: String,
 
-    @SerialName("claveSimetrica")
-    val claveSimetrica: String? = null,
+//    @SerialName("claveSimetrica")
+//    val claveSimetrica: String? = null,
 )
