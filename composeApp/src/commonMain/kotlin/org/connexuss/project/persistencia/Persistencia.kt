@@ -43,7 +43,6 @@ import kotlinx.serialization.json.Json
 import org.connexuss.project.interfaces.DefaultTopBar
 import org.connexuss.project.interfaces.LimitaTamanioAncho
 import org.connexuss.project.interfaces.TemaConfig
-import org.connexuss.project.misc.UsuarioPrincipal
 import org.connexuss.project.usuario.Usuario
 
 val settings: Settings = Settings() // SharedPreferences en Android, Preferences.userRoot() en Desktop, localStorage en JS

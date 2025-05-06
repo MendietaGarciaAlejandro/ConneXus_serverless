@@ -43,6 +43,9 @@ import dev.whyoleg.cryptography.random.CryptographyRandom
 import io.ktor.utils.io.core.toByteArray
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.connexuss.project.comunicacion.Mensaje
 import org.connexuss.project.comunicacion.Post
@@ -51,6 +54,8 @@ import org.connexuss.project.interfaces.LimitaTamanioAncho
 import org.connexuss.project.persistencia.SettingsState
 import org.connexuss.project.supabase.ClavesUsuarioRepositorio
 import org.connexuss.project.supabase.SupabaseUsuariosRepositorio
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 /**
  * Calcula el hash SHA-512 de un texto.
@@ -802,6 +807,48 @@ data class EncryptedPayload(
     val ephemeralPubHex: String,
     val ivHex: String,
     val ciphertextHex: String
+)
+
+
+/**
+ * Representa una entrada en la tabla `secrets` de Supabase y en Vault
+ * para almacenar la clave simétrica del foro.
+ */
+@Serializable
+data class SecretRecord @OptIn(ExperimentalUuidApi::class) constructor(
+    /** UUID único de la fila */
+    @SerialName("id")
+    val id: String = Uuid.random().toString(),
+
+    /** Nombre descriptivo de la clave */
+    @SerialName("name")
+    val name: String,
+
+    /** Descripción opcional */
+    @SerialName("description")
+    val description: String? = null,
+
+    /** Valor de la clave simétrica (hex o Base64) */
+    @SerialName("secret")
+    val secret: String,
+
+    /** UUID de la clave maestra en Vault o KMS */
+    @SerialName("key_id")
+    val keyId: String,
+
+    /** Nonce usado en el cifrado (hex)
+     *  Mapeado desde la columna bytea en formato hex
+     */
+    @SerialName("nonce")
+    val nonceHex: String,
+
+    /** Timestamp de creación (timestamptz) */
+    @SerialName("created_at")
+    val createdAt: Instant = Clock.System.now(),
+
+    /** Timestamp de última modificación (timestamptz) */
+    @SerialName("updated_at")
+    val updatedAt: Instant? = null
 )
 
 // --------------------------------------------------

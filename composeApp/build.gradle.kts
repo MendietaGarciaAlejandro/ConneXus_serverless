@@ -299,6 +299,7 @@ dependencies {
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.serialization)
     implementation(libs.androidx.runtime.android)
+    implementation(libs.identity.jvm)
 
     // Firebase dependencies (commented)
 //    implementation(platform(libs.firebase.android.bom))
