@@ -39,10 +39,15 @@ import connexus_serverless.composeapp.generated.resources.Res
 import connexus_serverless.composeapp.generated.resources.avatar
 import connexus_serverless.composeapp.generated.resources.ic_email
 import connexus_serverless.composeapp.generated.resources.unblock
+import io.github.jan.supabase.postgrest.from
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import org.connexuss.project.misc.Reporte
+import org.connexuss.project.misc.Supabase
 import org.connexuss.project.misc.UsuarioPrincipal
 import org.connexuss.project.supabase.SupabaseRepositorioGenerico
+import org.connexuss.project.supabase.Texto
+import org.connexuss.project.supabase.generaIdLongAleatorio
 import org.connexuss.project.usuario.Usuario
 import org.connexuss.project.usuario.UsuarioBloqueado
 import org.jetbrains.compose.resources.painterResource
@@ -181,6 +186,8 @@ fun PantallaAjustesAyuda(navController: NavHostController) {
     val reporteVacio = traducir("reporte_vacio")
     val reporteEnviado = traducir("reporte_enviado")
 
+    val scope = rememberCoroutineScope()
+
     MaterialTheme {
         Scaffold(
             topBar = {
@@ -242,6 +249,16 @@ fun PantallaAjustesAyuda(navController: NavHostController) {
                                 errorMessage = if (reporte.isBlank()) {
                                     reporteVacio
                                 } else {
+                                    scope.launch {
+                                        Supabase.client.from("reporte").insert(
+                                            Reporte(
+                                                idReporte = generaIdLongAleatorio().toString(),
+                                                idUsuario = (UsuarioPrincipal?.getIdUnicoMio() ?: 0).toString(),
+                                                motivo = reporte,
+                                                resuelto = false,
+                                            )
+                                        )
+                                    }
                                     reporteEnviado
                                 }
                             }) {
