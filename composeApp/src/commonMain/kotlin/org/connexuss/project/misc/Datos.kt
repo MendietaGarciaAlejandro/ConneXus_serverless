@@ -17,7 +17,12 @@ import connexus_serverless.composeapp.generated.resources.visibilidadOn
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.user.UserSession
 import kotlinx.coroutines.flow.asFlow
+import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import org.connexuss.project.comunicacion.Hilo
 import org.connexuss.project.comunicacion.Post
 import org.connexuss.project.comunicacion.Tema
@@ -1354,3 +1359,26 @@ object Supabase {
 }
 
 var sesionActualUsuario: UserSession? = null
+
+
+@Serializable
+data class Reporte(
+    @SerialName("idReporte")
+    val idReporte: String,
+
+    @SerialName("idUsuario")
+    val idUsuario: String,
+
+    @SerialName("motivo")
+    val motivo: String,
+
+    @SerialName("resuelto")
+    val resuelto: Boolean = false,
+
+    @SerialName("respuestaAdmin")
+    val respuestaAdmin: String? = null,
+
+    @SerialName("fecha")
+    val fecha: LocalDateTime = Clock.System.now()
+        .toLocalDateTime(TimeZone.currentSystemDefault()),
+)

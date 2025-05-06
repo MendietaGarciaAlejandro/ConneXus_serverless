@@ -2776,6 +2776,13 @@ fun PantallaZonaPruebas(navController: NavHostController) {
                         ) {
                             Text("Debug: Ir a las pruebas de persistencia de datos")
                         }
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(
+                            onClick = { navController.navigate("zonaReportes") },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("ADMIN: Ir a la zona de reportes")
+                        }
                     }
                 }
             }

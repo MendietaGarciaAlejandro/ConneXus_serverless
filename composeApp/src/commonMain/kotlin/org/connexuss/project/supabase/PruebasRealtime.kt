@@ -1,6 +1,7 @@
 package org.connexuss.project.supabase
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,6 +16,8 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.AlertDialog
+import androidx.compose.material.Button
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
@@ -41,11 +44,17 @@ import io.github.jan.supabase.annotations.SupabaseExperimental
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.filter.FilterOperation
 import io.github.jan.supabase.realtime.selectAsFlow
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import org.connexuss.project.interfaces.DefaultTopBar
+import org.connexuss.project.interfaces.LimitaTamanioAncho
+import org.connexuss.project.misc.Reporte
 import org.connexuss.project.misc.Supabase
+import org.connexuss.project.usuario.Usuario
 import kotlin.random.Random
 import kotlin.reflect.KProperty1
 
@@ -208,6 +217,173 @@ fun PantallaTextosRealtime(navHostController: NavHostController) {
         }
     }
 }
+
+@Composable
+fun PantallaReportesRealtime(navHostController: NavHostController) {
+    // Suscripción a lista de reportes en tiempo real
+    val reportesFlow = remember {
+        Supabase.client
+            .subscribeTableAsFlow<Reporte, String>("reporte", Reporte::idReporte)
+    }
+    val reportes by reportesFlow.collectAsState(initial = emptyList())
+    val scope = rememberCoroutineScope()
+
+    Scaffold(
+        topBar = {
+            DefaultTopBar(
+                title = "Reportes del sistema",
+                navController = navHostController,
+                irParaAtras = true,
+                showBackButton = true,
+                muestraEngranaje = true
+            )
+        }
+    ) { padding ->
+        LimitaTamanioAncho { modifier ->
+            Column(
+                modifier = modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(16.dp)
+            ) {
+                ReportesScreen(
+                    reportes = reportes,
+                    onBuscarUsuario = { idUsuario ->
+                        scope.launch {
+                            try {
+                                // Ejemplo: buscar usuario y manejarlo en la pantalla padre
+                                val usuario = SupabaseUsuariosRepositorio()
+                                    .getUsuarioPorId(idUsuario)
+                                    .first()
+                                // Usar usuario si se requiere: analytics, navegación...
+                            } catch (e: Exception) {
+                                // Manejo de error
+                            }
+                        }
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ReportesScreen(
+    reportes: List<Reporte>,
+    onBuscarUsuario: (String) -> Unit = {}
+) {
+    var dialogoVisible by remember { mutableStateOf(false) }
+    var reporteSeleccionado by remember { mutableStateOf<Reporte?>(null) }
+    var usuario by remember { mutableStateOf<Usuario?>(null) }
+
+    val repoUsuario = SupabaseUsuariosRepositorio()
+    val scope = rememberCoroutineScope()
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colors.background)
+    ) {
+        // Listado de reportes
+        LazyColumn(
+            modifier = Modifier.weight(1f),
+            contentPadding = PaddingValues(vertical = 8.dp)
+        ) {
+            items(reportes) { reporte ->
+                ReporteItem(
+                    reporte = reporte,
+                    onClick = {
+                        reporteSeleccionado = reporte
+                        scope.launch {
+                            try {
+                                // Obtener el Usuario directamente desde el Flow
+                                usuario = repoUsuario
+                                    .getUsuarioPorId(reporte.idUsuario)  // Flow<Usuario?>
+                                    .first()                            // Usuario?
+                            } catch (e: Exception) {
+                                usuario = null
+                            }
+                            onBuscarUsuario(reporte.idUsuario)
+                            dialogoVisible = true
+                        }
+                    }
+                )
+            }
+        }
+    }
+
+    // Diálogo con información del reporte y usuario
+    if (dialogoVisible && reporteSeleccionado != null) {
+        AlertDialog(
+            onDismissRequest = {
+                dialogoVisible = false
+                usuario = null
+            },
+            title = { Text("Información del Reporte") },
+            text = {
+                Column {
+                    Text("ID Usuario: ${reporteSeleccionado!!.idUsuario}")
+//                    usuario?.let {
+//                        Text("Nombre: ${it.nombre}")
+//                        Text("Correo: ${it.correo}")
+//                        Text("Alias Público: ${it.aliasPublico}")
+//                        Text("Alias Privado: ${it.aliasPrivado}")
+//                        Text("Activo: ${it.activo}")
+//                        Text("Descripción: ${it.descripcion}")
+//                    } ?: Text("Error al cargar datos del usuario")
+
+                    Text("Motivo del reporte: ${reporteSeleccionado!!.motivo}")
+                    //Text("Respuesta Admin: ${reporteSeleccionado!!.respuestaAdmin ?: "Sin respuesta"}")
+                    Text("Fecha: ${reporteSeleccionado!!.fecha}")
+                }
+            },
+            confirmButton = {
+                Button(onClick = {
+                    dialogoVisible = false
+                    usuario = null
+                }) {
+                    Text("Cerrar")
+                }
+            }
+        )
+    }
+}
+
+@Composable
+fun ReporteItem(
+    reporte: Reporte,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp, vertical = 4.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colors.secondary.copy(alpha = 0.7f))
+            .padding(12.dp)
+            .clickable(onClick = onClick),
+        horizontalArrangement = Arrangement.Start
+    ) {
+        Column {
+            Text(
+                text = "ID: ${reporte.idReporte}",
+                style = MaterialTheme.typography.caption,
+                color = MaterialTheme.colors.onSecondary
+            )
+            Text(
+                text = "Usuario: ${reporte.idUsuario}",
+                style = MaterialTheme.typography.caption,
+                color = MaterialTheme.colors.onSecondary
+            )
+            Text(
+                text = reporte.respuestaAdmin ?: "Sin respuesta",
+                style = MaterialTheme.typography.body1,
+                color = MaterialTheme.colors.onSecondary
+            )
+        }
+    }
+}
+
 
 fun generaIdLongAleatorio(): Long {
     val largo = Random.nextLong()
