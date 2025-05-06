@@ -168,7 +168,7 @@ fun ForoScreen(navController: NavHostController) {
                             val temaId = generateId()
 
                             // 1) Creamos el SecretRecord y lo upserteamos en vault.secrets
-                            secretsRepo.upsertSecret(
+                            secretsRepo.upsertSecretAdmin(
                                 SecretRecord(
                                     id          = temaId,
                                     name        = "tema_$temaId",

@@ -91,6 +91,7 @@ fun Navegacion(
 
     val repoSupabase = remember { SupabaseRepositorioGenerico() }
     val repoUsuarios = remember { SupabaseUsuariosRepositorio() }
+    val repoSecretos = remember { SupabaseSecretsRepo() }
 
     val estadoFlowSettings = remember { FlowSettingsProvider(settings, Dispatchers.Default) }
     // val estadoSettings = remember { SettingsState(  ) }
@@ -215,7 +216,11 @@ fun Navegacion(
             arguments = listOf(navArgument("temaId") { type = NavType.StringType })
         ) { backStackEntry ->
             val temaId = backStackEntry.arguments!!.getString("temaId")!!
-            TemaScreen(navController, temaId)
+            TemaScreen(
+                navController, temaId,
+                repoForo = repoSupabase,
+                secretsRepo = repoSecretos
+            )
         }
         composable(
             "hilo/{hiloId}",

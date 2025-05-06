@@ -5,10 +5,13 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import org.connexuss.project.encriptacion.SecretRecord
 import org.connexuss.project.misc.Supabase
+import org.connexuss.project.misc.SupabaseAdmin
 
 interface SecretsRepositorio {
     suspend fun upsertSecret(secret: SecretRecord)
+    suspend fun upsertSecretAdmin(secret: SecretRecord)
     fun getSecretByName(name: String): Flow<SecretRecord?>
+    fun getSecretByNameAdmin(name: String): Flow<SecretRecord?>
 }
 
 class SupabaseSecretsRepo : SecretsRepositorio {
@@ -27,8 +30,30 @@ class SupabaseSecretsRepo : SecretsRepositorio {
             .decodeSingleOrNull<SecretRecord>()  // ahora recibes el SecretRecord o null :contentReference[oaicite:0]{index=0}
     }
 
+    override suspend fun upsertSecretAdmin(secret: SecretRecord) {
+        // Performs an UPSERT and returns the upserted row
+        SupabaseAdmin.client
+            .from(tabla)
+            .upsert(secret) {
+                // 1) Indica la columna de conflicto (primary key = "id")
+                onConflict = "id"
+                // 2) Solicita devolver la fila resultante
+                select()
+            }
+            .decodeSingleOrNull<SecretRecord>()  // ahora recibes el SecretRecord o null :contentReference[oaicite:0]{index=0}
+    }
+
     override fun getSecretByName(name: String): Flow<SecretRecord?> = flow {
         val found = Supabase.client
+            .from(tabla)
+            .select { filter { eq("name", name) } }
+            .decodeList<SecretRecord>()
+            .firstOrNull()
+        emit(found)
+    }
+
+    override fun getSecretByNameAdmin(name: String): Flow<SecretRecord?> = flow {
+        val found = SupabaseAdmin.client
             .from(tabla)
             .select { filter { eq("name", name) } }
             .decodeList<SecretRecord>()
