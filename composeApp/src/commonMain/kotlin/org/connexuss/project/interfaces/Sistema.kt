@@ -1367,24 +1367,34 @@ fun mostrarPerfil(navController: NavHostController, usuarioU: Usuario?) {
                                         usuario?.let {
                                             coroutineScope.launch {
                                                 try {
-                                                    println(" Enviando actualización a Supabase...")
+                                                    // Solo actualiza si es distinto
+                                                    val authUser = Supabase.client.auth.currentUserOrNull()
+                                                    if (contrasennia != it.getContrasenniaMio()) {
+                                                        Supabase.client.auth.updateUser {
+                                                            password = contrasennia
+                                                        }
+                                                    }
+
+                                                    if (email != it.getCorreoMio()) {
+                                                        Supabase.client.auth.updateUser {
+                                                            email = email
+                                                        }
+                                                    }
+
+                                                    // Luego actualiza en la tabla usuario
                                                     repo.updateUsuario(it)
 
-                                                    // Recarga el usuario actualizado desde Supabase
                                                     val usuarioActualizado = repo.getUsuarioAutenticado()
                                                     usuario = usuarioActualizado
 
-                                                    println("Usuario recargado tras actualización: $usuarioActualizado")
-
-                                                    // Navegación atrás (opcional)
                                                     navController.popBackStack()
+
                                                 } catch (e: Exception) {
                                                     println("Error al actualizar usuario: ${e.message}")
                                                 }
                                             }
                                         }
                                     }
-
                                 )
                                 {
                                     Text(text = traducir("aplicar"))

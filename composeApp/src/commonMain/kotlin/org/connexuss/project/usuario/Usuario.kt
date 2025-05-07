@@ -534,3 +534,14 @@ data class UsuarioContacto(
     @SerialName("idcontacto")
     val idContacto: String   // ID del contacto
 )
+
+@Serializable
+data class UsuarioUpdate(
+    val nombre: String,
+    val correo: String,
+    val contrasennia: String,
+    val aliasprivado: String,
+    val aliaspublico: String,
+    val descripcion: String,
+    val activo: Boolean
+)
