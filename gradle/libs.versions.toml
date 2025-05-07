@@ -4,22 +4,16 @@ agp = "8.8.2"
 android-compileSdk = "35"
 android-minSdk = "24"
 android-targetSdk = "35"
-compose-multiplatform = "1.7.3"
-composeTest = "1.8.0"
+composeMultiplatform = "1.7.3"
 
 # AndroidX versions
 androidx-activityCompose = "1.10.1"
 androidx-lifecycle = "2.8.4"
-foundationAndroid = "1.8.0"
-foundationLayoutAndroid = "1.8.0"
-animationCoreLint = "1.8.0"
+androidx-compose = "1.8.1"
 material3Android = "1.3.2"
-skikoWasmJs = "0.9.4"
-uiGraphicsAndroid = "1.8.0"
-uiAndroid = "1.8.0"
-uiTextAndroid = "1.8.0"
+#skikoWasmJs = "0.9.4"
 coreI18n = "1.0.0"
-coreKtx = "1.6.1"
+#coreKtx = "1.6.1"
 
 # Kotlin related versions
 kotlin = "2.1.10"
@@ -27,8 +21,7 @@ kotlinx-coroutines = "1.10.1"
 kotlinxDatetime = "0.6.2"
 kotlinxSerialization = "1.8.1"
 kotlinTest = "2.2.0-Beta1"
-kotlinTestAnnotationsCommon = "2.2.0-Beta1"
-assertk = "0.28.1"
+kotest = "5.9.1"
 
 # Navigation versions
 navigation-compose = "2.8.0-alpha10"
@@ -64,33 +57,32 @@ multiplatformSettings = "1.3.0"
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "androidx-activityCompose" }
 androidx-lifecycle-viewmodel = { group = "org.jetbrains.androidx.lifecycle", name = "lifecycle-viewmodel", version.ref = "androidx-lifecycle" }
 androidx-lifecycle-runtime-compose = { group = "org.jetbrains.androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "androidx-lifecycle" }
-androidx-foundation-android = { group = "androidx.compose.foundation", name = "foundation-android", version.ref = "foundationAndroid" }
-androidx-animation-core-lint = { group = "androidx.compose.animation", name = "animation-core-lint", version.ref = "animationCoreLint" }
+androidx-foundation-android = { group = "androidx.compose.foundation", name = "foundation-android", version.ref = "androidx-compose" }
+androidx-animation-core-lint = { group = "androidx.compose.animation", name = "animation-core-lint", version.ref = "androidx-compose" }
 androidx-material3-android = { group = "androidx.compose.material3", name = "material3-android", version.ref = "material3Android" }
-androidx-ui-graphics-android = { group = "androidx.compose.ui", name = "ui-graphics-android", version.ref = "uiGraphicsAndroid" }
-androidx-ui-text-android = { group = "androidx.compose.ui", name = "ui-text-android", version.ref = "uiTextAndroid" }
+androidx-ui-graphics-android = { group = "androidx.compose.ui", name = "ui-graphics-android", version.ref = "androidx-compose" }
+androidx-ui-test-junit4-android = { module = "androidx.compose.ui:ui-test-junit4-android", version.ref = "androidx-compose" }
+androidx-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest", version.ref = "androidx-compose" }
+androidx-ui-text-android = { group = "androidx.compose.ui", name = "ui-text-android", version.ref = "androidx-compose" }
 androidx-core-i18n = { group = "androidx.core", name = "core-i18n", version.ref = "coreI18n" }
-androidx-ui-android = { group = "androidx.compose.ui", name = "ui-android", version.ref = "uiAndroid" }
-androidx-foundation-layout-android = { group = "androidx.compose.foundation", name = "foundation-layout-android", version.ref = "foundationLayoutAndroid" }
+androidx-ui-android = { group = "androidx.compose.ui", name = "ui-android", version.ref = "androidx-compose" }
+androidx-foundation-layout-android = { group = "androidx.compose.foundation", name = "foundation-layout-android", version.ref = "androidx-compose" }
 
 # Kotlin libraries
 kotlinx-coroutines-swing = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-swing", version.ref = "kotlinx-coroutines" }
 kotlinx-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version.ref = "kotlinxDatetime" }
 kotlinx-serialization = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
-kotlin-test = { group = "org.jetbrains.kotlin", name = "kotlin-test", version.ref = "kotlinTest" }
-kotlin-test-annotations-common = { group = "org.jetbrains.kotlin", name = "kotlin-test-annotations-common", version.ref = "kotlinTestAnnotationsCommon" }
-assertk = { group = "com.willowtreeapps.assertk", name = "assertk", version.ref = "assertk" }
 
 # Navigation libraries
 #androidx-navigation-safe-args-generator = { group = "androidx.navigation", name = "navigation-safe-args-generator", version.ref = "navigationSafeArgsGenerator" }
 
 # Multiplatform Settings libraries
 multiplatform-settings = { module = "com.russhwolf:multiplatform-settings", version.ref = "multiplatformSettings" }
-multiplatform-settings-android = { module = "com.russhwolf:multiplatform-settings-android", version.ref = "multiplatformSettings" }
+#multiplatform-settings-android = { module = "com.russhwolf:multiplatform-settings-android", version.ref = "multiplatformSettings" }
 multiplatform-settings-coroutines = { module = "com.russhwolf:multiplatform-settings-coroutines", version.ref = "multiplatformSettings" }
-multiplatform-settings-datastore = { module = "com.russhwolf:multiplatform-settings-datastore", version.ref = "multiplatformSettings" }
+#multiplatform-settings-datastore = { module = "com.russhwolf:multiplatform-settings-datastore", version.ref = "multiplatformSettings" }
 multiplatform-settings-make-observable = { module = "com.russhwolf:multiplatform-settings-make-observable", version.ref = "multiplatformSettings" }
-multiplatform-settings-make-observable-js = { module = "com.russhwolf:multiplatform-settings-make-observable-js", version.ref = "multiplatformSettings" }
+#multiplatform-settings-make-observable-js = { module = "com.russhwolf:multiplatform-settings-make-observable-js", version.ref = "multiplatformSettings" }
 multiplatform-settings-no-arg = { module = "com.russhwolf:multiplatform-settings-no-arg", version.ref = "multiplatformSettings" }
 multiplatform-settings-serialization = { module = "com.russhwolf:multiplatform-settings-serialization", version.ref = "multiplatformSettings" }
 multiplatform-settings-wasm-js = { module = "com.russhwolf:multiplatform-settings-wasm-js", version.ref = "multiplatformSettings" }
@@ -117,7 +109,7 @@ decompose-jetbrains = { module = "com.arkivanov.decompose:extensions-compose-jet
 auth-kt = { group = "io.github.jan-tennert.supabase", name = "auth-kt", version.ref = "supabaseKt" }
 functions-kt = { group = "io.github.jan-tennert.supabase", name = "functions-kt", version.ref = "supabaseKt" }
 realtime-kt = { group = "io.github.jan-tennert.supabase", name = "realtime-kt", version.ref = "supabaseKt" }
-skiko-wasm-js = { module = "org.jetbrains.skiko:skiko-wasm-js", version.ref = "skikoWasmJs" }
+#skiko-wasm-js = { module = "org.jetbrains.skiko:skiko-wasm-js", version.ref = "skikoWasmJs" }
 storage-kt = { group = "io.github.jan-tennert.supabase", name = "storage-kt", version.ref = "supabaseKt" }
 supabase-kt = { group = "io.github.jan-tennert.supabase", name = "supabase-kt", version.ref = "supabaseKt" }
 supabase-postgrest-kt = { group = "io.github.jan-tennert.supabase", name = "postgrest-kt", version.ref = "supabaseKt" }
@@ -135,9 +127,12 @@ cryptography-provider-jdk = { group = "dev.whyoleg.cryptography", name = "crypto
 cryptography-provider-webcrypto = { group = "dev.whyoleg.cryptography", name = "cryptography-provider-webcrypto", version.ref = "cryptographyCore" }
 
 # Testing libraries
-compose-ui-test-junit4-android = { group = "androidx.compose.ui", name = "ui-test-junit4-android", version.ref = "composeTest" }
-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest", version.ref = "composeTest" }
-core-ktx = { group = "androidx.test", name = "core-ktx", version.ref = "coreKtx" }
+kotlin-test = { group = "org.jetbrains.kotlin", name = "kotlin-test", version.ref = "kotlinTest" }
+kotest-framework-engine = { group = "io.kotest", name = "kotest-framework-engine", version.ref = "kotest" }
+kotest-assertions-core = { group = "io.kotest", name = "kotest-assertions-core", version.ref = "kotest" }
+kotest-property = { group = "io.kotest", name = "kotest-property", version.ref = "kotest" }
+kotest-framework-datatest = { group = "io.kotest", name = "kotest-framework-datatest", version.ref = "kotest" }
+kotest-runner-junit5 = { group = "io.kotest", name = "kotest-runner-junit5", version.ref = "kotest" }
 
 [plugins]
 # Android plugins
@@ -145,11 +140,12 @@ androidApplication = { id = "com.android.application", version.ref = "agp" }
 androidLibrary = { id = "com.android.library", version.ref = "agp" }
 
 # Compose & Kotlin plugins
-composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "compose-multiplatform" }
+composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }
 composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+kotestMultiplatform = { id = "io.kotest.multiplatform", version.ref = "kotest" }
 
-# Plugin de serializadcion de Jotlin
+# Plugin de serializadcion de Kotlin
 kotlinxSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 
 # Cosas de Google (Firebase)
