@@ -183,16 +183,16 @@ fun ForoScreen(navController: NavHostController) {
                             println("Resultado de la función insert_secret: $result")
 
                             // 1) Creamos el SecretRecord y lo upserteamos en vault.secrets
-//                            secretsRepo.upsertSecretAdmin(
-//                                SecretRecord(
-//                                    id          = temaId,
-//                                    name        = "tema_$temaId",
-//                                    description = "Clave AES para tema $temaId",
-//                                    secret      = claveSimHex,
-//                                    keyId       = "<vault-key-uuid>",
-//                                    nonceHex    = ""
-//                                )
-//                            )
+                            secretsRepo.upsertSecretAdmin(
+                                SecretRecord(
+                                    id = temaId,
+                                    name = "tema_$temaId",
+                                    description = "Clave AES para tema $temaId",
+                                    secret = claveSimHex,
+                                    keyId = "<vault-key-uuid>",
+                                    nonceHex = ""
+                                )
+                            )
 
                             // 2) Insertamos el Tema (solo con nombre cifrado)
                             repoForo.addItem(

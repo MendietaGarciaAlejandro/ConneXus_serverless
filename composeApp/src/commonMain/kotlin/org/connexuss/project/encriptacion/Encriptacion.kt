@@ -40,19 +40,33 @@ import dev.whyoleg.cryptography.algorithms.HMAC
 import dev.whyoleg.cryptography.algorithms.PBKDF2
 import dev.whyoleg.cryptography.algorithms.SHA512
 import dev.whyoleg.cryptography.random.CryptographyRandom
+import io.github.jan.supabase.auth.Auth
+import io.github.jan.supabase.createSupabaseClient
+import io.github.jan.supabase.postgrest.Postgrest
+import io.github.jan.supabase.postgrest.from
+import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.realtime.Realtime
+import io.github.jan.supabase.storage.Storage
+import io.ktor.util.encodeBase64
 import io.ktor.utils.io.core.toByteArray
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.selects.select
+import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import okio.ByteString
 import org.connexuss.project.comunicacion.Mensaje
-import org.connexuss.project.comunicacion.Post
 import org.connexuss.project.interfaces.DefaultTopBar
 import org.connexuss.project.interfaces.LimitaTamanioAncho
+import org.connexuss.project.misc.SupabaseAdmin
 import org.connexuss.project.persistencia.SettingsState
 import org.connexuss.project.supabase.ClavesUsuarioRepositorio
+import org.connexuss.project.supabase.SUPABASE_KEY
+import org.connexuss.project.supabase.SUPABASE_URL
 import org.connexuss.project.supabase.SupabaseUsuariosRepositorio
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -809,48 +823,6 @@ data class EncryptedPayload(
     val ciphertextHex: String
 )
 
-
-/**
- * Representa una entrada en la tabla `secrets` de Supabase y en Vault
- * para almacenar la clave simétrica del foro.
- */
-@Serializable
-data class SecretRecord @OptIn(ExperimentalUuidApi::class) constructor(
-    /** UUID único de la fila */
-    @SerialName("id")
-    val id: String = Uuid.random().toString(),
-
-    /** Nombre descriptivo de la clave */
-    @SerialName("name")
-    val name: String,
-
-    /** Descripción opcional */
-    @SerialName("description")
-    val description: String? = null,
-
-    /** Valor de la clave simétrica (hex o Base64) */
-    @SerialName("secret")
-    val secret: String,
-
-    /** UUID de la clave maestra en Vault o KMS */
-    @SerialName("key_id")
-    val keyId: String,
-
-    /** Nonce usado en el cifrado (hex)
-     *  Mapeado desde la columna bytea en formato hex
-     */
-    @SerialName("nonce")
-    val nonceHex: String,
-
-    /** Timestamp de creación (timestamptz) */
-    @SerialName("created_at")
-    val createdAt: Instant = Clock.System.now(),
-
-    /** Timestamp de última modificación (timestamptz) */
-    @SerialName("updated_at")
-    val updatedAt: Instant? = null
-)
-
 // --------------------------------------------------
 // Core ECIES + AES-GCM utilities
 // --------------------------------------------------
@@ -1073,4 +1045,96 @@ fun PantallaClavesUsuario(
             }
         }
     }
+}
+
+/**
+ * Representa una entrada en la tabla `secrets` de Supabase y en Vault
+ * para almacenar la clave simétrica del foro.
+ */
+@Serializable
+data class SecretRecord @OptIn(ExperimentalUuidApi::class) constructor(
+    /** UUID único de la fila */
+    @SerialName("id")
+    val id: String = Uuid.random().toString(),
+
+    /** Nombre descriptivo de la clave */
+    @SerialName("name")
+    val name: String,
+
+    /** Descripción opcional */
+    @SerialName("description")
+    val description: String? = null,
+
+    /** Valor de la clave simétrica (hex o Base64) */
+    @SerialName("secret")
+    val secret: String,
+
+    /** UUID de la clave maestra en Vault o KMS */
+    @SerialName("key_id")
+    val keyId: String,
+
+    /** Nonce usado en el cifrado (hex)
+     *  Mapeado desde la columna bytea en formato hex
+     */
+    @SerialName("nonce")
+    val nonceHex: String,
+
+    /** Timestamp de creación (timestamptz) */
+    @SerialName("created_at")
+    val createdAt: Instant = Clock.System.now(),
+
+    /** Timestamp de última modificación (timestamptz) */
+    @SerialName("updated_at")
+    val updatedAt: Instant? = null
+)
+
+suspend fun generateSymmetricKey(): String = withContext(Dispatchers.Default) {
+    // Genera 32 bytes (256 bits) de forma segura
+    val keyBytes: ByteArray =
+        CryptographyRandom.nextBytes(32)                     // :contentReference[oaicite:5]{index=5}
+    // Codifica a Base64 para almacenar/transmitir fácilmente
+    keyBytes.encodeBase64()
+}
+
+@Serializable
+data class VaultSecret(
+    val id: String,
+    val name: String,
+    val secret: String          // Cadena Base64
+)
+
+// Inserta y recibe de vuelta la fila completa
+suspend fun storeKeyInVault(name: String, base64Key: String): VaultSecret =
+    SupabaseAdmin.client.postgrest
+        .from("vault.secrets")
+.insert(
+value = VaultSecret(id = "auto", name = name, secret = base64Key)
+) {
+    // Esta cláusula SELECT le indica a PostgREST que devuelva la fila insertada
+    select()
+}
+.decodeSingle<VaultSecret>()
+
+@Serializable
+data class DecryptedSecret(
+    val id: String,
+    val name: String,
+    val secret: String          // Base64
+)
+
+suspend fun fetchSymmetricKey(name: String): ByteArray? {
+    val response = SupabaseAdmin.client.postgrest
+        .from("vault.decrypted_secrets")
+        .select {
+            filter { eq("name", name) }
+        }
+        .decodeSingleOrNull<VaultSecret>()
+
+    val base64Key = response?.secret ?: return null
+
+    // 2) Llamar al método estático de ByteString
+    val byteString = ByteString.of(
+        data = base64Key.toByteArray()
+    )
+    return byteString.toByteArray()
 }
