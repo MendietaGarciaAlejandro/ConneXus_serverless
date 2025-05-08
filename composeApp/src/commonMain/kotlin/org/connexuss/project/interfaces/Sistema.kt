@@ -2283,32 +2283,6 @@ fun PantallaRegistro(navController: NavHostController) {
                                                     this.email = emailTrimmed
                                                     this.password = password
                                                 }
-
-                                                /*val uid = Supabase.client.auth.currentUserOrNull()?.id
-                                                    ?: throw Exception("No se pudo obtener el UID del usuario autenticado")
-
-                                                // Crear objeto Usuario con el mismo ID que auth.uid()
-                                                val nuevoUsuario = Usuario(
-                                                    idUnico = uid,
-                                                    nombre = nombre,
-                                                    correo = emailTrimmed,
-                                                    aliasPublico = UtilidadesUsuario().generarAliasPublico(),
-                                                    aliasPrivado = "Privado_$nombre",
-                                                    activo = true,
-                                                    descripcion = "Descripción de $nombre",
-                                                    contrasennia = password
-                                                )
-
-                                                println("Nuevo usuario: $nuevoUsuario")
-                                                println("UID Supabase actual: $uid")
-                                                */
-                                                /*
-                                                repoSupabase.addUsuario(nuevoUsuario)
-
-
-                                                navController.navigate("login") {
-                                                    popUpTo("registro") { inclusive = true }
-                                                }*/
                                                 navController.navigate("registroVerificaCorreo/${emailTrimmed}/${nombre}/${password}")
 
 
