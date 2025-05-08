@@ -1,6 +1,7 @@
 package org.connexuss.project.interfaces
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,13 +12,17 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.AlertDialog
 import androidx.compose.material.CircularProgressIndicator
+import androidx.compose.material.DropdownMenu
+import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
+import androidx.compose.material.TextButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.runtime.Composable
@@ -31,6 +36,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import connexus_serverless.composeapp.generated.resources.Res
@@ -142,10 +148,21 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
             ) {
                 items(mensajes.sortedBy { it.fechaMensaje }) { mensaje ->
                     val esMio = mensaje.idusuario == currentUserId
+                    var expanded by remember { mutableStateOf(false) }
+                    var showEditDialog by remember { mutableStateOf(false) }
+                    var nuevoContenido by remember { mutableStateOf(mensaje.content) }
+
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(8.dp),
+                            .padding(8.dp)
+                            .pointerInput(Unit) {
+                                detectTapGestures(
+                                    onLongPress = {
+                                        if (esMio) expanded = true
+                                    }
+                                )
+                            },
                         contentAlignment = if (esMio) Alignment.CenterEnd else Alignment.CenterStart
                     ) {
                         Box(
@@ -159,8 +176,71 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
                         ) {
                             Text(mensaje.content)
                         }
+
+                        if (esMio) {
+                            DropdownMenu(
+                                expanded = expanded,
+                                onDismissRequest = { expanded = false }
+                            ) {
+                                DropdownMenuItem(onClick = {
+                                    nuevoContenido = mensaje.content
+                                    showEditDialog = true
+                                    expanded = false
+                                }) {
+                                    Text("Editar")
+                                }
+
+                                DropdownMenuItem(onClick = {
+                                    scope.launch {
+                                        supabaseClient
+                                            .from("mensaje")
+                                            .update({ set("content", "Mensaje eliminado") }) {
+                                                filter { eq("id", mensaje.id) }
+                                            }
+                                    }
+                                    expanded = false
+                                }) {
+                                    Text("Eliminar")
+                                }
+                            }
+                        }
+
+                        if (showEditDialog) {
+                            AlertDialog(
+                                onDismissRequest = { showEditDialog = false },
+                                title = { Text("Editar mensaje") },
+                                text = {
+                                    OutlinedTextField(
+                                        value = nuevoContenido,
+                                        onValueChange = { nuevoContenido = it },
+                                        label = { Text("Nuevo contenido") },
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                },
+                                confirmButton = {
+                                    TextButton(onClick = {
+                                        scope.launch {
+                                            supabaseClient
+                                                .from("mensaje")
+                                                .update({ set("content", nuevoContenido.trim()) }) {
+                                                    filter { eq("id", mensaje.id) }
+                                                }
+                                            showEditDialog = false
+                                        }
+                                    }) {
+                                        Text("Guardar")
+                                    }
+                                },
+                                dismissButton = {
+                                    TextButton(onClick = { showEditDialog = false }) {
+                                        Text("Cancelar")
+                                    }
+                                }
+                            )
+                        }
                     }
                 }
+
             }
 
             Row(

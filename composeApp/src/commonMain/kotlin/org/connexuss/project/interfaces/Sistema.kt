@@ -550,11 +550,11 @@ fun ChatCard(
                 )
             }
 
-            if (ultimoMensaje != null) {
+            if (ultimoMensaje != null && !estaBloqueado) {
                 Text(
                     text = ultimoMensaje.content,
                     style = MaterialTheme.typography.body1,
-                    color = if (estaBloqueado) Color.Red else MaterialTheme.colors.onSurface,
+                    color = MaterialTheme.colors.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -1176,8 +1176,6 @@ fun mostrarPerfil(navController: NavHostController, usuarioU: Usuario?) {
     // Dialogs
     var showDialogNombre by remember { mutableStateOf(false) }
     var nuevoNombre by remember { mutableStateOf("") }
-    var showDialogEmail by remember { mutableStateOf(false) }
-    var nuevoEmail by remember { mutableStateOf("") }
 
     // Campos del usuario
     var aliasPrivado by remember { mutableStateOf("") }
@@ -1340,14 +1338,6 @@ fun mostrarPerfil(navController: NavHostController, usuarioU: Usuario?) {
                                     readOnly = true,
                                     modifier = Modifier.weight(1f)
                                 )
-                                TextButton(
-                                    onClick = {
-                                        nuevoEmail = email
-                                        showDialogEmail = true
-                                    }
-                                ) {
-                                    Text(text = traducir("modificar"))
-                                }
                             }
                             // Botones inferiores
                             Row(
@@ -1367,24 +1357,28 @@ fun mostrarPerfil(navController: NavHostController, usuarioU: Usuario?) {
                                         usuario?.let {
                                             coroutineScope.launch {
                                                 try {
-                                                    println(" Enviando actualización a Supabase...")
+                                                    // Solo actualiza si es distinto
+                                                    val authUser = Supabase.client.auth.currentUserOrNull()
+                                                    if (contrasennia != it.getContrasenniaMio()) {
+                                                        Supabase.client.auth.updateUser {
+                                                            password = contrasennia
+                                                        }
+                                                    }
+
+                                                    // Luego actualiza en la tabla usuario
                                                     repo.updateUsuario(it)
 
-                                                    // Recarga el usuario actualizado desde Supabase
                                                     val usuarioActualizado = repo.getUsuarioAutenticado()
                                                     usuario = usuarioActualizado
 
-                                                    println("Usuario recargado tras actualización: $usuarioActualizado")
-
-                                                    // Navegación atrás (opcional)
                                                     navController.popBackStack()
+
                                                 } catch (e: Exception) {
                                                     println("Error al actualizar usuario: ${e.message}")
                                                 }
                                             }
                                         }
                                     }
-
                                 )
                                 {
                                     Text(text = traducir("aplicar"))
@@ -1400,48 +1394,6 @@ fun mostrarPerfil(navController: NavHostController, usuarioU: Usuario?) {
                 }
             }
         }
-    }
-    // AlertDialog para modificar Email
-    if (showDialogEmail) {
-        AlertDialog(
-            onDismissRequest = { showDialogEmail = false },
-            title = { Text(text = traducir("modificar_email")) },
-            text = {
-                OutlinedTextField(
-                    value = nuevoEmail,
-                    onValueChange = { nuevoEmail = it },
-                    label = { Text(text = traducir("nuevo_email")) }
-                )
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        email = nuevoEmail
-                        usuario?.setCorreoMio(nuevoEmail)
-                        showDialogEmail = false
-
-                        usuario?.let {
-                            coroutineScope.launch {
-                                try {
-                                    repo.updateUsuario(it)
-                                } catch (e: Exception) {
-                                    //Log.e("Perfil", "Error actualizando email: ${e.message}")
-                                }
-                            }
-                        }
-                    }
-                ) {
-                    Text(text = traducir("guardar"))
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = { showDialogEmail = false }
-                ) {
-                    Text(text = traducir("cancelar"))
-                }
-            }
-        )
     }
     // AlertDialog para modificar Nombre
     if (showDialogNombre) {
@@ -1465,15 +1417,21 @@ fun mostrarPerfil(navController: NavHostController, usuarioU: Usuario?) {
                         usuario?.let {
                             coroutineScope.launch {
                                 try {
+                                    // Cambiar contraseña en Auth
+                                    Supabase.client.auth.updateUser {
+                                        password = nuevoNombre
+                                    }
+
+                                    // Luego actualizar en la tabla usuario
                                     repo.updateUsuario(it)
                                 } catch (e: Exception) {
-                                    // Manejo de error (no se por que me da error el Log)
+                                    println("❌ Error al cambiar contraseña: ${e.message}")
                                 }
                             }
                         }
                     }
-
-                ) {
+                )
+                {
                     Text(text = traducir("guardar"))
                 }
             },
@@ -1503,6 +1461,7 @@ fun mostrarPerfilUsuario(
     userId: String?,
     imagenesApp: List<Imagen>
 ) {
+
     val scope = rememberCoroutineScope()
     val currentUserId = UsuarioPrincipal?.getIdUnicoMio() ?: return
     val repo = remember { SupabaseRepositorioGenerico() }
@@ -1516,6 +1475,8 @@ fun mostrarPerfilUsuario(
 
         println("🙋 Usuario cargado: ${usuario?.getNombreCompletoMio()}")
     }
+    if (usuario == null) return
+
 
     Scaffold(
         topBar = {
@@ -1643,7 +1604,11 @@ fun mostrarPerfilUsuario(
                                         )
                                     )
 
-                                    navController.popBackStack() // Volver atrás
+                                    usuario = null
+                                    navController.popBackStack()
+                                    return@launch
+
+
                                 } catch (e: Exception) {
                                     println("❌ Error eliminando contacto: ${e.message}")
                                 }
@@ -2318,32 +2283,6 @@ fun PantallaRegistro(navController: NavHostController) {
                                                     this.email = emailTrimmed
                                                     this.password = password
                                                 }
-
-                                                val uid = Supabase.client.auth.currentUserOrNull()?.id
-                                                    ?: throw Exception("No se pudo obtener el UID del usuario autenticado")
-
-                                                // Crear objeto Usuario con el mismo ID que auth.uid()
-                                                val nuevoUsuario = Usuario(
-                                                    idUnico = uid,
-                                                    nombre = nombre,
-                                                    correo = emailTrimmed,
-                                                    aliasPublico = UtilidadesUsuario().generarAliasPublico(),
-                                                    aliasPrivado = "Privado_$nombre",
-                                                    activo = true,
-                                                    descripcion = "Descripción de $nombre",
-                                                    contrasennia = password
-                                                )
-
-                                                println("Nuevo usuario: $nuevoUsuario")
-                                                println("UID Supabase actual: $uid")
-
-                                                /*
-                                                repoSupabase.addUsuario(nuevoUsuario)
-
-
-                                                navController.navigate("login") {
-                                                    popUpTo("registro") { inclusive = true }
-                                                }*/
                                                 navController.navigate("registroVerificaCorreo/${emailTrimmed}/${nombre}/${password}")
 
 
@@ -2633,11 +2572,17 @@ fun PantallaLogin(navController: NavHostController, settingsState: SettingsState
                                             println("Usuario autenticado: $UsuarioPrincipal")
 
                                             // Iniciar sesión en Supabase
-                                            Supabase.client.auth.signInWith(
+                                            // importante...
+                                            /*Supabase.client.auth.signInWith(
                                                 provider = Email
                                             ) {
                                                 email = UsuarioPrincipal!!.correo
                                                 password = UsuarioPrincipal!!.contrasennia
+                                            }*/
+                                            //utilizar uno de los dos (el de arriba te permite loguearte con el email y la contraseña de supabase. el de abajo con auth.
+                                            Supabase.client.auth.signInWith(Email) {
+                                                email = emailInterno.trim()
+                                                password = passwordInterno.trim()
                                             }
 
                                             // Actualizar la sesión actual

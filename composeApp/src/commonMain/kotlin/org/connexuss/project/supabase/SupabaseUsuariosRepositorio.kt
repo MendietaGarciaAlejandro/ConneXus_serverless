@@ -94,40 +94,51 @@ class SupabaseUsuariosRepositorio : ISupabaseUsuariosRepositorio {
         }
     }
 
+    @kotlinx.serialization.Serializable
+    data class UsuarioUpdate(
+        val nombre: String,
+        val correo: String,
+        val contrasennia: String,
+        val aliasprivado: String,
+        val aliaspublico: String,
+        val descripcion: String,
+        val activo: Boolean
+    )
+
 
     override suspend fun updateUsuario(usuario: Usuario) {
-        val updateData = mapOf(
-            "nombre" to usuario.getNombreCompletoMio(),
-            "correo" to usuario.getCorreoMio(),
-            "contrasennia" to usuario.getContrasenniaMio(),
-            "aliasprivado" to usuario.getAliasPrivadoMio(),
-            "aliaspublico" to usuario.getAliasMio(),
-            "descripcion" to usuario.getDescripcionMio(),
-            "activo" to usuario.getActivoMio()
+        val updateData = UsuarioUpdate(
+            nombre = usuario.getNombreCompletoMio(),
+            correo = usuario.getCorreoMio(),
+            contrasennia = usuario.getContrasenniaMio(),
+            aliasprivado = usuario.getAliasPrivadoMio(),
+            aliaspublico = usuario.getAliasMio(),
+            descripcion = usuario.getDescripcionMio(),
+            activo = usuario.getActivoMio()
         )
 
         try {
             println("updateData: $updateData")
-            println(" idunico: ${usuario.getIdUnicoMio()}")
+            println("idunico: ${usuario.getIdUnicoMio()}")
 
             val updated = Supabase.client
                 .from(nombreTabla)
                 .update(updateData) {
                     filter {
-                        eq("idunico", usuario.getIdUnicoMio()) // ¡asegúrate que es minúscula!
+                        eq("idunico", usuario.getIdUnicoMio())
                     }
                     select(Columns.ALL)
                 }
                 .decodeSingleOrNull<Usuario>()
 
             if (updated != null) {
-                println("Usuario actualizado correctamente: $updated")
+                println("✅ Usuario actualizado correctamente: $updated")
             } else {
-                println(" No se actualizó ningún usuario")
+                println("⚠️ No se actualizó ningún usuario")
             }
 
         } catch (e: Exception) {
-            println(" Error al actualizar usuario: ${e.message}")
+            println("❌ Error al actualizar usuario: ${e.message}")
             throw e
         }
     }
