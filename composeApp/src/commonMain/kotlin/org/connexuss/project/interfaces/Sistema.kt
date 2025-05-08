@@ -2284,7 +2284,7 @@ fun PantallaRegistro(navController: NavHostController) {
                                                     this.password = password
                                                 }
 
-                                                val uid = Supabase.client.auth.currentUserOrNull()?.id
+                                                /*val uid = Supabase.client.auth.currentUserOrNull()?.id
                                                     ?: throw Exception("No se pudo obtener el UID del usuario autenticado")
 
                                                 // Crear objeto Usuario con el mismo ID que auth.uid()
@@ -2301,7 +2301,7 @@ fun PantallaRegistro(navController: NavHostController) {
 
                                                 println("Nuevo usuario: $nuevoUsuario")
                                                 println("UID Supabase actual: $uid")
-
+                                                */
                                                 /*
                                                 repoSupabase.addUsuario(nuevoUsuario)
 
