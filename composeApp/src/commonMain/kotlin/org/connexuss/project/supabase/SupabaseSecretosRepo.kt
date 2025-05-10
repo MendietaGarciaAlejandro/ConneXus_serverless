@@ -82,9 +82,9 @@ class SupabaseSecretosRepo : ISecretosRepositorio {
 
         // Construimos los parámetros que espera tu función insert_secret
         val params = buildJsonObject {
-            put("name", temaId)
-            put("secret", claveHex)
-            put("nonce", nonceHex)
+            put("p_name", temaId)
+            put("p_secret", claveHex)
+            put("p_nonce", nonceHex)
         }
 
         // Invo­camos la RPC tipada a SecretoInsertado

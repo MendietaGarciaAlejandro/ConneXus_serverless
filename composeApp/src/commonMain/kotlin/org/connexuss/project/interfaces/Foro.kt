@@ -66,6 +66,8 @@ import org.connexuss.project.misc.UsuarioPrincipal
 import org.connexuss.project.supabase.ISecretosRepositorio
 import org.connexuss.project.supabase.SupabaseRepositorioGenerico
 import org.connexuss.project.supabase.SupabaseSecretosRepo
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
 
 // Repositorio genérico instanciado
 private val repoForo = SupabaseRepositorioGenerico()
@@ -489,7 +491,7 @@ fun CrearElementoDialog(
  * Tarjeta para mostrar un Tema cifrado.
  * Obtiene la clave simétrica desde vault.secrets y desencripta el nombre.
  */
-@OptIn(ExperimentalStdlibApi::class)
+@OptIn(ExperimentalStdlibApi::class, ExperimentalEncodingApi::class)
 @Composable
 fun TemaCard(
     tema: Tema,
@@ -505,14 +507,19 @@ fun TemaCard(
 
         if (secreto != null) {
             println("Nonce recibido: ${secreto.nonce}")
+        } else {
+            println("No se encontró el secreto para el tema ${tema.idTema}")
         }
+
         if (secreto != null) {
             println("Clave secreta recibida: ${secreto.secret}")
+        } else {
+            println("No se encontró el secreto para el tema ${tema.idTema}")
         }
 
         if (secreto != null) {
             try {
-                val rawKey = secreto.secret.hexToByteArray()
+                val rawKey = Base64.decode(secreto.secret)
                 println("Longitud de la clave: ${rawKey.size}") // Debe ser 16, 24 o 32 bytes
 
                 val aesKey = CryptographyProvider.Default
