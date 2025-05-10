@@ -1,7 +1,11 @@
 package org.connexuss.project.supabase
 
+import io.github.jan.supabase.exceptions.RestException
+import io.github.jan.supabase.functions.functions
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.postgrest
+import io.ktor.client.call.body
+import io.ktor.http.isSuccess
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.serialization.json.buildJsonObject
@@ -11,6 +15,9 @@ import org.connexuss.project.encriptacion.SecretoRPC
 import org.connexuss.project.encriptacion.SecretoInsertado
 import org.connexuss.project.misc.Supabase
 import org.connexuss.project.misc.SupabaseAdmin
+import io.ktor.http.ContentType
+import io.ktor.client.request.setBody
+import io.ktor.http.contentType
 
 interface ISecretosRepositorio {
     suspend fun upsertSecret(secret: Secreto)
@@ -18,7 +25,7 @@ interface ISecretosRepositorio {
     fun getSecretByName(name: String): Flow<Secreto?>
     fun getSecretByNameAdmin(name: String): Flow<Secreto?>
     suspend fun insertarSecretoConRpc(temaId: String, claveHex: String, nonceHex: String): SecretoInsertado?
-    suspend fun recuperarSecretoRpc(temaId: String): SecretoRPC?
+    suspend fun recuperarSecretoRpc(name: String): SecretoRPC?
 }
 
 class SupabaseSecretosRepo : ISecretosRepositorio {
@@ -96,10 +103,30 @@ class SupabaseSecretosRepo : ISecretosRepositorio {
     }
 
     override suspend fun recuperarSecretoRpc(name: String): SecretoRPC? {
-        val params = buildJsonObject { put("p_name", name) }
+        val supabaseAdmin = SupabaseAdmin.client
 
-        return SupabaseAdmin.client.postgrest
-            .rpc("get_decrypted_secret", params)
-            .decodeSingleOrNull<SecretoRPC>()
+        // Make the raw HTTP call
+        val response = supabaseAdmin.functions.invoke(
+            function = "getSecret"
+        ) {
+            contentType(ContentType.Application.Json)
+            setBody(mapOf("name" to name))
+        }
+
+        // Check for non-200
+        if (!response.status.isSuccess()) {
+            throw RestException(
+                "Failed to invoke getSecret: ${response.status}",
+                description = "Error invoking getSecret function",
+                response = response,
+            )
+        }
+
+        // Deserialize the body into List<SecretoRPC>
+        // Edge functions always wrap results in an array
+        val arr: List<SecretoRPC> = response.body()
+
+        // Return first element or null
+        return arr.firstOrNull()
     }
 }

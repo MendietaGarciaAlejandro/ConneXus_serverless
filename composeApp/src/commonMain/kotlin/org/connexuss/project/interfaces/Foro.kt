@@ -160,6 +160,8 @@ fun ForoScreen(navController: NavHostController) {
                             // 1) Generar clave y nonce
                             val claveSim = generarClaveSimetricaAES()
                             val (iv, textoCifrado) = claveSim.encriptarTexto(nombre)
+                            println("Nombre del tema: $nombre")
+
                             val claveHex = claveSim.encodeToByteArray(AES.Key.Format.RAW).toHex()
                             val nonceHex = iv.toHex()
                             val temaId = generateId()
@@ -499,20 +501,44 @@ fun TemaCard(
 
     LaunchedEffect(tema.idTema) {
         val secreto = secretsRepo.recuperarSecretoRpc(tema.idTema)
+        println("Contenido de tema.nombre: ${tema.nombre}")
+
         if (secreto != null) {
-            val rawKey = secreto.secret.hexToByteArray()
-            val aesKey = CryptographyProvider.Default
-                .get(AES.GCM)
-                .keyDecoder()
-                .decodeFromByteArray(AES.Key.Format.RAW, rawKey)
-            val iv = secreto.nonce.hexToByteArray()
-            val cipher = tema.nombre.hexToByteArray()
-            nombrePlano = aesKey.cipher().decrypt(iv + cipher).decodeToString()
+            println("Nonce recibido: ${secreto.nonce}")
+        }
+        if (secreto != null) {
+            println("Clave secreta recibida: ${secreto.secret}")
+        }
+
+        if (secreto != null) {
+            try {
+                val rawKey = secreto.secret.hexToByteArray()
+                println("Longitud de la clave: ${rawKey.size}") // Debe ser 16, 24 o 32 bytes
+
+                val aesKey = CryptographyProvider.Default
+                    .get(AES.GCM)
+                    .keyDecoder()
+                    .decodeFromByteArray(AES.Key.Format.RAW, rawKey)
+
+                // Limpia el prefijo que trae Postgres
+                val nonceHexClean =
+                    secreto.nonce.removePrefix("\\x").removePrefix("0x")  // por si acaso
+                val ivBytes = nonceHexClean.hexToByteArray()
+                println("Longitud del IV: ${ivBytes.size}") // Debe ser 12 bytes para AES-GCM
+
+                val cipherBytes = tema.nombre.hexToByteArray()
+
+                nombrePlano = aesKey.cipher()
+                    .decrypt(ivBytes + cipherBytes)
+                    .decodeToString()
+            } catch (e: Exception) {
+                println("Error durante el descifrado: ${e.message}")
+                nombrePlano = "(clave no disponible) ¡¡¡Error!!!"
+            }
         } else {
             nombrePlano = "(clave no disponible)"
         }
     }
-
 
     Card(
         modifier = Modifier

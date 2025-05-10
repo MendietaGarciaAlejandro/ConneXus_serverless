@@ -3,6 +3,7 @@ package org.connexuss.project.supabase
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.createSupabaseClient
+import io.github.jan.supabase.functions.Functions
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.Columns
@@ -51,7 +52,8 @@ fun instanciaSupabaseClient(
     tieneStorage: Boolean = true,
     tieneAuth: Boolean = true,
     tieneRealtime: Boolean = true,
-    tienePostgrest: Boolean = true
+    tienePostgrest: Boolean = true,
+    tieneFunciones: Boolean = true
 ): SupabaseClient {
     return createSupabaseClient(
         supabaseUrl = SUPABASE_URL,
@@ -61,6 +63,7 @@ fun instanciaSupabaseClient(
         if (tieneAuth) install(Auth)
         if (tieneRealtime) install(Realtime)
         if (tienePostgrest) install(Postgrest)
+        if (tieneFunciones) install(Functions)
     }
 }
 
@@ -68,7 +71,8 @@ fun instanciaSupabaseAdmin(
     tieneStorage: Boolean = true,
     tieneAuth: Boolean = true,
     tieneRealtime: Boolean = true,
-    tienePostgrest: Boolean = true
+    tienePostgrest: Boolean = true,
+    tieneFunciones: Boolean = true
 ): SupabaseClient {
     return createSupabaseClient(
         supabaseUrl = SUPABASE_URL,
@@ -78,6 +82,7 @@ fun instanciaSupabaseAdmin(
         if (tieneAuth) install(Auth)
         if (tieneRealtime) install(Realtime)
         if (tienePostgrest) install(Postgrest)
+        if (tieneFunciones) install(Functions)
     }
 }
 

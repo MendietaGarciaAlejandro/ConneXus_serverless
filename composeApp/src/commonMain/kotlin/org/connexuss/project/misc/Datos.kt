@@ -1353,7 +1353,8 @@ object Supabase {
             tieneStorage = true,
             tieneAuth = true,
             tieneRealtime = true,
-            tienePostgrest = true
+            tienePostgrest = true,
+            tieneFunciones = true
         )
     }
 }
@@ -1364,7 +1365,8 @@ object SupabaseAdmin {
             tieneStorage = true,
             tieneAuth = true,
             tieneRealtime = true,
-            tienePostgrest = true
+            tienePostgrest = true,
+            tieneFunciones = true
         )
     }
 }
