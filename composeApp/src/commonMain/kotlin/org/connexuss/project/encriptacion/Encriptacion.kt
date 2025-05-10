@@ -34,17 +34,14 @@ import dev.whyoleg.cryptography.algorithms.ECDSA
 import dev.whyoleg.cryptography.algorithms.HMAC
 import dev.whyoleg.cryptography.algorithms.SHA512
 import dev.whyoleg.cryptography.random.CryptographyRandom
-import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import org.connexuss.project.comunicacion.generateId
 import org.connexuss.project.interfaces.DefaultTopBar
 import org.connexuss.project.interfaces.LimitaTamanioAncho
-import org.connexuss.project.misc.SupabaseAdmin
 import org.connexuss.project.supabase.SupabaseSecretosRepo
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -696,6 +693,27 @@ data class Secreto @OptIn(ExperimentalUuidApi::class) constructor(
     /** Timestamp de última modificación (timestamptz) */
     @SerialName("updated_at")
     val updatedAt: Instant? = null
+)
+
+// Reutilizamos tu data class Secreto si tu función devuelve exactamente esas columnas:
+@Serializable
+data class SecretoInsertado(
+    val id: String,
+    val name: String,
+    val description: String?,
+    val secret: String,
+    @SerialName("key_id") val keyId: String,
+    val nonce: String,
+    @SerialName("created_at") val createdAt: Instant,
+    @SerialName("updated_at") val updatedAt: Instant?
+)
+
+@Serializable
+data class SecretoRPC(
+    val id: String,
+    val name: String,
+    val secret: String,
+    val nonce: String
 )
 
 /**

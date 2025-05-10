@@ -1,9 +1,14 @@
 package org.connexuss.project.supabase
 
 import io.github.jan.supabase.postgrest.from
+import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import org.connexuss.project.encriptacion.Secreto
+import org.connexuss.project.encriptacion.SecretoRPC
+import org.connexuss.project.encriptacion.SecretoInsertado
 import org.connexuss.project.misc.Supabase
 import org.connexuss.project.misc.SupabaseAdmin
 
@@ -12,6 +17,8 @@ interface ISecretosRepositorio {
     suspend fun upsertSecretAdmin(secret: Secreto)
     fun getSecretByName(name: String): Flow<Secreto?>
     fun getSecretByNameAdmin(name: String): Flow<Secreto?>
+    suspend fun insertarSecretoConRpc(temaId: String, claveHex: String, nonceHex: String): SecretoInsertado?
+    suspend fun recuperarSecretoRpc(temaId: String): SecretoRPC?
 }
 
 class SupabaseSecretosRepo : ISecretosRepositorio {
@@ -60,5 +67,39 @@ class SupabaseSecretosRepo : ISecretosRepositorio {
             .decodeList<Secreto>()
             .firstOrNull()
         emit(found)
+    }
+
+    override suspend fun insertarSecretoConRpc(temaId: String, claveHex: String, nonceHex: String): SecretoInsertado? {
+        // Asegúrate de usar el cliente admin con service_role
+        val supabaseAdmin = SupabaseAdmin.client
+
+        // Construimos los parámetros que espera tu función insert_secret
+        val params = buildJsonObject {
+            put("name", temaId)
+            put("secret", claveHex)
+            put("nonce", nonceHex)
+        }
+
+        // Invo­camos la RPC tipada a SecretoInsertado
+        return supabaseAdmin.postgrest.rpc(
+                function   = "insert_secret",
+                parameters = params
+            )
+            .decodeSingleOrNull<SecretoInsertado>()  // ahora recibes el SecretRecord o null
+            .also { response ->
+                if (response == null) {
+                    println("Error al insertar el secreto")
+                } else {
+                    println("Secreto insertado: $response")
+                }
+            }
+    }
+
+    override suspend fun recuperarSecretoRpc(name: String): SecretoRPC? {
+        val params = buildJsonObject { put("p_name", name) }
+
+        return SupabaseAdmin.client.postgrest
+            .rpc("get_decrypted_secret", params)
+            .decodeSingleOrNull<SecretoRPC>()
     }
 }

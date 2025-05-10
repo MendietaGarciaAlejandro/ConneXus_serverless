@@ -2390,6 +2390,7 @@ fun PantallaLogin(navController: NavHostController, settingsState: SettingsState
     var emailInterno by remember { mutableStateOf("") }
     var passwordInterno by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
+    var mensajeBienvenido by remember { mutableStateOf("") }
 
     // Estados para el botón Debug oculto
     var showDebug by remember { mutableStateOf(false) }
@@ -2522,12 +2523,20 @@ fun PantallaLogin(navController: NavHostController, settingsState: SettingsState
                                             UsuarioPrincipal = usuario
                                             println("Usuario autenticado: $UsuarioPrincipal")
 
-                                            // Iniciar sesión en Supabase
-                                            Supabase.client.auth.signInWith(
-                                                provider = Email
-                                            ) {
-                                                email = UsuarioPrincipal!!.correo
-                                                password = UsuarioPrincipal!!.contrasennia
+                                            try {
+                                                // Iniciar sesión en Supabase
+                                                Supabase.client.auth.signInWith(
+                                                    provider = Email
+                                                ) {
+                                                    email = UsuarioPrincipal!!.correo
+                                                    password = UsuarioPrincipal!!.contrasennia
+                                                }
+                                            }catch (RestException: Exception){
+                                                mensajeBienvenido = "Bienvenido ${UsuarioPrincipal!!.nombre}"
+                                                delay(2000)
+                                                navController.navigate("contactos") {
+                                                    popUpTo("login") { inclusive = true }
+                                                }
                                             }
 
                                             // Actualizar la sesión actual
@@ -2568,6 +2577,16 @@ fun PantallaLogin(navController: NavHostController, settingsState: SettingsState
                                     Text(text = "Debug: Ir a la zona de pruebas")
                                 }
                             }
+                        }
+
+                        if (mensajeBienvenido.isNotEmpty()) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                mensajeBienvenido,
+                                color = MaterialTheme.colors.primary,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            )
                         }
 
                         if (errorMessage.isNotEmpty()) {

@@ -51,20 +51,17 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import dev.whyoleg.cryptography.CryptographyProvider
 import dev.whyoleg.cryptography.algorithms.AES
-import io.github.jan.supabase.postgrest.postgrest
-import io.github.jan.supabase.postgrest.result.PostgrestResult
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import kotlinx.serialization.json.put
 import org.connexuss.project.comunicacion.Hilo
 import org.connexuss.project.comunicacion.Post
 import org.connexuss.project.comunicacion.Tema
 import org.connexuss.project.comunicacion.generateId
-import org.connexuss.project.encriptacion.Secreto
+import org.connexuss.project.encriptacion.desencriptarTexto
+import org.connexuss.project.encriptacion.encriptarTexto
 import org.connexuss.project.encriptacion.generarClaveSimetricaAES
 import org.connexuss.project.encriptacion.pruebasEncriptacionAES
 import org.connexuss.project.encriptacion.toHex
-import org.connexuss.project.misc.SupabaseAdmin
 import org.connexuss.project.misc.UsuarioPrincipal
 import org.connexuss.project.supabase.ISecretosRepositorio
 import org.connexuss.project.supabase.SupabaseRepositorioGenerico
@@ -86,6 +83,7 @@ fun ForoScreen(navController: NavHostController) {
     var showNewTopicDialog by remember { mutableStateOf(false) }
     var searchText by remember { mutableStateOf("") }
     val refreshTrigger = remember { mutableStateOf(0) }
+
 
     // Tablas de temas y hilos
     val tablaTemas = "tema"
@@ -159,46 +157,29 @@ fun ForoScreen(navController: NavHostController) {
                     onDismiss = { showNewTopicDialog = false },
                     onConfirm = { nombre ->
                         scope.launch {
-                            // Generar clave simétrica
-                            val claveSimetrica = generarClaveSimetricaAES()
-                            // cifrar el nombre
-                            val nombreCifradoBytes = pruebasEncriptacionAES(
-                                texto      = nombre,
-                                clave      = claveSimetrica
-                            )
-                            val nombreCifradoHex = nombreCifradoBytes.toHex()
-                            // serializar la clave simétrica también a hex
-                            val claveSimHex = claveSimetrica
-                                .encodeToByteArray(AES.Key.Format.RAW)
-                                .toHex()
-
+                            // 1) Generar clave y nonce
+                            val claveSim = generarClaveSimetricaAES()
+                            val (iv, textoCifrado) = claveSim.encriptarTexto(nombre)
+                            val claveHex = claveSim.encodeToByteArray(AES.Key.Format.RAW).toHex()
+                            val nonceHex = iv.toHex()
                             val temaId = generateId()
 
-                            val result: PostgrestResult = SupabaseAdmin.client.postgrest.rpc(
-                                function = "insert_secret",
-                                parameters = kotlinx.serialization.json.buildJsonObject {
-                                    put("name", temaId)
-                                    put("secret", claveSimHex)
-                                }
-                            )
-                            println("Resultado de la función insert_secret: $result")
-
-                            // 1) Creamos el SecretRecord y lo upserteamos en vault.secrets
-                            secretsRepo.upsertSecretAdmin(
-                                Secreto(
-                                    id = temaId,
-                                    name = "tema_$temaId",
-                                    description = "Clave AES para tema $temaId",
-                                    secret = claveSimHex,
-                                    keyId = "<vault-key-uuid>",
-                                    nonceHex = ""
-                                )
-                            )
+                            try {
+                                // 2) Llamar a la función RPC
+                                val insertResult = secretsRepo.insertarSecretoConRpc(
+                                    temaId  = temaId,
+                                    claveHex = claveHex,
+                                    nonceHex = nonceHex
+                                ) ?: throw IllegalStateException("La función insert_secret no devolvió datos")
+                                println("Resultado de la función insert_secret: $insertResult")
+                            } catch (RestException: Exception) {
+                                println("Error al insertar el secreto: ${RestException.message}")
+                            }
 
                             // 2) Insertamos el Tema (solo con nombre cifrado)
                             repoForo.addItem(
                                 tablaTemas,
-                                Tema(idTema = temaId, nombre = nombreCifradoHex)
+                                Tema(idTema = temaId, nombre = textoCifrado.toHex())
                             )
 
                             refreshTrigger.value++
@@ -514,35 +495,24 @@ fun TemaCard(
     onTemaClick: () -> Unit,
     secretsRepo: ISecretosRepositorio = remember { SupabaseSecretosRepo() }
 ) {
-    val scope = rememberCoroutineScope()
+    var nombrePlano by remember { mutableStateOf("(cargando…)") }
 
-    // Estado para la clave AES reconstruida y nombre desencriptado
-    var aesKey by remember { mutableStateOf<AES.GCM.Key?>(null) }
-    var nombrePlano by remember { mutableStateOf("(cargando...)") }
-
-    // 1) Recuperar SecretRecord de vault.secrets
     LaunchedEffect(tema.idTema) {
-        secretsRepo.getSecretByName("tema_\${tema.idTema}")
-            .collect { secret ->
-                secret?.let {
-                    // Reconstruir AES Key
-                    val rawKey = it.secret.hexToByteArray()
-                    aesKey = CryptographyProvider.Default
-                        .get(AES.GCM)
-                        .keyDecoder()
-                        .decodeFromByteArray(AES.Key.Format.RAW, rawKey)
-                }
-            }
-    }
-
-    // 2) Desencriptar el nombre cuando tengamos la clave y el cipher text
-    LaunchedEffect(aesKey, tema.nombre) {
-        aesKey?.let { key ->
-            val cipherBytes = tema.nombre.hexToByteArray()
-            val plainBytes  = key.cipher().decrypt(ciphertext = cipherBytes)
-            nombrePlano    = plainBytes.decodeToString()
+        val secreto = secretsRepo.recuperarSecretoRpc(tema.idTema)
+        if (secreto != null) {
+            val rawKey = secreto.secret.hexToByteArray()
+            val aesKey = CryptographyProvider.Default
+                .get(AES.GCM)
+                .keyDecoder()
+                .decodeFromByteArray(AES.Key.Format.RAW, rawKey)
+            val iv = secreto.nonce.hexToByteArray()
+            val cipher = tema.nombre.hexToByteArray()
+            nombrePlano = aesKey.cipher().decrypt(iv + cipher).decodeToString()
+        } else {
+            nombrePlano = "(clave no disponible)"
         }
     }
+
 
     Card(
         modifier = Modifier
@@ -551,13 +521,10 @@ fun TemaCard(
         elevation = 4.dp
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
+            Text(text = nombrePlano, style = MaterialTheme.typography.h6)
+            Spacer(Modifier.height(4.dp))
             Text(
-                text = nombrePlano,
-                style = MaterialTheme.typography.h6
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = "\$hilosCount ${if (hilosCount == 1) "hilo" else "hilos"}",
+                text = "$hilosCount ${if (hilosCount == 1) "hilo" else "hilos"}",
                 style = MaterialTheme.typography.caption
             )
         }
