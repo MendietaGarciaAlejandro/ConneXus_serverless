@@ -33,17 +33,19 @@ import dev.whyoleg.cryptography.algorithms.EC
 import dev.whyoleg.cryptography.algorithms.ECDSA
 import dev.whyoleg.cryptography.algorithms.HMAC
 import dev.whyoleg.cryptography.algorithms.SHA512
+import dev.whyoleg.cryptography.random.CryptographyRandom
 import io.github.jan.supabase.postgrest.postgrest
-import io.ktor.utils.io.core.toByteArray
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import okio.ByteString
+import org.connexuss.project.comunicacion.generateId
 import org.connexuss.project.interfaces.DefaultTopBar
 import org.connexuss.project.interfaces.LimitaTamanioAncho
 import org.connexuss.project.misc.SupabaseAdmin
+import org.connexuss.project.supabase.SupabaseSecretosRepo
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -656,8 +658,8 @@ fun PantallaPruebasEncriptacion(navController: NavHostController) {
 }
 
 /**
- * Representa una entrada en la tabla `secrets` de Supabase y en Vault
- * para almacenar la clave simétrica del foro.
+ * Clase para representar un secreto en la base de datos.
+ * Esta clase es utilizada para almacenar el resultado de la consulta a la tabla "vault.secrets".
  */
 @Serializable
 data class Secreto @OptIn(ExperimentalUuidApi::class) constructor(
@@ -696,45 +698,44 @@ data class Secreto @OptIn(ExperimentalUuidApi::class) constructor(
     val updatedAt: Instant? = null
 )
 
-// Inserta y recibe de vuelta la fila completa
-suspend fun storeKeyInVault(name: String, base64Key: String): Secreto =
-    SupabaseAdmin.client.postgrest
-        .from("vault.secrets")
-.insert(
-value = Secreto(
-    id = "auto", name = name, secret = base64Key,
-    description = TODO(),
-    keyId = TODO(),
-    nonceHex = TODO(),
-    createdAt = TODO(),
-    updatedAt = TODO()
-)
-) {
-    // Esta cláusula SELECT le indica a PostgREST que devuelva la fila insertada
-    select()
-}
-.decodeSingle<Secreto>()
+/**
+ * Almacena una clave simétrica en la tabla "vault.secrets" de Supabase.
+ *
+ * @param temaId El ID del tema asociado a la clave.
+ * @param base64Key La clave simétrica en formato Base64.
+ */
+suspend fun almacenarClaveSimetricaEnVault(temaId: String, base64Key: String) {
 
-@Serializable
-data class SecretoDesencriptado(
-    val id: String,
-    val name: String,
-    val secret: String          // Base64
-)
+    val repo = SupabaseSecretosRepo()
 
-suspend fun fetchSymmetricKey(name: String): ByteArray? {
-    val response = SupabaseAdmin.client.postgrest
-        .from("vault.decrypted_secrets")
-        .select {
-            filter { eq("name", name) }
-        }
-        .decodeSingleOrNull<SecretoDesencriptado>()
+    // Genera un nonce de 12 bytes para AES-GCM
+    val nonce = CryptographyRandom.nextBytes(12)
+    // Convierte a hex para almacenar en la columna bytea de PostgreSQL
+    val nonceHex = nonce.toHex()
 
-    val base64Key = response?.secret ?: return null
-
-    // 2) Llamar al método estático de ByteString
-    val byteString = ByteString.of(
-        data = base64Key.toByteArray()
+    val secreto = Secreto(
+        name = temaId,
+        description = "Clave simétrica para el tema $temaId",
+        secret = base64Key,
+        keyId = temaId,
+        nonceHex = nonceHex
     )
-    return byteString.toByteArray()
+    // Almacena el secreto en la tabla "vault.secrets"
+    repo.upsertSecret(secreto)
+}
+
+/**
+ * Recupera una clave simétrica de la tabla "vault.secrets" de Supabase.
+ *
+ * @param temaId El ID del tema asociado a la clave.
+ * @return La clave simétrica en formato Base64, o null si no se encuentra.
+ */
+suspend fun recuperarClaveSimetricaDeVault(temaId: String): Secreto? {
+    val repo = SupabaseSecretosRepo()
+    // Recupera el secreto de la tabla "vault.secrets"
+    return repo.getSecretByName(temaId).firstOrNull()
+        ?: run {
+            println("No se encontró el secreto para el tema $temaId")
+            null
+        }
 }
