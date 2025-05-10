@@ -70,9 +70,6 @@ import connexus_serverless.composeapp.generated.resources.ic_foros
 import connexus_serverless.composeapp.generated.resources.usuarios
 import connexus_serverless.composeapp.generated.resources.visibilidadOff
 import connexus_serverless.composeapp.generated.resources.visibilidadOn
-import dev.whyoleg.cryptography.CryptographyProvider
-import dev.whyoleg.cryptography.algorithms.EC
-import dev.whyoleg.cryptography.algorithms.ECDH
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
 import kotlinx.coroutines.delay
@@ -83,7 +80,7 @@ import kotlinx.serialization.json.Json
 import org.connexuss.project.comunicacion.Conversacion
 import org.connexuss.project.comunicacion.ConversacionesUsuario
 import org.connexuss.project.comunicacion.Mensaje
-import org.connexuss.project.encriptacion.CredencialesUsuario
+import org.connexuss.project.comunicacion.generateId
 import org.connexuss.project.misc.Imagen
 import org.connexuss.project.misc.Supabase
 import org.connexuss.project.misc.UsuarioPrincipal
@@ -91,7 +88,6 @@ import org.connexuss.project.misc.sesionActualUsuario
 import org.connexuss.project.persistencia.SettingsState
 import org.connexuss.project.persistencia.clearSession
 import org.connexuss.project.persistencia.getRestoredSessionFlow
-import org.connexuss.project.encriptacion.derivePasswordEmailHash
 import org.connexuss.project.persistencia.saveSession
 import org.connexuss.project.supabase.SupabaseRepositorioGenerico
 import org.connexuss.project.supabase.SupabaseUsuariosRepositorio
@@ -103,13 +99,6 @@ import org.connexuss.project.usuario.UtilidadesUsuario
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
-import dev.whyoleg.cryptography.random.CryptographyRandom
-import org.connexuss.project.encriptacion.hexToByteArray
-import kotlinx.coroutines.flow.Flow
-import org.connexuss.project.encriptacion.ClavesUsuario
-import org.connexuss.project.encriptacion.toHex
-import org.connexuss.project.persistencia.KEY_PRIV_MSG
-import org.connexuss.project.supabase.SupabaseClavesRepo
 
 @Composable
 fun DefaultTopBar(
@@ -2196,7 +2185,6 @@ fun PantallaRegistro(navController: NavHostController, settingsState: SettingsSt
     var errorMessage by remember { mutableStateOf("") }
 
     val repoSupabase = SupabaseUsuariosRepositorio()
-    val clavesUsuarioRepo = SupabaseClavesRepo()
 
     val errorContrasenas = traducir("error_contrasenas")
     val errorEmailYaRegistrado =
@@ -2290,7 +2278,6 @@ fun PantallaRegistro(navController: NavHostController, settingsState: SettingsSt
                                                     errorMessage = "Formato de correo inválido"
                                                     return@launch
                                                 }
-                                                KEY_PRIV_MSG = emailTrimmed
 
                                                 // 1) Verificar si el email ya está registrado
                                                 val existingUser = repoSupabase.getUsuarioPorEmail(emailTrimmed).firstOrNull()
@@ -2324,68 +2311,9 @@ fun PantallaRegistro(navController: NavHostController, settingsState: SettingsSt
                                                     this.password = password
                                                 }
 
-                                                val uid = Supabase.client.auth.currentUserOrNull()?.id
-                                                    ?: throw Exception("No se pudo obtener el UID del usuario autenticado")
-
-                                                // ——————————————
-                                                // 2. GENERAR PARES DE CLAVES
-                                                val provider    = CryptographyProvider.Default
-                                                val ecdhAlg     = provider.get(ECDH)
-                                                // Par para mensajes
-                                                val msgKP   = ecdhAlg.keyPairGenerator(EC.Curve.P256).generateKey()
-                                                // Par para posts
-                                                val postKP  = ecdhAlg.keyPairGenerator(EC.Curve.P256).generateKey()
-
-                                                // 3. SERIALIZAR CLAVES PÚBLICAS
-                                                val msgPubHex  = msgKP.publicKey
-                                                    .encodeToByteArray(EC.PublicKey.Format.DER).toHex()
-                                                val postPubHex = postKP.publicKey
-                                                    .encodeToByteArray(EC.PublicKey.Format.DER).toHex()
-
-                                                // 4. GUARDAR EN BD (claves_usuario)
-                                                val claves = ClavesUsuario(
-                                                    idUsuario     = uid,
-                                                    pubKeyMsgHex  = msgPubHex,
-                                                    //pubKeyPostHex = postPubHex
-                                                )
-                                                clavesUsuarioRepo.upsertClaves(claves)
-
-                                                // 5. PERSISTIR CLAVES PRIVADAS en Settings
-                                                settingsState.savePrivateMsgKey(
-                                                    msgKP.privateKey.encodeToByteArray(EC.PrivateKey.Format.DER).toHex()
-                                                )
-//                                                settingsState.savePrivatePostKey(
-//                                                    postKP.privateKey.encodeToByteArray(EC.PrivateKey.Format.DER).toHex()
-//                                                )
-                                                // ——————————————
-
-                                                // 2) Generar salt
-                                                val saltBytes: ByteArray = CryptographyRandom.nextBytes(16)
-                                                val saltHex:    String    = saltBytes.joinToString("") { b ->
-                                                    (b.toInt() and 0xFF).toString(16).padStart(2, '0')
-                                                }
-
-                                                // 3) Derivar hash PBKDF2
-                                                val hashBytes = derivePasswordEmailHash(password, saltBytes)
-                                                val emailHashBytes = derivePasswordEmailHash(emailTrimmed, saltBytes)
-
-                                                val hashHex = hashBytes.joinToString("") { b: Byte ->
-                                                    (b.toInt() and 0xFF).toString(16).padStart(2, '0')
-                                                }
-                                                val emailHashHex = emailHashBytes.joinToString("") { b -> (b.toInt() and 0xFF)
-                                                    .toString(16).padStart(2, '0') }
-
-                                                // 4) Crear y guardar CredencialesUsuario
-                                                val creds = CredencialesUsuario(
-                                                    idUsuario = uid,
-                                                    saltHex = saltHex,
-                                                    hashHex = hashHex,
-                                                    emailHex  = emailHashHex)
-                                                repoSupabase.addCredenciales(creds)
-
                                                 // 2. Crear objeto Usuario con el mismo ID que auth.uid()
                                                 val nuevoUsuario = Usuario(
-                                                    idUnico = uid,
+                                                    idUnico = generateId(),
                                                     nombre = nombre,
                                                     correo = emailTrimmed,
                                                     aliasPublico = UtilidadesUsuario().generarAliasPublico(),
@@ -2396,7 +2324,6 @@ fun PantallaRegistro(navController: NavHostController, settingsState: SettingsSt
                                                 )
 
                                                 println("Nuevo usuario: $nuevoUsuario")
-                                                println("UID Supabase actual: $uid")
 
 
                                                 // 3. Guardar en tabla usuario
@@ -2585,36 +2512,6 @@ fun PantallaLogin(navController: NavHostController, settingsState: SettingsState
                                         } else {
                                             UsuarioPrincipal = usuario
                                             println("Usuario autenticado: $UsuarioPrincipal")
-
-                                            // 2) Recuperar todas las credenciales
-                                            val allCreds = repoSupabase
-                                                .getCredenciales()             // Flow<List<CredencialesUsuario>>
-                                                .firstOrNull()
-                                                ?: emptyList()
-
-                                            // 3) Buscar cuál salt hace derivar el mismo emailHash
-                                            val matchingCred = allCreds.firstOrNull { cred ->
-                                                val saltBytes = cred.saltHex.hexToByteArray()
-                                                // deriveHash = tu PBKDF2
-                                                val candidate = derivePasswordEmailHash(emailInterno.trim(), saltBytes)
-                                                // comparamos ByteArray contra el hashHex almacenado
-                                                candidate.contentEquals(cred.emailHex.hexToByteArray())
-                                            }
-
-                                            if (matchingCred == null) {
-                                                errorMessage = errorEmailNingunUsuario
-                                                return@launch
-                                            }
-
-                                            // 4) Con la cred seleccionada, verificamos la contraseña
-                                            val saltBytes = matchingCred.saltHex.hexToByteArray()
-                                            val storedPwd = matchingCred.hashHex.hexToByteArray()
-                                            val candidatePwd = derivePasswordEmailHash(passwordInterno, saltBytes)
-
-                                            if (!candidatePwd.contentEquals(storedPwd)) {
-                                                errorMessage = errorContrasenaIncorrecta
-                                                return@launch
-                                            }
 
                                             // Iniciar sesión en Supabase
                                             Supabase.client.auth.signInWith(

@@ -53,7 +53,6 @@ import dev.whyoleg.cryptography.CryptographyProvider
 import dev.whyoleg.cryptography.algorithms.AES
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.result.PostgrestResult
-import io.github.jan.supabase.postgrest.rpc
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.put
@@ -61,16 +60,15 @@ import org.connexuss.project.comunicacion.Hilo
 import org.connexuss.project.comunicacion.Post
 import org.connexuss.project.comunicacion.Tema
 import org.connexuss.project.comunicacion.generateId
-import org.connexuss.project.encriptacion.SecretRecord
-import org.connexuss.project.encriptacion.generaClaveAES
+import org.connexuss.project.encriptacion.Secreto
+import org.connexuss.project.encriptacion.generarClaveSimetricaAES
 import org.connexuss.project.encriptacion.pruebasEncriptacionAES
 import org.connexuss.project.encriptacion.toHex
-import org.connexuss.project.misc.Supabase
 import org.connexuss.project.misc.SupabaseAdmin
 import org.connexuss.project.misc.UsuarioPrincipal
-import org.connexuss.project.supabase.SecretsRepositorio
+import org.connexuss.project.supabase.ISecretosRepositorio
 import org.connexuss.project.supabase.SupabaseRepositorioGenerico
-import org.connexuss.project.supabase.SupabaseSecretsRepo
+import org.connexuss.project.supabase.SupabaseSecretosRepo
 
 // Repositorio genérico instanciado
 private val repoForo = SupabaseRepositorioGenerico()
@@ -102,7 +100,7 @@ fun ForoScreen(navController: NavHostController) {
     // Filtrar temas y contar hilos
     val filteredTemas = temasFlow.collectAsState(initial = emptyList()).value
 
-    val secretsRepo = remember { SupabaseSecretsRepo() }
+    val secretsRepo = remember { SupabaseSecretosRepo() }
 
     Scaffold(
         scaffoldState = scaffoldState,
@@ -159,7 +157,7 @@ fun ForoScreen(navController: NavHostController) {
                     onConfirm = { nombre ->
                         scope.launch {
                             // Generar clave simétrica
-                            val claveSimetrica = generaClaveAES()
+                            val claveSimetrica = generarClaveSimetricaAES()
                             // cifrar el nombre
                             val nombreCifradoBytes = pruebasEncriptacionAES(
                                 texto      = nombre,
@@ -184,7 +182,7 @@ fun ForoScreen(navController: NavHostController) {
 
                             // 1) Creamos el SecretRecord y lo upserteamos en vault.secrets
                             secretsRepo.upsertSecretAdmin(
-                                SecretRecord(
+                                Secreto(
                                     id = temaId,
                                     name = "tema_$temaId",
                                     description = "Clave AES para tema $temaId",
@@ -223,7 +221,7 @@ fun TemaScreen(
     navController: NavHostController,
     temaId: String,
     repoForo: SupabaseRepositorioGenerico,
-    secretsRepo: SecretsRepositorio
+    secretsRepo: ISecretosRepositorio
 ) {
     val scope = rememberCoroutineScope()
     var showNewThreadDialog by remember { mutableStateOf(false) }
@@ -511,7 +509,7 @@ fun TemaCard(
     tema: Tema,
     hilosCount: Int,
     onTemaClick: () -> Unit,
-    secretsRepo: SecretsRepositorio = remember { SupabaseSecretsRepo() }
+    secretsRepo: ISecretosRepositorio = remember { SupabaseSecretosRepo() }
 ) {
     val scope = rememberCoroutineScope()
 
@@ -572,7 +570,7 @@ fun TemaCard(
 fun HiloCard(
     hilo: Hilo,
     onClick: () -> Unit,
-    secretsRepo: SecretsRepositorio = remember { SupabaseSecretsRepo() }
+    secretsRepo: ISecretosRepositorio = remember { SupabaseSecretosRepo() }
 ) {
     // Flow del SecretRecord de este hilo (clave del tema padre)
     val secretRecord by secretsRepo

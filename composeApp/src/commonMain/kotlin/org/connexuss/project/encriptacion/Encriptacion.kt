@@ -2,14 +2,11 @@ package org.connexuss.project.encriptacion
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Button
@@ -19,7 +16,6 @@ import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -34,40 +30,20 @@ import dev.whyoleg.cryptography.BinarySize.Companion.bytes
 import dev.whyoleg.cryptography.CryptographyProvider
 import dev.whyoleg.cryptography.algorithms.AES
 import dev.whyoleg.cryptography.algorithms.EC
-import dev.whyoleg.cryptography.algorithms.ECDH
 import dev.whyoleg.cryptography.algorithms.ECDSA
 import dev.whyoleg.cryptography.algorithms.HMAC
-import dev.whyoleg.cryptography.algorithms.PBKDF2
 import dev.whyoleg.cryptography.algorithms.SHA512
-import dev.whyoleg.cryptography.random.CryptographyRandom
-import io.github.jan.supabase.auth.Auth
-import io.github.jan.supabase.createSupabaseClient
-import io.github.jan.supabase.postgrest.Postgrest
-import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.postgrest
-import io.github.jan.supabase.realtime.Realtime
-import io.github.jan.supabase.storage.Storage
-import io.ktor.util.encodeBase64
 import io.ktor.utils.io.core.toByteArray
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.selects.select
-import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import okio.ByteString
-import org.connexuss.project.comunicacion.Mensaje
 import org.connexuss.project.interfaces.DefaultTopBar
 import org.connexuss.project.interfaces.LimitaTamanioAncho
 import org.connexuss.project.misc.SupabaseAdmin
-import org.connexuss.project.persistencia.SettingsState
-import org.connexuss.project.supabase.ClavesUsuarioRepositorio
-import org.connexuss.project.supabase.SUPABASE_KEY
-import org.connexuss.project.supabase.SUPABASE_URL
-import org.connexuss.project.supabase.SupabaseUsuariosRepositorio
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -108,11 +84,58 @@ fun String.hexToByteArray(): ByteArray {
 /**
  * Genera una clave AES de 256 bits (una sola vez).
  */
-suspend fun generaClaveAES(): AES.GCM.Key {
+suspend fun generarClaveSimetricaAES(): AES.GCM.Key {
     val proveedor = CryptographyProvider.Default
     val algoritmoAES = proveedor.get(AES.GCM)
-    val claveGenerador = algoritmoAES.keyGenerator(AES.Key.Size.B256)
-    return claveGenerador.generateKey()
+    val generadorClave = algoritmoAES.keyGenerator(AES.Key.Size.B256)
+    return generadorClave.generateKey()
+}
+
+/**
+ * Encripta datos con una clave AES-GCM y devuelve el vector de inicialización y el texto cifrado.
+ *
+ * @param datosPlanos Los datos a encriptar.
+ * @return Un par con el vector de inicialización (IV) y el texto cifrado.
+ */
+suspend fun AES.GCM.Key.encriptarContenido(datosPlanos: ByteArray): Pair<ByteArray, ByteArray> {
+    val datosCifrados = this.cipher().encrypt(datosPlanos)
+    val vectorInicializacion = datosCifrados.sliceArray(0 until 12)
+    val textoCifrado = datosCifrados.sliceArray(12 until datosCifrados.size)
+    return vectorInicializacion to textoCifrado
+}
+
+/**
+ * Desencripta datos con una clave AES-GCM.
+ *
+ * @param iv El vector de inicialización (IV).
+ * @param textoCifrado El texto cifrado a desencriptar.
+ * @return Los datos desencriptados.
+ */
+suspend fun AES.GCM.Key.desencriptarContenido(iv: ByteArray, textoCifrado: ByteArray): ByteArray {
+    val cipher = this.cipher()
+    return cipher.decrypt(iv + textoCifrado)
+}
+
+/**
+ * Encripta una cadena de texto con una clave AES-GCM.
+ *
+ * @param textoPlano El texto a encriptar.
+ * @return Un par con el vector de inicialización (IV) y el texto cifrado.
+ */
+suspend fun AES.GCM.Key.encriptarTexto(textoPlano: String): Pair<ByteArray, ByteArray> {
+    return this.encriptarContenido(textoPlano.encodeToByteArray())
+}
+
+/**
+ * Desencripta un texto cifrado con una clave AES-GCM.
+ *
+ * @param iv El vector de inicialización (IV).
+ * @param textoCifrado El texto cifrado a desencriptar.
+ * @return El texto desencriptado como cadena.
+ */
+suspend fun AES.GCM.Key.desencriptarTexto(iv: ByteArray, textoCifrado: ByteArray): String {
+    val datosDesencriptados = this.desencriptarContenido(iv, textoCifrado)
+    return datosDesencriptados.decodeToString()
 }
 
 /**
@@ -362,7 +385,7 @@ fun PantallaPruebasEncriptacion(navController: NavHostController) {
 
     // Generamos las claves/pares una sola vez
     LaunchedEffect(Unit) {
-        claveAES = generaClaveAES()
+        claveAES = generarClaveSimetricaAES()
         claveHMAC = generaClaveHMAC(SHA512)
         keyPairECDSA = generaClaveECDSA()
     }
@@ -633,426 +656,11 @@ fun PantallaPruebasEncriptacion(navController: NavHostController) {
 }
 
 /**
- * Deriva un hash PBKDF2-HMAC-SHA512 de la contraseña.
- *
- * @param password Texto de la contraseña.
- * @param saltBytes Lista de bytes aleatorios (salt) de al menos 16 bytes.
- * @param iterations Nº de iteraciones (por defecto 100 000).
- * @return El resultado como ByteString (derivado de 32 bytes).
- */
-suspend fun derivePasswordEmailHash(
-    password: String,
-    saltBytes: ByteArray,
-    iterations: Int = 100_000
-): ByteArray {
-    val provider = CryptographyProvider.Default
-    val derivation = provider
-        .get(PBKDF2)
-        .secretDerivation(
-            digest     = SHA512,
-            iterations = iterations,
-            outputSize = 32.bytes,
-            salt       = saltBytes
-        )
-    return derivation.deriveSecretBlocking(password.toByteArray()).toByteArray()
-}
-
-@Serializable
-data class CredencialesUsuario(
-    val idUsuario: String,
-    val saltHex: String,   // 32 hex chars = 16 bytes
-    val hashHex: String,   // 64 hex chars = 32 bytes
-    val emailHex:  String   // email hash (determinístico)
-)
-
-suspend fun migrarCredencialesExistentes(repoUsuario: SupabaseUsuariosRepositorio) {
-    // 1. Obtenemos todos los usuarios
-    val usuarios = repoUsuario.getUsuarios()  // asume Flow<List<Usuario>> o similar
-        .firstOrNull() ?: emptyList()
-
-    for (usuario in usuarios) {
-        val plainPwd = usuario.contrasennia
-        val plainEmail = usuario.correo
-        if (plainPwd.isNullOrBlank() || plainEmail.isNullOrBlank()) {
-            // O bien saltarnos usuarios sin password, o marcar para reset de contraseña
-            continue
-        }
-
-        // 1) mismo salt+hash para cada usuario
-        val saltBytes      = CryptographyRandom.nextBytes(16)
-        val saltHex        = saltBytes.toHex()
-
-        // 2) derivar
-        val pwdHashHex     = derivePasswordEmailHash(plainPwd,   saltBytes).toHex()
-        val emailHashHex   = derivePasswordEmailHash(plainEmail, saltBytes).toHex()
-
-        val creds = CredencialesUsuario(
-            idUsuario = usuario.idUnico,
-            saltHex   = saltHex,
-            hashHex   = pwdHashHex,
-            emailHex  = emailHashHex
-        )
-        repoUsuario.addCredenciales(creds)
-    }
-
-    // 4. (Opcional) Vaciar o eliminar contrasennia de usuario
-    //repoUsuario.clearAllPasswords()
-}
-
-@Composable
-fun PantallaMigracionCredenciales(
-    navController: NavHostController,
-    userRepo: SupabaseUsuariosRepositorio = SupabaseUsuariosRepositorio()
-) {
-    var credentials by remember { mutableStateOf<List<CredencialesUsuario>>(emptyList()) }
-    var isMigrated by remember { mutableStateOf(false) }
-    var loading by remember { mutableStateOf(false) }
-    var error by remember { mutableStateOf<String?>(null) }
-    val scope = rememberCoroutineScope()
-
-    MaterialTheme {
-        Scaffold(
-            topBar = {
-                DefaultTopBar(
-                    title = "Migrar Credenciales",
-                    navController = navController,
-                    showBackButton = true,
-                    irParaAtras = true
-                )
-            }
-        ) { padding ->
-            LimitaTamanioAncho { modifier ->
-                Column(
-                    modifier = modifier
-                        .fillMaxSize()
-                        .padding(padding)
-                        .padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Button(
-                        onClick = {
-                            scope.launch {
-                                loading = true
-                                error = null
-                                try {
-                                    // Ejecuta migración
-                                    migrarCredencialesExistentes(userRepo)
-                                    isMigrated = true
-                                    // Carga resultado
-                                    credentials =
-                                        userRepo.getCredenciales().firstOrNull() ?: emptyList()
-                                } catch (e: Exception) {
-                                    error = e.message
-                                } finally {
-                                    loading = false
-                                }
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(if (loading) "Migrando..." else "Iniciar migración")
-                    }
-
-                    if (error != null) {
-                        Text("Error: $error", color = MaterialTheme.colors.error)
-                    }
-
-                    if (isMigrated) {
-                        Text("Credenciales migradas:", style = MaterialTheme.typography.h6)
-                        LazyColumn(
-                            modifier = Modifier.fillMaxWidth(),
-                            contentPadding = PaddingValues(vertical = 8.dp)
-                        ) {
-                            items(credentials) { cred ->
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 4.dp)
-                                ) {
-                                    Text("Usuario: ${cred.idUsuario}")
-                                    Text("Salt: ${cred.saltHex}")
-                                    Text("Hash: ${cred.hashHex}")
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-// Encriptacion Posts
-
-@Serializable
-data class EncryptedPost(
-    val postId: String,
-    val ephemeralPubHex: String,
-    val ivHex: String,
-    val ciphertextHex: String
-)
-
-@Serializable
-data class EncryptedMessage(
-    val messageId: String,
-    val ephemeralPubHex: String,
-    val ivHex: String,
-    val ciphertextHex: String
-)
-
-@Serializable
-data class ClavesUsuario(
-    val idUsuario:         String,
-    val pubKeyMsgHex:      String, // ECDH clave pública mensajes (DER→hex)
-    //val pubKeyPostHex:     String, // ECDH clave pública posts
-    //val pubKeyMsgSignHex:  String  // ECDSA clave pública firma mensajes
-)
-
-// Queda aun aclarar la diferencia entre claves de mensajes y posts y la implementación de ambos sistemas
-
-// --------------------------------------------------
-// Data classes for encrypted payloads
-// --------------------------------------------------
-
-@Serializable
-data class EncryptedPayload(
-    val id: String,
-    val ephemeralPubHex: String,
-    val ivHex: String,
-    val ciphertextHex: String
-)
-
-// --------------------------------------------------
-// Core ECIES + AES-GCM utilities
-// --------------------------------------------------
-
-/**
- * Derives a shared AES key for ECIES using ECDH.
- */
-suspend fun deriveAesKey(
-    myPriv: ECDH.PrivateKey,
-    theirPub: ECDH.PublicKey
-): AES.GCM.Key {
-    val provider = CryptographyProvider.Default
-    val shared   = myPriv
-        .sharedSecretGenerator()
-        .generateSharedSecretToByteArray(theirPub)
-    return provider.get(AES.GCM)
-        .keyDecoder()
-        .decodeFromByteArray(AES.Key.Format.RAW, shared)
-}
-
-/**
- * Encrypts a UTF-8 string using AES-GCM; returns IV and ciphertext.
- */
-suspend fun AES.GCM.Key.encryptContent(plaintext: ByteArray): Pair<ByteArray, ByteArray> {
-    val encryptedAll = this.cipher().encrypt(plaintext)
-    val iv           = encryptedAll.sliceArray(0 until 12)
-    val ciphertext   = encryptedAll.sliceArray(12 until encryptedAll.size)
-    return iv to ciphertext
-}
-
-/**
- * Decrypts AES-GCM cipher with given IV.
- */
-suspend fun AES.GCM.Key.decryptContent(iv: ByteArray, ciphertext: ByteArray): ByteArray {
-    val combined = iv + ciphertext
-    return this.cipher().decrypt(ciphertext = combined)
-}
-
-// --------------------------------------------------
-// Generic encrypt/decrypt for content
-// --------------------------------------------------
-
-/**
- * Encrypts arbitrary text for a receiver's public key.
- */
-suspend fun encryptFor(
-    content: String,
-    receiverPub: ECDH.PublicKey
-): EncryptedPayload {
-    val provider    = CryptographyProvider.Default
-    val ecdh        = provider.get(ECDH)
-    val ephemeralKP = ecdh.keyPairGenerator(EC.Curve.P256).generateKey()
-
-    val aesKey      = deriveAesKey(ephemeralKP.privateKey, receiverPub)
-    val (iv, ct)    = aesKey.encryptContent(content.encodeToByteArray())
-
-    return EncryptedPayload(
-        id               = "", // to be set by caller
-        ephemeralPubHex  = ephemeralKP.publicKey
-            .encodeToByteArray(EC.PublicKey.Format.DER)
-            .toHex(),
-        ivHex            = iv.toHex(),
-        ciphertextHex    = ct.toHex()
-    )
-}
-
-/**
- * Decrypts previously encrypted payload with user's private key.
- */
-suspend fun decryptWith(
-    encrypted: EncryptedPayload,
-    myPriv: ECDH.PrivateKey
-): String {
-    val provider = CryptographyProvider.Default
-    val ecdh     = provider.get(ECDH)
-
-    val ephPub   = ecdh.publicKeyDecoder(EC.Curve.P256)
-        .decodeFromByteArray(EC.PublicKey.Format.DER, encrypted.ephemeralPubHex.hexToByteArray())
-
-    val aesKey   = deriveAesKey(myPriv, ephPub)
-    val iv       = encrypted.ivHex.hexToByteArray()
-    val ct       = encrypted.ciphertextHex.hexToByteArray()
-
-    return aesKey.decryptContent(iv, ct).decodeToString()
-}
-
-// --------------------------------------------------
-// Public APIs for Posts and Messages
-// --------------------------------------------------
-
-/**
- * Encrypts a Post for a given receiverId.
- */
-//suspend fun encryptPostFor(
-//    post: Post,
-//    receiverId: String,
-//    clavesRepo: ClavesUsuarioRepositorio
-//): EncryptedPayload {
-//    val claves       = clavesRepo.getClavesByUserId(receiverId).firstOrNull()
-//        ?: throw IllegalStateException("No public keys for user $receiverId")
-//    val pubBytes     = claves.pubKeyPostHex.hexToByteArray()
-//    val receiverPub  = CryptographyProvider.Default.get(ECDH)
-//        .publicKeyDecoder(EC.Curve.P256)
-//        .decodeFromByteArray(EC.PublicKey.Format.DER, pubBytes)
-//
-//    return encryptFor(post.content, receiverPub).copy(id = post.idPost)
-//}
-
-/**
- * Decrypts an EncryptedPayload representing a Post using local private key.
- */
-//suspend fun decryptPostWith(
-//    encrypted: EncryptedPayload,
-//    settings: SettingsState
-//): String {
-//    val privHex = settings.privPostKeyFlow.firstOrNull()
-//        ?: throw IllegalStateException("No private post key stored")
-//    val privKey = CryptographyProvider.Default.get(ECDH)
-//        .privateKeyDecoder(EC.Curve.P256)
-//        .decodeFromByteArray(EC.PrivateKey.Format.DER, privHex.hexToByteArray())
-//
-//    return decryptWith(encrypted, privKey)
-//}
-
-/**
- * Encrypts a Mensaje for a given receiverId.
- */
-suspend fun encryptMessageFor(
-    message: Mensaje,
-    receiverId: String,
-    clavesRepo: ClavesUsuarioRepositorio
-): EncryptedPayload {
-    val claves       = clavesRepo.getClavesByUserId(receiverId).firstOrNull()
-        ?: throw IllegalStateException("No public keys for user $receiverId")
-    val pubBytes     = claves.pubKeyMsgHex.hexToByteArray()
-    val receiverPub  = CryptographyProvider.Default.get(ECDH)
-        .publicKeyDecoder(EC.Curve.P256)
-        .decodeFromByteArray(EC.PublicKey.Format.DER, pubBytes)
-
-    return encryptFor(message.content, receiverPub).copy(id = message.id)
-}
-
-/**
- * Decrypts an EncryptedPayload representing a Mensaje using local private key.
- */
-suspend fun decryptMessageWith(
-    encrypted: EncryptedPayload,
-    settings: SettingsState
-): String {
-    val privHex = settings.privMsgKeyFlow.firstOrNull()
-        ?: throw IllegalStateException("No private message key stored")
-    val privKey = CryptographyProvider.Default.get(ECDH)
-        .privateKeyDecoder(EC.Curve.P256)
-        .decodeFromByteArray(EC.PrivateKey.Format.DER, privHex.hexToByteArray())
-
-    return decryptWith(encrypted, privKey)
-}
-
-@Composable
-fun PantallaClavesUsuario(
-    navController: NavHostController,
-    settingsState: SettingsState,
-    clavesRepo: ClavesUsuarioRepositorio,
-    userId: String
-) {
-    val scope = rememberCoroutineScope()
-
-    // Colectamos los Flows como estados Compose
-    val pubClaves by clavesRepo
-        .getClavesByUserId(userId)
-        .collectAsState(initial = null)
-    val privMsgKey by settingsState
-        .privMsgKeyFlow
-        .collectAsState(initial = null)
-//    val privPostKey by settingsState
-//        .privPostKeyFlow
-//        .collectAsState(initial = null)
-
-    Scaffold(
-        topBar = {
-            DefaultTopBar(
-                title = "Claves de Usuario",
-                navController = navController,
-                showBackButton = true,
-                irParaAtras = true
-            )
-        }
-    ) { padding ->
-        LimitaTamanioAncho { modifier ->
-            Column(
-                modifier = modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                // Sección de claves públicas
-                Text("Claves Públicas:", style = MaterialTheme.typography.h6)
-                val msgPubText = pubClaves?.pubKeyMsgHex ?: "(no configurada)"
-                //val postPubText = pubClaves?.pubKeyPostHex ?: "(no configurada)"
-                Text("Mensajes: $msgPubText")
-                //Text("Posts:    $postPubText")
-
-                Spacer(modifier = Modifier.height(16.dp))
-                Button(onClick = {
-                    scope.launch {
-                        // TODO: Generar nuevo par de claves y llamar a clavesRepo.upsertClaves(...)
-                    }
-                }, modifier = Modifier.fillMaxWidth()) {
-                    Text("Regenerar claves")
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Sección de claves privadas
-                Text("Claves Privadas (guardadas localmente):", style = MaterialTheme.typography.h6)
-                val msgPrivText = privMsgKey ?: "(no existe)"
-//                val postPrivText = privPostKey ?: "(no existe)"
-                Text("Mensajes: $msgPrivText")
-//                Text("Posts:    $postPrivText")
-            }
-        }
-    }
-}
-
-/**
  * Representa una entrada en la tabla `secrets` de Supabase y en Vault
  * para almacenar la clave simétrica del foro.
  */
 @Serializable
-data class SecretRecord @OptIn(ExperimentalUuidApi::class) constructor(
+data class Secreto @OptIn(ExperimentalUuidApi::class) constructor(
     /** UUID único de la fila */
     @SerialName("id")
     val id: String = Uuid.random().toString(),
@@ -1088,35 +696,27 @@ data class SecretRecord @OptIn(ExperimentalUuidApi::class) constructor(
     val updatedAt: Instant? = null
 )
 
-suspend fun generateSymmetricKey(): String = withContext(Dispatchers.Default) {
-    // Genera 32 bytes (256 bits) de forma segura
-    val keyBytes: ByteArray =
-        CryptographyRandom.nextBytes(32)                     // :contentReference[oaicite:5]{index=5}
-    // Codifica a Base64 para almacenar/transmitir fácilmente
-    keyBytes.encodeBase64()
-}
-
-@Serializable
-data class VaultSecret(
-    val id: String,
-    val name: String,
-    val secret: String          // Cadena Base64
-)
-
 // Inserta y recibe de vuelta la fila completa
-suspend fun storeKeyInVault(name: String, base64Key: String): VaultSecret =
+suspend fun storeKeyInVault(name: String, base64Key: String): Secreto =
     SupabaseAdmin.client.postgrest
         .from("vault.secrets")
 .insert(
-value = VaultSecret(id = "auto", name = name, secret = base64Key)
+value = Secreto(
+    id = "auto", name = name, secret = base64Key,
+    description = TODO(),
+    keyId = TODO(),
+    nonceHex = TODO(),
+    createdAt = TODO(),
+    updatedAt = TODO()
+)
 ) {
     // Esta cláusula SELECT le indica a PostgREST que devuelva la fila insertada
     select()
 }
-.decodeSingle<VaultSecret>()
+.decodeSingle<Secreto>()
 
 @Serializable
-data class DecryptedSecret(
+data class SecretoDesencriptado(
     val id: String,
     val name: String,
     val secret: String          // Base64
@@ -1128,7 +728,7 @@ suspend fun fetchSymmetricKey(name: String): ByteArray? {
         .select {
             filter { eq("name", name) }
         }
-        .decodeSingleOrNull<VaultSecret>()
+        .decodeSingleOrNull<SecretoDesencriptado>()
 
     val base64Key = response?.secret ?: return null
 
