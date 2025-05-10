@@ -83,6 +83,7 @@ import org.connexuss.project.comunicacion.Mensaje
 import org.connexuss.project.comunicacion.generateId
 import org.connexuss.project.misc.Imagen
 import org.connexuss.project.misc.Supabase
+import org.connexuss.project.misc.SupabaseAdmin
 import org.connexuss.project.misc.UsuarioPrincipal
 import org.connexuss.project.misc.sesionActualUsuario
 import org.connexuss.project.persistencia.SettingsState
@@ -2306,9 +2307,20 @@ fun PantallaRegistro(navController: NavHostController, settingsState: SettingsSt
                                                 }
 
                                                 // 1. Registro en Supabase Auth
-                                                val authResult = Supabase.client.auth.signUpWith(Email) {
+                                                val result = SupabaseAdmin.client.auth.signUpWith(Email) {
                                                     this.email = emailTrimmed
                                                     this.password = password
+                                                }
+
+                                                if (result != null) {
+                                                    errorMessage = "error_registro"
+                                                    return@launch
+                                                }
+
+                                                val authUser = result?.userMetadata
+                                                if (authUser == null) {
+                                                    errorMessage = "error_registro_desconocido"
+                                                    return@launch
                                                 }
 
                                                 // 2. Crear objeto Usuario con el mismo ID que auth.uid()
@@ -2340,10 +2352,7 @@ fun PantallaRegistro(navController: NavHostController, settingsState: SettingsSt
                                             }
                                         }
                                     }
-                                }
-
-
-                                ,
+                                },
                                 modifier = Modifier.weight(1f)
                             ) {
                                 Text(traducir("registrar"))

@@ -19,7 +19,7 @@ import org.connexuss.project.misc.Supabase
 
 // Credenciales de Base de datos Supabase de prueba
 const val SUPABASE_URL = "https://aitsngvbqluaisjzunwv.supabase.co"
-const val SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFpdHNuZ3ZicWx1YWlzanp1bnd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY0NjQ5ODgsImV4cCI6MjA2MjA0MDk4OH0.vjC5_8eEb9_N_hcwBg9WU6IRbXUW3_WBiFaXYUR6TKU"
+const val SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFpdHNuZ3ZicWx1YWlzanp1bnd2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NjQ2NDk4OCwiZXhwIjoyMDYyMDQwOTg4fQ.qFetqDUMBYS1_3YAKHGWGsm9ziSL-7VqkKdN0gC5W00"
 
 // Interfaz sin el modificador inline en deleteItemGeneric:
 //interface ISupabaseRepository<T : Any> {

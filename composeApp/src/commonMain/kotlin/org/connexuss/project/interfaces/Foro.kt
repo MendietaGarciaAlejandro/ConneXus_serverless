@@ -73,6 +73,9 @@ import org.connexuss.project.supabase.SupabaseSecretosRepo
 // Repositorio genérico instanciado
 private val repoForo = SupabaseRepositorioGenerico()
 
+// Clave simétrica sobreescibible para cada vez que se entra en un tema, se sobreescribe
+private var claveSimetricaTema = null
+
 // -----------------------
 // Pantalla principal del foro
 // -----------------------
