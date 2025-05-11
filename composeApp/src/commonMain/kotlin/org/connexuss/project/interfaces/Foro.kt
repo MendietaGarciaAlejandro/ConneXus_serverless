@@ -68,7 +68,6 @@ import org.connexuss.project.supabase.SupabaseRepositorioGenerico
 import org.connexuss.project.supabase.SupabaseSecretosRepo
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
-
 // Repositorio genérico instanciado
 private val repoForo = SupabaseRepositorioGenerico()
 
@@ -78,6 +77,7 @@ private var claveSimetricaTema = null
 // -----------------------
 // Pantalla principal del foro
 // -----------------------
+@OptIn(ExperimentalEncodingApi::class)
 @Composable
 fun ForoScreen(navController: NavHostController) {
     val scope = rememberCoroutineScope()
@@ -164,15 +164,25 @@ fun ForoScreen(navController: NavHostController) {
                             val (iv, textoCifrado) = claveSim.encriptarTexto(nombre)
                             println("Nombre del tema: $nombre")
 
-                            val claveHex = claveSim.encodeToByteArray(AES.Key.Format.RAW).toHex()
+                            // 3) Serializar la clave a RAW bytes y luego a Base64 CONTINUO
+                            val rawKeyBytes = claveSim.encodeToByteArray(AES.Key.Format.RAW)  // 32 bytes
+                            println("Clave simétrica: ${rawKeyBytes.toHex()}")
+
+                            val claveBase64 = Base64.Default.encode(rawKeyBytes)              // ~44 chars, sin saltos
+                            println("Clave simétrica Base64: $claveBase64")
+
+                            // 4) Serializar IV a hex (12 bytes → 24 hex chars)
                             val nonceHex = iv.toHex()
+                            println("Nonce: $nonceHex")
+
                             val temaId = generateId()
+                            println("ID del tema: $temaId")
 
                             try {
                                 // 2) Llamar a la función RPC
                                 val insertResult = secretsRepo.insertarSecretoConRpc(
                                     temaId  = temaId,
-                                    claveHex = claveHex,
+                                    claveHex = claveBase64,
                                     nonceHex = nonceHex
                                 ) ?: throw IllegalStateException("La función insert_secret no devolvió datos")
                                 println("Resultado de la función insert_secret: $insertResult")
@@ -501,49 +511,50 @@ fun TemaCard(
 ) {
     var nombrePlano by remember { mutableStateOf("(cargando…)") }
 
+    @OptIn(ExperimentalEncodingApi::class)
     LaunchedEffect(tema.idTema) {
         val secreto = secretsRepo.recuperarSecretoRpc(tema.idTema)
-        println("Contenido de tema.nombre: ${tema.nombre}")
+            ?: return@LaunchedEffect run { nombrePlano = "(clave no disponible)" }
 
-        if (secreto != null) {
-            println("Nonce recibido: ${secreto.nonce}")
-        } else {
-            println("No se encontró el secreto para el tema ${tema.idTema}")
-        }
-
-        if (secreto != null) {
-            println("Clave secreta recibida: ${secreto.secret}")
-        } else {
-            println("No se encontró el secreto para el tema ${tema.idTema}")
-        }
-
-        if (secreto != null) {
-            try {
-                val rawKey = Base64.decode(secreto.secret)
-                println("Longitud de la clave: ${rawKey.size}") // Debe ser 16, 24 o 32 bytes
-
-                val aesKey = CryptographyProvider.Default
-                    .get(AES.GCM)
-                    .keyDecoder()
-                    .decodeFromByteArray(AES.Key.Format.RAW, rawKey)
-
-                // Limpia el prefijo que trae Postgres
-                val nonceHexClean =
-                    secreto.nonce.removePrefix("\\x").removePrefix("0x")  // por si acaso
-                val ivBytes = nonceHexClean.hexToByteArray()
-                println("Longitud del IV: ${ivBytes.size}") // Debe ser 12 bytes para AES-GCM
-
-                val cipherBytes = tema.nombre.hexToByteArray()
-
-                nombrePlano = aesKey.cipher()
-                    .decrypt(ivBytes + cipherBytes)
-                    .decodeToString()
-            } catch (e: Exception) {
-                println("Error durante el descifrado: ${e.message}")
-                nombrePlano = "(clave no disponible) ¡¡¡Error!!!"
-            }
-        } else {
+        // 1) Base64 → ByteArray (32 bytes)
+        val claveBytes = try {
+            Base64.Default.decode(secreto.secret)
+        } catch (e: Exception) {
+            println("Error Base64: ${e.message}")
             nombrePlano = "(clave no disponible)"
+            return@LaunchedEffect
+        }
+        if (claveBytes.size != 32) {
+            println("Clave AES inválida: ${claveBytes.size} bytes")
+            nombrePlano = "(clave no disponible)"
+            return@LaunchedEffect
+        }
+
+        // 2) Reconstruir AES Key
+        val aesKey = CryptographyProvider.Default
+            .get(AES.GCM)
+            .keyDecoder()
+            .decodeFromByteArray(AES.Key.Format.RAW, claveBytes)
+
+        // 3) IV: hex → ByteArray (12 bytes)
+        val ivBytes = secreto.nonce
+            .removePrefix("\\x")
+            .hexToByteArray()
+        if (ivBytes.size != 12) {
+            println("IV inválido: ${ivBytes.size} bytes")
+            nombrePlano = "(clave no disponible)"
+            return@LaunchedEffect
+        }
+
+        // 4) Ciphertext: tema.nombre hex → ByteArray
+        val cipherBytes = tema.nombre.hexToByteArray()
+
+        // 5) Desencriptar con tu helper
+        nombrePlano = try {
+            aesKey.desencriptarTexto(ivBytes, cipherBytes)
+        } catch (e: Exception) {
+            println("Error descifrado: ${e.message}")
+            "(clave no disponible)"
         }
     }
 
