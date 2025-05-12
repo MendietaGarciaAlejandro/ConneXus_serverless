@@ -520,16 +520,17 @@ fun TemaCard(
         // 1) Base64 → ByteArray (32 bytes)
         val claveBytes = try {
             secreto.decryptedSecret?.let { Base64.Default.decode(it) }
-
         } catch (e: Exception) {
             println("Error Base64: ${e.message}")
-            nombrePlano = "(clave no disponible)"
+            nombrePlano = "(clave no disponible) clave no válida"
             return@LaunchedEffect
         }
+        println("Secreto descifrado: ${secreto.decryptedSecret}")
+
         if (claveBytes != null) {
             if (claveBytes.size != 32) {
                 println("Clave AES inválida: ${claveBytes.size} bytes")
-                nombrePlano = "(clave no disponible)"
+                nombrePlano = "(clave no disponible) inválida"
                 return@LaunchedEffect
             }
         }
@@ -543,14 +544,15 @@ fun TemaCard(
         }
 
         // 3) IV: hex → ByteArray (12 bytes)
-        val ivBytes = secreto.nonce
+        val ivBytes = secreto.nonce.substring(2, secreto.nonce.length)
             .removePrefix("\\x")
             .hexToByteArray()
         if (ivBytes.size != 12) {
             println("IV inválido: ${ivBytes.size} bytes")
-            nombrePlano = "(clave no disponible)"
+            nombrePlano = "(clave no disponible) iv inválido"
             return@LaunchedEffect
         }
+        println("IV descifrado: ${ivBytes.toHex()}")
 
         // 4) Ciphertext: tema.nombre hex → ByteArray
         val cipherBytes = tema.nombre.hexToByteArray()
@@ -561,7 +563,7 @@ fun TemaCard(
                 aesKey.desencriptarTexto(ivBytes, cipherBytes)
             } catch (e: Exception) {
                 println("Error descifrado: ${e.message}")
-                "(clave no disponible)"
+                "(clave no disponible) aesKey inválida"
             }
         }
     }
