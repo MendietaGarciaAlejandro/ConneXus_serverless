@@ -10,15 +10,21 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import io.github.jan.supabase.postgrest.query.PostgrestQueryBuilder
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import org.connexuss.project.comunicacion.Hilo
 import org.connexuss.project.comunicacion.Post
 import org.connexuss.project.comunicacion.Tema
@@ -226,6 +232,74 @@ fun TemaScreen(navController: NavHostController, temaId: String) {
         }
     }
 }
+
+// commonMain
+@Serializable
+@SerialName("hilosList")
+object HilosListScreen
+
+@Serializable
+@SerialName("hiloDetalle")
+data class HiloDetalleScreen(val hiloId: Long)
+
+
+// Topbar para la pantalla de los hilos dle foro, con el botón de atrás y el botón de refrescar para recargar y ver los posts nuevos
+@Composable
+fun HiloTopBar(
+    title: String,
+    navController: NavHostController?,
+    showBackButton: Boolean = false,
+    irParaAtras: Boolean = false,
+    muestraRefresh: Boolean = true,
+    startRoute: String       // <-- nueva propiedad
+) {
+    TopAppBar(
+        title = {
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(text = traducir(title))
+            }
+        },
+        navigationIcon = if (showBackButton) {
+            {
+                IconButton(onClick = {
+                    if (irParaAtras) navController?.popBackStack()
+                }) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = traducir("atras")
+                    )
+                }
+            }
+        } else null,
+        actions = {
+            if (muestraRefresh) {
+                IconButton(onClick = {
+                    navController?.let { nc ->
+                        nc.currentDestination?.route?.let { currentRoute ->
+                            nc.navigate(currentRoute) {
+                                // Limpiamos hasta la ruta de inicio que conocemos
+                                popUpTo(startRoute) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        }
+                    }
+                }) {
+                    Icon(
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = traducir("refrescar")
+                    )
+                }
+            }
+        }
+    )
+}
+
 
 // -----------------------
 // Pantalla de un hilo y sus posts
