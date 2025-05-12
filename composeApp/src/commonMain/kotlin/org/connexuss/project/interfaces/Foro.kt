@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import dev.whyoleg.cryptography.CryptographyProvider
 import dev.whyoleg.cryptography.algorithms.AES
+import io.github.jan.supabase.exceptions.RestException
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import org.connexuss.project.comunicacion.Hilo
@@ -186,8 +187,8 @@ fun ForoScreen(navController: NavHostController) {
                                     nonceHex = nonceHex
                                 ) ?: throw IllegalStateException("La función insert_secret no devolvió datos")
                                 println("Resultado de la función insert_secret: $insertResult")
-                            } catch (RestException: Exception) {
-                                println("Error al insertar el secreto: ${RestException.message}")
+                            } catch (e: RestException) {
+                                println("Error al insertar el secreto: ${e.message}")
                             }
 
                             // 2) Insertamos el Tema (solo con nombre cifrado)
@@ -518,23 +519,28 @@ fun TemaCard(
 
         // 1) Base64 → ByteArray (32 bytes)
         val claveBytes = try {
-            Base64.Default.decode(secreto.secret)
+            secreto.decryptedSecret?.let { Base64.Default.decode(it) }
+
         } catch (e: Exception) {
             println("Error Base64: ${e.message}")
             nombrePlano = "(clave no disponible)"
             return@LaunchedEffect
         }
-        if (claveBytes.size != 32) {
-            println("Clave AES inválida: ${claveBytes.size} bytes")
-            nombrePlano = "(clave no disponible)"
-            return@LaunchedEffect
+        if (claveBytes != null) {
+            if (claveBytes.size != 32) {
+                println("Clave AES inválida: ${claveBytes.size} bytes")
+                nombrePlano = "(clave no disponible)"
+                return@LaunchedEffect
+            }
         }
 
         // 2) Reconstruir AES Key
-        val aesKey = CryptographyProvider.Default
-            .get(AES.GCM)
-            .keyDecoder()
-            .decodeFromByteArray(AES.Key.Format.RAW, claveBytes)
+        val aesKey = claveBytes?.let {
+            CryptographyProvider.Default
+                .get(AES.GCM)
+                .keyDecoder()
+                .decodeFromByteArray(AES.Key.Format.RAW, it)
+        }
 
         // 3) IV: hex → ByteArray (12 bytes)
         val ivBytes = secreto.nonce
@@ -550,11 +556,13 @@ fun TemaCard(
         val cipherBytes = tema.nombre.hexToByteArray()
 
         // 5) Desencriptar con tu helper
-        nombrePlano = try {
-            aesKey.desencriptarTexto(ivBytes, cipherBytes)
-        } catch (e: Exception) {
-            println("Error descifrado: ${e.message}")
-            "(clave no disponible)"
+        if (aesKey != null) {
+            nombrePlano = try {
+                aesKey.desencriptarTexto(ivBytes, cipherBytes)
+            } catch (e: Exception) {
+                println("Error descifrado: ${e.message}")
+                "(clave no disponible)"
+            }
         }
     }
 

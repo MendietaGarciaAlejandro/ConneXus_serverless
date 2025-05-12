@@ -710,8 +710,18 @@ data class SecretoInsertado(
 
 @Serializable
 data class SecretoRPC(
+    @SerialName("id")
     val id: String,
+
+    @SerialName("name")
     val name: String,
+
+    @SerialName("secret")
     val secret: String,
+
+    @SerialName("decrypted_secret")
+    val decryptedSecret: String? = null,
+
+    @SerialName("nonce")
     val nonce: String
 )
