@@ -81,17 +81,17 @@ class HiloViewModel : ViewModel() {
             table = "post"
         }.map { it.decodeRecord<Post>() }
             .onEach { change ->
-                newPostsCount++
+                onNewPost()
         }.launchIn(scope)
 
         channel.subscribe()
     }
 
-    fun onNewPost() {
+    private fun onNewPost() {
         _newPostsCount++
     }
     fun resetCounter() {
-        _newPostsCount.value = 0
+        _newPostsCount = 0
     }
 }
 
