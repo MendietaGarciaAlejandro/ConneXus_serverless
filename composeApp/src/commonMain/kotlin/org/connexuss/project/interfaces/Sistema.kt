@@ -84,6 +84,9 @@ import org.connexuss.project.comunicacion.Mensaje
 import org.connexuss.project.misc.Imagen
 import org.connexuss.project.misc.Supabase
 import org.connexuss.project.misc.UsuarioPrincipal
+import org.connexuss.project.misc.obtenerClaveDesdeImagen
+import org.connexuss.project.misc.obtenerImagenAleatoria
+import org.connexuss.project.misc.obtenerImagenDesdeId
 import org.connexuss.project.misc.sesionActualUsuario
 import org.connexuss.project.persistencia.SettingsState
 import org.connexuss.project.persistencia.clearSession
@@ -1196,15 +1199,20 @@ fun mostrarPerfil(navController: NavHostController, usuarioU: Usuario?) {
         }
     }
 
+    val imagenPerfilState = remember(usuario) {
+        mutableStateOf(obtenerImagenDesdeId(usuario?.getImagenPerfilIdMio()))
+    }
 
-    // Estado para la imagen de perfil (para refrescar la UI al cambiarla)
-    val imagenPerfilState = remember { mutableStateOf(usuario?.getImagenPerfilMio()) }
+    LaunchedEffect(usuario?.getImagenPerfilIdMio()) {
+        imagenPerfilState.value = obtenerImagenDesdeId(usuario?.getImagenPerfilIdMio())
+    }
+
 
     MaterialTheme {
         Scaffold(
             topBar = {
                 DefaultTopBar(
-                    title = "perfil", // Clave para "Perfil"
+                    title = "perfil",
                     navController = navController,
                     showBackButton = true,
                     irParaAtras = true,
@@ -1236,25 +1244,27 @@ fun mostrarPerfil(navController: NavHostController, usuarioU: Usuario?) {
                                 horizontalArrangement = Arrangement.Center,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                // Imagen de perfil en un cuadrado
                                 Image(
-                                    painter = imagenPerfilState.value?.let { painterResource(it) }
-                                        ?: painterResource(Res.drawable.avatar),
+                                    painter = painterResource(imagenPerfilState.value ?: Res.drawable.avatar),
                                     contentDescription = "Imagen de perfil",
                                     modifier = Modifier
                                         .size(100.dp)
                                         .clip(RoundedCornerShape(8.dp))
                                         .border(1.dp, Color.Gray, RoundedCornerShape(8.dp))
                                 )
+
                             }
                             // Botón para cambiar la imagen
                             Button(
                                 onClick = {
-                                    // Genera una nueva imagen aleatoria y actualiza tanto el usuario como el estado mutable
-                                    //val nuevaImagen = usuario.generarImagenPerfilRandom()
-                                    //usuario.setImagenPerfilMia(nuevaImagen)
-                                    //imagenPerfilState.value = nuevaImagen
-                                },
+                                    val nuevaImagen = obtenerImagenAleatoria()
+                                    imagenPerfilState.value = nuevaImagen
+                                    usuario?.apply {
+                                        setImagenPerfilMia(nuevaImagen)
+                                        setImagenPerfilIdMia(obtenerClaveDesdeImagen(nuevaImagen))
+                                    }
+                                }
+                                ,
                                 modifier = Modifier.align(Alignment.CenterHorizontally)
                             ) {
                                 Text(text = traducir("cambiar"))
@@ -1511,16 +1521,19 @@ fun mostrarPerfilUsuario(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                usuario?.getImagenPerfilMio()?.let { imagenId ->
-                    Image(
-                        painter = painterResource(imagenId),
-                        contentDescription = "Imagen de perfil de ${usuario?.getNombreCompletoMio()}",
-                        modifier = Modifier
-                            .size(100.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .border(1.dp, Color.Gray, RoundedCornerShape(8.dp))
-                    )
+                val imagenDrawable = remember(usuario?.getImagenPerfilIdMio()) {
+                    obtenerImagenDesdeId(usuario?.getImagenPerfilIdMio())
                 }
+
+                Image(
+                    painter = painterResource(imagenDrawable),
+                    contentDescription = "Imagen de perfil de ${usuario?.getNombreCompletoMio()}",
+                    modifier = Modifier
+                        .size(100.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .border(1.dp, Color.Gray, RoundedCornerShape(8.dp))
+                )
+
 
                 OutlinedTextField(
                     value = aliasPrivado,
@@ -2379,6 +2392,8 @@ fun PantallaVerificaCorreo(
                             val usuarioActual = Supabase.client.auth.currentUserOrNull()
 
                             if (usuarioActual?.emailConfirmedAt != null) {
+                                val imagenAleatoria = UtilidadesUsuario().generarImagenPerfilAleatoria()
+
                                 val nuevoUsuario = Usuario(
                                     idUnico = usuarioActual.id,
                                     correo = email ?: "",
@@ -2387,8 +2402,13 @@ fun PantallaVerificaCorreo(
                                     aliasPublico = UtilidadesUsuario().generarAliasPublico(),
                                     activo = true,
                                     descripcion = "Perfil creado automáticamente",
-                                    contrasennia = password ?: ""
-                                )
+                                    contrasennia = password ?: "",
+                                    imagenPerfilId = imagenAleatoria.id
+                                ).apply {
+                                    imagenPerfil = imagenAleatoria.resource
+                                }
+
+
 
                                 repo.addUsuario(nuevoUsuario)
 

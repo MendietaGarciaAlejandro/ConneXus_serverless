@@ -5,6 +5,7 @@ import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.serialization.SerialName
 import org.connexuss.project.misc.Supabase
 import org.connexuss.project.usuario.Usuario
 
@@ -102,7 +103,9 @@ class SupabaseUsuariosRepositorio : ISupabaseUsuariosRepositorio {
         val aliasprivado: String,
         val aliaspublico: String,
         val descripcion: String,
-        val activo: Boolean
+        val activo: Boolean,
+        @SerialName("imagen_perfil")
+        val imagenPerfilId: String? = null
     )
 
 
@@ -114,12 +117,14 @@ class SupabaseUsuariosRepositorio : ISupabaseUsuariosRepositorio {
             aliasprivado = usuario.getAliasPrivadoMio(),
             aliaspublico = usuario.getAliasMio(),
             descripcion = usuario.getDescripcionMio(),
-            activo = usuario.getActivoMio()
+            activo = usuario.getActivoMio(),
+            imagenPerfilId = usuario.getImagenPerfilIdMio() // <- NUEVO
         )
 
+
         try {
-            println("updateData: $updateData")
-            println("idunico: ${usuario.getIdUnicoMio()}")
+            println("🟡 updateData: $updateData")
+            println("🆔 idunico: ${usuario.getIdUnicoMio()}")
 
             val updated = Supabase.client
                 .from(nombreTabla)
@@ -142,6 +147,7 @@ class SupabaseUsuariosRepositorio : ISupabaseUsuariosRepositorio {
             throw e
         }
     }
+
 
 
 
