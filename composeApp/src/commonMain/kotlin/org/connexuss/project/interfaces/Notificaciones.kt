@@ -1,8 +1,14 @@
 package org.connexuss.project.interfaces
 
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.*
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.material.Badge
+import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
+import androidx.compose.material.Text
+import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Refresh
@@ -19,36 +25,29 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
 import io.github.jan.supabase.annotations.SupabaseExperimental
-import io.github.jan.supabase.realtime.channel
-import io.github.jan.supabase.realtime.realtime
-import org.connexuss.project.misc.Supabase
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.filter.FilterOperation
 import io.github.jan.supabase.postgrest.query.filter.FilterOperator
 import io.github.jan.supabase.realtime.PostgresAction
-import io.github.jan.supabase.realtime.PostgresChangeFilter
-import io.github.jan.supabase.realtime.PrimaryKey
+import io.github.jan.supabase.realtime.channel
+import io.github.jan.supabase.realtime.decodeRecord
+import io.github.jan.supabase.realtime.postgresChangeFlow
+import io.github.jan.supabase.realtime.realtime
 import io.github.jan.supabase.realtime.selectAsFlow
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
-import org.connexuss.project.comunicacion.Post
-import io.github.jan.supabase.realtime.channel
-import io.github.jan.supabase.realtime.decodeRecord
-import io.github.jan.supabase.realtime.postgresChangeFlow
+import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
-
+import kotlinx.coroutines.flow.onEach
+import org.connexuss.project.comunicacion.Post
+import org.connexuss.project.misc.Supabase
 
 var currentHiloId = mutableStateOf("")
 var initialCount = mutableStateOf(0)
 var newPostsCount = mutableStateOf(0)
-
 val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
-
 val filter: FilterOperation = FilterOperation(
     column = "idhilo",
     operator = FilterOperator.EQ,
@@ -72,7 +71,7 @@ class HiloViewModel : ViewModel() {
     private var _newPostsCount by mutableStateOf(0)
     var newPostsCount: State<Int> = mutableStateOf(0)
 
-    suspend fun startListeningToNewPosts(currentHiloId: Int) {
+    suspend fun startListeningToNewPosts(currentIdhilo: String) {
         val scope = viewModelScope  // o cualquier CoroutineScope válido
 
         val channel = Supabase.client.realtime.channel("public:post")
@@ -81,7 +80,9 @@ class HiloViewModel : ViewModel() {
             table = "post"
         }.map { it.decodeRecord<Post>() }
             .onEach { change ->
-                onNewPost()
+                if (change.idHilo == currentIdhilo) {
+                    onNewPost()
+                }
         }.launchIn(scope)
 
         channel.subscribe()
@@ -103,16 +104,31 @@ fun HiloTopBar(
     showRefresh: Boolean = true,
     startRoute: String
 ) {
+
+    val newCount by viewModel.newPostsCount
+
     TopAppBar(
+        modifier = Modifier.statusBarsPadding().navigationBarsPadding(),
         title = { Text(text = title, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) },
-        navigationIcon = { /* botón atrás si aplica */ },
+        navigationIcon = {
+            IconButton(onClick = {
+                navController?.popBackStack()
+            }) {
+                Icon(Icons.Default.Info, contentDescription = "Atrás")
+            }
+        },
         actions = {
-            if (viewModel.newPostsCount.value > 0) {
+            if (newCount > 0) {
                 BadgedBox(
-                    badge = { Text("${viewModel.newPostsCount.value}") },
+                    badge = {
+                        Badge { Text("$newCount") }
+                    },
                     modifier = Modifier.padding(end = 8.dp)
                 ) {
-                    Icon(Icons.Default.Info, contentDescription = "Nuevos posts")
+                    Icon(
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = "Nuevos posts"
+                    )
                 }
             }
             if (showRefresh) {
@@ -126,7 +142,10 @@ fun HiloTopBar(
                         }
                     }
                 }) {
-                    Icon(Icons.Default.Refresh, contentDescription = "Refrescar")
+                    Icon(
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = "Refrescar"
+                    )
                 }
             }
         }
