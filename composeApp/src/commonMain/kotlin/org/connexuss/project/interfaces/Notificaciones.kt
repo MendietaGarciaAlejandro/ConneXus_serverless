@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.BadgedBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -29,6 +30,7 @@ import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.filter.FilterOperation
 import io.github.jan.supabase.postgrest.query.filter.FilterOperator
 import io.github.jan.supabase.realtime.PostgresAction
+import io.github.jan.supabase.realtime.RealtimeChannel
 import io.github.jan.supabase.realtime.channel
 import io.github.jan.supabase.realtime.decodeRecord
 import io.github.jan.supabase.realtime.postgresChangeFlow
@@ -36,11 +38,14 @@ import io.github.jan.supabase.realtime.realtime
 import io.github.jan.supabase.realtime.selectAsFlow
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 import org.connexuss.project.comunicacion.Post
 import org.connexuss.project.misc.Supabase
 
@@ -76,7 +81,7 @@ class HiloViewModel : ViewModel() {
 
         val channel = Supabase.client.realtime.channel("public:post")
 
-        val postChangeFlow = channel.postgresChangeFlow<PostgresAction.Insert>("public") {
+        channel.postgresChangeFlow<PostgresAction.Insert>("public") {
             table = "post"
         }.map { it.decodeRecord<Post>() }
             .onEach { change ->
@@ -96,19 +101,68 @@ class HiloViewModel : ViewModel() {
     }
 }
 
+class HiloState(hiloId: String) {
+    // Expuesto a la UI
+    var newPostsCount: MutableState<Int> = mutableStateOf(0)
+
+    private val scope: CoroutineScope = MainScope()
+    private val channel: RealtimeChannel =
+        Supabase.client.realtime.channel("public:post")
+
+    private suspend fun startListeningToNewPosts(currentIdhilo: String) {
+        val channel = Supabase.client.realtime.channel("public:post")
+
+        channel.postgresChangeFlow<PostgresAction.Insert>("public") {
+            table = "post"
+        }.map { it.decodeRecord<Post>() }
+            .onEach { change ->
+                if (change.idHilo == currentIdhilo) {
+                    onNewPost()
+                }
+            }.launchIn(scope)
+
+        channel.subscribe()
+    }
+
+    init {
+        scope.launch {
+            startListeningToNewPosts(
+                hiloId.toString()
+            )
+        }
+    }
+
+    /** Llamar para detener la escucha (por ejemplo al desmontar el Composable) */
+    suspend fun stop() {
+        channel.unsubscribe()
+        scope.cancel(
+            "HiloState: stop()"
+        )
+    }
+
+    /** Resetear contador (por ejemplo al pulsar refresh) */
+    fun reset() {
+        newPostsCount.value = 0
+    }
+
+    private fun onNewPost() {
+        newPostsCount.value++
+    }
+    fun resetCounter() {
+        newPostsCount = mutableStateOf(0)
+    }
+}
+
 @Composable
 fun HiloTopBar(
     title: String,
     navController: NavHostController?,
-    viewModel: HiloViewModel,
+    newPostsCount: Int,
+    onRefresh: () -> Unit,
     showRefresh: Boolean = true,
     startRoute: String
 ) {
-
-    val newCount by viewModel.newPostsCount
-
     TopAppBar(
-        modifier = Modifier.statusBarsPadding().navigationBarsPadding(),
         title = { Text(text = title, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) },
         navigationIcon = {
             IconButton(onClick = {
@@ -118,34 +172,17 @@ fun HiloTopBar(
             }
         },
         actions = {
-            if (newCount > 0) {
+            if (newPostsCount > 0) {
                 BadgedBox(
-                    badge = {
-                        Badge { Text("$newCount") }
-                    },
+                    badge = { Badge { Text("$newPostsCount") } },
                     modifier = Modifier.padding(end = 8.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Refresh,
-                        contentDescription = "Nuevos posts"
-                    )
+                    Icon(Icons.Default.Refresh, contentDescription = "Nuevos posts")
                 }
             }
             if (showRefresh) {
-                IconButton(onClick = {
-                    viewModel.resetCounter()
-                    navController?.currentDestination?.route?.let { current ->
-                        navController.navigate(current) {
-                            popUpTo(startRoute) { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    }
-                }) {
-                    Icon(
-                        imageVector = Icons.Default.Refresh,
-                        contentDescription = "Refrescar"
-                    )
+                IconButton(onClick = onRefresh) {
+                    Icon(Icons.Default.Refresh, contentDescription = "Refrescar")
                 }
             }
         }

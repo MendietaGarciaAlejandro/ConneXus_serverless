@@ -239,11 +239,13 @@ fun TemaScreen(navController: NavHostController, temaId: String) {
 // Pantalla de un hilo y sus posts
 // -----------------------
 @Composable
-fun HiloScreen(navController: NavHostController, hiloId: String, viewModel: HiloViewModel = viewModel()) {
+fun HiloScreen(navController: NavHostController, hiloId: String, startRoute: String) {
+
+    val hiloState = remember(hiloId) { HiloState(hiloId) }
 
     // Inicia la escucha al entrar en pantalla
-    LaunchedEffect(hiloId) {
-        viewModel.startListeningToNewPosts(hiloId)
+    DisposableEffect(hiloState) {
+        onDispose { scope.launch { hiloState.stop() } }
     }
 
     val scope = rememberCoroutineScope()
@@ -284,8 +286,9 @@ fun HiloScreen(navController: NavHostController, hiloId: String, viewModel: Hilo
             HiloTopBar(
                 title = "Hilo #$hiloId",
                 navController = navController,
-                viewModel = viewModel,
-                startRoute = "foroLocal"
+                newPostsCount = hiloState.newPostsCount.value,
+                onRefresh = { hiloState.reset() },
+                startRoute = startRoute
             )
         },
         bottomBar = { MiBottomBar(navController) }
