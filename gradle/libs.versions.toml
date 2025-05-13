@@ -13,7 +13,6 @@ androidx-compose = "1.8.1"
 material3Android = "1.3.2"
 #skikoWasmJs = "0.9.4"
 coreI18n = "1.0.0"
-#coreKtx = "1.6.1"
 
 # Kotlin related versions
 kotlin = "2.1.10"
@@ -21,7 +20,10 @@ kotlinx-coroutines = "1.10.1"
 kotlinxDatetime = "0.6.2"
 kotlinxSerialization = "1.8.1"
 kotlinTest = "2.2.0-Beta1"
-kotest = "5.9.1"
+#kotest = "5.9.1"
+assertk = "0.28.1"
+coreKtx = "1.6.1"
+composeTest = "1.8.1"
 
 # Navigation versions
 navigation-compose = "2.8.0-alpha10"
@@ -61,8 +63,6 @@ androidx-foundation-android = { group = "androidx.compose.foundation", name = "f
 androidx-animation-core-lint = { group = "androidx.compose.animation", name = "animation-core-lint", version.ref = "androidx-compose" }
 androidx-material3-android = { group = "androidx.compose.material3", name = "material3-android", version.ref = "material3Android" }
 androidx-ui-graphics-android = { group = "androidx.compose.ui", name = "ui-graphics-android", version.ref = "androidx-compose" }
-androidx-ui-test-junit4-android = { module = "androidx.compose.ui:ui-test-junit4-android", version.ref = "androidx-compose" }
-androidx-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest", version.ref = "androidx-compose" }
 androidx-ui-text-android = { group = "androidx.compose.ui", name = "ui-text-android", version.ref = "androidx-compose" }
 androidx-core-i18n = { group = "androidx.core", name = "core-i18n", version.ref = "coreI18n" }
 androidx-ui-android = { group = "androidx.compose.ui", name = "ui-android", version.ref = "androidx-compose" }
@@ -128,11 +128,16 @@ cryptography-provider-webcrypto = { group = "dev.whyoleg.cryptography", name = "
 
 # Testing libraries
 kotlin-test = { group = "org.jetbrains.kotlin", name = "kotlin-test", version.ref = "kotlinTest" }
-kotest-framework-engine = { group = "io.kotest", name = "kotest-framework-engine", version.ref = "kotest" }
-kotest-assertions-core = { group = "io.kotest", name = "kotest-assertions-core", version.ref = "kotest" }
-kotest-property = { group = "io.kotest", name = "kotest-property", version.ref = "kotest" }
-kotest-framework-datatest = { group = "io.kotest", name = "kotest-framework-datatest", version.ref = "kotest" }
-kotest-runner-junit5 = { group = "io.kotest", name = "kotest-runner-junit5", version.ref = "kotest" }
+#kotest-framework-engine = { group = "io.kotest", name = "kotest-framework-engine", version.ref = "kotest" }
+#kotest-assertions-core = { group = "io.kotest", name = "kotest-assertions-core", version.ref = "kotest" }
+#kotest-property = { group = "io.kotest", name = "kotest-property", version.ref = "kotest" }
+#kotest-framework-datatest = { group = "io.kotest", name = "kotest-framework-datatest", version.ref = "kotest" }
+#kotest-runner-junit5 = { group = "io.kotest", name = "kotest-runner-junit5", version.ref = "kotest" }
+kotlin-test-annotations-common = { group = "org.jetbrains.kotlin", name = "kotlin-test-annotations-common", version.ref = "kotlinTest" }
+assertk = { module = "com.willowtreeapps.assertk:assertk", version.ref = "assertk" }
+compose-ui-test-junit4-android = { module = "androidx.compose.ui:ui-test-junit4-android", version.ref = "composeTest" }
+compose-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest", version.ref = "composeTest" }
+core-ktx = { group = "androidx.test", name = "core-ktx", version.ref = "coreKtx" }
 
 [plugins]
 # Android plugins
@@ -143,7 +148,7 @@ androidLibrary = { id = "com.android.library", version.ref = "agp" }
 composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }
 composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
-kotestMultiplatform = { id = "io.kotest.multiplatform", version.ref = "kotest" }
+#kotestMultiplatform = { id = "io.kotest.multiplatform", version.ref = "kotest" }
 
 # Plugin de serializadcion de Kotlin
 kotlinxSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }

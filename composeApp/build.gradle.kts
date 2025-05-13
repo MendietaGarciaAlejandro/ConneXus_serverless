@@ -1,11 +1,9 @@
 import org.jetbrains.compose.ExperimentalComposeLibrary
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.compose.web.tasks.UnpackSkikoWasmRuntimeTask
-import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
-import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig.*
+import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -15,12 +13,10 @@ plugins {
     // id("com.google.gms.google-services")
     //kotlin("plugin.serialization") version "2.1.0"
     alias(libs.plugins.kotlinxSerialization)
-    alias(libs.plugins.kotestMultiplatform)
 }
 tasks.withType<UnpackSkikoWasmRuntimeTask> {
     enabled = true
 }
-
 android {
     namespace = "org.connexuss.project"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
@@ -31,15 +27,6 @@ android {
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
         versionName = "1.0"
-        // Para pruebas instrumentadas de Android
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-    }
-
-    @Suppress("UnstableApiUsage")
-    testOptions {
-        unitTests.all {
-            it.useJUnitPlatform()
-        }
     }
 
     buildTypes {
@@ -65,17 +52,10 @@ kotlin {
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_21)
         }
-        // Para pruebas instrumentadas de Compose UI en Android
-        @OptIn(ExperimentalKotlinGradlePluginApi::class)
-        instrumentedTestVariant.sourceSetTree.set(KotlinSourceSetTree.test)
     }
 
 
-    jvm("desktop") {
-        compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_21)
-        }
-    }
+    jvm("desktop")
 
 //    js(IR) {
 //        moduleName = "composeApp"
@@ -106,9 +86,9 @@ kotlin {
             val rootDirPath = project.rootDir.path
             val projectDirPath = project.projectDir.path
             commonWebpackConfig {
-                mode = Mode.DEVELOPMENT
+                mode = org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig.Mode.DEVELOPMENT
                 outputFileName = "composeApp.js"
-                devServer = (devServer ?: DevServer()).apply {
+                devServer = (devServer ?: KotlinWebpackConfig.DevServer()).apply {
                     static = (static ?: mutableListOf()).apply {
                         add(rootDirPath)
                         add(projectDirPath)
@@ -183,10 +163,9 @@ kotlin {
         val commonTest by getting {
             dependencies {
                 implementation(libs.kotlin.test)
-                implementation(libs.kotest.framework.engine)
-                implementation(libs.kotest.assertions.core)
-                implementation(libs.kotest.property)
-                implementation(libs.kotest.framework.datatest)
+                implementation(libs.kotlin.test.annotations.common)
+                implementation(libs.assertk)
+
                 @OptIn(ExperimentalComposeLibrary::class)
                 implementation(compose.uiTest)
             }
@@ -233,12 +212,6 @@ kotlin {
             }
         }
 
-        val androidUnitTest by getting { // Corresponde a src/test/java o src/test/kotlin
-            dependencies {
-                implementation(libs.kotest.runner.junit5)
-            }
-        }
-
         val desktopMain by getting {
             dependencies {
                 // Compose & Kotlin dependencies
@@ -264,14 +237,6 @@ kotlin {
 
                 // Cryptography dependencies
                 implementation(libs.cryptography.provider.jdk)
-            }
-        }
-
-        val desktopTest by getting {
-            dependencies {
-                implementation(libs.kotest.runner.junit5)
-                // Dependencia específica para Compose Desktop Test
-                implementation(compose.desktop.uiTestJUnit4)
             }
         }
 
@@ -337,9 +302,6 @@ dependencies {
 //    implementation(platform(libs.firebase.android.bom))
 //    implementation(libs.firebase.analytics)
 //    implementation(libs.firebase.firestore.ktx)
-
-    androidTestImplementation(libs.androidx.ui.test.junit4.android)
-    debugImplementation(libs.androidx.ui.test.manifest)
 }
 
 compose.desktop {
