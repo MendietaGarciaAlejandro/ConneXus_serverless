@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
 import io.github.jan.supabase.annotations.SupabaseExperimental
 import io.github.jan.supabase.realtime.channel
@@ -24,6 +25,8 @@ import org.connexuss.project.misc.Supabase
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.filter.FilterOperation
 import io.github.jan.supabase.postgrest.query.filter.FilterOperator
+import io.github.jan.supabase.realtime.PostgresAction
+import io.github.jan.supabase.realtime.PostgresChangeFilter
 import io.github.jan.supabase.realtime.PrimaryKey
 import io.github.jan.supabase.realtime.selectAsFlow
 import kotlinx.coroutines.flow.collect
@@ -34,6 +37,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import org.connexuss.project.comunicacion.Post
+import io.github.jan.supabase.realtime.channel
+import io.github.jan.supabase.realtime.decodeRecord
+import io.github.jan.supabase.realtime.postgresChangeFlow
+import kotlinx.coroutines.flow.map
 
 
 var currentHiloId = mutableStateOf("")
@@ -63,29 +70,30 @@ val flow: Flow<List<Post>> = Supabase.client
 
 class HiloViewModel : ViewModel() {
     private var _newPostsCount by mutableStateOf(0)
-    val newPostsCount: State<Int> get() = mutableStateOf(_newPostsCount)
+    var newPostsCount: State<Int> = mutableStateOf(0)
+
+    suspend fun startListeningToNewPosts(currentHiloId: Int) {
+        val scope = viewModelScope  // o cualquier CoroutineScope válido
+
+        val channel = Supabase.client.realtime.channel("public:post")
+
+        val postChangeFlow = channel.postgresChangeFlow<PostgresAction.Insert>("public") {
+            table = "post"
+        }.map { it.decodeRecord<Post>() }
+            .onEach { change ->
+                newPostsCount++
+        }.launchIn(scope)
+
+        channel.subscribe()
+    }
 
     fun onNewPost() {
         _newPostsCount++
     }
     fun resetCounter() {
-        _newPostsCount = 0
+        _newPostsCount.value = 0
     }
 }
-
-val canal = Supabase.client
-    .realtime
-    .channel("public:post")
-    .onPostgresChange(
-        event = PostgresAction.Insert,
-        schema = "public",
-        table = "post",
-        filter = "hiloId=eq.$currentHiloId"
-    ) { change ->
-        newPostsCount.value += 1
-    }
-    .subscribe()
-
 
 @Composable
 fun HiloTopBar(
