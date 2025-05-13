@@ -57,8 +57,7 @@ data class Post(
     val idFirmante: String,
 
     // @SerialName("creado_en")
-    val creadoEn: LocalDateTime? = Clock.System.now()
-        .toLocalDateTime(TimeZone.currentSystemDefault())
+    //val creadoEn: LocalDateTime? = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
 )
 
 @Serializable
