@@ -22,7 +22,7 @@ interface ISupabaseTemasRepositorio {
 class SupabaseTemasRepositorio : ISupabaseTemasRepositorio {
 
     private val supabaseClient = instanciaSupabaseClient( tieneStorage = true, tieneAuth = false, tieneRealtime = true, tienePostgrest = true)
-    private val nombreTabla = "temas"
+    private val nombreTabla = "tema"
 
     // Implementación de los métodos de la interfaz
     override fun getTemas() = flow {
@@ -34,7 +34,7 @@ class SupabaseTemasRepositorio : ISupabaseTemasRepositorio {
     }
 
     override fun getTemaPorId(idTema: String) = flow {
-        val tableWithFilter = "$nombreTabla?id=eq.$idTema"
+        val tableWithFilter = "$nombreTabla?idtema=eq.$idTema"
         val response = supabaseClient
             .from(tableWithFilter)
             .select()
