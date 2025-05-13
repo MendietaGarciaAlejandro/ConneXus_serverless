@@ -18,6 +18,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import io.github.jan.supabase.postgrest.query.PostgrestQueryBuilder
@@ -233,20 +235,17 @@ fun TemaScreen(navController: NavHostController, temaId: String) {
     }
 }
 
-// commonMain
-@Serializable
-@SerialName("hilosList")
-object HilosListScreen
-
-@Serializable
-@SerialName("hiloDetalle")
-data class HiloDetalleScreen(val hiloId: Long)
-
 // -----------------------
 // Pantalla de un hilo y sus posts
 // -----------------------
 @Composable
-fun HiloScreen(navController: NavHostController, hiloId: String) {
+fun HiloScreen(navController: NavHostController, hiloId: String, viewModel: HiloViewModel = viewModel()) {
+
+    // Inicia la escucha al entrar en pantalla
+    LaunchedEffect(hiloId) {
+        viewModel.startListeningToNewPosts(hiloId)
+    }
+
     val scope = rememberCoroutineScope()
     var contenido by remember { mutableStateOf("") }
     var refreshTrigger by remember { mutableStateOf(0) }
@@ -282,9 +281,11 @@ fun HiloScreen(navController: NavHostController, hiloId: String) {
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(hilo!!.nombre ?: "Hilo") },
-                navigationIcon = { BackButton(navController) }
+            HiloTopBar(
+                title = "Hilo #$hiloId",
+                navController = navController,
+                viewModel = viewModel,
+                startRoute = "foroLocal"
             )
         },
         bottomBar = { MiBottomBar(navController) }
