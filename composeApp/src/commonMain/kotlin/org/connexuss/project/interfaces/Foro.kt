@@ -10,15 +10,23 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import io.github.jan.supabase.postgrest.query.PostgrestQueryBuilder
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import org.connexuss.project.comunicacion.Hilo
 import org.connexuss.project.comunicacion.Post
 import org.connexuss.project.comunicacion.Tema
@@ -231,7 +239,15 @@ fun TemaScreen(navController: NavHostController, temaId: String) {
 // Pantalla de un hilo y sus posts
 // -----------------------
 @Composable
-fun HiloScreen(navController: NavHostController, hiloId: String) {
+fun HiloScreen(navController: NavHostController, hiloId: String, startRoute: String) {
+
+    val hiloState = remember(hiloId) { HiloState(hiloId) }
+
+    // Inicia la escucha al entrar en pantalla
+    DisposableEffect(hiloState) {
+        onDispose { scope.launch { hiloState.stop() } }
+    }
+
     val scope = rememberCoroutineScope()
     var contenido by remember { mutableStateOf("") }
     var refreshTrigger by remember { mutableStateOf(0) }
@@ -267,9 +283,13 @@ fun HiloScreen(navController: NavHostController, hiloId: String) {
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(hilo!!.nombre ?: "Hilo") },
-                navigationIcon = { BackButton(navController) }
+            HiloTopBar(
+                title = "Hilo #$hiloId",
+                navController = navController,
+                newPostsCount = hiloState.newPostsCount.value,
+                onRefresh = { hiloState.reset(); refreshTrigger++ },
+                showRefresh = true,
+                startRoute = startRoute
             )
         },
         bottomBar = { MiBottomBar(navController) }

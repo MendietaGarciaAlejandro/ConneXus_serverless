@@ -229,7 +229,7 @@ fun Navegacion(
         ) {
             backStackEntry ->
             val hiloId = backStackEntry.arguments!!.getString("hiloId")!!
-            HiloScreen(navController, hiloId)
+            HiloScreen(navController, hiloId, "foroLocal")
         }
         composable("pruebasEncriptacion") {
             PantallaPruebasEncriptacion(navController)
