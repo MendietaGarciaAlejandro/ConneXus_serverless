@@ -14,6 +14,7 @@ import androidx.compose.material3.BadgedBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -40,10 +41,14 @@ import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.decodeFromJsonElement
+import org.connexuss.project.comunicacion.Mensaje
 import org.connexuss.project.comunicacion.Post
 import org.connexuss.project.misc.Supabase
 
@@ -187,4 +192,70 @@ fun HiloTopBar(
 //            }
         }
     )
+}
+
+class ChatState(conversacionId: String) {
+    val mensajes = mutableStateOf<List<Mensaje>>(emptyList())
+    val newMessagesCount = mutableStateOf(0)
+
+    private val scope = MainScope()
+    private val channel = Supabase.client.realtime.channel("public:mensaje")
+
+    init {
+        fetchMessages(conversacionId)  // carga inicial y resetea badge
+
+        scope.launch {
+            startListeningToNewMessages(conversacionId)
+        }
+    }
+
+    private suspend fun startListeningToNewMessages(conversacionId: String) {
+        var filtroConver = channel.postgresChangeFlow<PostgresAction.Insert>("public") {
+            table = "mensaje"
+        }.filter {
+            it.decodeRecord<Mensaje>().idconversacion == conversacionId
+        }.map { action -> action.decodeRecord<Mensaje>() }
+            .onEach { nuevoMensaje ->
+                // Añádelo a la lista
+                mensajes.value = mensajes.value + nuevoMensaje
+                // Incrementa el badge
+                newMessagesCount.value += 1
+            }
+            .launchIn(scope)
+        channel.subscribe()
+    }
+
+    private fun fetchMessages(conversacionId: String) = scope.launch {
+        val resp = Supabase.client
+            .from("mensaje")
+            .select {
+                filter {
+                    eq("idconversacion", conversacionId)
+                }
+            }
+
+        // Decodifica la respuesta
+        val jsonString: String = resp.data
+        try {
+            val listaDeMensajes: List<Mensaje> = Json.decodeFromString(jsonString)
+            mensajes.value = listaDeMensajes
+            newMessagesCount.value = 0
+        } catch (_: Exception) {
+        }
+//        resp.data.let {
+//            if (it != null) {
+//                mensajes.value = it
+//                newMessagesCount.value = 0 // Resetea el badge
+//            } else {
+//                // Maneja el error
+//            }
+//        }
+    }
+
+    fun stop() {
+        scope.launch {
+            channel.unsubscribe()
+        }
+        scope.cancel()
+    }
 }
