@@ -242,65 +242,6 @@ object HilosListScreen
 @SerialName("hiloDetalle")
 data class HiloDetalleScreen(val hiloId: Long)
 
-
-// Topbar para la pantalla de los hilos dle foro, con el botón de atrás y el botón de refrescar para recargar y ver los posts nuevos
-@Composable
-fun HiloTopBar(
-    title: String,
-    navController: NavHostController?,
-    showBackButton: Boolean = false,
-    irParaAtras: Boolean = false,
-    muestraRefresh: Boolean = true,
-    startRoute: String       // <-- nueva propiedad
-) {
-    TopAppBar(
-        title = {
-            Box(
-                modifier = Modifier.fillMaxWidth(),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(text = traducir(title))
-            }
-        },
-        navigationIcon = if (showBackButton) {
-            {
-                IconButton(onClick = {
-                    if (irParaAtras) navController?.popBackStack()
-                }) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = traducir("atras")
-                    )
-                }
-            }
-        } else null,
-        actions = {
-            if (muestraRefresh) {
-                IconButton(onClick = {
-                    navController?.let { nc ->
-                        nc.currentDestination?.route?.let { currentRoute ->
-                            nc.navigate(currentRoute) {
-                                // Limpiamos hasta la ruta de inicio que conocemos
-                                popUpTo(startRoute) {
-                                    saveState = true
-                                }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        }
-                    }
-                }) {
-                    Icon(
-                        imageVector = Icons.Default.Refresh,
-                        contentDescription = traducir("refrescar")
-                    )
-                }
-            }
-        }
-    )
-}
-
-
 // -----------------------
 // Pantalla de un hilo y sus posts
 // -----------------------
