@@ -287,7 +287,8 @@ fun HiloScreen(navController: NavHostController, hiloId: String, startRoute: Str
                 title = "Hilo #$hiloId",
                 navController = navController,
                 newPostsCount = hiloState.newPostsCount.value,
-                onRefresh = { hiloState.reset() },
+                onRefresh = { hiloState.reset(); refreshTrigger++ },
+                showRefresh = true,
                 startRoute = startRoute
             )
         },

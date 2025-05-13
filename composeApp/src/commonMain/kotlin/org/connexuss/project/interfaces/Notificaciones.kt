@@ -175,14 +175,16 @@ fun HiloTopBar(
                     badge = { Badge { Text("$newPostsCount") } },
                     modifier = Modifier.padding(end = 8.dp)
                 ) {
-                    Icon(Icons.Default.Refresh, contentDescription = "Nuevos posts")
+                    IconButton(onClick = onRefresh) {
+                        Icon(Icons.Default.Refresh, contentDescription = "Refrescar")
+                    }
                 }
             }
-            if (showRefresh) {
-                IconButton(onClick = onRefresh) {
-                    Icon(Icons.Default.Refresh, contentDescription = "Refrescar")
-                }
-            }
+//            if (showRefresh) {
+//                IconButton(onClick = onRefresh) {
+//                    Icon(Icons.Default.Refresh, contentDescription = "Refrescar")
+//                }
+//            }
         }
     )
 }
