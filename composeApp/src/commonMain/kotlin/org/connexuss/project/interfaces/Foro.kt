@@ -32,7 +32,9 @@ import org.connexuss.project.comunicacion.Post
 import org.connexuss.project.comunicacion.Tema
 import org.connexuss.project.comunicacion.generateId
 import org.connexuss.project.misc.UsuarioPrincipal
+import org.connexuss.project.supabase.SupabaseHiloRepositorio
 import org.connexuss.project.supabase.SupabaseRepositorioGenerico
+import org.connexuss.project.supabase.SupabaseTemasRepositorio
 
 // Repositorio genérico instanciado
 private val repoForo = SupabaseRepositorioGenerico()
@@ -172,13 +174,20 @@ fun TemaScreen(navController: NavHostController, temaId: String) {
         }
     }
 
+    val repoTemas = SupabaseTemasRepositorio()
+    val temaBuscado = repoTemas.getTemaPorId(temaId).collectAsState(initial = null).value
+
     // Si el tema no es nulo, mostrar la lista de hilos
     when {
         tema != null -> {
             Scaffold(
                 topBar = {
                     TopAppBar(
-                        title = { Text(tema?.nombre ?: "Tema no encontrado") },
+                        title = {
+                            if (temaBuscado != null) {
+                                Text(temaBuscado.nombre)
+                            }
+                        },
                         navigationIcon = { BackButton(navController) },
                         actions = {
                             IconButton(onClick = { showNewThreadDialog = true }) {
@@ -281,16 +290,23 @@ fun HiloScreen(navController: NavHostController, hiloId: String, startRoute: Str
         return
     }
 
+    val repoForoDedicado = SupabaseHiloRepositorio()
+    val hiloBuscado = repoForoDedicado.getHiloPorId(hiloId).collectAsState(initial = null).value
+
     Scaffold(
         topBar = {
-            HiloTopBar(
-                title = "Hilo #$hiloId",
-                navController = navController,
-                newPostsCount = hiloState.newPostsCount.value,
-                onRefresh = { hiloState.reset(); refreshTrigger++ },
-                showRefresh = true,
-                startRoute = startRoute
-            )
+            if (hiloBuscado != null) {
+                hiloBuscado.nombre?.let {
+                    HiloTopBar(
+                        title = it,
+                        navController = navController,
+                        newPostsCount = hiloState.newPostsCount.value,
+                        onRefresh = { hiloState.reset(); refreshTrigger++ },
+                        showRefresh = true,
+                        startRoute = startRoute
+                    )
+                }
+            }
         },
         bottomBar = { MiBottomBar(navController) }
     ) { padding ->
