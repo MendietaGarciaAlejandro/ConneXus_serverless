@@ -306,7 +306,7 @@ class ChatState(conversacionId: String) {
                             .from("usuario")
                             .select {
                                 filter {
-                                    eq("id", rel.idusuario)
+                                    eq("idunico", rel.idusuario)
                                 }
                             }.decodeSingle()
                     }
