@@ -26,6 +26,8 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
 import io.github.jan.supabase.annotations.SupabaseExperimental
 import io.github.jan.supabase.postgrest.from
+import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.postgrest.query.Order
 import io.github.jan.supabase.postgrest.query.filter.FilterOperation
 import io.github.jan.supabase.postgrest.query.filter.FilterOperator
 import io.github.jan.supabase.realtime.PostgresAction
@@ -46,11 +48,20 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.decodeFromJsonElement
+import org.connexuss.project.comunicacion.Conversacion
+import org.connexuss.project.comunicacion.ConversacionesUsuario
 import org.connexuss.project.comunicacion.Mensaje
 import org.connexuss.project.comunicacion.Post
 import org.connexuss.project.misc.Supabase
+import org.connexuss.project.supabase.SupabaseConversacionesUsuarioRepositorio
+import org.connexuss.project.usuario.Usuario
+
+// ---------------------------------Parte del Foro ---------------------------------
 
 var currentHiloId = mutableStateOf("")
 var initialCount = mutableStateOf(0)
@@ -194,6 +205,15 @@ fun HiloTopBar(
     )
 }
 
+// ---------------------------------Parte del Chat ---------------------------------
+
+data class ChatSummary(
+    val conversacion: Conversacion,
+    val participantes: List<Usuario>,
+    val ultimoMensaje: Mensaje?,
+    val unreadCount: Int
+)
+
 class ChatState(conversacionId: String) {
     val mensajes = mutableStateOf<List<Mensaje>>(emptyList())
     val newMessagesCount = mutableStateOf(0)
@@ -250,6 +270,82 @@ class ChatState(conversacionId: String) {
 //                // Maneja el error
 //            }
 //        }
+    }
+
+    suspend fun fetchChatSummaries(userId: String): List<ChatSummary> {
+
+        val supa = Supabase.client
+
+        suspend fun fetchConversacion(conversacionId: String): Conversacion =
+            supa.postgrest
+                .from("conversacion")
+                .select {
+                    filter {
+                        eq("id", conversacionId)
+                    }
+                }.decodeSingle()
+
+        suspend fun fetchParticipantes(conversacionId: String): List<Usuario> =
+            supa.postgrest
+                .from("conversaciones_usuario")
+                .select {
+                    filter {
+                        eq("idconversacion", conversacionId)
+                    }
+                }
+                .decodeList<ConversacionesUsuario>()
+                .mapNotNull { rel ->
+                    supa.postgrest
+                        .from("usuario")
+                        .select {
+                            filter {
+                                eq("id", rel.idusuario)
+                            }
+                        }.decodeSingle()
+                }
+
+        suspend fun fetchUltimoMensaje(conversacionId: String): Mensaje? =
+            supa.postgrest
+                .from("mensaje")
+                .select {
+                    filter {
+                        eq("idconversacion", conversacionId)
+                    }
+                    order("fechamensaje", order = Order.DESCENDING)
+                    limit(1)
+                }.decodeSingleOrNull()
+
+        // 1. Carga las relaciones con last_read
+        val rels: List<ConversacionesUsuario> = supa
+            .from("conversaciones_usuario")
+            .select{
+                filter {
+                    eq("idusuario", userId)
+                }
+            }
+            .decodeList<ConversacionesUsuario>()
+
+        // 2. Para cada relación calcula el count de mensajes posteriores a last_read
+        return rels.map { rel ->
+            val params = buildJsonObject {
+                put("p_conversacion", JsonPrimitive(rel.idconversacion))
+                // Si lastRead es Instant o LocalDateTime, pásalo como String
+                put("p_last_read", JsonPrimitive(rel.lastRead.toString()))
+            }
+
+            val countResp: Int = supa
+                .postgrest
+                .rpc("count_unread", params)
+                .decodeAs<Int>()
+
+            // coge último mensaje igual que ahora
+            ChatSummary(
+                    conversacion = fetchConversacion(rel.idconversacion),
+                    participantes = fetchParticipantes(rel.idconversacion),
+                    ultimoMensaje = fetchUltimoMensaje(rel.idconversacion),
+                    unreadCount = countResp
+            )
+        }
     }
 
     fun stop() {

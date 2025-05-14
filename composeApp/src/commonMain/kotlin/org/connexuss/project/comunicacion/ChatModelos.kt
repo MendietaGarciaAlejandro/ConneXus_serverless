@@ -115,4 +115,10 @@ data class ConversacionesUsuario(
 
     @SerialName("idconversacion")
     val idconversacion: String = generateId(),
+
+    @SerialName("last_read")
+    val lastRead: LocalDateTime? = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()),
+
+    @SerialName("unread_count")
+    val unreadCount: Int? = 0
 )
