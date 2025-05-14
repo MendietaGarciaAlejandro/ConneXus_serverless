@@ -483,15 +483,14 @@ fun muestraUsuarios(navController: NavHostController) {
     }
 }
 
-
-
 // --- elemento chat ---
 //Muestra el id del usuarioPrincipal ya que no esta incluido en la lista de usuarios precreados
 @Composable
 fun ChatCard(
     summary: ChatSummary,
     navController: NavHostController,
-    bloqueados: Set<String> = emptySet()
+    bloqueados: Set<String> = emptySet(),
+    onChatClick: (String) -> Unit
 ) {
     val (conversacion, participantes, ultimoMensaje, unreadCount) = summary
     val currentUserId = UsuarioPrincipal?.getIdUnicoMio()
@@ -509,7 +508,8 @@ fun ChatCard(
             .fillMaxWidth()
             .padding(vertical = 4.dp)
             .clickable(enabled = !estaBloqueado) {
-                navController.navigate(destino)
+                //navController.navigate(destino)
+                onChatClick(destino)
             },
         backgroundColor = if (estaBloqueado) Color.Red.copy(alpha = .2f)
         else MaterialTheme.colors.surface,
@@ -524,10 +524,24 @@ fun ChatCard(
             Column(Modifier.weight(1f)) {
                 Text(displayName, style = MaterialTheme.typography.h6,
                     color = if (estaBloqueado) Color.Red else MaterialTheme.colors.onSurface)
-                ultimoMensaje?.let {
-                    Text(it.content,
+                if (esGrupo) {
+                    val nombresParticipantes = participantes
+                        .filter { it.getIdUnicoMio() != currentUserId }
+                        .joinToString(", ") { it.getNombreCompletoMio() }
+                    Text(
+                        text = "Participantes: $nombresParticipantes",
                         style = MaterialTheme.typography.body2,
-                        maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        color = Color.Gray
+                    )
+                }
+                if (!estaBloqueado) {
+                    ultimoMensaje?.let {
+                        Text(
+                            it.content,
+                            style = MaterialTheme.typography.body2,
+                            maxLines = 1, overflow = TextOverflow.Ellipsis
+                        )
+                    }
                 }
             }
             if (unreadCount > 0) {
@@ -548,6 +562,7 @@ fun muestraChats(navController: NavHostController) {
     val currentUserId = UsuarioPrincipal?.getIdUnicoMio() ?: return
     var summaries by remember { mutableStateOf<List<ChatSummary>>(emptyList()) }
     val repo = remember { SupabaseRepositorioGenerico() }
+    val scope = rememberCoroutineScope()
 
     var relacionesConversaciones by remember { mutableStateOf<List<ConversacionesUsuario>>(emptyList()) }
     var listaConversaciones by remember { mutableStateOf<List<Conversacion>>(emptyList()) }
@@ -644,7 +659,21 @@ fun muestraChats(navController: NavHostController) {
                             ChatCard(
                                 summary = summary,
                                 navController = navController,
-                                bloqueados = usuariosBloqueados
+                                bloqueados = usuariosBloqueados,
+                                onChatClick = { destino ->
+                                    scope.launch {
+                                        ChatState.markAsRead(
+                                            userId            = currentUserId,           // el ID de usuario logueado
+                                            conversacionId    = summary.conversacion.id  // el ID de la conversación
+                                        )
+                                        // 2) Actualizar localmente el badge si quieres (ej. refetch de summaries)
+                                        summaries = summaries.map {
+                                            if (it.conversacion.id == summary.conversacion.id) it.copy(unreadCount = 0)
+                                            else it
+                                        }
+                                        navController.navigate(destino)
+                                    }
+                                }
                             )
                         }
                     }
@@ -661,10 +690,6 @@ fun muestraChats(navController: NavHostController) {
         }
     }
 }
-
-
-
-
 
 // --- Contactos ---
 @Composable
