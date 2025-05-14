@@ -22,6 +22,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.AlertDialog
+import androidx.compose.material.Badge
+import androidx.compose.material.BadgedBox
 import androidx.compose.material.BottomNavigation
 import androidx.compose.material.BottomNavigationItem
 import androidx.compose.material.Button
@@ -38,11 +40,11 @@ import androidx.compose.material.TextButton
 import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -91,7 +93,6 @@ import org.connexuss.project.misc.sesionActualUsuario
 import org.connexuss.project.persistencia.SettingsState
 import org.connexuss.project.persistencia.clearSession
 import org.connexuss.project.persistencia.getRestoredSessionFlow
-import org.connexuss.project.persistencia.getSessionFlow
 import org.connexuss.project.persistencia.saveSession
 import org.connexuss.project.supabase.SupabaseRepositorioGenerico
 import org.connexuss.project.supabase.SupabaseUsuariosRepositorio
@@ -488,91 +489,64 @@ fun muestraUsuarios(navController: NavHostController) {
 //Muestra el id del usuarioPrincipal ya que no esta incluido en la lista de usuarios precreados
 @Composable
 fun ChatCard(
-    conversacion: Conversacion,
+    summary: ChatSummary,
     navController: NavHostController,
-    participantes: List<Usuario>,
-    ultimoMensaje: Mensaje?,
     bloqueados: Set<String> = emptySet()
 ) {
+    val (conversacion, participantes, ultimoMensaje, unreadCount) = summary
     val currentUserId = UsuarioPrincipal?.getIdUnicoMio()
     val esGrupo = !conversacion.nombre.isNullOrBlank()
+    val otraParte = participantes.firstOrNull { it.getIdUnicoMio() != currentUserId }
+    val displayName = if (esGrupo) conversacion.nombre!!
+    else otraParte?.getNombreCompletoMio() ?: conversacion.id
+    val estaBloqueado = otraParte?.getIdUnicoMio() in bloqueados
 
-    println("👥 Participantes en la conversación ${conversacion.id}:")
-    participantes.forEach {
-        println(" - ${it.getNombreCompletoMio()} (id: ${it.getIdUnicoMio()})")
-    }
-    println("🧍 Usuario actual: $currentUserId")
-
-    val otroUsuario = participantes.firstOrNull { it.getIdUnicoMio() != currentUserId }
-    val estaBloqueado = otroUsuario?.getIdUnicoMio() in bloqueados
-
-    val displayName = if (esGrupo) {
-        conversacion.nombre!!
-    } else {
-        otroUsuario?.getNombreCompletoMio() ?: conversacion.id
-    }
-
-    val nombresParticipantes = if (esGrupo) {
-        participantes.joinToString(", ") {
-            if (it.getIdUnicoMio() == currentUserId) "Tú" else it.getNombreCompletoMio()
-        }
-    } else null
-
-    val destino = if (esGrupo) {
-        "mostrarChatGrupo/${conversacion.id}"
-    } else {
-        "mostrarChat/${conversacion.id}"
-    }
+    val destino = if (esGrupo) "mostrarChatGrupo/${conversacion.id}"
+    else "mostrarChat/${conversacion.id}"
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
-            .then(
-                if (!estaBloqueado) Modifier.clickable {
-                    println("🧭 Navegando a: $destino")
-                    navController.navigate(destino)
-                } else Modifier
-            ),
-        elevation = 4.dp,
-        backgroundColor = if (estaBloqueado) Color.Red.copy(alpha = 0.2f) else MaterialTheme.colors.surface
+            .clickable(enabled = !estaBloqueado) {
+                navController.navigate(destino)
+            },
+        backgroundColor = if (estaBloqueado) Color.Red.copy(alpha = .2f)
+        else MaterialTheme.colors.surface,
+        elevation = 4.dp
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = displayName,
-                style = MaterialTheme.typography.h6,
-                color = if (estaBloqueado) Color.Red else MaterialTheme.colors.onSurface
-            )
-
-            nombresParticipantes?.let {
-                Text(
-                    text = it,
-                    style = MaterialTheme.typography.body2,
-                    color = if (estaBloqueado) Color.Red else Color.Gray,
-                    modifier = Modifier.padding(top = 4.dp, bottom = 4.dp)
-                )
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(displayName, style = MaterialTheme.typography.h6,
+                    color = if (estaBloqueado) Color.Red else MaterialTheme.colors.onSurface)
+                ultimoMensaje?.let {
+                    Text(it.content,
+                        style = MaterialTheme.typography.body2,
+                        maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
             }
-
-            if (ultimoMensaje != null && !estaBloqueado) {
-                Text(
-                    text = ultimoMensaje.content,
-                    style = MaterialTheme.typography.body1,
-                    color = MaterialTheme.colors.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+            if (unreadCount > 0) {
+                BadgedBox(
+                    badge = { Badge { Text(unreadCount.toString()) } },
+                    modifier = Modifier.padding(start = 8.dp)
+                ) {
+                    Icon(Icons.Default.Email, contentDescription = "Nuevos mensajes")
+                }
             }
         }
     }
 }
 
-
-
 // --- Chats PorDefecto ---
 @Composable
 fun muestraChats(navController: NavHostController) {
     val currentUserId = UsuarioPrincipal?.getIdUnicoMio() ?: return
-
+    var summaries by remember { mutableStateOf<List<ChatSummary>>(emptyList()) }
     val repo = remember { SupabaseRepositorioGenerico() }
 
     var relacionesConversaciones by remember { mutableStateOf<List<ConversacionesUsuario>>(emptyList()) }
@@ -610,6 +584,10 @@ fun muestraChats(navController: NavHostController) {
         repo.getAll<Mensaje>("mensaje").collect {
             mensajes = it
         }
+    }
+
+    LaunchedEffect(currentUserId) {
+        summaries = ChatState.fetchChatSummaries(currentUserId)
     }
 
     //  Usuarios bloqueados
@@ -654,30 +632,29 @@ fun muestraChats(navController: NavHostController) {
                     modifier = modifier
                         .fillMaxSize()
                         .padding(padding)
-                        .padding(16.dp)
                 ) {
-                    LazyColumn(modifier = Modifier.fillMaxSize()) {
-                        items(chatsConDatos) { (conversacion, participantes, ultimoMensaje) ->
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(padding)
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(summaries) { summary ->
                             ChatCard(
-                                conversacion = conversacion,
+                                summary = summary,
                                 navController = navController,
-                                participantes = participantes,
-                                ultimoMensaje = ultimoMensaje,
                                 bloqueados = usuariosBloqueados
                             )
                         }
                     }
-
                     FloatingActionButton(
                         onClick = { navController.navigate("nuevo") },
                         modifier = Modifier
                             .align(Alignment.BottomEnd)
                             .padding(16.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = traducir("nuevo_chat")
-                        )
+                        Icon(Icons.Default.Person, contentDescription = "Nuevo chat")
                     }
                 }
             }
