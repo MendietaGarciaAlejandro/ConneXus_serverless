@@ -33,7 +33,12 @@ import dev.whyoleg.cryptography.algorithms.EC
 import dev.whyoleg.cryptography.algorithms.ECDSA
 import dev.whyoleg.cryptography.algorithms.HMAC
 import dev.whyoleg.cryptography.algorithms.SHA512
+import dev.whyoleg.cryptography.algorithms.symmetric.SymmetricKeySize
 import dev.whyoleg.cryptography.random.CryptographyRandom
+import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.postgrest.from
+import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
@@ -43,6 +48,8 @@ import kotlinx.serialization.Serializable
 import org.connexuss.project.interfaces.DefaultTopBar
 import org.connexuss.project.interfaces.LimitaTamanioAncho
 import org.connexuss.project.supabase.SupabaseSecretosRepo
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -725,3 +732,67 @@ data class SecretoRPC(
     @SerialName("nonce")
     val nonce: String
 )
+
+class EncriptacionSimplificada{
+
+    /** Genera y devuelve una clave AES‑GCM de 256 bits */
+    suspend fun generarClaveAES(): AES.GCM.Key {
+        val provider = CryptographyProvider.Default
+        val aesGcm = provider.get(AES.GCM)
+        return aesGcm.keyGenerator(AES.Key.Size.B256).generateKey()
+    }
+
+    /** Retorna Pair(nonceBytes, textoCifradoBytes) */
+    suspend fun AES.GCM.Key.encriptar(texto: ByteArray): Pair<ByteArray, ByteArray> {
+        val cipher = this.cipher()
+        val encrypted = cipher.encrypt(texto)       // incluye nonce/tag internamente
+        val nonce = cipher.iv                       // toma el IV usado
+        return nonce to encrypted
+    }
+
+
+    @Serializable
+    data class VaultSecretInsert(
+        val secret: String,    // Base64(keyBytes)
+        val name: String       // Identificador, p.ej. "tema-123"
+    )
+
+    @OptIn(ExperimentalEncodingApi::class)
+    suspend fun insertarClaveEnVault(
+        repo: SupabaseClient,
+        key: AES.GCM.Key,
+        temaId: String
+    ) {
+        val rawKey = key.encodeToByteArray(AES.Key.Format.RAW)
+        val keyB64 = Base64.encode(rawKey, Base64.NO_WRAP)
+        val payload = VaultSecretInsert(secret = keyB64, name = temaId)
+        repo.postgrest.from("vault.secrets")
+            .insert(payload)
+            .decodeSingleOrNull<SecretoInsertado>()
+    }
+
+    @Serializable
+    data class VaultSecretSelect(
+        val decrypted_secret: String
+    )
+
+    @OptIn(ExperimentalEncodingApi::class)
+    suspend fun obtenerClaveDesdeVault(
+        repo: SupabaseClient,
+        temaId: String
+    ): AES.GCM.Key? {
+        val row = repo.from("vault.decrypted_secrets")
+            .select {
+                Columns.raw("decrypted_secret")
+                filter {
+                    eq("name", temaId)
+
+                }
+            }
+            .decodeSingleOrNull<VaultSecretSelect>()
+        val keyBytes = row?.let { Base64.decode(it.decrypted_secret, Base64.NO_WRAP) }
+        val provider = CryptographyProvider.Default
+        val aesGcm = provider.get(AES.GCM)
+        return keyBytes?.let { aesGcm.keyDecoder().decodeFromByteArray(AES.Key.Format.RAW, it) }
+    }
+}
