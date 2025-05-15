@@ -114,46 +114,49 @@ fun DefaultTopBar(
     irParaAtras: Boolean = false,
     muestraEngranaje: Boolean = true,
 ) {
-    (if (showBackButton) {
 
-        IconButton(onClick = {
-            if (navController != null && irParaAtras) {
-                navController.popBackStack()
-            }
-        }) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                // Se obtiene el texto traducido para "atrás"
-                contentDescription = traducir("atras")
-            )
-        }
-
-    } else null)?.let {
-        TopAppBar(
-        title = {
-            Box(
-                modifier = Modifier.fillMaxWidth(),
-                contentAlignment = Alignment.Center
-            ) {
-                // Se usa traducir para obtener el texto a partir de la clave
-                Text(text = traducir(title))
-            }
-        },
-        navigationIcon = it,
-        actions = {
-            if (muestraEngranaje) {
+    val iconoBoton: (@Composable () -> Unit)? =
+        if (showBackButton) {
+            {
                 IconButton(onClick = {
-                    navController?.navigate("ajustes")
+                    if (navController != null && irParaAtras) {
+                        navController.popBackStack()
+                    }
                 }) {
                     Icon(
-                        imageVector = Icons.Default.Settings,
-                        // Se obtiene el texto traducido para "ajustes"
-                        contentDescription = traducir("ajustes")
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = traducir("atras")
                     )
                 }
             }
-        }
-    )
+        } else null
+
+    if (iconoBoton != null) {
+        TopAppBar(
+            title = {
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    // Se usa traducir para obtener el texto a partir de la clave
+                    Text(text = traducir(title))
+                }
+            },
+            navigationIcon = iconoBoton,
+            actions = {
+                if (muestraEngranaje) {
+                    IconButton(onClick = {
+                        navController?.navigate("ajustes")
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            // Se obtiene el texto traducido para "ajustes"
+                            contentDescription = traducir("ajustes")
+                        )
+                    }
+                }
+            }
+        )
     }
 }
 
@@ -168,45 +171,47 @@ fun TopBarGrupo(
     muestraEngranaje: Boolean = true,
     onUsuariosClick: () -> Unit = {} // Acción al pulsar sobre el icono de usuarios
 ) {
-    (if (showBackButton) {
 
-        IconButton(onClick = {
-            if (navController != null && irParaAtras) {
-                //  navController.navigate("usuariosGrupo")
-                navController.popBackStack()
+    val iconoBoton: (@Composable () -> Unit)? =
+    if (showBackButton) {
+        {
+            IconButton(onClick = {
+                if (navController != null && irParaAtras) {
+                    navController.popBackStack()
+                }
+            }) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = traducir("atras")
+                )
             }
-        }) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = traducir("atras")
-            )
         }
-
-    } else null)?.let {
+    } else null
+    if (iconoBoton != null) {
         TopAppBar(
-        title = {
-            Box(
-                modifier = Modifier.fillMaxWidth(),
-                contentAlignment = Alignment.Center
-            ) {
-                // Título traducido
-                Text(text = traducir(title))
-            }
-        },
-        navigationIcon = it,
-        actions = {
-            if (muestraEngranaje) {
-                IconButton(onClick = onUsuariosClick) {
-                    Icon(
-                        painter = painterResource(Res.drawable.usuarios),
-                        contentDescription = traducir("usuarios"),
-                        // Hacemos que tenga un tamaño de 24dp
-                        modifier = Modifier.size(24.dp)
-                    )
+            title = {
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    // Título traducido
+                    Text(text = traducir(title))
+                }
+            },
+            navigationIcon = iconoBoton,
+            actions = {
+                if (muestraEngranaje) {
+                    IconButton(onClick = onUsuariosClick) {
+                        Icon(
+                            painter = painterResource(Res.drawable.usuarios),
+                            contentDescription = traducir("usuarios"),
+                            // Hacemos que tenga un tamaño de 24dp
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
                 }
             }
-        }
-    )
+        )
     }
 }
 
@@ -283,60 +288,64 @@ fun TopBarUsuario(
     muestraEngranaje: Boolean = true,
     onTitleClick: () -> Unit = {} // Acción al pulsar sobre el título
 ) {
-    (if (showBackButton) {
 
-        IconButton(onClick = {
-            if (navController != null && irParaAtras) {
-                navController.popBackStack()
-            }
-        }) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = traducir("atras")
-            )
-        }
-
-    } else null)?.let {
-        TopAppBar(
-        title = {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onTitleClick() }
-            ) {
-                // Muestra la imagen del usuario (puedes aplicarle clip circular si lo deseas)
-                Image(
-                    painter = painterResource(profileImage),
-                    contentDescription = traducir("imagen_perfil"),
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(RoundedCornerShape(20.dp))
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                // Título traducido
-                Box(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentAlignment = Alignment.CenterStart
-                ) {
-                    Text(text = traducir(title), style = MaterialTheme.typography.headlineSmall)
-                }
-            }
-        },
-        navigationIcon = it,
-        actions = {
-            if (muestraEngranaje) {
+    val iconoBoton: (@Composable () -> Unit)? =
+        if (showBackButton) {
+            {
                 IconButton(onClick = {
-                    navController?.navigate("ajustes")
+                    if (navController != null && irParaAtras) {
+                        navController.popBackStack()
+                    }
                 }) {
                     Icon(
-                        imageVector = Icons.Default.Settings,
-                        contentDescription = traducir("ajustes")
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = traducir("atras")
                     )
                 }
             }
-        }
-    )
+        } else null
+
+    if (iconoBoton != null) {
+        TopAppBar(
+            title = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onTitleClick() }
+                ) {
+                    // Muestra la imagen del usuario (puedes aplicarle clip circular si lo deseas)
+                    Image(
+                        painter = painterResource(profileImage),
+                        contentDescription = traducir("imagen_perfil"),
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(RoundedCornerShape(20.dp))
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    // Título traducido
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.CenterStart
+                    ) {
+                        Text(text = traducir(title), style = MaterialTheme.typography.headlineSmall)
+                    }
+                }
+            },
+            navigationIcon = iconoBoton,
+            actions = {
+                if (muestraEngranaje) {
+                    IconButton(onClick = {
+                        navController?.navigate("ajustes")
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = traducir("ajustes")
+                        )
+                    }
+                }
+            }
+        )
     }
 }
 
