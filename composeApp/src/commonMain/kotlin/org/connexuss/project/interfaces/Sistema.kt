@@ -41,6 +41,8 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CardColors
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -112,7 +114,22 @@ fun DefaultTopBar(
     irParaAtras: Boolean = false,
     muestraEngranaje: Boolean = true,
 ) {
-    TopAppBar(
+    (if (showBackButton) {
+
+        IconButton(onClick = {
+            if (navController != null && irParaAtras) {
+                navController.popBackStack()
+            }
+        }) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                // Se obtiene el texto traducido para "atrás"
+                contentDescription = traducir("atras")
+            )
+        }
+
+    } else null)?.let {
+        TopAppBar(
         title = {
             Box(
                 modifier = Modifier.fillMaxWidth(),
@@ -122,21 +139,7 @@ fun DefaultTopBar(
                 Text(text = traducir(title))
             }
         },
-        navigationIcon = if (showBackButton) {
-            {
-                IconButton(onClick = {
-                    if (navController != null && irParaAtras) {
-                        navController.popBackStack()
-                    }
-                }) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        // Se obtiene el texto traducido para "atrás"
-                        contentDescription = traducir("atras")
-                    )
-                }
-            }
-        } else null,
+        navigationIcon = it,
         actions = {
             if (muestraEngranaje) {
                 IconButton(onClick = {
@@ -151,6 +154,7 @@ fun DefaultTopBar(
             }
         }
     )
+    }
 }
 
 // Topbar para el grupo en el que se esta chateando,mostrando a la derecha un icono de usuarios
@@ -268,6 +272,7 @@ fun MuestraUsuariosGrupo(
 }
 
 //TopBar para mostrar el usuario con el que se esta chateando
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TopBarUsuario(
     title: String, // Clave para el título (se usará traducir(title))
@@ -278,7 +283,21 @@ fun TopBarUsuario(
     muestraEngranaje: Boolean = true,
     onTitleClick: () -> Unit = {} // Acción al pulsar sobre el título
 ) {
-    TopAppBar(
+    (if (showBackButton) {
+
+        IconButton(onClick = {
+            if (navController != null && irParaAtras) {
+                navController.popBackStack()
+            }
+        }) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = traducir("atras")
+            )
+        }
+
+    } else null)?.let {
+        TopAppBar(
         title = {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -304,20 +323,7 @@ fun TopBarUsuario(
                 }
             }
         },
-        navigationIcon = if (showBackButton) {
-            {
-                IconButton(onClick = {
-                    if (navController != null && irParaAtras) {
-                        navController.popBackStack()
-                    }
-                }) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = traducir("atras")
-                    )
-                }
-            }
-        } else null,
+        navigationIcon = it,
         actions = {
             if (muestraEngranaje) {
                 IconButton(onClick = {
@@ -331,6 +337,7 @@ fun TopBarUsuario(
             }
         }
     )
+    }
 }
 
 
@@ -340,9 +347,9 @@ fun MiBottomBar(navController: NavHostController) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    BottomNavigation {
+    NavigationBar {
         // Ítem de Chats
-        BottomNavigationItem(
+        NavigationBarItem(
             selected = currentRoute == "contactos",
             onClick = {
                 navController.navigate("contactos") {
@@ -364,7 +371,7 @@ fun MiBottomBar(navController: NavHostController) {
         )
 
         // Ítem de Foros
-        BottomNavigationItem(
+        NavigationBarItem(
             selected = currentRoute == "foroLocal"/*"foro"*/,
             onClick = {
                 navController.navigate("foroLocal"/*"foro"*/) {
