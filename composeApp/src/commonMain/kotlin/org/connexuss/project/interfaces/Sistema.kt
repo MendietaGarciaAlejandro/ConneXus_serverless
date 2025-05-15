@@ -1,12 +1,14 @@
 package org.connexuss.project.interfaces
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.border
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,31 +20,50 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.AlertDialog
-import androidx.compose.material.BottomNavigation
-import androidx.compose.material.BottomNavigationItem
-import androidx.compose.material.Button
-import androidx.compose.material.Card
-import androidx.compose.material.Checkbox
-import androidx.compose.material.FloatingActionButton
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.OutlinedTextField
-import androidx.compose.material.Scaffold
-import androidx.compose.material.Text
-import androidx.compose.material.TextButton
-import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Email
+import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ElevatedButton
+import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -53,7 +74,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -64,7 +86,6 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import connexus_serverless.composeapp.generated.resources.Res
-import connexus_serverless.composeapp.generated.resources.avatar
 import connexus_serverless.composeapp.generated.resources.connexus
 import connexus_serverless.composeapp.generated.resources.ic_chats
 import connexus_serverless.composeapp.generated.resources.ic_foros
@@ -91,7 +112,6 @@ import org.connexuss.project.misc.sesionActualUsuario
 import org.connexuss.project.persistencia.SettingsState
 import org.connexuss.project.persistencia.clearSession
 import org.connexuss.project.persistencia.getRestoredSessionFlow
-import org.connexuss.project.persistencia.getSessionFlow
 import org.connexuss.project.persistencia.saveSession
 import org.connexuss.project.supabase.SupabaseRepositorioGenerico
 import org.connexuss.project.supabase.SupabaseUsuariosRepositorio
@@ -104,57 +124,64 @@ import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
+@Preview
 fun DefaultTopBar(
-    title: String, // Se pasa la clave en lugar del texto literal
+    title: String,
     navController: NavHostController?,
     showBackButton: Boolean = false,
     irParaAtras: Boolean = false,
     muestraEngranaje: Boolean = true,
 ) {
-    TopAppBar(
+    CenterAlignedTopAppBar(
         title = {
-            Box(
-                modifier = Modifier.fillMaxWidth(),
-                contentAlignment = Alignment.Center
-            ) {
-                // Se usa traducir para obtener el texto a partir de la clave
-                Text(text = traducir(title))
-            }
+            Text(
+                text = traducir(title),
+                style = MaterialTheme.typography.titleLarge,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         },
-        navigationIcon = if (showBackButton) {
-            {
+        navigationIcon = {
+            if (showBackButton) {
                 IconButton(onClick = {
                     if (navController != null && irParaAtras) {
                         navController.popBackStack()
                     }
                 }) {
                     Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        // Se obtiene el texto traducido para "atrás"
-                        contentDescription = traducir("atras")
+                        imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                        contentDescription = traducir("atras"),
+                        tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
-        } else null,
+        },
         actions = {
             if (muestraEngranaje) {
                 IconButton(onClick = {
                     navController?.navigate("ajustes")
                 }) {
                     Icon(
-                        imageVector = Icons.Default.Settings,
-                        // Se obtiene el texto traducido para "ajustes"
-                        contentDescription = traducir("ajustes")
+                        imageVector = Icons.Rounded.Settings,
+                        contentDescription = traducir("ajustes"),
+                        tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
-        }
+        },
+        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+            containerColor = MaterialTheme.colorScheme.surface,
+            titleContentColor = MaterialTheme.colorScheme.onSurface
+        )
     )
 }
 
 // Topbar para el grupo en el que se esta chateando,mostrando a la derecha un icono de usuarios
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
+@Preview
 fun TopBarGrupo(
     title: String, // Clave para el título (se usará traducir(title))
     navController: NavHostController?,
@@ -163,48 +190,52 @@ fun TopBarGrupo(
     muestraEngranaje: Boolean = true,
     onUsuariosClick: () -> Unit = {} // Acción al pulsar sobre el icono de usuarios
 ) {
-    TopAppBar(
+    CenterAlignedTopAppBar(
         title = {
-            Box(
-                modifier = Modifier.fillMaxWidth(),
-                contentAlignment = Alignment.Center
-            ) {
-                // Título traducido
-                Text(text = traducir(title))
-            }
+            Text(
+                text = traducir(title),
+                style = MaterialTheme.typography.titleLarge,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         },
-        navigationIcon = if (showBackButton) {
-            {
+        navigationIcon = {
+            if (showBackButton) {
                 IconButton(onClick = {
                     if (navController != null && irParaAtras) {
-                      //  navController.navigate("usuariosGrupo")
                         navController.popBackStack()
                     }
                 }) {
                     Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = traducir("atras")
+                        imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                        contentDescription = traducir("atras"),
+                        tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
-        } else null,
+        },
         actions = {
             if (muestraEngranaje) {
                 IconButton(onClick = onUsuariosClick) {
                     Icon(
                         painter = painterResource(Res.drawable.usuarios),
                         contentDescription = traducir("usuarios"),
-                        // Hacemos que tenga un tamaño de 24dp
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(24.dp),
+                        tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
-        }
+        },
+        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+            containerColor = MaterialTheme.colorScheme.surface,
+            titleContentColor = MaterialTheme.colorScheme.onSurface
+        )
     )
 }
 
 // Interfaz que muestra los usuarios del grupo, si se hace clic en un usuario, se muestra su perfil
 @Composable
+@Preview
 fun MuestraUsuariosGrupo(
     usuarios: List<Usuario>,
     navController: NavHostController
@@ -221,38 +252,46 @@ fun MuestraUsuariosGrupo(
                 )
             }
         ) { padding ->
-            // Usa LimitaTamanioAncho para restringir el ancho en pantallas grandes
             LimitaTamanioAncho { modifier ->
                 LazyColumn(
                     modifier = modifier
                         .fillMaxSize()
                         .padding(padding)
-                        .padding(16.dp)
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(usuarios) { usuario ->
-                        Card(
+                        ElevatedCard(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 4.dp)
                                 .clickable {
                                     navController.navigate("mostrarPerfil/${usuario.getIdUnicoMio()}")
                                 },
-                            elevation = 4.dp
+                            colors = CardDefaults.elevatedCardColors(
+                                containerColor = MaterialTheme.colorScheme.surface,
+                            )
                         ) {
-                            Column(modifier = Modifier.padding(16.dp)) {
+                            Column(
+                                modifier = Modifier
+                                    .padding(16.dp)
+                                    .fillMaxWidth()
+                            ) {
                                 Text(
                                     text = "${traducir("nombre_label")} ${usuario.getNombreCompletoMio()}",
-                                    style = MaterialTheme.typography.subtitle1
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
+                                Spacer(modifier = Modifier.height(4.dp))
                                 Text(
                                     text = "${traducir("alias_label")} ${usuario.getAliasMio()}",
-                                    style = MaterialTheme.typography.body1
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Text(
                                     text = "${traducir("alias_privado_label")} ${usuario.getAliasPrivadoMio()}",
-                                    style = MaterialTheme.typography.body2
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
                                 )
-                                Spacer(modifier = Modifier.height(8.dp))
                             }
                         }
                     }
@@ -263,7 +302,9 @@ fun MuestraUsuariosGrupo(
 }
 
 //TopBar para mostrar el usuario con el que se esta chateando
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
+@Preview
 fun TopBarUsuario(
     title: String, // Clave para el título (se usará traducir(title))
     profileImage: DrawableResource, // Imagen del usuario
@@ -273,71 +314,86 @@ fun TopBarUsuario(
     muestraEngranaje: Boolean = true,
     onTitleClick: () -> Unit = {} // Acción al pulsar sobre el título
 ) {
-    TopAppBar(
+    CenterAlignedTopAppBar(
         title = {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
-                    .fillMaxWidth()
                     .clickable { onTitleClick() }
+                    .padding(end = 16.dp)
             ) {
-                // Muestra la imagen del usuario (puedes aplicarle clip circular si lo deseas)
-                Image(
-                    painter = painterResource(profileImage),
-                    contentDescription = traducir("imagen_perfil"),
+                // Muestra la imagen del usuario con borde y sombra
+                Surface(
                     modifier = Modifier
                         .size(40.dp)
-                        .clip(RoundedCornerShape(20.dp))
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                // Título traducido
-                Box(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentAlignment = Alignment.CenterStart
+                        .clip(RoundedCornerShape(20.dp)),
+                    tonalElevation = 2.dp
                 ) {
-                    Text(text = traducir(title), style = MaterialTheme.typography.h6)
+                    Image(
+                        painter = painterResource(profileImage),
+                        contentDescription = traducir("imagen_perfil"),
+                        modifier = Modifier.fillMaxSize()
+                    )
                 }
+                Spacer(modifier = Modifier.width(12.dp))
+                // Título traducido
+                Text(
+                    text = traducir(title),
+                    style = MaterialTheme.typography.titleLarge,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
         },
-        navigationIcon = if (showBackButton) {
-            {
+        navigationIcon = {
+            if (showBackButton) {
                 IconButton(onClick = {
                     if (navController != null && irParaAtras) {
                         navController.popBackStack()
                     }
                 }) {
                     Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = traducir("atras")
+                        imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                        contentDescription = traducir("atras"),
+                        tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
-        } else null,
+        },
         actions = {
             if (muestraEngranaje) {
                 IconButton(onClick = {
                     navController?.navigate("ajustes")
                 }) {
                     Icon(
-                        imageVector = Icons.Default.Settings,
-                        contentDescription = traducir("ajustes")
+                        imageVector = Icons.Rounded.Settings,
+                        contentDescription = traducir("ajustes"),
+                        tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
-        }
+        },
+        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+            containerColor = MaterialTheme.colorScheme.surface,
+            titleContentColor = MaterialTheme.colorScheme.onSurface
+        )
     )
 }
 
 
 //BottomBar
 @Composable
+@Preview
 fun MiBottomBar(navController: NavHostController) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    BottomNavigation {
+    NavigationBar(
+        containerColor = MaterialTheme.colorScheme.surface,
+        tonalElevation = 8.dp
+    ) {
         // Ítem de Chats
-        BottomNavigationItem(
+        NavigationBarItem(
             selected = currentRoute == "contactos",
             onClick = {
                 navController.navigate("contactos") {
@@ -350,16 +406,28 @@ fun MiBottomBar(navController: NavHostController) {
             },
             icon = {
                 Icon(
-                    painterResource(Res.drawable.ic_chats),
+                    painter = painterResource(Res.drawable.ic_chats),
                     contentDescription = traducir("chats"),
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(24.dp)
                 )
             },
-            label = { Text(traducir("chats")) }
+            label = {
+                Text(
+                    text = traducir("chats"),
+                    style = MaterialTheme.typography.labelMedium
+                )
+            },
+            colors = NavigationBarItemDefaults.colors(
+                selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                selectedTextColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         )
 
         // Ítem de Foros
-        BottomNavigationItem(
+        NavigationBarItem(
             selected = currentRoute == "foroLocal"/*"foro"*/,
             onClick = {
                 navController.navigate("foroLocal"/*"foro"*/) {
@@ -372,12 +440,24 @@ fun MiBottomBar(navController: NavHostController) {
             },
             icon = {
                 Icon(
-                    painterResource(Res.drawable.ic_foros),
+                    painter = painterResource(Res.drawable.ic_foros),
                     contentDescription = traducir("foro"),
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(24.dp)
                 )
             },
-            label = { Text(traducir("foro")) }
+            label = {
+                Text(
+                    text = traducir("foro"),
+                    style = MaterialTheme.typography.labelMedium
+                )
+            },
+            colors = NavigationBarItemDefaults.colors(
+                selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                selectedTextColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         )
     }
 }
@@ -425,7 +505,7 @@ fun muestraUsuarios(navController: NavHostController) {
         Scaffold(
             topBar = {
                 DefaultTopBar(
-                    title = "usuarios", // Se utiliza la clave "usuarios" definida en el mapa
+                    title = "usuarios",
                     navController = navController,
                     showBackButton = true
                 )
@@ -443,33 +523,56 @@ fun muestraUsuarios(navController: NavHostController) {
                             .padding(16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Button(onClick = { showContent = !showContent }) {
-                            Text(traducir("mostrar_usuarios")) // Se usa la clave para "Mostrar Usuarios"
+                        ElevatedButton(
+                            onClick = { showContent = !showContent },
+                            elevation = ButtonDefaults.elevatedButtonElevation()
+                        ) {
+                            Text(
+                                text = traducir("mostrar_usuarios"),
+                                style = MaterialTheme.typography.labelLarge
+                            )
                         }
                         Spacer(modifier = Modifier.height(16.dp))
                         AnimatedVisibility(visible = showContent) {
-                            LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                            LazyColumn(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
                                 items(usuarios) { usuario ->
-                                    Card(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(vertical = 4.dp),
-                                        elevation = 4.dp
+                                    Modifier
+                                        .fillMaxWidth()
+                                    ElevatedCard(
+                                        modifier = Modifier.animateItem(
+                                            fadeInSpec = null,
+                                            fadeOutSpec = null
+                                        ),
+                                        colors = CardDefaults.elevatedCardColors(
+                                            containerColor = MaterialTheme.colorScheme.surface,
+                                        ),
+                                        elevation = CardDefaults.elevatedCardElevation()
                                     ) {
-                                        Column(modifier = Modifier.padding(16.dp)) {
+                                        Column(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(16.dp)
+                                        ) {
                                             Text(
                                                 text = "${traducir("nombre_label")} ${usuario.getNombreCompletoMio()}",
-                                                style = MaterialTheme.typography.subtitle1
+                                                style = MaterialTheme.typography.titleMedium,
+                                                color = MaterialTheme.colorScheme.onSurface
                                             )
                                             Text(
                                                 text = "${traducir("alias_label")} ${usuario.getAliasMio()}",
-                                                style = MaterialTheme.typography.body1
+                                                style = MaterialTheme.typography.bodyLarge,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                             Text(
                                                 text = "${traducir("activo_label")} ${usuario.getActivoMio()}",
-                                                style = MaterialTheme.typography.body2
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                                                    alpha = 0.8f
+                                                )
                                             )
-                                            Spacer(modifier = Modifier.height(8.dp))
                                         }
                                     }
                                 }
@@ -483,10 +586,9 @@ fun muestraUsuarios(navController: NavHostController) {
 }
 
 
-
 // --- elemento chat ---
-//Muestra el id del usuarioPrincipal ya que no esta incluido en la lista de usuarios precreados
 @Composable
+@Preview
 fun ChatCard(
     conversacion: Conversacion,
     navController: NavHostController,
@@ -524,7 +626,7 @@ fun ChatCard(
         "mostrarChat/${conversacion.id}"
     }
 
-    Card(
+    ElevatedCard(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
@@ -534,21 +636,39 @@ fun ChatCard(
                     navController.navigate(destino)
                 } else Modifier
             ),
-        elevation = 4.dp,
-        backgroundColor = if (estaBloqueado) Color.Red.copy(alpha = 0.2f) else MaterialTheme.colors.surface
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = if (estaBloqueado) {
+                MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f)
+            } else {
+                MaterialTheme.colorScheme.surface
+            }
+        ),
+        elevation = CardDefaults.elevatedCardElevation()
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth()
+        ) {
             Text(
                 text = displayName,
-                style = MaterialTheme.typography.h6,
-                color = if (estaBloqueado) Color.Red else MaterialTheme.colors.onSurface
+                style = MaterialTheme.typography.titleLarge,
+                color = if (estaBloqueado) {
+                    MaterialTheme.colorScheme.error
+                } else {
+                    MaterialTheme.colorScheme.onSurface
+                }
             )
 
             nombresParticipantes?.let {
                 Text(
                     text = it,
-                    style = MaterialTheme.typography.body2,
-                    color = if (estaBloqueado) Color.Red else Color.Gray,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (estaBloqueado) {
+                        MaterialTheme.colorScheme.error
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
                     modifier = Modifier.padding(top = 4.dp, bottom = 4.dp)
                 )
             }
@@ -556,8 +676,8 @@ fun ChatCard(
             if (ultimoMensaje != null && !estaBloqueado) {
                 Text(
                     text = ultimoMensaje.content,
-                    style = MaterialTheme.typography.body1,
-                    color = MaterialTheme.colors.onSurface,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -567,9 +687,9 @@ fun ChatCard(
 }
 
 
-
 // --- Chats PorDefecto ---
 @Composable
+@Preview
 fun muestraChats(navController: NavHostController) {
     val currentUserId = UsuarioPrincipal?.getIdUnicoMio() ?: return
 
@@ -636,7 +756,10 @@ fun muestraChats(navController: NavHostController) {
         Triple(conversacion, participantes, ultimoMensaje)
     }
 
-    MaterialTheme {
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
+    ) {
         Scaffold(
             topBar = {
                 DefaultTopBar(
@@ -647,16 +770,31 @@ fun muestraChats(navController: NavHostController) {
                     muestraEngranaje = true
                 )
             },
-            bottomBar = { MiBottomBar(navController) }
+            bottomBar = { MiBottomBar(navController) },
+            floatingActionButton = {
+                FloatingActionButton(
+                    onClick = { navController.navigate("nuevo") },
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Person,
+                        contentDescription = traducir("nuevo_chat")
+                    )
+                }
+            }
         ) { padding ->
             LimitaTamanioAncho { modifier ->
                 Box(
                     modifier = modifier
                         .fillMaxSize()
                         .padding(padding)
-                        .padding(16.dp)
                 ) {
-                    LazyColumn(modifier = Modifier.fillMaxSize()) {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
                         items(chatsConDatos) { (conversacion, participantes, ultimoMensaje) ->
                             ChatCard(
                                 conversacion = conversacion,
@@ -667,18 +805,6 @@ fun muestraChats(navController: NavHostController) {
                             )
                         }
                     }
-
-                    FloatingActionButton(
-                        onClick = { navController.navigate("nuevo") },
-                        modifier = Modifier
-                            .align(Alignment.BottomEnd)
-                            .padding(16.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = traducir("nuevo_chat")
-                        )
-                    }
                 }
             }
         }
@@ -686,11 +812,9 @@ fun muestraChats(navController: NavHostController) {
 }
 
 
-
-
-
 // --- Contactos ---
 @Composable
+@Preview
 fun muestraContactos(navController: NavHostController) {
     val currentUserId = UsuarioPrincipal?.idUnico ?: return
     println("🪪 ID usuario actual: $currentUserId")
@@ -700,7 +824,6 @@ fun muestraContactos(navController: NavHostController) {
     var registrosContacto by remember { mutableStateOf<List<UsuarioContacto>>(emptyList()) }
     var contactos by remember { mutableStateOf<List<Usuario>>(emptyList()) }
     var usuariosBloqueados by remember { mutableStateOf<Set<String>>(emptySet()) }
-
 
     var showNuevoContactoDialog by remember { mutableStateOf(false) }
     var nuevoContactoId by remember { mutableStateOf("") }
@@ -735,7 +858,6 @@ fun muestraContactos(navController: NavHostController) {
         }
     }
 
-
     MaterialTheme {
         Scaffold(
             topBar = {
@@ -754,40 +876,56 @@ fun muestraContactos(navController: NavHostController) {
                     .padding(padding)
             ) {
                 Column(modifier = Modifier.fillMaxSize()) {
-                    LazyColumn(modifier = Modifier.weight(1f)) {
+                    LazyColumn(
+                        modifier = Modifier.weight(1f),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
                         items(contactos) { usuario ->
                             val estaBloqueado = usuario.idUnico in usuariosBloqueados
 
-                            Card(
+                            ElevatedCard(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(8.dp)
                                     .then(
                                         if (!estaBloqueado)
                                             Modifier.clickable {
                                                 navController.navigate("mostrarPerfilUsuario/${usuario.idUnico}")
                                             }
-                                        else Modifier // no clickable
+                                        else Modifier
                                     ),
-                                elevation = 4.dp,
-                                backgroundColor = if (estaBloqueado) Color.Red.copy(alpha = 0.2f) else Color.White
+                                colors = CardDefaults.elevatedCardColors(
+                                    containerColor = if (estaBloqueado)
+                                        MaterialTheme.colorScheme.errorContainer
+                                    else
+                                        MaterialTheme.colorScheme.surface
+                                )
                             ) {
-                                Column(modifier = Modifier.padding(16.dp)) {
+                                Column(
+                                    modifier = Modifier.padding(16.dp),
+                                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
                                     Text(
                                         text = "${traducir("nombre_label")}: ${usuario.getNombreCompletoMio()}",
-                                        style = MaterialTheme.typography.subtitle1,
-                                        color = if (estaBloqueado) Color.Red else Color.Unspecified
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = if (estaBloqueado)
+                                            MaterialTheme.colorScheme.error
+                                        else
+                                            MaterialTheme.colorScheme.onSurface
                                     )
                                     Text(
                                         text = "${traducir("alias_label")}: ${usuario.getAliasMio()}",
-                                        style = MaterialTheme.typography.body1,
-                                        color = if (estaBloqueado) Color.Red else Color.Unspecified
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = if (estaBloqueado)
+                                            MaterialTheme.colorScheme.error
+                                        else
+                                            MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                     if (estaBloqueado) {
                                         Text(
                                             text = "Bloqueado",
-                                            style = MaterialTheme.typography.caption,
-                                            color = Color.Red
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = MaterialTheme.colorScheme.error
                                         )
                                     }
                                 }
@@ -795,10 +933,15 @@ fun muestraContactos(navController: NavHostController) {
                         }
                     }
 
-                    Row(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-                        Button(
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        FilledTonalButton(
                             onClick = { showNuevoContactoDialog = true },
-                            modifier = Modifier.weight(1f).padding(end = 8.dp)
+                            modifier = Modifier.weight(1f)
                         ) {
                             Text(text = traducir("nuevo_contacto"))
                         }
@@ -816,12 +959,16 @@ fun muestraContactos(navController: NavHostController) {
                         onDismissRequest = { showNuevoContactoDialog = false },
                         title = { Text(text = traducir("nuevo_contacto")) },
                         text = {
-                            Column {
-                                Text(text = "Introduce el alias privado del usuario:")
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text(
+                                    text = "Introduce el alias privado del usuario:",
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
                                 OutlinedTextField(
                                     value = nuevoContactoId,
                                     onValueChange = { nuevoContactoId = it },
-                                    label = { Text(text = "Alias Privado") }
+                                    label = { Text("Alias Privado") },
+                                    modifier = Modifier.fillMaxWidth()
                                 )
                             }
                         },
@@ -833,8 +980,10 @@ fun muestraContactos(navController: NavHostController) {
 
                                     scope.launch {
                                         try {
-                                            val todosUsuarios = repo.getAll<Usuario>("usuario").first()
-                                            val usuarioEncontrado = todosUsuarios.find { it.getAliasPrivadoMio() == aliasBuscado }
+                                            val todosUsuarios =
+                                                repo.getAll<Usuario>("usuario").first()
+                                            val usuarioEncontrado =
+                                                todosUsuarios.find { it.getAliasPrivadoMio() == aliasBuscado }
 
                                             if (usuarioEncontrado != null) {
                                                 val idEncontrado = usuarioEncontrado.idUnico
@@ -857,13 +1006,14 @@ fun muestraContactos(navController: NavHostController) {
                                                 repo.addItem("usuario_contacto", nuevoRegistro2)
                                                 println("✅ Contactos agregados")
 
-                                                repo.getAll<UsuarioContacto>("usuario_contacto").collect { lista ->
-                                                    registrosContacto = lista.filter { it.idUsuario == currentUserId }
-                                                }
+                                                repo.getAll<UsuarioContacto>("usuario_contacto")
+                                                    .collect { lista ->
+                                                        registrosContacto =
+                                                            lista.filter { it.idUsuario == currentUserId }
+                                                    }
                                             } else {
                                                 println("❌ No se encontró usuario con ese alias privado")
                                             }
-
                                         } catch (e: Exception) {
                                             println("❌ Error buscando o agregando contacto: ${e.message}")
                                         }
@@ -875,8 +1025,7 @@ fun muestraContactos(navController: NavHostController) {
                             ) {
                                 Text(text = traducir("guardar"))
                             }
-                        }
-                        ,
+                        },
                         dismissButton = {
                             TextButton(onClick = {
                                 nuevoContactoId = ""
@@ -897,10 +1046,19 @@ fun muestraContactos(navController: NavHostController) {
                         },
                         title = { Text(text = "Crear nuevo chat") },
                         text = {
-                            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                                Text("Selecciona participantes:")
+                            Column(
+                                modifier = Modifier.verticalScroll(rememberScrollState()),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    "Selecciona participantes:",
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
                                 contactos.forEach { usuario ->
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
                                         Checkbox(
                                             checked = contactosSeleccionados.contains(usuario.idUnico),
                                             onCheckedChange = {
@@ -910,11 +1068,13 @@ fun muestraContactos(navController: NavHostController) {
                                                     contactosSeleccionados - usuario.idUnico
                                             }
                                         )
-                                        Text(text = usuario.getNombreCompletoMio())
+                                        Text(
+                                            text = usuario.getNombreCompletoMio(),
+                                            style = MaterialTheme.typography.bodyMedium
+                                        )
                                     }
                                 }
                                 if (contactosSeleccionados.size > 1) {
-                                    Spacer(Modifier.height(8.dp))
                                     OutlinedTextField(
                                         value = nombreGrupo,
                                         onValueChange = { nombreGrupo = it },
@@ -950,7 +1110,9 @@ fun muestraContactos(navController: NavHostController) {
                                         println("❌ Error creando nuevo chat: ${e.message}")
                                     }
                                 }
-                            }) { Text("Crear") }
+                            }) {
+                                Text("Crear")
+                            }
                         },
                         dismissButton = {
                             TextButton(onClick = {
@@ -969,9 +1131,6 @@ fun muestraContactos(navController: NavHostController) {
 }
 
 
-
-
-
 // --- elemento usuario ---
 /**
  * Composable que muestra la tarjeta de un usuario.
@@ -980,43 +1139,54 @@ fun muestraContactos(navController: NavHostController) {
  * @param onClick acción a ejecutar al hacer clic en la tarjeta.
  */
 @Composable
+@Preview
 fun UsuCard(usuario: Usuario, onClick: () -> Unit) {
-    Card(
+    ElevatedCard(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
             .clickable(onClick = onClick),
-        elevation = 4.dp
+        elevation = CardDefaults.elevatedCardElevation(),
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Imagen cuadrada a la izquierda
-            usuario.getImagenPerfilMio()?.let { painterResource(it as DrawableResource) }?.let {
-                Image(
-                    painter = it,
-                    contentDescription = "Imagen de perfil",
+            usuario.getImagenPerfilMio()?.let { painterResource(it) }?.let {
+                Surface(
                     modifier = Modifier
                         .size(64.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .border(1.dp, Color.Gray, RoundedCornerShape(8.dp))
-                )
+                        .clip(RoundedCornerShape(8.dp)),
+                    tonalElevation = 2.dp
+                ) {
+                    Image(
+                        painter = it,
+                        contentDescription = "Imagen de perfil",
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
             }
             Spacer(modifier = Modifier.width(16.dp))
             // Información del usuario en una columna
             Column {
                 Text(
                     text = "${traducir("nombre_label")} ${usuario.getNombreCompletoMio()}",
-                    style = MaterialTheme.typography.subtitle1
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = "${traducir("alias_publico")} ${usuario.getAliasMio()}",
-                    style = MaterialTheme.typography.body1
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
                     text = "${traducir("alias_privado")} ${usuario.getAliasPrivadoMio()}",
-                    style = MaterialTheme.typography.body2
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
                 )
             }
         }
@@ -1031,36 +1201,47 @@ fun UsuCard(usuario: Usuario, onClick: () -> Unit) {
  */
 @Composable
 @Preview
-fun muestraAjustes(navController: NavHostController = rememberNavController(), settingsState: SettingsState) {
+fun muestraAjustes(
+    navController: NavHostController = rememberNavController(),
+    settingsState: SettingsState
+) {
     val user = UsuarioPrincipal
     val scope = rememberCoroutineScope()
-    MaterialTheme {
-        Scaffold(
-            topBar = {
-                DefaultTopBar(
-                    title = "ajustes", // Se usa la clave para "Ajustes"
-                    navController = navController,
-                    showBackButton = true,
-                    irParaAtras = true,
-                    muestraEngranaje = false
-                )
-            }
-        ) { padding ->
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                LimitaTamanioAncho { modifier ->
-                    Column(
-                        modifier = modifier
-                            .fillMaxSize()
-                            .padding(padding)
-                            .padding(16.dp)
-                            .verticalScroll(rememberScrollState()),
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        if (user != null) {
+
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        containerColor = MaterialTheme.colorScheme.background,
+        topBar = {
+            DefaultTopBar(
+                title = "ajustes",
+                navController = navController,
+                showBackButton = true,
+                irParaAtras = true,
+                muestraEngranaje = false
+            )
+        }
+    ) { padding ->
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            LimitaTamanioAncho { modifier ->
+                Column(
+                    modifier = modifier
+                        .fillMaxSize()
+                        .padding(padding)
+                        .padding(16.dp)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    if (user != null) {
+                        ElevatedCard(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.elevatedCardColors(
+                                containerColor = MaterialTheme.colorScheme.surface
+                            )
+                        ) {
                             UsuCard(
                                 usuario = user,
                                 onClick = {
@@ -1068,77 +1249,134 @@ fun muestraAjustes(navController: NavHostController = rememberNavController(), s
                                 }
                             )
                         }
-                        Button(
-                            onClick = { navController.navigate("cambiarTema") },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(text = traducir("cambiar_modo_oscuro_tema"))
-                        }
-                        Button(
-                            onClick = { navController.navigate("cambiaFuente") },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(text = traducir("cambiar_fuente"))
-                        }
-                        Button(
-                            onClick = { navController.navigate("idiomas") },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(text = traducir("cambiar_idioma"))
-                        }
-                        Button(
-                            onClick = { /* Eliminar Chats */ },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(text = traducir("eliminar_chats"))
-                        }
-                        Button(
-                            onClick = { navController.navigate("ajustesControlCuentas") },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(text = traducir("control_de_cuentas"))
-                        }
-                        Button(
-                            onClick = { navController.navigate("ajustesAyuda") },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(text = traducir("ayuda"))
-                        }
-                        Button(
-                            onClick = {
-                                // Cerrar sesión
-                                scope.launch {
-                                    try {
-                                        // 1) Cerrar sesión en Supabase (limpia el cliente)
-                                        Supabase.client.auth.signOut()
+                    }
 
-                                        // 2) Limpiar almacenamiento local de tokens y usuario
-                                        settingsState.clearSession()
+                    // Opciones principales
+                    ElevatedCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.elevatedCardColors(
+                            containerColor = MaterialTheme.colorScheme.surface
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            FilledTonalButton(
+                                onClick = { navController.navigate("cambiarTema") },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                    text = traducir("cambiar_modo_oscuro_tema"),
+                                    style = MaterialTheme.typography.labelLarge
+                                )
+                            }
 
-                                        // 3) Reiniciar variables globales
-                                        sesionActualUsuario = null
-                                        UsuarioPrincipal   = null
+                            FilledTonalButton(
+                                onClick = { navController.navigate("cambiaFuente") },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                    text = traducir("cambiar_fuente"),
+                                    style = MaterialTheme.typography.labelLarge
+                                )
+                            }
 
-                                        println("🔒 Sesión local y remota cerrada")
-                                    } catch (e: Exception) {
-                                        println("❌ Error cerrando sesión: ${e.message}")
-                                    }
+                            FilledTonalButton(
+                                onClick = { navController.navigate("idiomas") },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                    text = traducir("cambiar_idioma"),
+                                    style = MaterialTheme.typography.labelLarge
+                                )
+                            }
+                        }
+                    }
+
+                    // Opciones de gestión
+                    ElevatedCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.elevatedCardColors(
+                            containerColor = MaterialTheme.colorScheme.surface
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            FilledTonalButton(
+                                onClick = { /* Eliminar Chats */ },
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.filledTonalButtonColors(
+                                    containerColor = MaterialTheme.colorScheme.errorContainer,
+                                    contentColor = MaterialTheme.colorScheme.onErrorContainer
+                                )
+                            ) {
+                                Text(
+                                    text = traducir("eliminar_chats"),
+                                    style = MaterialTheme.typography.labelLarge
+                                )
+                            }
+
+                            FilledTonalButton(
+                                onClick = { navController.navigate("ajustesControlCuentas") },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                    text = traducir("control_de_cuentas"),
+                                    style = MaterialTheme.typography.labelLarge
+                                )
+                            }
+
+                            FilledTonalButton(
+                                onClick = { navController.navigate("ajustesAyuda") },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                    text = traducir("ayuda"),
+                                    style = MaterialTheme.typography.labelLarge
+                                )
+                            }
+                        }
+                    }
+
+                    // Botón de cerrar sesión
+                    Button(
+                        onClick = {
+                            scope.launch {
+                                try {
+                                    Supabase.client.auth.signOut()
+                                    settingsState.clearSession()
+                                    sesionActualUsuario = null
+                                    UsuarioPrincipal = null
+                                    println("🔒 Sesión local y remota cerrada")
+                                } catch (e: Exception) {
+                                    println("❌ Error cerrando sesión: ${e.message}")
                                 }
-                                // Navegar a la pantalla de inicio de sesión
-                                navController.navigate("login") {
-                                    popUpTo("splash") { inclusive = true }
-                                }
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(text = traducir("cerrar_sesion"))
-                        }
+                            }
+                            navController.navigate("login") {
+                                popUpTo("splash") { inclusive = true }
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.error,
+                            contentColor = MaterialTheme.colorScheme.onError
+                        )
+                    ) {
+                        Text(
+                            text = traducir("cerrar_sesion"),
+                            style = MaterialTheme.typography.titleMedium
+                        )
                     }
                 }
             }
         }
     }
 }
+
+val repo = SupabaseUsuariosRepositorio()
 
 // --- Mostrar Perdil ---
 /**
@@ -1147,9 +1385,9 @@ fun muestraAjustes(navController: NavHostController = rememberNavController(), s
  * @param navController controlador de navegación.
  * @param usuarioU usuario a mostrar.
  */
-val repo = SupabaseUsuariosRepositorio()
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
+@Preview
 fun mostrarPerfil(navController: NavHostController, usuarioU: Usuario?) {
     // Se recibe el usuario
     //val usuario = usuarioU
@@ -1173,7 +1411,6 @@ fun mostrarPerfil(navController: NavHostController, usuarioU: Usuario?) {
 
         }
     }
-
 
 
     // Dialogs
@@ -1211,14 +1448,23 @@ fun mostrarPerfil(navController: NavHostController, usuarioU: Usuario?) {
     MaterialTheme {
         Scaffold(
             topBar = {
-                DefaultTopBar(
-                    title = "perfil",
-                    navController = navController,
-                    showBackButton = true,
-                    irParaAtras = true,
-                    muestraEngranaje = false
+                CenterAlignedTopAppBar(
+                    title = { Text(text = traducir("perfil")) },
+                    navigationIcon = {
+                        IconButton(onClick = { navController.popBackStack() }) {
+                            Icon(
+                                Icons.AutoMirrored.Rounded.ArrowBack,
+                                contentDescription = traducir("volver")
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        titleContentColor = MaterialTheme.colorScheme.onSurface
+                    )
                 )
-            }
+            },
+            containerColor = MaterialTheme.colorScheme.background
         ) { padding ->
             Box(
                 modifier = Modifier
@@ -1230,32 +1476,35 @@ fun mostrarPerfil(navController: NavHostController, usuarioU: Usuario?) {
                     Column(
                         modifier = modifier
                             .fillMaxSize()
-                            .padding(16.dp)
+                            .padding(24.dp)
                             .verticalScroll(rememberScrollState()),
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(24.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         if (usuario == null) {
-                            Text(text = traducir("usuario_no_encontrado"))
+                            Text(
+                                text = traducir("usuario_no_encontrado"),
+                                style = MaterialTheme.typography.titleLarge
+                            )
                         } else {
-                            // Sección superior: Imagen de perfil y botón "Cambiar"
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.Center,
-                                verticalAlignment = Alignment.CenterVertically
+                            Surface(
+                                shape = CircleShape,
+                                modifier = Modifier.size(120.dp),
+                                tonalElevation = 4.dp,
+                                border = BorderStroke(
+                                    width = 2.dp,
+                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                                )
                             ) {
                                 Image(
-                                    painter = painterResource(imagenPerfilState.value ?: Res.drawable.avatar),
+                                    painter = painterResource(imagenPerfilState.value),
                                     contentDescription = "Imagen de perfil",
-                                    modifier = Modifier
-                                        .size(100.dp)
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .border(1.dp, Color.Gray, RoundedCornerShape(8.dp))
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
                                 )
-
                             }
-                            // Botón para cambiar la imagen
-                            Button(
+
+                            FilledTonalButton(
                                 onClick = {
                                     val nuevaImagen = obtenerImagenAleatoria()
                                     imagenPerfilState.value = nuevaImagen
@@ -1264,95 +1513,124 @@ fun mostrarPerfil(navController: NavHostController, usuarioU: Usuario?) {
                                         setImagenPerfilIdMia(obtenerClaveDesdeImagen(nuevaImagen))
                                     }
                                 }
-                                ,
-                                modifier = Modifier.align(Alignment.CenterHorizontally)
                             ) {
+                                Icon(
+                                    Icons.Rounded.Edit,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(Modifier.width(8.dp))
                                 Text(text = traducir("cambiar"))
                             }
 
-                            // Alias
-                            Row(
+                            ElevatedCard(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                                )
                             ) {
-                                OutlinedTextField(
-                                    value = aliasPrivado,
-                                    onValueChange = { aliasPrivado = it },
-                                    label = { Text(text = traducir("alias_privado")) },
-                                    modifier = Modifier.weight(1f)
-                                )
-                                OutlinedTextField(
-                                    value = aliasPublico,
-                                    onValueChange = { aliasPublico = it },
-                                    label = { Text(text = traducir("alias_publico")) },
-                                    modifier = Modifier.weight(1f)
-                                )
-                            }
-                            // Descripción
-                            OutlinedTextField(
-                                value = descripcion,
-                                onValueChange = { descripcion = it },
-                                label = { Text(text = traducir("descripcion")) },
-                                modifier = Modifier.fillMaxWidth(),
-                                maxLines = 3
-                            )
-                            // Contraseña: campo de solo lectura, modificar mediante Dialog
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                OutlinedTextField(
-                                    value = contrasennia,
-                                    onValueChange = { /* No se edita directamente */ },
-                                    label = { Text(text = traducir("nombre_label")) },
-                                    modifier = Modifier.weight(1f),
-                                    readOnly = true,
-                                    visualTransformation = if (isNameVisible)
-                                        VisualTransformation.None
-                                    else
-                                        PasswordVisualTransformation()
-                                )
-                                IconButton(
-                                    onClick = { isNameVisible = !isNameVisible }
+                                Column(
+                                    modifier = Modifier.padding(16.dp),
+                                    verticalArrangement = Arrangement.spacedBy(16.dp)
                                 ) {
-                                    Icon(
-                                        modifier = Modifier.size(20.dp),
-                                        painter = if (isNameVisible)
-                                            painterResource(Res.drawable.visibilidadOn)
-                                        else
-                                            painterResource(Res.drawable.visibilidadOff),
-                                        contentDescription = if (isNameVisible)
-                                            traducir("ocultar_nombre")
-                                        else
-                                            traducir("mostrar_nombre")
+                                    // Alias
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        OutlinedTextField(
+                                            value = aliasPrivado,
+                                            onValueChange = { aliasPrivado = it },
+                                            label = { Text(text = traducir("alias_privado")) },
+                                            modifier = Modifier.weight(1f),
+                                            colors = OutlinedTextFieldDefaults.colors(
+                                                unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                                            )
+                                        )
+                                        OutlinedTextField(
+                                            value = aliasPublico,
+                                            onValueChange = { aliasPublico = it },
+                                            label = { Text(text = traducir("alias_publico")) },
+                                            modifier = Modifier.weight(1f),
+                                            colors = OutlinedTextFieldDefaults.colors(
+                                                unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                                            )
+                                        )
+                                    }
+
+                                    // Descripción
+                                    OutlinedTextField(
+                                        value = descripcion,
+                                        onValueChange = { descripcion = it },
+                                        label = { Text(text = traducir("descripcion")) },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        maxLines = 3,
+                                        colors = OutlinedTextFieldDefaults.colors(
+                                            unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                                        )
+                                    )
+
+                                    // Contraseña
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        OutlinedTextField(
+                                            value = contrasennia,
+                                            onValueChange = { },
+                                            label = { Text(text = traducir("nombre_label")) },
+                                            modifier = Modifier.weight(1f),
+                                            readOnly = true,
+                                            visualTransformation = if (isNameVisible)
+                                                VisualTransformation.None
+                                            else
+                                                PasswordVisualTransformation(),
+                                            colors = OutlinedTextFieldDefaults.colors(
+                                                unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                                            )
+                                        )
+                                        IconButton(
+                                            onClick = { isNameVisible = !isNameVisible }
+                                        ) {
+                                            Icon(
+                                                painter = if (isNameVisible)
+                                                    painterResource(Res.drawable.visibilidadOn)
+                                                else
+                                                    painterResource(Res.drawable.visibilidadOff),
+                                                contentDescription = if (isNameVisible)
+                                                    traducir("ocultar_nombre")
+                                                else
+                                                    traducir("mostrar_nombre")
+                                            )
+                                        }
+                                        FilledTonalButton(
+                                            onClick = {
+                                                nuevoNombre = contrasennia
+                                                showDialogNombre = true
+                                            }
+                                        ) {
+                                            Text(text = traducir("modificar"))
+                                        }
+                                    }
+
+                                    // Email
+                                    OutlinedTextField(
+                                        value = email,
+                                        onValueChange = {},
+                                        label = { Text(text = traducir("email")) },
+                                        readOnly = true,
+                                        modifier = Modifier.fillMaxWidth(),
+                                        colors = OutlinedTextFieldDefaults.colors(
+                                            unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                                        )
                                     )
                                 }
-                                TextButton(
-                                    onClick = {
-                                        nuevoNombre = contrasennia
-                                        showDialogNombre = true
-                                    }
-                                ) {
-                                    Text(text = traducir("modificar"))
-                                }
                             }
-                            // Email
+
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                OutlinedTextField(
-                                    value = email,
-                                    onValueChange = {},
-                                    label = { Text(text = traducir("email")) },
-                                    readOnly = true,
-                                    modifier = Modifier.weight(1f)
-                                )
-                            }
-                            // Botones inferiores
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceEvenly
+                                horizontalArrangement = Arrangement.spacedBy(16.dp)
                             ) {
                                 Button(
                                     onClick = {
@@ -1367,34 +1645,27 @@ fun mostrarPerfil(navController: NavHostController, usuarioU: Usuario?) {
                                         usuario?.let {
                                             coroutineScope.launch {
                                                 try {
-                                                    // Solo actualiza si es distinto
-                                                    val authUser = Supabase.client.auth.currentUserOrNull()
                                                     if (contrasennia != it.getContrasenniaMio()) {
                                                         Supabase.client.auth.updateUser {
                                                             password = contrasennia
                                                         }
                                                     }
-
-                                                    // Luego actualiza en la tabla usuario
                                                     repo.updateUsuario(it)
-
-                                                    val usuarioActualizado = repo.getUsuarioAutenticado()
-                                                    usuario = usuarioActualizado
-
+                                                    usuario = repo.getUsuarioAutenticado()
                                                     navController.popBackStack()
-
                                                 } catch (e: Exception) {
                                                     println("Error al actualizar usuario: ${e.message}")
                                                 }
                                             }
                                         }
-                                    }
-                                )
-                                {
+                                    },
+                                    modifier = Modifier.weight(1f)
+                                ) {
                                     Text(text = traducir("aplicar"))
                                 }
-                                Button(
-                                    onClick = { navController.popBackStack() }
+                                OutlinedButton(
+                                    onClick = { navController.popBackStack() },
+                                    modifier = Modifier.weight(1f)
                                 ) {
                                     Text(text = traducir("cancelar"))
                                 }
@@ -1405,20 +1676,28 @@ fun mostrarPerfil(navController: NavHostController, usuarioU: Usuario?) {
             }
         }
     }
-    // AlertDialog para modificar Nombre
     if (showDialogNombre) {
         AlertDialog(
             onDismissRequest = { showDialogNombre = false },
-            title = { Text(text = traducir("modificar_nombre")) },
+            title = {
+                Text(
+                    text = traducir("modificar_nombre"),
+                    style = MaterialTheme.typography.titleLarge
+                )
+            },
             text = {
                 OutlinedTextField(
                     value = nuevoNombre,
                     onValueChange = { nuevoNombre = it },
-                    label = { Text(text = traducir("nuevo_nombre")) }
+                    label = { Text(text = traducir("nuevo_nombre")) },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                    ),
+                    modifier = Modifier.fillMaxWidth()
                 )
             },
             confirmButton = {
-                TextButton(
+                Button(
                     onClick = {
                         contrasennia = nuevoNombre
                         usuario?.setContrasenniaMio(nuevoNombre)
@@ -1427,12 +1706,9 @@ fun mostrarPerfil(navController: NavHostController, usuarioU: Usuario?) {
                         usuario?.let {
                             coroutineScope.launch {
                                 try {
-                                    // Cambiar contraseña en Auth
                                     Supabase.client.auth.updateUser {
                                         password = nuevoNombre
                                     }
-
-                                    // Luego actualizar en la tabla usuario
                                     repo.updateUsuario(it)
                                 } catch (e: Exception) {
                                     println("❌ Error al cambiar contraseña: ${e.message}")
@@ -1440,8 +1716,7 @@ fun mostrarPerfil(navController: NavHostController, usuarioU: Usuario?) {
                             }
                         }
                     }
-                )
-                {
+                ) {
                     Text(text = traducir("guardar"))
                 }
             },
@@ -1456,8 +1731,7 @@ fun mostrarPerfil(navController: NavHostController, usuarioU: Usuario?) {
     }
 }
 
-
-//Mostrar perfil usuario chat, por ahora no muestra la imagen del usuario, solo muestra negro
+//Mostrar perfil usuario chat
 /**
  * Composable que muestra el perfil de un usuario en el chat.
  *
@@ -1465,13 +1739,14 @@ fun mostrarPerfil(navController: NavHostController, usuarioU: Usuario?) {
  * @param userId identificador único del usuario.
  * @param imagenesApp lista de imágenes de la aplicación.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
+@Preview
 fun mostrarPerfilUsuario(
     navController: NavHostController,
     userId: String?,
     imagenesApp: List<Imagen>
 ) {
-
     val scope = rememberCoroutineScope()
     val currentUserId = UsuarioPrincipal?.getIdUnicoMio() ?: return
     val repo = remember { SupabaseRepositorioGenerico() }
@@ -1479,23 +1754,34 @@ fun mostrarPerfilUsuario(
 
     LaunchedEffect(userId) {
         if (userId == null) return@LaunchedEffect
-
         val todosUsuarios = repo.getAll<Usuario>("usuario").first()
         usuario = todosUsuarios.find { it.getIdUnicoMio() == userId }
-
         println("🙋 Usuario cargado: ${usuario?.getNombreCompletoMio()}")
     }
     if (usuario == null) return
 
-
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            DefaultTopBar(
-                title = usuario?.getNombreCompletoMio() ?: "Perfil",
-                navController = navController,
-                showBackButton = true,
-                irParaAtras = true,
-                muestraEngranaje = false
+            CenterAlignedTopAppBar(
+                title = {
+                    Text(
+                        text = usuario?.getNombreCompletoMio() ?: "Perfil",
+                        style = MaterialTheme.typography.headlineMedium
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                            contentDescription = "Volver"
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.largeTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface
+                )
             )
         }
     ) { padding ->
@@ -1506,166 +1792,210 @@ fun mostrarPerfilUsuario(
                     .padding(padding),
                 contentAlignment = Alignment.Center
             ) {
-                Text("Usuario no encontrado")
+                Text(
+                    text = "Usuario no encontrado",
+                    style = MaterialTheme.typography.titleLarge
+                )
             }
         } else {
-            var aliasPrivado by remember { mutableStateOf(usuario?.getAliasPrivadoMio() ?: "") }
-            var aliasPublico by remember { mutableStateOf(usuario?.getAliasMio() ?: "") }
-            var descripcion by remember { mutableStateOf(usuario?.getDescripcionMio() ?: "") }
+            val aliasPrivado by remember { mutableStateOf(usuario?.getAliasPrivadoMio() ?: "") }
+            val aliasPublico by remember { mutableStateOf(usuario?.getAliasMio() ?: "") }
+            val descripcion by remember { mutableStateOf(usuario?.getDescripcionMio() ?: "") }
 
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                    .padding(24.dp),
+                verticalArrangement = Arrangement.spacedBy(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 val imagenDrawable = remember(usuario?.getImagenPerfilIdMio()) {
                     obtenerImagenDesdeId(usuario?.getImagenPerfilIdMio())
                 }
 
-                Image(
-                    painter = painterResource(imagenDrawable),
-                    contentDescription = "Imagen de perfil de ${usuario?.getNombreCompletoMio()}",
+                Surface(
                     modifier = Modifier
-                        .size(100.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .border(1.dp, Color.Gray, RoundedCornerShape(8.dp))
-                )
-
-
-                OutlinedTextField(
-                    value = aliasPrivado,
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Alias Privado") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                OutlinedTextField(
-                    value = aliasPublico,
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Alias Público") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                OutlinedTextField(
-                    value = descripcion,
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Descripción") },
-                    modifier = Modifier.fillMaxWidth(),
-                    maxLines = 3
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                TextButton(
-                    onClick = {
-                        if (usuario != null) {
-                            scope.launch {
-                                val repo = SupabaseRepositorioGenerico()
-
-                                try {
-                                    val relaciones = repo.getAll<ConversacionesUsuario>("conversaciones_usuario").first()
-
-                                    // IDs de conversaciones donde estén ambos
-                                    val conversacionesComunes = relaciones
-                                        .groupBy { it.idconversacion }
-                                        .filter { (_, users) ->
-                                            val ids = users.map { it.idusuario }
-                                            currentUserId in ids && usuario!!.getIdUnicoMio() in ids && ids.size == 2
-                                        }
-                                        .keys
-
-                                    println("🔍 Conversaciones individuales encontradas: $conversacionesComunes")
-
-                                    for (convId in conversacionesComunes) {
-                                        // Eliminar relaciones en conversaciones_usuario
-                                        repo.deleteItem<ConversacionesUsuario>(
-                                            tableName = "conversaciones_usuario",
-                                            idField = "idconversacion",
-                                            idValue = convId
-                                        )
-
-                                        // Eliminar conversación
-                                        repo.deleteItem<Conversacion>(
-                                            tableName = "conversacion",
-                                            idField = "id",
-                                            idValue = convId
-                                        )
-
-                                        println("🗑️ Eliminada conversación $convId")
-                                    }
-
-                                    //Eliminar también contacto en tabla contactos
-                                    repo.deleteItemMulti<UsuarioContacto>(
-                                        tableName = "usuario_contacto",
-                                        conditions = mapOf(
-                                            "idusuario" to currentUserId,
-                                            "idcontacto" to usuario!!.getIdUnicoMio()
-                                        )
-                                    )
-
-                                    repo.deleteItemMulti<UsuarioContacto>(
-                                        tableName = "usuario_contacto",
-                                        conditions = mapOf(
-                                            "idusuario" to usuario!!.getIdUnicoMio(),
-                                            "idcontacto" to currentUserId
-                                        )
-                                    )
-
-                                    usuario = null
-                                    navController.popBackStack()
-                                    return@launch
-
-
-                                } catch (e: Exception) {
-                                    println("❌ Error eliminando contacto: ${e.message}")
-                                }
-                            }
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth()
+                        .size(120.dp)
+                        .clip(CircleShape),
+                    tonalElevation = 4.dp,
+                    border = BorderStroke(
+                        width = 2.dp,
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                    )
                 ) {
-                    Text(
-                        text = "Eliminar Contacto",
-                        color = Color.Red
+                    Image(
+                        painter = painterResource(imagenDrawable),
+                        contentDescription = "Imagen de perfil de ${usuario?.getNombreCompletoMio()}",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
                     )
                 }
 
-
-                TextButton(
-                    onClick = {
-                        if (usuario != null) {
-                            scope.launch {
-                                try {
-                                    val nuevoBloqueo = UsuarioBloqueado(
-                                        idUsuario = currentUserId,
-                                        idBloqueado = usuario!!.getIdUnicoMio()
-                                    )
-                                    repo.addItem("usuario_bloqueados", nuevoBloqueo)
-                                    println("🚫 Usuario bloqueado correctamente")
-                                    navController.popBackStack()
-                                } catch (e: Exception) {
-                                    println("❌ Error al bloquear usuario: ${e.message}")
-                                }
-                            }
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth()
+                ElevatedCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.elevatedCardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
                 ) {
-                    Text("Bloquear", color = Color.Red)
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = aliasPrivado,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Alias Privado") },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                                focusedBorderColor = MaterialTheme.colorScheme.primary
+                            )
+                        )
+
+                        OutlinedTextField(
+                            value = aliasPublico,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Alias Público") },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                                focusedBorderColor = MaterialTheme.colorScheme.primary
+                            )
+                        )
+
+                        OutlinedTextField(
+                            value = descripcion,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Descripción") },
+                            modifier = Modifier.fillMaxWidth(),
+                            maxLines = 3,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                                focusedBorderColor = MaterialTheme.colorScheme.primary
+                            )
+                        )
+                    }
                 }
 
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FilledTonalButton(
+                        onClick = {
+                            if (usuario != null) {
+                                scope.launch {
+                                    val repo = SupabaseRepositorioGenerico()
+                                    try {
+                                        val relaciones =
+                                            repo.getAll<ConversacionesUsuario>("conversaciones_usuario")
+                                                .first()
+                                        val conversacionesComunes = relaciones
+                                            .groupBy { it.idconversacion }
+                                            .filter { (_, users) ->
+                                                val ids = users.map { it.idusuario }
+                                                currentUserId in ids && usuario!!.getIdUnicoMio() in ids && ids.size == 2
+                                            }
+                                            .keys
+
+                                        println("🔍 Conversaciones individuales encontradas: $conversacionesComunes")
+
+                                        for (convId in conversacionesComunes) {
+                                            repo.deleteItem<ConversacionesUsuario>(
+                                                tableName = "conversaciones_usuario",
+                                                idField = "idconversacion",
+                                                idValue = convId
+                                            )
+                                            repo.deleteItem<Conversacion>(
+                                                tableName = "conversacion",
+                                                idField = "id",
+                                                idValue = convId
+                                            )
+                                            println("🗑️ Eliminada conversación $convId")
+                                        }
+
+                                        repo.deleteItemMulti<UsuarioContacto>(
+                                            tableName = "usuario_contacto",
+                                            conditions = mapOf(
+                                                "idusuario" to currentUserId,
+                                                "idcontacto" to usuario!!.getIdUnicoMio()
+                                            )
+                                        )
+
+                                        repo.deleteItemMulti<UsuarioContacto>(
+                                            tableName = "usuario_contacto",
+                                            conditions = mapOf(
+                                                "idusuario" to usuario!!.getIdUnicoMio(),
+                                                "idcontacto" to currentUserId
+                                            )
+                                        )
+
+                                        usuario = null
+                                        navController.popBackStack()
+                                        return@launch
+
+                                    } catch (e: Exception) {
+                                        println("❌ Error eliminando contacto: ${e.message}")
+                                    }
+                                }
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.filledTonalButtonColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer,
+                            contentColor = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Delete,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text("Eliminar Contacto")
+                    }
+
+                    FilledTonalButton(
+                        onClick = {
+                            if (usuario != null) {
+                                scope.launch {
+                                    try {
+                                        val nuevoBloqueo = UsuarioBloqueado(
+                                            idUsuario = currentUserId,
+                                            idBloqueado = usuario!!.getIdUnicoMio()
+                                        )
+                                        repo.addItem("usuario_bloqueados", nuevoBloqueo)
+                                        println("🚫 Usuario bloqueado correctamente")
+                                        navController.popBackStack()
+                                    } catch (e: Exception) {
+                                        println("❌ Error al bloquear usuario: ${e.message}")
+                                    }
+                                }
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.filledTonalButtonColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer,
+                            contentColor = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Close,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text("Bloquear Usuario")
+                    }
+                }
             }
         }
     }
 }
-
-
 
 
 // --- Home Page ---
@@ -1674,62 +2004,99 @@ fun mostrarPerfilUsuario(
  *
  * @param navController controlador de navegación.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 @Preview
 fun muestraHomePage(navController: NavHostController) {
-    MaterialTheme {
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
+    ) {
         Scaffold(
             topBar = {
-                DefaultTopBar(
-                    title = "inicio", // Se usa la clave "inicio" en lugar del literal "Inicio"
-                    navController = null,
-                    showBackButton = false,
-                    muestraEngranaje = false,
-                    irParaAtras = false
+                CenterAlignedTopAppBar(
+                    title = {
+                        Text(
+                            text = traducir("inicio"),
+                            style = MaterialTheme.typography.headlineMedium
+                        )
+                    },
+                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        titleContentColor = MaterialTheme.colorScheme.onSurface
+                    )
                 )
             }
         ) { padding ->
             Box(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
                 contentAlignment = Alignment.Center
             ) {
                 LimitaTamanioAncho { modifier ->
                     Column(
                         modifier = modifier
-                            .padding(padding)
-                            .padding(16.dp),
+                            .padding(horizontal = 24.dp, vertical = 16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Button(
+                        ElevatedButton(
                             onClick = { navController.navigate("login") },
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.elevatedButtonColors(
+                                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
                         ) {
-                            Text(text = traducir("ir_a_login"))
+                            Text(
+                                text = traducir("ir_a_login"),
+                                style = MaterialTheme.typography.titleMedium
+                            )
                         }
-                        Button(
+
+                        ElevatedButton(
                             onClick = { navController.navigate("registro") },
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.elevatedButtonColors(
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
                         ) {
-                            Text(text = traducir("ir_a_registro"))
+                            Text(
+                                text = traducir("ir_a_registro"),
+                                style = MaterialTheme.typography.titleMedium
+                            )
                         }
-                        Button(
+
+                        FilledTonalButton(
                             onClick = { navController.navigate("contactos") },
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text(text = traducir("contactos"))
+                            Text(
+                                text = traducir("contactos"),
+                                style = MaterialTheme.typography.titleMedium
+                            )
                         }
-                        Button(
+
+                        FilledTonalButton(
                             onClick = { navController.navigate("ajustes") },
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text(text = traducir("ajustes"))
+                            Text(
+                                text = traducir("ajustes"),
+                                style = MaterialTheme.typography.titleMedium
+                            )
                         }
-                        Button(
+
+                        FilledTonalButton(
                             onClick = { navController.navigate("usuarios") },
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text(text = traducir("usuarios"))
+                            Text(
+                                text = traducir("usuarios"),
+                                style = MaterialTheme.typography.titleMedium
+                            )
                         }
                     }
                 }
@@ -1745,6 +2112,7 @@ fun muestraHomePage(navController: NavHostController) {
  * @param navController controlador de navegación.
  */
 @Composable
+@Preview
 fun SplashScreen(navController: NavHostController, settingsState: SettingsState) {
 
     // 1) Convertimos el Flow<UserSession?> en State
@@ -1770,7 +2138,7 @@ fun SplashScreen(navController: NavHostController, settingsState: SettingsState)
 
             // 4) Reasignar globals para toda la app
             sesionActualUsuario = session
-            UsuarioPrincipal   = usuario
+            UsuarioPrincipal = usuario
 
             // 5) Navegar a contactos, pop splash
             navController.navigate("contactos") {
@@ -1784,18 +2152,43 @@ fun SplashScreen(navController: NavHostController, settingsState: SettingsState)
         }
     }
 
-    MaterialTheme {
-        Scaffold {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.primaryContainer,
+                            MaterialTheme.colorScheme.surface
+                        )
+                    )
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
-                // Muestra el ícono de la app en el centro
-                Image(
-                    painter = painterResource(
-                        Res.drawable.connexus
-                    ),
-                    contentDescription = "Ícono de la aplicación"
+                Surface(
+                    modifier = Modifier.size(120.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    tonalElevation = 8.dp,
+                    shadowElevation = 4.dp
+                ) {
+                    Image(
+                        painter = painterResource(Res.drawable.connexus),
+                        contentDescription = "Ícono de la aplicación",
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
+
+                CircularProgressIndicator(
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(32.dp)
                 )
             }
         }
@@ -1817,7 +2210,9 @@ fun SplashScreen(navController: NavHostController, settingsState: SettingsState)
  * @param textoBotonSecundarioKey clave para el texto del botón secundario.
  * @param rutaBotonSecundario ruta de navegación del botón secundario.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
+@Preview
 fun PantallaEmailBase(
     navController: NavHostController,
     titleKey: String,
@@ -1829,13 +2224,35 @@ fun PantallaEmailBase(
     rutaBotonSecundario: String? = null
 ) {
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            DefaultTopBar(
-                title = traducir(titleKey),
-                navController = navController,
-                showBackButton = true,
-                muestraEngranaje = true,
-                irParaAtras = true
+            CenterAlignedTopAppBar(
+                title = {
+                    Text(
+                        text = traducir(titleKey),
+                        style = MaterialTheme.typography.headlineMedium
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                            contentDescription = traducir("volver")
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { /* acción engranaje */ }) {
+                        Icon(
+                            imageVector = Icons.Rounded.Settings,
+                            contentDescription = traducir("ajustes")
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface
+                )
             )
         }
     ) { padding ->
@@ -1847,48 +2264,68 @@ fun PantallaEmailBase(
                 Column(
                     modifier = modifier
                         .padding(padding)
-                        .padding(16.dp),
+                        .padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
+                    verticalArrangement = Arrangement.spacedBy(24.dp)
                 ) {
-                    Image(
-                        painter = painterResource(Res.drawable.connexus),
-                        contentDescription = "Ícono de la aplicación",
-                        modifier = Modifier.size(100.dp)
-                    )
-                    Text(traducir(mensajeKey), style = MaterialTheme.typography.h6)
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Surface(
+                        modifier = Modifier.size(120.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        tonalElevation = 4.dp
+                    ) {
+                        Image(
+                            painter = painterResource(Res.drawable.connexus),
+                            contentDescription = "Ícono de la aplicación",
+                            modifier = Modifier.padding(16.dp)
+                        )
+                    }
 
-                    // Campo de código si es necesario
+                    Text(
+                        text = traducir(mensajeKey),
+                        style = MaterialTheme.typography.titleLarge,
+                        textAlign = TextAlign.Center
+                    )
+
                     if (mostrarCampoCodigo) {
                         OutlinedTextField(
                             value = "",
                             onValueChange = {},
                             label = { Text(traducir("codigo_verificacion")) },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                            )
                         )
-                        Spacer(modifier = Modifier.height(16.dp))
                     }
 
-                    // Botones en una Row (alineados horizontalmente)
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        Button(
+                        FilledTonalButton(
                             onClick = { navController.navigate(rutaBotonPrincipal) },
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp)
                         ) {
-                            Text(traducir(textoBotonPrincipalKey))
+                            Text(
+                                text = traducir(textoBotonPrincipalKey),
+                                style = MaterialTheme.typography.labelLarge
+                            )
                         }
 
                         if (textoBotonSecundarioKey != null && rutaBotonSecundario != null) {
                             Button(
                                 onClick = { navController.navigate(rutaBotonSecundario) },
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(12.dp)
                             ) {
-                                Text(traducir(textoBotonSecundarioKey))
+                                Text(
+                                    text = traducir(textoBotonSecundarioKey),
+                                    style = MaterialTheme.typography.labelLarge
+                                )
                             }
                         }
                     }
@@ -1905,6 +2342,7 @@ fun PantallaEmailBase(
  * @param navController controlador de navegación.
  */
 @Composable
+@Preview
 fun PantallaEmailNoEnElSistema(navController: NavHostController) {
     PantallaEmailBase(
         navController = navController,
@@ -1922,6 +2360,7 @@ fun PantallaEmailNoEnElSistema(navController: NavHostController) {
  * @param navController controlador de navegación.
  */
 @Composable
+@Preview
 fun PantallaEmailEnElSistema(navController: NavHostController) {
     PantallaEmailBase(
         navController = navController,
@@ -1941,103 +2380,160 @@ fun PantallaEmailEnElSistema(navController: NavHostController) {
  *
  * @param navController controlador de navegación.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
+@Preview
 fun PantallaRestablecer(navController: NavHostController) {
     var email by remember { mutableStateOf("") }
     var mensaje by remember { mutableStateOf("") }
     var error by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
 
-    MaterialTheme {
-        Scaffold(
-            topBar = {
-                DefaultTopBar(
-                    title = traducir("restablecer_contrasena"),
-                    navController = navController,
-                    showBackButton = true,
-                    muestraEngranaje = false,
-                    irParaAtras = true
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = {
+                    Text(
+                        text = traducir("restablecer_contrasena"),
+                        style = MaterialTheme.typography.headlineMedium
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                            contentDescription = traducir("volver")
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface
                 )
-            }
-        ) { padding ->
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                contentAlignment = Alignment.Center
-            ) {
-                LimitaTamanioAncho { modifier ->
-                    Column(
-                        modifier = modifier.padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+            )
+        }
+    ) { padding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+            contentAlignment = Alignment.Center
+        ) {
+            LimitaTamanioAncho { modifier ->
+                Column(
+                    modifier = modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Surface(
+                        modifier = Modifier.size(120.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        tonalElevation = 4.dp
                     ) {
                         Image(
                             painter = painterResource(Res.drawable.connexus),
                             contentDescription = "Logo",
-                            modifier = Modifier.size(100.dp)
+                            modifier = Modifier.padding(16.dp)
                         )
+                    }
 
-                        Spacer(Modifier.height(16.dp))
-
-                        OutlinedTextField(
-                            value = email,
-                            onValueChange = { email = it },
-                            label = { Text("Correo electrónico") },
-                            modifier = Modifier.fillMaxWidth(),
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
+                    OutlinedTextField(
+                        value = email,
+                        onValueChange = { email = it },
+                        label = { Text(traducir("email")) },
+                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline
                         )
+                    )
 
-                        Spacer(Modifier.height(16.dp))
-
-                        Button(
-                            onClick = {
-                                scope.launch {
-                                    if (email.isBlank()) {
-                                        error = "Introduce tu correo"
-                                        return@launch
-                                    }
-
-                                    try {
-                                        Supabase.client.auth.resetPasswordForEmail(email)
-                                        mensaje = "📧 Se ha enviado un correo para restablecer tu contraseña. Ábrelo desde tu navegador y sigue los pasos."
-                                        error = ""
-                                    } catch (e: Exception) {
-                                        error = "❌ Error al enviar el correo: ${e.message}"
-                                    }
+                    FilledTonalButton(
+                        onClick = {
+                            scope.launch {
+                                if (email.isBlank()) {
+                                    error = "Introduce tu correo"
+                                    return@launch
                                 }
-                            },
-                            modifier = Modifier.fillMaxWidth()
+
+                                try {
+                                    Supabase.client.auth.resetPasswordForEmail(email)
+                                    mensaje =
+                                        "📧 Se ha enviado un correo para restablecer tu contraseña. Ábrelo desde tu navegador y sigue los pasos."
+                                    error = ""
+                                } catch (e: Exception) {
+                                    error = "❌ Error al enviar el correo: ${e.message}"
+                                }
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Row(
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("Enviar correo de restablecimiento")
+                            Icon(
+                                imageVector = Icons.Rounded.Email,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                traducir("enviar_correo_restablecimiento"),
+                                style = MaterialTheme.typography.labelLarge
+                            )
                         }
+                    }
 
-                        Spacer(Modifier.height(16.dp))
+                    if (mensaje.isNotEmpty()) {
+                        Text(
+                            mensaje,
+                            color = MaterialTheme.colorScheme.tertiary,
+                            textAlign = TextAlign.Center,
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
 
-                        if (mensaje.isNotEmpty()) {
-                            Text(mensaje, color = Color.Green, textAlign = TextAlign.Center)
-                        }
+                    if (error.isNotEmpty()) {
+                        Text(
+                            error,
+                            color = MaterialTheme.colorScheme.error,
+                            textAlign = TextAlign.Center,
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
 
-                        if (error.isNotEmpty()) {
-                            Text(error, color = MaterialTheme.colors.error, textAlign = TextAlign.Center)
-                        }
-
-                        Spacer(Modifier.height(24.dp))
-
+                    Surface(
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    ) {
                         Text(
                             "Una vez restablezcas tu contraseña desde el navegador, vuelve a esta app y entra con tu nueva clave.",
-                            style = MaterialTheme.typography.body2,
-                            color = Color.Gray,
-                            textAlign = TextAlign.Center
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(16.dp)
                         )
+                    }
 
-                        Spacer(Modifier.height(32.dp))
-
-                        Button(
-                            onClick = { navController.navigate("login") },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text("Volver al login")
-                        }
+                    Button(
+                        onClick = { navController.navigate("login") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    ) {
+                        Text(
+                            traducir("volver_login"),
+                            style = MaterialTheme.typography.labelLarge
+                        )
                     }
                 }
             }
@@ -2045,15 +2541,14 @@ fun PantallaRestablecer(navController: NavHostController) {
     }
 }
 
-
-
-// Pantalla de de restablecer contraseña ingresando la nueva contraseña
+// Pantalla de restablecer contraseña ingresando la nueva contraseña
 /**
  * Composable que muestra la pantalla para restablecer la contraseña ingresando una nueva.
  *
  * @param navController controlador de navegación.
  */
 @Composable
+@Preview
 fun muestraRestablecimientoContasenna(navController: NavHostController) {
     var contrasenna by remember { mutableStateOf("") }
     var confirmarContrasenna by remember { mutableStateOf("") }
@@ -2064,118 +2559,149 @@ fun muestraRestablecimientoContasenna(navController: NavHostController) {
 
     val errorContrasenas = traducir("error_contrasenas")
 
-    MaterialTheme {
-        Scaffold(
-            topBar = {
-                DefaultTopBar(
-                    title = traducir("restablecer_contrasena"),
-                    navController = navController,
-                    showBackButton = true,
-                    muestraEngranaje = false,
-                    irParaAtras = false
-                )
-            }
-        ) { padding ->
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                contentAlignment = Alignment.Center
-            ) {
-                LimitaTamanioAncho { modifier ->
-                    Column(
-                        modifier = modifier.padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
+        topBar = {
+            DefaultTopBar(
+                title = traducir("restablecer_contrasena"),
+                navController = navController,
+                showBackButton = true,
+                muestraEngranaje = false,
+                irParaAtras = false
+            )
+        }
+    ) { padding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+            contentAlignment = Alignment.Center
+        ) {
+            LimitaTamanioAncho { modifier ->
+                Column(
+                    modifier = modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Surface(
+                        modifier = Modifier.size(120.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        tonalElevation = 4.dp
                     ) {
                         Image(
                             painter = painterResource(Res.drawable.connexus),
                             contentDescription = traducir("icono_app"),
-                            modifier = Modifier.size(100.dp)
+                            modifier = Modifier.padding(16.dp)
                         )
+                    }
 
-                        Spacer(Modifier.height(16.dp))
-
-                        OutlinedTextField(
-                            value = contrasenna,
-                            onValueChange = { contrasenna = it },
-                            label = { Text(traducir("contrasena")) },
-                            visualTransformation = PasswordVisualTransformation(),
-                            modifier = Modifier.fillMaxWidth()
+                    OutlinedTextField(
+                        value = contrasenna,
+                        onValueChange = { contrasenna = it },
+                        label = { Text(traducir("contrasena")) },
+                        visualTransformation = PasswordVisualTransformation(),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline
                         )
+                    )
 
-                        Spacer(Modifier.height(8.dp))
-
-                        OutlinedTextField(
-                            value = confirmarContrasenna,
-                            onValueChange = { confirmarContrasenna = it },
-                            label = { Text(traducir("confirmar_contrasena")) },
-                            visualTransformation = PasswordVisualTransformation(),
-                            modifier = Modifier.fillMaxWidth()
+                    OutlinedTextField(
+                        value = confirmarContrasenna,
+                        onValueChange = { confirmarContrasenna = it },
+                        label = { Text(traducir("confirmar_contrasena")) },
+                        visualTransformation = PasswordVisualTransformation(),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline
                         )
+                    )
 
-                        Spacer(Modifier.height(16.dp))
+                    FilledTonalButton(
+                        onClick = {
+                            if (contrasenna != confirmarContrasenna || contrasenna.isBlank()) {
+                                errorMessage = errorContrasenas
+                                return@FilledTonalButton
+                            }
 
-                        Button(
-                            onClick = {
-                                if (contrasenna != confirmarContrasenna || contrasenna.isBlank()) {
-                                    errorMessage = errorContrasenas
-                                    return@Button
-                                }
-
-                                scope.launch {
-                                    try {
-                                        val user = Supabase.client.auth.currentUserOrNull()
-                                        if (user == null) {
-                                            errorMessage = "⚠️ No hay sesión activa para actualizar."
-                                            return@launch
-                                        }
-
-                                        // 1. Actualizar en Auth
-                                        Supabase.client.auth.updateUser {
-                                            password = contrasenna
-                                        }
-
-                                        // 2. Actualizar también en la tabla usuario
-                                        repo.updateCampo(
-                                            tabla = "usuario",
-                                            campo = "contrasennia",
-                                            valor = contrasenna,
-                                            idCampo = "idunico",
-                                            idValor = user.id
-                                        )
-
-                                        mensaje = "✅ Contraseña restablecida con éxito."
-                                        errorMessage = ""
-                                        navController.navigate("login") {
-                                            popUpTo("restablecerNueva") { inclusive = true }
-                                        }
-                                    } catch (e: Exception) {
-                                        errorMessage = "❌ Error: ${e.message}"
+                            scope.launch {
+                                try {
+                                    val user = Supabase.client.auth.currentUserOrNull()
+                                    if (user == null) {
+                                        errorMessage = "⚠️ No hay sesión activa para actualizar."
+                                        return@launch
                                     }
+
+                                    // 1. Actualizar en Auth
+                                    Supabase.client.auth.updateUser {
+                                        password = contrasenna
+                                    }
+
+                                    // 2. Actualizar también en la tabla usuario
+                                    repo.updateCampo(
+                                        tabla = "usuario",
+                                        campo = "contrasennia",
+                                        valor = contrasenna,
+                                        idCampo = "idunico",
+                                        idValor = user.id
+                                    )
+
+                                    mensaje = "✅ Contraseña restablecida con éxito."
+                                    errorMessage = ""
+                                    navController.navigate("login") {
+                                        popUpTo("restablecerNueva") { inclusive = true }
+                                    }
+                                } catch (e: Exception) {
+                                    errorMessage = "❌ Error: ${e.message}"
                                 }
-                            },
-                            modifier = Modifier.fillMaxWidth()
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Row(
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(traducir("restablecer"))
+                            Icon(
+                                imageVector = Icons.Rounded.Lock,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                traducir("restablecer"),
+                                style = MaterialTheme.typography.labelLarge
+                            )
                         }
+                    }
 
-                        if (mensaje.isNotEmpty()) {
-                            Spacer(Modifier.height(8.dp))
-                            Text(mensaje, color = Color.Green)
-                        }
+                    if (mensaje.isNotEmpty()) {
+                        Text(
+                            mensaje,
+                            color = MaterialTheme.colorScheme.tertiary,
+                            style = MaterialTheme.typography.bodyLarge,
+                            textAlign = TextAlign.Center
+                        )
+                    }
 
-                        if (errorMessage.isNotEmpty()) {
-                            Spacer(Modifier.height(8.dp))
-                            Text(errorMessage, color = MaterialTheme.colors.error)
-                        }
+                    if (errorMessage.isNotEmpty()) {
+                        Text(
+                            errorMessage,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodyLarge,
+                            textAlign = TextAlign.Center
+                        )
                     }
                 }
             }
         }
     }
 }
-
-
 
 
 //metodo que comprueba correo
@@ -2190,7 +2716,9 @@ fun esEmailValido(email: String): Boolean {
  *
  * @param navController controlador de navegación.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
+@Preview
 fun PantallaRegistro(navController: NavHostController) {
     var nombre by remember { mutableStateOf("") }
     var emailInterno by remember { mutableStateOf("") }
@@ -2199,136 +2727,193 @@ fun PantallaRegistro(navController: NavHostController) {
     var errorMessage by remember { mutableStateOf("") }
 
     val repoSupabase = SupabaseUsuariosRepositorio()
-
     val errorContrasenas = traducir("error_contrasenas")
-    val errorEmailYaRegistrado =
-        traducir("error_email_ya_registrado") // Falta implementar y mete en los mapas de idiomas
-
+    val errorEmailYaRegistrado = traducir("error_email_ya_registrado")
     val usuario = Usuario()
-
     val scope = rememberCoroutineScope()
 
-    MaterialTheme {
-        Scaffold(
-            topBar = {
-                DefaultTopBar(
-                    title = traducir("registro"),
-                    navController = navController,
-                    showBackButton = true,
-                    muestraEngranaje = true,
-                    irParaAtras = true
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = {
+                    Text(
+                        text = traducir("registro"),
+                        style = MaterialTheme.typography.headlineMedium
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                            contentDescription = traducir("volver")
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface
                 )
-            }
-        ) { padding ->
-            Box(
-                modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
-                contentAlignment = Alignment.Center
-            ) {
-                LimitaTamanioAncho { modifier ->
-                    Column(
-                        modifier = modifier
-                            .padding(padding)
-                            .padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+            )
+        }
+    ) { padding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState()),
+            contentAlignment = Alignment.Center
+        ) {
+            LimitaTamanioAncho { modifier ->
+                Column(
+                    modifier = modifier
+                        .padding(padding)
+                        .padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Surface(
+                        modifier = Modifier.size(120.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        tonalElevation = 4.dp
                     ) {
                         Image(
                             painter = painterResource(Res.drawable.connexus),
                             contentDescription = traducir("icono_app"),
-                            modifier = Modifier.size(100.dp)
+                            modifier = Modifier.padding(16.dp)
                         )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        OutlinedTextField(
-                            value = nombre,
-                            onValueChange = { nombre = it },
-                            label = { Text(traducir("nombre")) },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        OutlinedTextField(
-                            value = emailInterno,
-                            onValueChange = { emailInterno = it },
-                            label = { Text(traducir("email")) },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        OutlinedTextField(
-                            value = password,
-                            onValueChange = { password = it },
-                            label = { Text(traducir("contrasena")) },
-                            visualTransformation = PasswordVisualTransformation(),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        OutlinedTextField(
-                            value = confirmPassword,
-                            onValueChange = { confirmPassword = it },
-                            label = { Text(traducir("confirmar_contrasena")) },
-                            visualTransformation = PasswordVisualTransformation(),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            Button(
-                                onClick = {
-                                    errorMessage =
-                                        if (password == confirmPassword && password.isNotBlank()) {
-                                            ""
-                                        } else {
-                                            errorContrasenas
-                                        }
+                    }
 
-                                    if (errorMessage.isEmpty()) {
-                                        scope.launch {
-                                            try {
-                                                val emailTrimmed = emailInterno.trim()
+                    OutlinedTextField(
+                        value = nombre,
+                        onValueChange = { nombre = it },
+                        label = { Text(traducir("nombre")) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                        )
+                    )
 
-                                                if (!esEmailValido(emailTrimmed)) {
-                                                    errorMessage = "Formato de correo inválido"
-                                                    return@launch
-                                                }
+                    OutlinedTextField(
+                        value = emailInterno,
+                        onValueChange = { emailInterno = it },
+                        label = { Text(traducir("email")) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                        )
+                    )
 
-                                                // Registro en Supabase Auth
-                                                val authResult = Supabase.client.auth.signUpWith(Email) {
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        label = { Text(traducir("contrasena")) },
+                        visualTransformation = PasswordVisualTransformation(),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                        )
+                    )
+
+                    OutlinedTextField(
+                        value = confirmPassword,
+                        onValueChange = { confirmPassword = it },
+                        label = { Text(traducir("confirmar_contrasena")) },
+                        visualTransformation = PasswordVisualTransformation(),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                        )
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Button(
+                            onClick = {
+                                errorMessage =
+                                    if (password == confirmPassword && password.isNotBlank()) {
+                                        ""
+                                    } else {
+                                        errorContrasenas
+                                    }
+
+                                if (errorMessage.isEmpty()) {
+                                    scope.launch {
+                                        try {
+                                            val emailTrimmed = emailInterno.trim()
+
+                                            if (!esEmailValido(emailTrimmed)) {
+                                                errorMessage = "Formato de correo inválido"
+                                                return@launch
+                                            }
+
+                                            val authResult =
+                                                Supabase.client.auth.signUpWith(Email) {
                                                     this.email = emailTrimmed
                                                     this.password = password
                                                 }
-                                                navController.navigate("registroVerificaCorreo/${emailTrimmed}/${nombre}/${password}")
+                                            navController.navigate("registroVerificaCorreo/${emailTrimmed}/${nombre}/${password}")
 
-
-                                            } catch (e: Exception) {
-                                                errorMessage = "❌ Error al registrar: ${e.message}"
-                                                //navController.navigate("login")
-                                            }
+                                        } catch (e: Exception) {
+                                            errorMessage = "❌ Error al registrar: ${e.message}"
                                         }
                                     }
                                 }
-
-
-                                ,
-                                modifier = Modifier.weight(1f)
+                            },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary
+                            )
+                        ) {
+                            Row(
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(traducir("registrar"))
-                            }
-                            Button(
-                                onClick = { navController.navigate("login") },
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Text(traducir("cancelar"))
+                                Icon(
+                                    imageVector = Icons.Rounded.Person,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text(
+                                    traducir("registrar"),
+                                    style = MaterialTheme.typography.labelLarge
+                                )
                             }
                         }
-                        if (errorMessage.isNotEmpty()) {
-                            Spacer(modifier = Modifier.height(8.dp))
+
+                        OutlinedButton(
+                            onClick = { navController.navigate("login") },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
                             Text(
-                                errorMessage,
-                                color = MaterialTheme.colors.error,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.fillMaxWidth()
+                                traducir("cancelar"),
+                                style = MaterialTheme.typography.labelLarge
                             )
                         }
+                    }
+
+                    if (errorMessage.isNotEmpty()) {
+                        Text(
+                            errorMessage,
+                            color = MaterialTheme.colorScheme.error,
+                            textAlign = TextAlign.Center,
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.fillMaxWidth()
+                        )
                     }
                 }
             }
@@ -2341,8 +2926,9 @@ fun PantallaRegistro(navController: NavHostController) {
  *
  * @param navController controlador de navegación.
  */
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
+@Preview
 fun PantallaVerificaCorreo(
     navController: NavHostController,
     email: String?,
@@ -2351,17 +2937,22 @@ fun PantallaVerificaCorreo(
 ) {
     val scope = rememberCoroutineScope()
     val repo = remember { SupabaseUsuariosRepositorio() }
-
     var mensaje by remember { mutableStateOf("") }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            DefaultTopBar(
-                title = "Verificación de correo",
-                navController = navController,
-                showBackButton = false,
-                muestraEngranaje = false,
-                irParaAtras = false
+            CenterAlignedTopAppBar(
+                title = {
+                    Text(
+                        text = traducir("verificacion_correo"),
+                        style = MaterialTheme.typography.headlineMedium
+                    )
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface
+                )
             )
         }
     ) { padding ->
@@ -2371,87 +2962,169 @@ fun PantallaVerificaCorreo(
                 .padding(padding),
             contentAlignment = Alignment.Center
         ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("Hemos enviado un correo de verificación a:")
-                Text(email ?: "", style = MaterialTheme.typography.h6)
-                Spacer(Modifier.height(16.dp))
-                Text("Verifica tu cuenta, y luego pulsa el botón para continuar.")
-                Spacer(Modifier.height(24.dp))
+            LimitaTamanioAncho { modifier ->
+                Column(
+                    modifier = modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Surface(
+                        modifier = Modifier.size(120.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        tonalElevation = 4.dp
+                    ) {
+                        Image(
+                            painter = painterResource(Res.drawable.connexus),
+                            contentDescription = traducir("icono_app"),
+                            modifier = Modifier.padding(16.dp)
+                        )
+                    }
 
-                Button(onClick = {
-                    scope.launch {
-                        try {
-                            // 🛡Reautenticación
-                            if (!email.isNullOrBlank() && !password.isNullOrBlank()) {
-                                Supabase.client.auth.signInWith(Email) {
-                                    this.email = email
-                                    this.password = password
-                                }
-                            }
-
-                            val usuarioActual = Supabase.client.auth.currentUserOrNull()
-
-                            if (usuarioActual?.emailConfirmedAt != null) {
-                                val imagenAleatoria = UtilidadesUsuario().generarImagenPerfilAleatoria()
-
-                                val nuevoUsuario = Usuario(
-                                    idUnico = usuarioActual.id,
-                                    correo = email ?: "",
-                                    nombre = nombre ?: "",
-                                    aliasPrivado = "Privado_$nombre",
-                                    aliasPublico = UtilidadesUsuario().generarAliasPublico(),
-                                    activo = true,
-                                    descripcion = "Perfil creado automáticamente",
-                                    contrasennia = password ?: "",
-                                    imagenPerfilId = imagenAleatoria.id
-                                ).apply {
-                                    imagenPerfil = imagenAleatoria.resource
-                                }
-
-
-
-                                repo.addUsuario(nuevoUsuario)
-
-                                navController.navigate("login") {
-                                    popUpTo("registroVerificaCorreo") { inclusive = true }
-                                }
-                            } else {
-                                mensaje = "❗ Tu correo aún no está verificado."
-                            }
-                        } catch (e: Exception) {
-                            //mensaje = "❌ Error: ${e.message}"
-                            navController.navigate("login")
+                    ElevatedCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.elevatedCardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = traducir("correo_enviado_a"),
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = email ?: "",
+                                style = MaterialTheme.typography.titleLarge,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Text(
+                                text = traducir("verifica_cuenta_continuar"),
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center
+                            )
                         }
                     }
-                }) {
-                    Text("Ya lo he verificado")
-                }
 
-                Spacer(Modifier.height(12.dp))
+                    FilledTonalButton(
+                        onClick = {
+                            scope.launch {
+                                try {
+                                    if (!email.isNullOrBlank() && !password.isNullOrBlank()) {
+                                        Supabase.client.auth.signInWith(Email) {
+                                            this.email = email
+                                            this.password = password
+                                        }
+                                    }
 
-                Button(onClick = {
-                    scope.launch {
-                        try {
-                            if (!email.isNullOrBlank() && !password.isNullOrBlank()) {
-                                Supabase.client.auth.signUpWith(Email) {
-                                    this.email = email
-                                    this.password = password
+                                    val usuarioActual = Supabase.client.auth.currentUserOrNull()
+
+                                    if (usuarioActual?.emailConfirmedAt != null) {
+                                        val imagenAleatoria =
+                                            UtilidadesUsuario().generarImagenPerfilAleatoria()
+
+                                        val nuevoUsuario = Usuario(
+                                            idUnico = usuarioActual.id,
+                                            correo = email ?: "",
+                                            nombre = nombre ?: "",
+                                            aliasPrivado = "Privado_$nombre",
+                                            aliasPublico = UtilidadesUsuario().generarAliasPublico(),
+                                            activo = true,
+                                            descripcion = "Perfil creado automáticamente",
+                                            contrasennia = password ?: "",
+                                            imagenPerfilId = imagenAleatoria.id
+                                        ).apply {
+                                            imagenPerfil = imagenAleatoria.resource
+                                        }
+
+                                        repo.addUsuario(nuevoUsuario)
+
+                                        navController.navigate("login") {
+                                            popUpTo("registroVerificaCorreo") { inclusive = true }
+                                        }
+                                    } else {
+                                        mensaje = "❗ Tu correo aún no está verificado."
+                                    }
+                                } catch (e: Exception) {
+                                    navController.navigate("login")
                                 }
-                                mensaje = "📧 Correo reenviado correctamente."
-                            } else {
-                                mensaje = "⚠️ Falta información para reenviar el correo."
                             }
-                        } catch (e: Exception) {
-                            mensaje = "❌ Error al reenviar: ${e.message}"
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Row(
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.CheckCircle,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = traducir("ya_verificado"),
+                                style = MaterialTheme.typography.labelLarge
+                            )
                         }
                     }
-                }) {
-                    Text("Reenviar correo")
-                }
 
-                if (mensaje.isNotEmpty()) {
-                    Spacer(Modifier.height(12.dp))
-                    Text(mensaje, color = MaterialTheme.colors.error)
+                    OutlinedButton(
+                        onClick = {
+                            scope.launch {
+                                try {
+                                    if (!email.isNullOrBlank() && !password.isNullOrBlank()) {
+                                        Supabase.client.auth.signUpWith(Email) {
+                                            this.email = email
+                                            this.password = password
+                                        }
+                                        mensaje = "📧 Correo reenviado correctamente."
+                                    } else {
+                                        mensaje = "⚠️ Falta información para reenviar el correo."
+                                    }
+                                } catch (e: Exception) {
+                                    mensaje = "❌ Error al reenviar: ${e.message}"
+                                }
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Row(
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Refresh,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = traducir("reenviar_correo"),
+                                style = MaterialTheme.typography.labelLarge
+                            )
+                        }
+                    }
+
+                    if (mensaje.isNotEmpty()) {
+                        Text(
+                            text = mensaje,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = if (mensaje.startsWith("❌")) {
+                                MaterialTheme.colorScheme.error
+                            } else {
+                                MaterialTheme.colorScheme.primary
+                            },
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                 }
             }
         }
@@ -2459,22 +3132,22 @@ fun PantallaVerificaCorreo(
 }
 
 
-
 /**
  * Composable que muestra la pantalla de inicio de sesión.
  *
  * @param navController controlador de navegación.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
+@Preview
 fun PantallaLogin(navController: NavHostController, settingsState: SettingsState) {
     var emailInterno by remember { mutableStateOf("") }
     var passwordInterno by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
 
-    // Estados para el botón Debug oculto
     var showDebug by remember { mutableStateOf(false) }
     var logoTapCount by remember { mutableStateOf(0) }
-    val tapsToReveal = 5  // Número de toques necesarios para mostrar Debug
+    val tapsToReveal = 5
 
     val repoSupabase = SupabaseUsuariosRepositorio()
 
@@ -2484,38 +3157,49 @@ fun PantallaLogin(navController: NavHostController, settingsState: SettingsState
 
     var rememberMe by rememberSaveable { mutableStateOf(false) }
 
-    // Scope para lanzar corrutinas
     val scope = rememberCoroutineScope()
 
-    MaterialTheme {
-        Scaffold(
-            topBar = {
-                DefaultTopBar(
-                    title = traducir("iniciar_sesion"),
-                    navController = navController,
-                    showBackButton = false,
-                    irParaAtras = false,
-                    muestraEngranaje = false
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = {
+                    Text(
+                        text = traducir("iniciar_sesion"),
+                        style = MaterialTheme.typography.headlineMedium
+                    )
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface
                 )
-            }
-        ) { padding ->
-            Box(
-                modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
-                contentAlignment = Alignment.Center
-            ) {
-                LimitaTamanioAncho { modifier ->
-                    Column(
-                        modifier = modifier
-                            .padding(padding)
-                            .padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+            )
+        }
+    ) { padding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState()),
+            contentAlignment = Alignment.Center
+        ) {
+            LimitaTamanioAncho { modifier ->
+                Column(
+                    modifier = modifier
+                        .padding(padding)
+                        .padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Surface(
+                        modifier = Modifier.size(120.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        tonalElevation = 4.dp
                     ) {
-                        // Logo con área clickable oculta para revelar Debug
                         Image(
                             painter = painterResource(Res.drawable.connexus),
                             contentDescription = traducir("icono_app"),
                             modifier = Modifier
-                                .size(100.dp)
+                                .padding(16.dp)
                                 .clickable {
                                     logoTapCount++
                                     if (logoTapCount >= tapsToReveal) {
@@ -2523,141 +3207,162 @@ fun PantallaLogin(navController: NavHostController, settingsState: SettingsState
                                     }
                                 }
                         )
+                    }
 
-                        Spacer(modifier = Modifier.height(16.dp))
-                        OutlinedTextField(
-                            value = emailInterno,
-                            onValueChange = { emailInterno = it },
-                            label = { Text(traducir("email")) },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                            modifier = Modifier.fillMaxWidth()
+                    OutlinedTextField(
+                        value = emailInterno,
+                        onValueChange = { emailInterno = it },
+                        label = { Text(traducir("email")) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        OutlinedTextField(
-                            value = passwordInterno,
-                            onValueChange = { passwordInterno = it },
-                            label = { Text(traducir("contrasena")) },
-                            visualTransformation = PasswordVisualTransformation(),
-                            modifier = Modifier.fillMaxWidth()
+                    )
+
+                    OutlinedTextField(
+                        value = passwordInterno,
+                        onValueChange = { passwordInterno = it },
+                        label = { Text(traducir("contrasena")) },
+                        visualTransformation = PasswordVisualTransformation(),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(vertical = 8.dp)
-                        ) {
-                            Checkbox(
-                                checked = rememberMe,
-                                onCheckedChange = { rememberMe = it }
+                    )
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Checkbox(
+                            checked = rememberMe,
+                            onCheckedChange = { rememberMe = it },
+                            colors = CheckboxDefaults.colors(
+                                checkedColor = MaterialTheme.colorScheme.primary
                             )
-                            Spacer(Modifier.width(8.dp))
+                        )
+                        Text(
+                            text = traducir("recuerdame"),
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        FilledTonalButton(
+                            onClick = { navController.navigate("restablecer") },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
                             Text(
-                                text = traducir("recuerdame"),
-                                style = MaterialTheme.typography.body1
+                                traducir("olvidaste_contrasena"),
+                                style = MaterialTheme.typography.labelLarge
                             )
                         }
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            Button(
-                                onClick = { navController.navigate("restablecer") },
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Text(traducir("olvidaste_contrasena"))
-                            }
-                            Button(
-                                onClick = { navController.navigate("registro") },
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Text(traducir("registrarse"))
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(16.dp))
+
                         Button(
-                            onClick = {
-                                scope.launch {
-                                    if (emailInterno.isBlank() || passwordInterno.isBlank()) {
-                                        errorMessage = porFavorCompleta
-                                        return@launch
-                                    }
-
-                                    try {
-                                        val usuario = repoSupabase.getUsuarioPorEmail(emailInterno.trim()).firstOrNull()
-
-                                        if (usuario == null) {
-                                            errorMessage = errorEmailNingunUsuario
-                                        } else {
-                                            UsuarioPrincipal = usuario
-                                            println("Usuario autenticado: $UsuarioPrincipal")
-
-                                            // Iniciar sesión en Supabase
-                                            // importante...
-                                            /*Supabase.client.auth.signInWith(
-                                                provider = Email
-                                            ) {
-                                                email = UsuarioPrincipal!!.correo
-                                                password = UsuarioPrincipal!!.contrasennia
-                                            }*/
-                                            //utilizar uno de los dos (el de arriba te permite loguearte con el email y la contraseña de supabase. el de abajo con auth.
-                                            Supabase.client.auth.signInWith(Email) {
-                                                email = emailInterno.trim()
-                                                password = passwordInterno.trim()
-                                            }
-
-                                            // Actualizar la sesión actual
-                                            sesionActualUsuario = Supabase.client.auth.currentSessionOrNull()
-                                            errorMessage = ""
-
-
-
-
-                                            // Persistir solo si rememberMe=true
-                                            if (rememberMe && sesionActualUsuario != null) {
-                                                val userJson = Json.encodeToString(Usuario.serializer(), usuario)
-                                                settingsState.saveSession(sesionActualUsuario!!, UsuarioPrincipal!!)
-                                            }
-
-
-                                            navController.navigate("contactos") {
-                                                popUpTo("login") { inclusive = true }
-                                            }
-                                        }
-                                    } catch (e: Exception) {
-                                        errorMessage = "Error: ${e.message}"
-                                    }
-                                }
-                            },
-                            modifier = Modifier.fillMaxWidth()
+                            onClick = { navController.navigate("registro") },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary
+                            )
                         ) {
-                            Text(traducir("acceder"))
-                        }
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        // Botón Debug solo visible tras suficientes toques
-                        if (showDebug) {
-                            Column(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Button(
-                                    onClick = { navController.navigate("zonaPruebas") },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text(text = "Debug: Ir a la zona de pruebas")
-                                }
-                            }
-                        }
-
-                        if (errorMessage.isNotEmpty()) {
-                            Spacer(modifier = Modifier.height(8.dp))
                             Text(
-                                errorMessage,
-                                color = MaterialTheme.colors.error,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.fillMaxWidth()
+                                traducir("registrarse"),
+                                style = MaterialTheme.typography.labelLarge
                             )
                         }
+                    }
+
+                    ElevatedButton(
+                        onClick = {
+                            scope.launch {
+                                if (emailInterno.isBlank() || passwordInterno.isBlank()) {
+                                    errorMessage = porFavorCompleta
+                                    return@launch
+                                }
+
+                                try {
+                                    val usuario =
+                                        repoSupabase.getUsuarioPorEmail(emailInterno.trim())
+                                            .firstOrNull()
+
+                                    if (usuario == null) {
+                                        errorMessage = errorEmailNingunUsuario
+                                    } else {
+                                        UsuarioPrincipal = usuario
+                                        println("Usuario autenticado: $UsuarioPrincipal")
+
+                                        Supabase.client.auth.signInWith(Email) {
+                                            email = emailInterno.trim()
+                                            password = passwordInterno.trim()
+                                        }
+
+                                        sesionActualUsuario =
+                                            Supabase.client.auth.currentSessionOrNull()
+                                        errorMessage = ""
+
+                                        if (rememberMe && sesionActualUsuario != null) {
+                                            val userJson = Json.encodeToString(
+                                                Usuario.serializer(),
+                                                usuario
+                                            )
+                                            settingsState.saveSession(
+                                                sesionActualUsuario!!,
+                                                UsuarioPrincipal!!
+                                            )
+                                        }
+
+                                        navController.navigate("contactos") {
+                                            popUpTo("login") { inclusive = true }
+                                        }
+                                    }
+                                } catch (e: Exception) {
+                                    errorMessage = "Error: ${e.message}"
+                                }
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.elevatedButtonColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    ) {
+                        Text(
+                            traducir("acceder"),
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                    }
+
+                    if (showDebug) {
+                        FilledTonalButton(
+                            onClick = { navController.navigate("zonaPruebas") },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text(
+                                "Debug: Ir a la zona de pruebas",
+                                style = MaterialTheme.typography.labelLarge
+                            )
+                        }
+                    }
+
+                    if (errorMessage.isNotEmpty()) {
+                        Text(
+                            errorMessage,
+                            color = MaterialTheme.colorScheme.error,
+                            textAlign = TextAlign.Center,
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.fillMaxWidth()
+                        )
                     }
                 }
             }
@@ -2665,89 +3370,159 @@ fun PantallaLogin(navController: NavHostController, settingsState: SettingsState
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
+@Preview
 fun PantallaZonaPruebas(navController: NavHostController) {
-    MaterialTheme {
-        Scaffold(
-            topBar = {
-                DefaultTopBar(
-                    title = "Zona de Pruebas",
-                    navController = navController,
-                    showBackButton = true,
-                    muestraEngranaje = true,
-                    irParaAtras = true
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = {
+                    Text(
+                        text = "Zona de Pruebas",
+                        style = MaterialTheme.typography.headlineMedium
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                            contentDescription = traducir("volver")
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { /* acción engranaje */ }) {
+                        Icon(
+                            imageVector = Icons.Rounded.Settings,
+                            contentDescription = traducir("ajustes")
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface
                 )
-            }
-        ) { padding ->
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                LimitaTamanioAncho { modifier ->
-                    Column(
-                        modifier = modifier
-                            .padding(padding)
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+            )
+        }
+    ) { padding ->
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            LimitaTamanioAncho { modifier ->
+                Column(
+                    modifier = modifier
+                        .padding(padding)
+                        .padding(24.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    ElevatedCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                        )
                     ) {
-                        Text("Zona de Pruebas")
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        Text(
+                            "Zona de Pruebas",
+                            modifier = Modifier.padding(16.dp),
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+
+                    ElevatedCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.elevatedCardColors(
+                            containerColor = MaterialTheme.colorScheme.surface
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Button(
+                            FilledTonalButton(
                                 onClick = { navController.navigate("contactos") },
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp)
                             ) {
                                 Text(traducir("debug_ir_a_contactos"))
                             }
-                            Button(
+
+                            FilledTonalButton(
                                 onClick = { navController.navigate("ajustesControlCuentas") },
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp)
                             ) {
                                 Text(traducir("debug_ajustes_control_cuentas"))
                             }
                         }
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    }
+
+                    ElevatedCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.elevatedCardColors(
+                            containerColor = MaterialTheme.colorScheme.surface
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Button(
+                            FilledTonalButton(
                                 onClick = { navController.navigate("pruebasTextosRealtime") },
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp)
                             ) {
                                 Text("Debug: Ir a las pruebas de textos Realtime")
                             }
-                            Button(
+
+                            FilledTonalButton(
                                 onClick = { navController.navigate("supabasePruebas") },
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp)
                             ) {
                                 Text("Debug: Ir a las pruebas con Supabase")
                             }
                         }
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Button(
-                            onClick = { navController.navigate("pruebasEncriptacion") },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text("Debug: Ir a las pruebas de encriptación")
-                        }
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Button(
-                            onClick = { navController.navigate("pruebasPersistencia") },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text("Debug: Ir a las pruebas de persistencia de datos")
-                        }
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Button(
-                            onClick = { navController.navigate("zonaReportes") },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text("ADMIN: Ir a la zona de reportes")
-                        }
+                    }
+
+                    Button(
+                        onClick = { navController.navigate("pruebasEncriptacion") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        )
+                    ) {
+                        Text("Debug: Ir a las pruebas de encriptación")
+                    }
+
+                    Button(
+                        onClick = { navController.navigate("pruebasPersistencia") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        )
+                    ) {
+                        Text("Debug: Ir a las pruebas de persistencia de datos")
+                    }
+
+                    ElevatedButton(
+                        onClick = { navController.navigate("zonaReportes") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.elevatedButtonColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer
+                        )
+                    ) {
+                        Text(
+                            "ADMIN: Ir a la zona de reportes",
+                            color = MaterialTheme.colorScheme.onErrorContainer
+                        )
                     }
                 }
             }
