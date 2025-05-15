@@ -45,6 +45,7 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import org.connexuss.project.comunicacion.generateId
 import org.connexuss.project.interfaces.DefaultTopBar
 import org.connexuss.project.interfaces.LimitaTamanioAncho
 import org.connexuss.project.supabase.SupabaseSecretosRepo
@@ -742,14 +743,14 @@ class EncriptacionSimplificada{
         return aesGcm.keyGenerator(AES.Key.Size.B256).generateKey()
     }
 
-    /** Retorna Pair(nonceBytes, textoCifradoBytes) */
-    suspend fun AES.GCM.Key.encriptar(texto: ByteArray): Pair<ByteArray, ByteArray> {
-        val cipher = this.cipher()
-        val encrypted = cipher.encrypt(texto)       // incluye nonce/tag internamente
-        val nonce = cipher.iv                       // toma el IV usado
-        return nonce to encrypted
+    /**
+     * Cifra `texto`, devuelve Pair(nonce, ciphertextConTag),
+     * donde nonce son los primeros 12 bytes de encrypted.
+     */
+    suspend fun AES.GCM.Key.encriptar(texto: ByteArray): ByteArray {
+        // encrypt() ya genera un nonce de 12 bytes y lo pone al principio
+        return this.cipher().encrypt(texto)
     }
-
 
     @Serializable
     data class VaultSecretInsert(
@@ -758,15 +759,40 @@ class EncriptacionSimplificada{
     )
 
     @OptIn(ExperimentalEncodingApi::class)
+    fun Base64.encode(source: ByteArray, startIndex: Int = 0, endIndex: Int = source.size): String {
+        return Base64.Default.encode(source, startIndex, endIndex)
+    }
+
+    @OptIn(ExperimentalEncodingApi::class)
+    fun Base64.encodeIntoByteArray(
+        source: ByteArray,
+        destination: ByteArray,
+        destinationOffset: Int = 0,
+        startIndex: Int = 0,
+        endIndex: Int = source.size
+    ): Int {
+        return Base64.Default.encodeIntoByteArray(
+            source,
+            destination,
+            destinationOffset,
+            startIndex,
+            endIndex
+        )
+    }
+
+    @OptIn(ExperimentalEncodingApi::class)
     suspend fun insertarClaveEnVault(
         repo: SupabaseClient,
         key: AES.GCM.Key,
         temaId: String
     ) {
         val rawKey = key.encodeToByteArray(AES.Key.Format.RAW)
-        val keyB64 = Base64.encode(rawKey, Base64.NO_WRAP)
+        // Llamada correcta: devuelve directamente un String Base64
+        val keyB64: String = Base64.encode(rawKey)
+
         val payload = VaultSecretInsert(secret = keyB64, name = temaId)
-        repo.postgrest.from("vault.secrets")
+        repo.postgrest
+            .from("vault.secrets")
             .insert(payload)
             .decodeSingleOrNull<SecretoInsertado>()
     }
@@ -781,18 +807,84 @@ class EncriptacionSimplificada{
         repo: SupabaseClient,
         temaId: String
     ): AES.GCM.Key? {
-        val row = repo.from("vault.decrypted_secrets")
-            .select {
-                Columns.raw("decrypted_secret")
-                filter {
-                    eq("name", temaId)
-
-                }
-            }
+        // 1) Leer la fila de Vault
+        val row = repo.postgrest
+            .from("vault.decrypted_secrets")
+            .select { Columns.raw("decrypted_secret"); filter { eq("name", temaId) } }
             .decodeSingleOrNull<VaultSecretSelect>()
-        val keyBytes = row?.let { Base64.decode(it.decrypted_secret, Base64.NO_WRAP) }
-        val provider = CryptographyProvider.Default
-        val aesGcm = provider.get(AES.GCM)
-        return keyBytes?.let { aesGcm.keyDecoder().decodeFromByteArray(AES.Key.Format.RAW, it) }
+
+        // 2) Decodificar Base64 usando kotlin.io.encoding.Base64
+        val keyBytes: ByteArray? = row?.let {
+            Base64.decode(it.decrypted_secret)                // ← aquí ya no hay NO_WRAP
+        }
+
+        // 3) Reconstruir la clave AES
+        return keyBytes?.let {
+            val provider = CryptographyProvider.Default
+            val aesGcm = provider.get(AES.GCM)
+            aesGcm.keyDecoder().decodeFromByteArray(AES.Key.Format.RAW, it)
+        }
+    }
+
+    /**
+     * Dado el ciphertext con tag y el nonce, descifra.
+     */
+    suspend fun AES.GCM.Key.desencriptar(encrypted: ByteArray): ByteArray {
+        // decrypt() extrae internamente los primeros 12 bytes como nonce
+        return this.cipher().decrypt(encrypted)
+    }
+
+    @OptIn(ExperimentalEncodingApi::class)
+    suspend fun crearTemaSinPadding(
+        repoForo: SupabaseClient,
+        repoVault: SupabaseClient,
+        nombrePlain: String
+    ) {
+        val key = generarClaveAES()
+        val (nonce, cipherText) = key.encriptar(nombrePlain.encodeToByteArray())
+        val temaId = generateId()
+        insertarClaveEnVault(repoVault, key, temaId)
+
+        // Usamos una instancia sin padding
+        val noPadEncoder = Base64.Default.withPadding(option = Base64.PaddingOption.ABSENT)  // Kotlin 2.0+
+        val nombreB64: String = noPadEncoder.encode(cipherText)
+        // —> e.g. "Y2lwaGVydGV4dA" (sin '==')
+
+        repoForo.postgrest
+            .from("temas")
+            .insert(
+                mapOf(
+                    "id" to temaId,
+                    "nombre_cifrado" to nombreB64,
+                    "nonce_hex" to nonce.toHex()
+                )
+            )
+            .decodeSingleOrNull<SecretoInsertado>()
+    }
+
+    @OptIn(ExperimentalEncodingApi::class)
+    suspend fun leerTema(
+        repoForo: SupabaseClient,
+        repoVault: SupabaseClient,
+        temaId: String
+    ): String {
+        // 1) Recuperar clave
+        val key = obtenerClaveDesdeVault(repoVault, temaId)
+
+        // 2) Recuperar ciphertext y nonce
+        val row = repoForo.from("temas")
+            .select {
+                Columns.raw("nombre_cifrado")
+                Columns.raw("nonce_hex")
+                filter {
+                    eq("id", temaId)
+                }
+            }.decodeSingleOrNull<Map<String, String>>()
+        val cipherBytes = Base64.decode(row?.get("nombre_cifrado")!!, Base64.Default.withPadding(option = Base64.PaddingOption.ABSENT))
+        val nonce = row["nonce_hex"]!!.hexToByteArray()
+
+        // 3) Desencriptar y devolver texto
+        val plainBytes = key?.desencriptar(cipherBytes, nonce)
+        return String(plainBytes)
     }
 }
