@@ -220,7 +220,7 @@ data class ChatSummary(
     val unreadCount: Int
 )
 
-class ChatState(conversacionId: String) {
+class ChatState(conversacionId: String, private val userId: String) {
     val mensajes = mutableStateOf<List<Mensaje>>(emptyList())
     private val newMessagesCount = mutableStateOf(0)
 
@@ -235,17 +235,20 @@ class ChatState(conversacionId: String) {
         }
     }
 
-    private suspend fun startListeningToNewMessages(conversacionId: String) {
+    private suspend fun startListeningToNewMessages(conversacionId: String, currentUserId: String = userId) {
         var filtroConver = channel.postgresChangeFlow<PostgresAction.Insert>("public") {
             table = "mensaje"
         }.filter {
             it.decodeRecord<Mensaje>().idconversacion == conversacionId
         }.map { action -> action.decodeRecord<Mensaje>() }
             .onEach { nuevoMensaje ->
-                // Añádelo a la lista
-                mensajes.value += nuevoMensaje
-                // Incrementa el badge
-                newMessagesCount.value += 1
+                //val currentUserId = UsuarioPrincipal?.getIdUnicoMio()
+                if (nuevoMensaje.idusuario != currentUserId) {
+                    // Añádelo a la lista
+                    mensajes.value = mensajes.value + nuevoMensaje
+                    // Incrementa el badge
+                    newMessagesCount.value += 1
+                }
             }
             .launchIn(scope)
         channel.subscribe()
