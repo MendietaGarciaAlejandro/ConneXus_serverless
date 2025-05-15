@@ -682,7 +682,7 @@ fun muestraChats(navController: NavHostController) {
                                 bloqueados = usuariosBloqueados,
                                 onChatClick = { destino ->
                                     scope.launch {
-                                        ChatState.markAsRead(
+                                        chatState.onConversationOpened(
                                             userId            = currentUserId,           // el ID de usuario logueado
                                             conversacionId    = summary.conversacion.id  // el ID de la conversación
                                         )

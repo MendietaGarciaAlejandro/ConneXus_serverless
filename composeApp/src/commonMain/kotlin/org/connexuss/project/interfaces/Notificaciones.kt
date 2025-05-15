@@ -27,9 +27,11 @@ import androidx.navigation.NavHostController
 import io.github.jan.supabase.annotations.SupabaseExperimental
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.postgrest.query.Count
 import io.github.jan.supabase.postgrest.query.Order
 import io.github.jan.supabase.postgrest.query.filter.FilterOperation
 import io.github.jan.supabase.postgrest.query.filter.FilterOperator
+import io.github.jan.supabase.postgrest.query.request.RpcRequestBuilder
 import io.github.jan.supabase.realtime.PostgresAction
 import io.github.jan.supabase.realtime.RealtimeChannel
 import io.github.jan.supabase.realtime.channel
@@ -222,7 +224,7 @@ data class ChatSummary(
 
 class ChatState(conversacionId: String, userId: String) {
     val mensajes = mutableStateOf<List<Mensaje>>(emptyList())
-    private val newMessagesCount = mutableStateOf(0)
+    private var newMessagesCount = mutableStateOf(0)
 
     private val scope = MainScope()
     private val channel = Supabase.client.realtime.channel("public:mensaje")
@@ -256,17 +258,17 @@ class ChatState(conversacionId: String, userId: String) {
             it.decodeRecord<Mensaje>().idconversacion == conversacionId
         }*/.map { action -> action.decodeRecord<Mensaje>() }
             .onEach { nuevoMensaje ->
-                //val currentUserId = UsuarioPrincipal?.getIdUnicoMio()
-                //println("✔️ Mensaje de otro usuario, lo contamos")
-                //if (nuevoMensaje.idusuario != currentUserId) {
-                    //println("✔️ Mensaje de otro usuario, lo contamos")
+                val currentUserId = UsuarioPrincipal?.getIdUnicoMio()
+                println("✔️ Mensaje de otro usuario, lo contamos")
+                if (nuevoMensaje.idusuario != currentUserId) {
+                    println("✔️ Mensaje de otro usuario, lo contamos")
                     // Añádelo a la lista
                     mensajes.value = mensajes.value + nuevoMensaje
                     // Incrementa el badge
                     newMessagesCount.value += 1
-                //} else {
-                //    println("🚫 Mensaje propio, lo ignoro")
-                //}
+                } else {
+                    println("🚫 Mensaje propio, lo ignoro")
+                }
             }
             .launchIn(scope)
         channel.subscribe()
@@ -396,6 +398,34 @@ class ChatState(conversacionId: String, userId: String) {
                 println("Error al marcar como leído: ${e.message}")
                 throw e
             }
+        }
+    }
+
+    // Llama a esto justo cuando el usuario abra la conversación
+    suspend fun onConversationOpened( userId: String, conversacionId: String) {
+        try {
+            // 1) Marca como leído en la base
+            markAsRead(userId, conversacionId)
+
+            // 2) Obtén el nuevo count (debería ser 0 tras el update)
+            val params = buildJsonObject {
+                put("p_conversacion", JsonPrimitive(conversacionId))
+                put("p_last_read", JsonPrimitive(Clock.System.now().toString()))
+            }
+            val newCount: Int = Supabase.client
+                .postgrest
+                .rpc(
+                    "count_unread",
+                    params
+                ) {
+                    count(Count.EXACT)
+                }
+                .decodeAs<Int>()
+
+            // 3) Actualiza tu estado local
+            newMessagesCount.value = newCount
+        } catch (e: Exception) {
+            println("Error al marcar como leído: ${e.message}")
         }
     }
 
