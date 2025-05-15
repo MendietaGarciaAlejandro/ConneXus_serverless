@@ -88,7 +88,9 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
         )
         .collectAsState(initial = emptyList())
 
-    val mensajes = todosLosMensajes.filter { it.idconversacion == chatId }
+    val mensajes = todosLosMensajes
+        .filter { it.idconversacion == chatId }
+        .sortedBy { it.fechaMensaje } // ✅ ordena por la fecha del mensaje
 
     LaunchedEffect(chatId) {
         if (chatId == null) return@LaunchedEffect
