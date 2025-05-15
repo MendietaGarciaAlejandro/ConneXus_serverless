@@ -12,19 +12,19 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.AlertDialog
-import androidx.compose.material.CircularProgressIndicator
-import androidx.compose.material.DropdownMenu
-import androidx.compose.material.DropdownMenuItem
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.OutlinedTextField
-import androidx.compose.material.Scaffold
-import androidx.compose.material.Text
-import androidx.compose.material.TextButton
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.automirrored.rounded.Send
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -182,26 +182,27 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
                                 expanded = expanded,
                                 onDismissRequest = { expanded = false }
                             ) {
-                                DropdownMenuItem(onClick = {
-                                    nuevoContenido = mensaje.content
-                                    showEditDialog = true
-                                    expanded = false
-                                }) {
-                                    Text("Editar")
-                                }
-
-                                DropdownMenuItem(onClick = {
-                                    scope.launch {
-                                        supabaseClient
-                                            .from("mensaje")
-                                            .update({ set("content", "Mensaje eliminado") }) {
-                                                filter { eq("id", mensaje.id) }
-                                            }
+                                DropdownMenuItem(
+                                    text = { Text("Editar") },
+                                    onClick = {
+                                        nuevoContenido = mensaje.content
+                                        showEditDialog = true
+                                        expanded = false
                                     }
-                                    expanded = false
-                                }) {
-                                    Text("Eliminar")
-                                }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Eliminar") },
+                                    onClick = {
+                                        scope.launch {
+                                            supabaseClient
+                                                .from("mensaje")
+                                                .update( { set("content", "Mensaje eliminado") }) {
+                                                    filter { eq("id", mensaje.id) }
+                                                }
+                                        }
+                                        expanded = false
+                                    }
+                                )
                             }
                         }
 
@@ -269,7 +270,7 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
                         }
                     }
                 }) {
-                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Enviar")
+                    Icon(Icons.AutoMirrored.Rounded.Send, contentDescription = "Enviar")
                 }
             }
         }
@@ -383,7 +384,7 @@ fun mostrarChatGrupo(
                             if (!esMio) {
                                 Text(
                                     text = senderAlias,
-                                    style = MaterialTheme.typography.caption,
+                                    style = MaterialTheme.typography.bodySmall,
                                     color = Color.DarkGray
                                 )
                             }
@@ -419,7 +420,7 @@ fun mostrarChatGrupo(
                         }
                     }
                 }) {
-                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Enviar")
+                    Icon(Icons.AutoMirrored.Rounded.Send, contentDescription = "Enviar")
                 }
             }
         }
