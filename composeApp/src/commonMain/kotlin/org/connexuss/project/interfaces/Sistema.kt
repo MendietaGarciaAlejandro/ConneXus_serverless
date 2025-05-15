@@ -44,6 +44,7 @@ import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -559,7 +560,9 @@ fun ChatCard(
 // --- Chats PorDefecto ---
 @Composable
 fun muestraChats(navController: NavHostController) {
+
     val currentUserId = UsuarioPrincipal?.getIdUnicoMio() ?: return
+
     var summaries by remember { mutableStateOf<List<ChatSummary>>(emptyList()) }
     val repo = remember { SupabaseRepositorioGenerico() }
     val scope = rememberCoroutineScope()
@@ -569,6 +572,16 @@ fun muestraChats(navController: NavHostController) {
     var todosLosUsuarios by remember { mutableStateOf<List<Usuario>>(emptyList()) }
     var mensajes by remember { mutableStateOf<List<Mensaje>>(emptyList()) }
     var usuariosBloqueados by remember { mutableStateOf<Set<String>>(emptySet()) }
+
+    LaunchedEffect(currentUserId, relacionesConversaciones) {
+        summaries = relacionesConversaciones
+            .filter { it.idusuario == currentUserId }
+            .map { rel ->
+                // cada ChatSummary lo obtienes con tu función estática
+                ChatState.fetchChatSummaries(currentUserId)
+                    .first { it.conversacion.id == rel.idconversacion }
+            }
+    }
 
     LaunchedEffect(Unit) {
         repo.getAll<ConversacionesUsuario>("conversaciones_usuario").collect {
@@ -656,6 +669,13 @@ fun muestraChats(navController: NavHostController) {
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         items(summaries) { summary ->
+                            // 3) Para cada item, recuerda y gestiona su ChatState
+                            val chatState = remember(summary.conversacion.id) {
+                                ChatState(currentUserId, summary.conversacion.id)
+                            }
+                            DisposableEffect(chatState) {
+                                onDispose { chatState.stop() }
+                            }
                             ChatCard(
                                 summary = summary,
                                 navController = navController,
