@@ -220,7 +220,7 @@ data class ChatSummary(
     val unreadCount: Int
 )
 
-class ChatState(conversacionId: String, private val userId: String) {
+class ChatState(conversacionId: String, userId: String) {
     val mensajes = mutableStateOf<List<Mensaje>>(emptyList())
     private val newMessagesCount = mutableStateOf(0)
 
@@ -231,24 +231,42 @@ class ChatState(conversacionId: String, private val userId: String) {
         fetchMessages(conversacionId)  // carga inicial y resetea badge
 
         scope.launch {
-            startListeningToNewMessages(conversacionId)
+            startListeningToNewMessages(conversacionId, userId)
         }
     }
 
-    private suspend fun startListeningToNewMessages(conversacionId: String, currentUserId: String = userId) {
+    private suspend fun startListeningToNewMessages(conversacionId: String, userId: String) {
         var filtroConver = channel.postgresChangeFlow<PostgresAction.Insert>("public") {
             table = "mensaje"
-        }.filter {
+            filter(
+                FilterOperation(
+                    column = "idconversacion",
+                    operator = FilterOperator.EQ,
+                    value = conversacionId
+                )
+            )
+            filter(
+                FilterOperation(
+                    column = "idusuario",
+                    operator = FilterOperator.NEQ,
+                    value = userId
+                )
+            )
+        }/*.filter {
             it.decodeRecord<Mensaje>().idconversacion == conversacionId
-        }.map { action -> action.decodeRecord<Mensaje>() }
+        }*/.map { action -> action.decodeRecord<Mensaje>() }
             .onEach { nuevoMensaje ->
                 //val currentUserId = UsuarioPrincipal?.getIdUnicoMio()
-                if (nuevoMensaje.idusuario != currentUserId) {
+                //println("✔️ Mensaje de otro usuario, lo contamos")
+                //if (nuevoMensaje.idusuario != currentUserId) {
+                    //println("✔️ Mensaje de otro usuario, lo contamos")
                     // Añádelo a la lista
                     mensajes.value = mensajes.value + nuevoMensaje
                     // Incrementa el badge
                     newMessagesCount.value += 1
-                }
+                //} else {
+                //    println("🚫 Mensaje propio, lo ignoro")
+                //}
             }
             .launchIn(scope)
         channel.subscribe()
