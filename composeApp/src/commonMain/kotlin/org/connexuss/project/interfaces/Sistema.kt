@@ -2221,7 +2221,7 @@ fun PantallaRegistro(navController: NavHostController) {
             }
         ) { padding ->
             Box(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
                 contentAlignment = Alignment.Center
             ) {
                 LimitaTamanioAncho { modifier ->
@@ -2500,7 +2500,7 @@ fun PantallaLogin(navController: NavHostController, settingsState: SettingsState
             }
         ) { padding ->
             Box(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
                 contentAlignment = Alignment.Center
             ) {
                 LimitaTamanioAncho { modifier ->
