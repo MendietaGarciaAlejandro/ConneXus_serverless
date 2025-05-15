@@ -108,16 +108,23 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DefaultTopBar(
-    title: String, // Se pasa la clave en lugar del texto literal
+    title: String, // Clave para el título
     navController: NavHostController?,
     showBackButton: Boolean = false,
     irParaAtras: Boolean = false,
     muestraEngranaje: Boolean = true,
 ) {
-
-    val iconoBoton: (@Composable () -> Unit)? =
-        if (showBackButton) {
-            {
+    TopAppBar(
+        title = {
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(text = traducir(title))
+            }
+        },
+        navigationIcon = {
+            if (showBackButton) {
                 IconButton(onClick = {
                     if (navController != null && irParaAtras) {
                         navController.popBackStack()
@@ -129,35 +136,20 @@ fun DefaultTopBar(
                     )
                 }
             }
-        } else null
-
-    if (iconoBoton != null) {
-        TopAppBar(
-            title = {
-                Box(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    // Se usa traducir para obtener el texto a partir de la clave
-                    Text(text = traducir(title))
-                }
-            },
-            navigationIcon = iconoBoton,
-            actions = {
-                if (muestraEngranaje) {
-                    IconButton(onClick = {
-                        navController?.navigate("ajustes")
-                    }) {
-                        Icon(
-                            imageVector = Icons.Default.Settings,
-                            // Se obtiene el texto traducido para "ajustes"
-                            contentDescription = traducir("ajustes")
-                        )
-                    }
+        },
+        actions = {
+            if (muestraEngranaje) {
+                IconButton(onClick = {
+                    navController?.navigate("ajustes")
+                }) {
+                    Icon(
+                        imageVector = Icons.Default.Settings,
+                        contentDescription = traducir("ajustes")
+                    )
                 }
             }
-        )
-    }
+        }
+    )
 }
 
 // Topbar para el grupo en el que se esta chateando,mostrando a la derecha un icono de usuarios
