@@ -58,7 +58,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.key.Key.Companion.R
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -98,7 +97,6 @@ import org.connexuss.project.persistencia.clearSession
 import org.connexuss.project.persistencia.getRestoredSessionFlow
 import org.connexuss.project.persistencia.getTemaConfigFlow
 import org.connexuss.project.persistencia.saveSession
-import org.connexuss.project.persistencia.settings
 import org.connexuss.project.supabase.SupabaseRepositorioGenerico
 import org.connexuss.project.supabase.SupabaseUsuariosRepositorio
 import org.connexuss.project.usuario.AlmacenamientoUsuario
@@ -559,57 +557,57 @@ fun ChatCard(
         "mostrarChat/${conversacion.id}"
     }
 
+    val colors = MaterialTheme.colorScheme
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
-            .then(
-                if (!estaBloqueado) Modifier.clickable {
-                    println("🧭 Navegando a: $destino")
-                    navController.navigate(destino)
-                } else Modifier
-            ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 4.dp
-        ),
-        colors = if (estaBloqueado)
-            CardColors(
-                containerColor = Color.Red.copy(alpha = 0.2f),
-                contentColor = Color.Unspecified,
-                disabledContainerColor = Color.Gray,
-                disabledContentColor = Color.Gray
+            .then( if (!estaBloqueado) Modifier.clickable {
+                println("🧭 Navegando a: $destino")
+                navController.navigate(destino)
+            } else Modifier ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        colors = if (estaBloqueado) {
+            // Mantén tu lógica de bloqueado
+            CardDefaults.cardColors(
+                containerColor = colors.errorContainer,
+                contentColor = colors.onErrorContainer
             )
-        else CardDefaults.cardColors(
-            containerColor = Color.White,
-            contentColor = Color.Unspecified,
-            disabledContainerColor = Color.Gray,
-            disabledContentColor = Color.Gray
-        )
+        } else {
+            CardDefaults.cardColors(
+                // Usa surfaceVariant para cards secundarias
+                containerColor = colors.surfaceVariant,
+                contentColor = colors.onSurface
+            )
+        }
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = displayName,
+                text  = displayName,
                 style = MaterialTheme.typography.headlineSmall,
-                color = if (estaBloqueado) Color.Red else MaterialTheme.colorScheme.onSurface
+                color = if (estaBloqueado) colors.error else colors.onSurface
             )
-
             nombresParticipantes?.let {
                 Text(
-                    text = it,
+                    text  = it,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = if (estaBloqueado) Color.Red else Color.Gray,
-                    modifier = Modifier.padding(top = 4.dp, bottom = 4.dp)
+                    // Usa onSurfaceVariant para texto de apoyo
+                    color = if (estaBloqueado) colors.error else colors.onSurfaceVariant,
+                    modifier = Modifier
+                        .padding(vertical = 4.dp)
                 )
             }
-
-            if (ultimoMensaje != null && !estaBloqueado) {
-                Text(
-                    text = ultimoMensaje.content,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+            ultimoMensaje?.let {
+                if (!estaBloqueado) {
+                    Text(
+                        text     = it.content,
+                        style    = MaterialTheme.typography.bodyLarge,
+                        color    = colors.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
             }
         }
     }

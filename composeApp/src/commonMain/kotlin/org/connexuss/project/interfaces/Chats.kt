@@ -36,6 +36,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
@@ -118,6 +119,12 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
         return
     }
 
+    val colors = MaterialTheme.colorScheme
+    val textColor = if (colors.background.luminance() > 0.5f)
+        colors.onBackground    // fondo claro → texto oscuro
+    else
+        colors.onBackground    // fondo oscuro → texto claro
+
     Scaffold(
         topBar = {
             TopBarUsuario(
@@ -174,7 +181,11 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
                                 .padding(12.dp)
                                 .widthIn(max = 280.dp)
                         ) {
-                            Text(mensaje.content)
+                            Text(
+                                text  = mensaje.content,
+                                color = textColor,
+                                style = MaterialTheme.typography.bodyLarge
+                            )
                         }
 
                         if (esMio) {
