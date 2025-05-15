@@ -1,32 +1,59 @@
 package org.connexuss.project.interfaces
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.rounded.AccountCircle
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
-import io.github.jan.supabase.postgrest.query.PostgrestQueryBuilder
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
 import org.connexuss.project.comunicacion.Hilo
 import org.connexuss.project.comunicacion.Post
 import org.connexuss.project.comunicacion.Tema
@@ -42,10 +69,11 @@ private val repoForo = SupabaseRepositorioGenerico()
 // -----------------------
 // Pantalla principal del foro
 // -----------------------
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ForoScreen(navController: NavHostController) {
     val scope = rememberCoroutineScope()
-    val scaffoldState = rememberScaffoldState()
+    val scaffoldState = remember { SnackbarHostState() }
     var showNewTopicDialog by remember { mutableStateOf(false) }
     var searchText by remember { mutableStateOf("") }
     val refreshTrigger = remember { mutableStateOf(0) }
@@ -60,14 +88,13 @@ fun ForoScreen(navController: NavHostController) {
     }
 
     // Flujos de temas y hilos
-    val temas by repoForo.getAll<Tema>(tablaTemas).collectAsState(initial = emptyList())
     val hilos by repoForo.getAll<Hilo>(tablaHilos).collectAsState(initial = emptyList())
 
     // Filtrar temas y contar hilos
     val filteredTemas = temasFlow.collectAsState(initial = emptyList()).value
 
     Scaffold(
-        scaffoldState = scaffoldState,
+        snackbarHost = { scaffoldState },
         topBar = {
             TopAppBar(
                 title = { Text("Foro General") },
@@ -81,7 +108,10 @@ fun ForoScreen(navController: NavHostController) {
                             .width(150.dp)
                     )
                     IconButton(onClick = { showNewTopicDialog = true }) {
-                        Icon(Icons.Filled.Add, contentDescription = "Nuevo tema")
+                        Icon(
+                            Icons.Rounded.Add,
+                            contentDescription = "Nuevo tema"
+                        )
                     }
                 }
             )
@@ -122,8 +152,8 @@ fun ForoScreen(navController: NavHostController) {
                         scope.launch {
                             repoForo.addItem(tablaTemas, Tema(nombre = nombre))
                             refreshTrigger.value++
-                            scaffoldState.snackbarHostState.showSnackbar(
-                                "Tema '$nombre' creado",
+                            scaffoldState.showSnackbar(
+                                message = "Tema '$nombre' creado",
                                 duration = SnackbarDuration.Short
                             )
                             showNewTopicDialog = false
@@ -138,6 +168,7 @@ fun ForoScreen(navController: NavHostController) {
 // -----------------------
 // Pantalla de un tema y sus hilos
 // -----------------------
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TemaScreen(navController: NavHostController, temaId: String) {
     val scope = rememberCoroutineScope()
@@ -262,7 +293,6 @@ fun HiloScreen(navController: NavHostController, hiloId: String, startRoute: Str
     var refreshTrigger by remember { mutableStateOf(0) }
 
     // Tablas de temas y hilos
-    val tablaTemas = "tema"
     val tablaHilos = "hilo"
     val tablaPosts = "post"
 
@@ -326,7 +356,7 @@ fun HiloScreen(navController: NavHostController, hiloId: String, startRoute: Str
                         PostItem(post = post)
                     }
                 }
-                Divider()
+                HorizontalDivider()
                 // Sección para nuevo post
                 Row(
                     modifier = Modifier
@@ -414,15 +444,17 @@ fun TemaCard(tema: Tema, hilosCount: Int, onTemaClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onTemaClick),
-        elevation = 4.dp,
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 4.dp
+        ),
         shape = RoundedCornerShape(8.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = tema.nombre, style = MaterialTheme.typography.h6)
+            Text(text = tema.nombre, style = MaterialTheme.typography.headlineMedium)
             Spacer(Modifier.height(4.dp))
             Text(
                 text = "$hilosCount ${if (hilosCount==1) "hilo" else "hilos"}",
-                style = MaterialTheme.typography.caption
+                style = MaterialTheme.typography.labelMedium
             )
         }
     }
@@ -434,13 +466,15 @@ fun HiloCard(hilo: Hilo, onClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() },
-        elevation = 4.dp,
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 4.dp
+        ),
         shape = RoundedCornerShape(8.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = hilo.nombre ?: "Hilo sin título", style = MaterialTheme.typography.subtitle1)
+            Text(text = hilo.nombre ?: "Hilo sin título", style = MaterialTheme.typography.labelSmall)
             Spacer(Modifier.height(2.dp))
-            Text(text = "ID Tema: ${hilo.idTema}", style = MaterialTheme.typography.caption)
+            Text(text = "ID Tema: ${hilo.idTema}", style = MaterialTheme.typography.labelMedium)
         }
     }
 }
@@ -449,33 +483,37 @@ fun HiloCard(hilo: Hilo, onClick: () -> Unit) {
 fun PostItem(post: Post) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        elevation = 2.dp,
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 2.dp
+        ),
         shape = RoundedCornerShape(8.dp)
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.AccountCircle, contentDescription = null, modifier = Modifier.size(24.dp))
+                Icon(Icons.Rounded.AccountCircle, contentDescription = null, modifier = Modifier.size(24.dp))
                 Spacer(Modifier.width(8.dp))
                 Text(text = post.aliaspublico, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.weight(1f))
-                Text(text = post.fechaPost.toString(), style = MaterialTheme.typography.caption)
+                Text(text = post.fechaPost.toString(), style = MaterialTheme.typography.labelMedium)
             }
             Spacer(Modifier.height(8.dp))
-            Text(text = post.content, style = MaterialTheme.typography.body1)
+            Text(text = post.content, style = MaterialTheme.typography.bodyMedium)
         }
     }
 }
 
 @Composable
 fun BackButton(navController: NavHostController) {
-    IconButton(onClick = { navController.navigateUp() }) {
-        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás")
+    IconButton(onClick = { navController.navigateUp() }) {Icon(
+        Icons.AutoMirrored.Rounded.ArrowBack,
+        contentDescription = "Volver atrás"
+    )
     }
 }
 
 @Composable
 fun EmptyStateMessage(message: String) {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(text = message, style = MaterialTheme.typography.h6, color = MaterialTheme.colors.onSurface.copy(alpha = 0.6f))
+        Text(text = message, style = MaterialTheme.typography.headlineLarge, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
     }
 }

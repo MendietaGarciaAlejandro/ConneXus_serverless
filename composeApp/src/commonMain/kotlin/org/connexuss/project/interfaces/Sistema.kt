@@ -21,28 +21,28 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.AlertDialog
-import androidx.compose.material.BottomNavigation
-import androidx.compose.material.BottomNavigationItem
-import androidx.compose.material.Button
-import androidx.compose.material.Card
-import androidx.compose.material.Checkbox
-import androidx.compose.material.FloatingActionButton
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.OutlinedTextField
-import androidx.compose.material.Scaffold
-import androidx.compose.material.Text
-import androidx.compose.material.TextButton
-import androidx.compose.material.TopAppBar
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.CardColors
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -91,7 +91,6 @@ import org.connexuss.project.misc.sesionActualUsuario
 import org.connexuss.project.persistencia.SettingsState
 import org.connexuss.project.persistencia.clearSession
 import org.connexuss.project.persistencia.getRestoredSessionFlow
-import org.connexuss.project.persistencia.getSessionFlow
 import org.connexuss.project.persistencia.saveSession
 import org.connexuss.project.supabase.SupabaseRepositorioGenerico
 import org.connexuss.project.supabase.SupabaseUsuariosRepositorio
@@ -104,6 +103,7 @@ import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DefaultTopBar(
     title: String, // Se pasa la clave en lugar del texto literal
@@ -154,6 +154,7 @@ fun DefaultTopBar(
 }
 
 // Topbar para el grupo en el que se esta chateando,mostrando a la derecha un icono de usuarios
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TopBarGrupo(
     title: String, // Clave para el título (se usará traducir(title))
@@ -163,7 +164,22 @@ fun TopBarGrupo(
     muestraEngranaje: Boolean = true,
     onUsuariosClick: () -> Unit = {} // Acción al pulsar sobre el icono de usuarios
 ) {
-    TopAppBar(
+    (if (showBackButton) {
+
+        IconButton(onClick = {
+            if (navController != null && irParaAtras) {
+                //  navController.navigate("usuariosGrupo")
+                navController.popBackStack()
+            }
+        }) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = traducir("atras")
+            )
+        }
+
+    } else null)?.let {
+        TopAppBar(
         title = {
             Box(
                 modifier = Modifier.fillMaxWidth(),
@@ -173,21 +189,7 @@ fun TopBarGrupo(
                 Text(text = traducir(title))
             }
         },
-        navigationIcon = if (showBackButton) {
-            {
-                IconButton(onClick = {
-                    if (navController != null && irParaAtras) {
-                      //  navController.navigate("usuariosGrupo")
-                        navController.popBackStack()
-                    }
-                }) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = traducir("atras")
-                    )
-                }
-            }
-        } else null,
+        navigationIcon = it,
         actions = {
             if (muestraEngranaje) {
                 IconButton(onClick = onUsuariosClick) {
@@ -201,6 +203,7 @@ fun TopBarGrupo(
             }
         }
     )
+    }
 }
 
 // Interfaz que muestra los usuarios del grupo, si se hace clic en un usuario, se muestra su perfil
@@ -237,20 +240,22 @@ fun MuestraUsuariosGrupo(
                                 .clickable {
                                     navController.navigate("mostrarPerfil/${usuario.getIdUnicoMio()}")
                                 },
-                            elevation = 4.dp
+                            elevation = CardDefaults.cardElevation(
+                                defaultElevation = 4.dp
+                            )
                         ) {
                             Column(modifier = Modifier.padding(16.dp)) {
                                 Text(
                                     text = "${traducir("nombre_label")} ${usuario.getNombreCompletoMio()}",
-                                    style = MaterialTheme.typography.subtitle1
+                                    style = MaterialTheme.typography.labelSmall
                                 )
                                 Text(
                                     text = "${traducir("alias_label")} ${usuario.getAliasMio()}",
-                                    style = MaterialTheme.typography.body1
+                                    style = MaterialTheme.typography.bodyLarge
                                 )
                                 Text(
                                     text = "${traducir("alias_privado_label")} ${usuario.getAliasPrivadoMio()}",
-                                    style = MaterialTheme.typography.body2
+                                    style = MaterialTheme.typography.bodyMedium
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
                             }
@@ -295,7 +300,7 @@ fun TopBarUsuario(
                     modifier = Modifier.fillMaxWidth(),
                     contentAlignment = Alignment.CenterStart
                 ) {
-                    Text(text = traducir(title), style = MaterialTheme.typography.h6)
+                    Text(text = traducir(title), style = MaterialTheme.typography.headlineSmall)
                 }
             }
         },
@@ -454,20 +459,22 @@ fun muestraUsuarios(navController: NavHostController) {
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .padding(vertical = 4.dp),
-                                        elevation = 4.dp
+                                        elevation = CardDefaults.cardElevation(
+                                            defaultElevation = 4.dp
+                                        ),
                                     ) {
                                         Column(modifier = Modifier.padding(16.dp)) {
                                             Text(
                                                 text = "${traducir("nombre_label")} ${usuario.getNombreCompletoMio()}",
-                                                style = MaterialTheme.typography.subtitle1
+                                                style = MaterialTheme.typography.labelSmall
                                             )
                                             Text(
                                                 text = "${traducir("alias_label")} ${usuario.getAliasMio()}",
-                                                style = MaterialTheme.typography.body1
+                                                style = MaterialTheme.typography.bodyLarge
                                             )
                                             Text(
                                                 text = "${traducir("activo_label")} ${usuario.getActivoMio()}",
-                                                style = MaterialTheme.typography.body2
+                                                style = MaterialTheme.typography.bodyMedium
                                             )
                                             Spacer(modifier = Modifier.height(8.dp))
                                         }
@@ -534,20 +541,34 @@ fun ChatCard(
                     navController.navigate(destino)
                 } else Modifier
             ),
-        elevation = 4.dp,
-        backgroundColor = if (estaBloqueado) Color.Red.copy(alpha = 0.2f) else MaterialTheme.colors.surface
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 4.dp
+        ),
+        colors = if (estaBloqueado)
+            CardColors(
+                containerColor = Color.Red.copy(alpha = 0.2f),
+                contentColor = Color.Unspecified,
+                disabledContainerColor = Color.Gray,
+                disabledContentColor = Color.Gray
+            )
+        else CardDefaults.cardColors(
+            containerColor = Color.White,
+            contentColor = Color.Unspecified,
+            disabledContainerColor = Color.Gray,
+            disabledContentColor = Color.Gray
+        )
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
                 text = displayName,
-                style = MaterialTheme.typography.h6,
-                color = if (estaBloqueado) Color.Red else MaterialTheme.colors.onSurface
+                style = MaterialTheme.typography.headlineSmall,
+                color = if (estaBloqueado) Color.Red else MaterialTheme.colorScheme.onSurface
             )
 
             nombresParticipantes?.let {
                 Text(
                     text = it,
-                    style = MaterialTheme.typography.body2,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = if (estaBloqueado) Color.Red else Color.Gray,
                     modifier = Modifier.padding(top = 4.dp, bottom = 4.dp)
                 )
@@ -556,8 +577,8 @@ fun ChatCard(
             if (ultimoMensaje != null && !estaBloqueado) {
                 Text(
                     text = ultimoMensaje.content,
-                    style = MaterialTheme.typography.body1,
-                    color = MaterialTheme.colors.onSurface,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -769,24 +790,38 @@ fun muestraContactos(navController: NavHostController) {
                                             }
                                         else Modifier // no clickable
                                     ),
-                                elevation = 4.dp,
-                                backgroundColor = if (estaBloqueado) Color.Red.copy(alpha = 0.2f) else Color.White
+                                elevation = CardDefaults.cardElevation(
+                                    defaultElevation = 4.dp
+                                ),
+                                colors = if (estaBloqueado)
+                                    CardColors(
+                                        containerColor = Color.Red.copy(alpha = 0.2f),
+                                        contentColor = Color.Unspecified,
+                                        disabledContainerColor = Color.Gray,
+                                        disabledContentColor = Color.Gray
+                                    )
+                                else CardDefaults.cardColors(
+                                    containerColor = Color.White,
+                                    contentColor = Color.Unspecified,
+                                    disabledContainerColor = Color.Gray,
+                                    disabledContentColor = Color.Gray
+                                )
                             ) {
                                 Column(modifier = Modifier.padding(16.dp)) {
                                     Text(
                                         text = "${traducir("nombre_label")}: ${usuario.getNombreCompletoMio()}",
-                                        style = MaterialTheme.typography.subtitle1,
+                                        style = MaterialTheme.typography.labelSmall,
                                         color = if (estaBloqueado) Color.Red else Color.Unspecified
                                     )
                                     Text(
                                         text = "${traducir("alias_label")}: ${usuario.getAliasMio()}",
-                                        style = MaterialTheme.typography.body1,
+                                        style = MaterialTheme.typography.bodyLarge,
                                         color = if (estaBloqueado) Color.Red else Color.Unspecified
                                     )
                                     if (estaBloqueado) {
                                         Text(
                                             text = "Bloqueado",
-                                            style = MaterialTheme.typography.caption,
+                                            style = MaterialTheme.typography.displaySmall,
                                             color = Color.Red
                                         )
                                     }
@@ -986,7 +1021,9 @@ fun UsuCard(usuario: Usuario, onClick: () -> Unit) {
             .fillMaxWidth()
             .padding(vertical = 4.dp)
             .clickable(onClick = onClick),
-        elevation = 4.dp
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 4.dp
+        )
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -1008,15 +1045,15 @@ fun UsuCard(usuario: Usuario, onClick: () -> Unit) {
             Column {
                 Text(
                     text = "${traducir("nombre_label")} ${usuario.getNombreCompletoMio()}",
-                    style = MaterialTheme.typography.subtitle1
+                    style = MaterialTheme.typography.displaySmall
                 )
                 Text(
                     text = "${traducir("alias_publico")} ${usuario.getAliasMio()}",
-                    style = MaterialTheme.typography.body1
+                    style = MaterialTheme.typography.bodyLarge
                 )
                 Text(
                     text = "${traducir("alias_privado")} ${usuario.getAliasPrivadoMio()}",
-                    style = MaterialTheme.typography.body2
+                    style = MaterialTheme.typography.bodyMedium
                 )
             }
         }
@@ -1856,7 +1893,7 @@ fun PantallaEmailBase(
                         contentDescription = "Ícono de la aplicación",
                         modifier = Modifier.size(100.dp)
                     )
-                    Text(traducir(mensajeKey), style = MaterialTheme.typography.h6)
+                    Text(traducir(mensajeKey), style = MaterialTheme.typography.headlineLarge)
                     Spacer(modifier = Modifier.height(16.dp))
 
                     // Campo de código si es necesario
@@ -2018,14 +2055,14 @@ fun PantallaRestablecer(navController: NavHostController) {
                         }
 
                         if (error.isNotEmpty()) {
-                            Text(error, color = MaterialTheme.colors.error, textAlign = TextAlign.Center)
+                            Text(error, color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center)
                         }
 
                         Spacer(Modifier.height(24.dp))
 
                         Text(
                             "Una vez restablezcas tu contraseña desde el navegador, vuelve a esta app y entra con tu nueva clave.",
-                            style = MaterialTheme.typography.body2,
+                            style = MaterialTheme.typography.bodyMedium,
                             color = Color.Gray,
                             textAlign = TextAlign.Center
                         )
@@ -2166,7 +2203,7 @@ fun muestraRestablecimientoContasenna(navController: NavHostController) {
 
                         if (errorMessage.isNotEmpty()) {
                             Spacer(Modifier.height(8.dp))
-                            Text(errorMessage, color = MaterialTheme.colors.error)
+                            Text(errorMessage, color = MaterialTheme.colorScheme.error)
                         }
                     }
                 }
@@ -2324,7 +2361,7 @@ fun PantallaRegistro(navController: NavHostController) {
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
                                 errorMessage,
-                                color = MaterialTheme.colors.error,
+                                color = MaterialTheme.colorScheme.error,
                                 textAlign = TextAlign.Center,
                                 modifier = Modifier.fillMaxWidth()
                             )
@@ -2373,7 +2410,7 @@ fun PantallaVerificaCorreo(
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text("Hemos enviado un correo de verificación a:")
-                Text(email ?: "", style = MaterialTheme.typography.h6)
+                Text(email ?: "", style = MaterialTheme.typography.headlineLarge)
                 Spacer(Modifier.height(16.dp))
                 Text("Verifica tu cuenta, y luego pulsa el botón para continuar.")
                 Spacer(Modifier.height(24.dp))
@@ -2451,7 +2488,7 @@ fun PantallaVerificaCorreo(
 
                 if (mensaje.isNotEmpty()) {
                     Spacer(Modifier.height(12.dp))
-                    Text(mensaje, color = MaterialTheme.colors.error)
+                    Text(mensaje, color = MaterialTheme.colorScheme.error)
                 }
             }
         }
@@ -2552,7 +2589,7 @@ fun PantallaLogin(navController: NavHostController, settingsState: SettingsState
                             Spacer(Modifier.width(8.dp))
                             Text(
                                 text = traducir("recuerdame"),
-                                style = MaterialTheme.typography.body1
+                                style = MaterialTheme.typography.bodyMedium
                             )
                         }
                         Spacer(modifier = Modifier.height(16.dp))
@@ -2653,7 +2690,7 @@ fun PantallaLogin(navController: NavHostController, settingsState: SettingsState
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
                                 errorMessage,
-                                color = MaterialTheme.colors.error,
+                                color = MaterialTheme.colorScheme.error,
                                 textAlign = TextAlign.Center,
                                 modifier = Modifier.fillMaxWidth()
                             )
