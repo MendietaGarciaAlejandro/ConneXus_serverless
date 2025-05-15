@@ -59,6 +59,7 @@ import org.connexuss.project.comunicacion.Post
 import org.connexuss.project.comunicacion.Tema
 import org.connexuss.project.comunicacion.generateId
 import org.connexuss.project.misc.UsuarioPrincipal
+import org.connexuss.project.persistencia.SettingsState
 import org.connexuss.project.supabase.SupabaseHiloRepositorio
 import org.connexuss.project.supabase.SupabaseRepositorioGenerico
 import org.connexuss.project.supabase.SupabaseTemasRepositorio
@@ -71,7 +72,7 @@ private val repoForo = SupabaseRepositorioGenerico()
 // -----------------------
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ForoScreen(navController: NavHostController) {
+fun ForoScreen(navController: NavHostController, settingsState: SettingsState) {
     val scope = rememberCoroutineScope()
     val scaffoldState = remember { SnackbarHostState() }
     var showNewTopicDialog by remember { mutableStateOf(false) }
@@ -116,7 +117,7 @@ fun ForoScreen(navController: NavHostController) {
                 }
             )
         },
-        bottomBar = { MiBottomBar(navController) }
+        bottomBar = { MiBottomBar(navController, settingsState) }
     ) { padding ->
         Box(modifier = Modifier
             .padding(padding)
@@ -170,7 +171,7 @@ fun ForoScreen(navController: NavHostController) {
 // -----------------------
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TemaScreen(navController: NavHostController, temaId: String) {
+fun TemaScreen(navController: NavHostController, temaId: String, settingsState: SettingsState) {
     val scope = rememberCoroutineScope()
     var showNewThreadDialog by remember { mutableStateOf(false) }
     var refreshTrigger by remember { mutableStateOf(0) }
@@ -227,7 +228,7 @@ fun TemaScreen(navController: NavHostController, temaId: String) {
                         }
                     )
                 },
-                bottomBar = { MiBottomBar(navController) }
+                bottomBar = { MiBottomBar(navController, settingsState) }
             ) { padding ->
                 LimitaTamanioAncho { modifier ->
                     if (tema == null) {
@@ -279,7 +280,7 @@ fun TemaScreen(navController: NavHostController, temaId: String) {
 // Pantalla de un hilo y sus posts
 // -----------------------
 @Composable
-fun HiloScreen(navController: NavHostController, hiloId: String, startRoute: String) {
+fun HiloScreen(navController: NavHostController, hiloId: String, startRoute: String, settingsState: SettingsState) {
 
     val hiloState = remember(hiloId) { HiloState(hiloId) }
 
@@ -338,7 +339,7 @@ fun HiloScreen(navController: NavHostController, hiloId: String, startRoute: Str
                 }
             }
         },
-        bottomBar = { MiBottomBar(navController) }
+        bottomBar = { MiBottomBar(navController, settingsState) }
     ) { padding ->
         LimitaTamanioAncho { modifier ->
             Column(

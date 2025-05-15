@@ -5,12 +5,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.Button
-import androidx.compose.material.ButtonDefaults
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Scaffold
-import androidx.compose.material.Text
-import androidx.compose.material.Typography
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Shapes
+import androidx.compose.material3.Text
+import androidx.compose.material3.Typography
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -23,6 +25,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
@@ -54,7 +57,6 @@ val fontOptions = listOf(
     FontOption(FontKeys.CURSIVE,    "cursive_font",    FontFamily.Cursive),
     FontOption(FontKeys.SANS_SERIF, "sans_serif_font", FontFamily.SansSerif)
 )
-
 
 /**
  * Provides the global font state to its content.
@@ -95,6 +97,14 @@ fun ProveedorDeFuente(
     }
 }
 
+val shapes = Shapes(
+    extraSmall = Shapes().extraSmall,
+    small = Shapes().small,
+    medium = Shapes().medium,
+    large = Shapes().large,
+    extraLarge = Shapes().extraLarge
+)
+
 /**
  * Applies MaterialTheme using the global font state.
  *
@@ -102,11 +112,27 @@ fun ProveedorDeFuente(
  */
 @Composable
 fun AppTheme(content: @Composable () -> Unit) {
+    // 1) Obtén la familia actual del estado
     val fontFamily = LocalFontState.current.value
+
+    // 2) Crea tu esquema de Material 3 (colores, shapes…)
+    val colorScheme = MaterialTheme.colorScheme // o tu propio esquema
+    val typography = Typography() // el M3 completo por defecto
+
+    // 3) Aplica MaterialTheme y, dentro, overridea el TextStyle global
     MaterialTheme(
-        typography = Typography(defaultFontFamily = fontFamily),
-        content = content
-    )
+        colorScheme = colorScheme,
+        typography = typography,
+        shapes = shapes
+    ) {
+        CompositionLocalProvider(
+            // TODO: si quieres también un LocalTextStyle específico para body/heading,
+            // puedes cambiar el estilo base aquí (size, weight…)
+            LocalTextStyle provides TextStyle(fontFamily = fontFamily)
+        ) {
+            content()
+        }
+    }
 }
 
 /**
@@ -152,7 +178,7 @@ fun PantallaCambiarFuente(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(traducir("cambiar_fuente"), style = MaterialTheme.typography.h6)
+                Text(traducir("cambiar_fuente"), style = MaterialTheme.typography.headlineSmall)
                 fontOptions.forEach { option ->
                     val selected = option.code == currentKey
                     Button(
@@ -161,7 +187,7 @@ fun PantallaCambiarFuente(
                         },
                         modifier = Modifier.fillMaxWidth(),
                         colors = if (selected)
-                            ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.primaryVariant)
+                            ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
                         else
                             ButtonDefaults.buttonColors()
                     ) {

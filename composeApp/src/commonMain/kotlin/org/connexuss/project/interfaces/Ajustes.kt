@@ -14,15 +14,15 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.Button
-import androidx.compose.material.Card
-import androidx.compose.material.Icon
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.OutlinedTextField
-import androidx.compose.material.Scaffold
-import androidx.compose.material.Text
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardColors
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -46,7 +46,6 @@ import org.connexuss.project.misc.Reporte
 import org.connexuss.project.misc.Supabase
 import org.connexuss.project.misc.UsuarioPrincipal
 import org.connexuss.project.supabase.SupabaseRepositorioGenerico
-import org.connexuss.project.supabase.Texto
 import org.connexuss.project.supabase.generaIdLongAleatorio
 import org.connexuss.project.usuario.Usuario
 import org.connexuss.project.usuario.UsuarioBloqueado
@@ -89,69 +88,80 @@ fun PantallaAjustesControlCuentas(navController: NavHostController) {
             )
         }
     ) { padding ->
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            LimitaTamanioAncho { modifier ->
-                Column(
-                    modifier = modifier
-                        .padding(padding)
-                        .padding(16.dp)
-                ) {
-                    Text(traducir("lista_de_cuentas"), style = MaterialTheme.typography.h6)
-
-                    LazyColumn(
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.fillMaxWidth()
+        LimitaTamanioAncho { modifier ->
+            Box(
+                modifier = modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                LimitaTamanioAncho { modifier ->
+                    Column(
+                        modifier = modifier
+                            .padding(padding)
+                            .padding(16.dp)
                     ) {
-                        items(bloqueados) { usuario ->
-                            Card(
-                                backgroundColor = Color(0xFFE1BEE7),
-                                elevation = 2.dp,
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(8.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(
-                                            painter = painterResource(Res.drawable.avatar),
-                                            contentDescription = traducir("avatar"),
-                                            modifier = Modifier.size(40.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Text(usuario.getNombreCompletoMio())
-                                    }
+                        Text(
+                            traducir("lista_de_cuentas"),
+                            style = MaterialTheme.typography.headlineMedium
+                        )
 
-                                    // Desbloquear
-                                    Icon(
-                                        painter = painterResource(Res.drawable.unblock),
-                                        contentDescription = traducir("desbloquear"),
+                        LazyColumn(
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            items(bloqueados) { usuario ->
+                                Card(
+                                    colors = CardColors(
+                                        containerColor = Color(0xFFD1C4E9),
+                                        contentColor = Color(0xFF000000),
+                                        disabledContainerColor = Color(0xFFD1C4E9),
+                                        disabledContentColor = Color(0xFF000000)
+                                    ),
+                                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Row(
                                         modifier = Modifier
-                                            .size(32.dp)
-                                            .clickable {
-                                                scope.launch {
-                                                    try {
-                                                        repo.deleteItemMulti<UsuarioBloqueado>(
-                                                            tableName = "usuario_bloqueados",
-                                                            conditions = mapOf(
-                                                                "idusuario" to currentUserId,
-                                                                "idbloqueado" to usuario.idUnico
+                                            .fillMaxWidth()
+                                            .padding(8.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(
+                                                painter = painterResource(Res.drawable.avatar),
+                                                contentDescription = traducir("avatar"),
+                                                modifier = Modifier.size(40.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text(usuario.getNombreCompletoMio())
+                                        }
+
+                                        // Desbloquear
+                                        Icon(
+                                            painter = painterResource(Res.drawable.unblock),
+                                            contentDescription = traducir("desbloquear"),
+                                            modifier = Modifier
+                                                .size(32.dp)
+                                                .clickable {
+                                                    scope.launch {
+                                                        try {
+                                                            repo.deleteItemMulti<UsuarioBloqueado>(
+                                                                tableName = "usuario_bloqueados",
+                                                                conditions = mapOf(
+                                                                    "idusuario" to currentUserId,
+                                                                    "idbloqueado" to usuario.idUnico
+                                                                )
                                                             )
-                                                        )
-                                                        bloqueados = bloqueados.filterNot { it.idUnico == usuario.idUnico }
-                                                        println("Usuario desbloqueado")
-                                                    } catch (e: Exception) {
-                                                        println("Error desbloqueando: ${e.message}")
+                                                            bloqueados =
+                                                                bloqueados.filterNot { it.idUnico == usuario.idUnico }
+                                                            println("Usuario desbloqueado")
+                                                        } catch (e: Exception) {
+                                                            println("Error desbloqueando: ${e.message}")
+                                                        }
                                                     }
                                                 }
-                                            }
-                                    )
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -200,81 +210,92 @@ fun PantallaAjustesAyuda(navController: NavHostController) {
                 )
             }
         ) { padding ->
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                LimitaTamanioAncho { modifier ->
-                    Column(
-                        modifier = modifier
-                            .fillMaxSize()
-                            .padding(padding)
-                            .padding(16.dp)
+            LimitaTamanioAncho { modifier ->
+                Box(
+                    modifier = modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    LimitaTamanioAncho { modifier ->
+                        Column(
+                            modifier = modifier
+                                .fillMaxSize()
+                                .padding(padding)
+                                .padding(16.dp)
                             //.verticalScroll(rememberScrollState())
-                    ) {
-                        LazyColumn(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .weight(1f),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
-                            items(faqs) { pregunta ->
-                                Card(
-                                    backgroundColor = Color(0xFFD1C4E9),
-                                    elevation = 2.dp,
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text(
-                                        pregunta,
-                                        modifier = Modifier.padding(8.dp)
+                            LazyColumn(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .weight(1f),
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                items(faqs) { pregunta ->
+                                    Card(
+                                        colors = CardDefaults.cardColors(
+                                            containerColor = Color(0xFFD1C4E9),
+                                            contentColor = Color(0xFF000000),
+                                            disabledContainerColor = Color(0xFFD1C4E9),
+                                            disabledContentColor = Color(0xFF000000)
+                                        ),
+                                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Text(
+                                            pregunta,
+                                            modifier = Modifier.padding(8.dp)
+                                        )
+                                    }
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                traducir("envia_un_reporte"),
+                                style = MaterialTheme.typography.labelSmall
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                OutlinedTextField(
+                                    value = reporte,
+                                    onValueChange = { reporte = it },
+                                    label = { Text(traducir("escribe_tu_reporte")) },
+                                    modifier = Modifier.weight(1f)
+                                )
+                                Button(onClick = {
+                                    errorMessage = if (reporte.isBlank()) {
+                                        reporteVacio
+                                    } else {
+                                        scope.launch {
+                                            Supabase.client.from("reporte").insert(
+                                                Reporte(
+                                                    idReporte = generaIdLongAleatorio().toString(),
+                                                    idUsuario = (UsuarioPrincipal?.getIdUnicoMio()
+                                                        ?: 0).toString(),
+                                                    motivo = reporte,
+                                                    resuelto = false,
+                                                )
+                                            )
+                                        }
+                                        reporteEnviado
+                                    }
+                                }) {
+                                    Icon(
+                                        painter = painterResource(Res.drawable.ic_email),
+                                        contentDescription = traducir("enviar_reporte"),
+                                        modifier = Modifier.size(24.dp)
                                     )
                                 }
                             }
-                        }
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(traducir("envia_un_reporte"), style = MaterialTheme.typography.subtitle1)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            OutlinedTextField(
-                                value = reporte,
-                                onValueChange = { reporte = it },
-                                label = { Text(traducir("escribe_tu_reporte")) },
-                                modifier = Modifier.weight(1f)
-                            )
-                            Button(onClick = {
-                                errorMessage = if (reporte.isBlank()) {
-                                    reporteVacio
-                                } else {
-                                    scope.launch {
-                                        Supabase.client.from("reporte").insert(
-                                            Reporte(
-                                                idReporte = generaIdLongAleatorio().toString(),
-                                                idUsuario = (UsuarioPrincipal?.getIdUnicoMio() ?: 0).toString(),
-                                                motivo = reporte,
-                                                resuelto = false,
-                                            )
-                                        )
-                                    }
-                                    reporteEnviado
-                                }
-                            }) {
-                                Icon(
-                                    painter = painterResource(Res.drawable.ic_email),
-                                    contentDescription = traducir("enviar_reporte"),
-                                    modifier = Modifier.size(24.dp)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            if (errorMessage.isNotEmpty()) {
+                                Text(
+                                    errorMessage,
+                                    color = if (errorMessage == traducir("reporte_vacio")) Color.Red else Color.Green
                                 )
                             }
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        if (errorMessage.isNotEmpty()) {
-                            Text(
-                                errorMessage,
-                                color = if (errorMessage == traducir("reporte_vacio")) Color.Red else Color.Green
-                            )
                         }
                     }
                 }
@@ -290,11 +311,11 @@ fun PantallaAjustesAyuda(navController: NavHostController) {
  *
  * @return Lista de nombres de usuario.
  */
-@Composable
-fun generaUsuariosAleatorios(): List<String> {
-    val usuariosGenerados = mutableListOf<String>()
-    for (i in 1..100) {
-        usuariosGenerados.add("Usuario $i")
-    }
-    return usuariosGenerados
-}
+//@Composable
+//fun generaUsuariosAleatorios(): List<String> {
+//    val usuariosGenerados = mutableListOf<String>()
+//    for (i in 1..100) {
+//        usuariosGenerados.add("Usuario $i")
+//    }
+//    return usuariosGenerados
+//}

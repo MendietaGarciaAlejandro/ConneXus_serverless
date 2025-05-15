@@ -115,7 +115,7 @@ fun Navegacion(
             muestraAjustes(navController, settingsState)
         }
         composable("contactos") {
-            muestraChats(navController)
+            muestraChats(navController, settingsState)
         }
         composable("nuevo") {
             muestraContactos(navController)
@@ -214,14 +214,14 @@ fun Navegacion(
             MuestraUsuariosGrupo(usuarios = listaUsuariosGrupo, navController = navController)
         }
         composable("foroLocal") {
-            ForoScreen(navController)
+            ForoScreen(navController, settingsState)
         }
         composable(
             "tema/{temaId}",
             arguments = listOf(navArgument("temaId") { type = NavType.StringType })
         ) { backStackEntry ->
             val temaId = backStackEntry.arguments!!.getString("temaId")!!
-            TemaScreen(navController, temaId)
+            TemaScreen(navController, temaId, settingsState)
         }
         composable(
             "hilo/{hiloId}",
@@ -229,7 +229,7 @@ fun Navegacion(
         ) {
             backStackEntry ->
             val hiloId = backStackEntry.arguments!!.getString("hiloId")!!
-            HiloScreen(navController, hiloId, "foroLocal")
+            HiloScreen(navController, hiloId, "foroLocal", settingsState)
         }
         composable("pruebasEncriptacion") {
             PantallaPruebasEncriptacion(navController)

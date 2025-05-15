@@ -43,8 +43,10 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -56,6 +58,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.Key.Companion.R
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -93,7 +96,9 @@ import org.connexuss.project.misc.sesionActualUsuario
 import org.connexuss.project.persistencia.SettingsState
 import org.connexuss.project.persistencia.clearSession
 import org.connexuss.project.persistencia.getRestoredSessionFlow
+import org.connexuss.project.persistencia.getTemaConfigFlow
 import org.connexuss.project.persistencia.saveSession
+import org.connexuss.project.persistencia.settings
 import org.connexuss.project.supabase.SupabaseRepositorioGenerico
 import org.connexuss.project.supabase.SupabaseUsuariosRepositorio
 import org.connexuss.project.usuario.AlmacenamientoUsuario
@@ -341,59 +346,74 @@ fun TopBarUsuario(
     }
 }
 
-
 //BottomBar
 @Composable
-fun MiBottomBar(navController: NavHostController) {
+fun MiBottomBar(
+    navController: NavHostController,
+    settingsState: SettingsState  // necesitas pasar SettingsState para leer la configuración
+) {
+    val temaConfig by settingsState.getTemaConfigFlow().collectAsState(initial = TemaConfig())
+    val colorScheme = getColorsForTheme(temaConfig.temaClaro, temaConfig.colorTemaKey)
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    NavigationBar {
-        // Ítem de Chats
+    NavigationBar(
+        containerColor = colorScheme.surface,
+        contentColor   = colorScheme.onSurface,
+        tonalElevation = 3.dp
+    ) {
         NavigationBarItem(
-            selected = currentRoute == "contactos",
-            onClick = {
+            selected   = currentRoute == "contactos",
+            onClick    = {
                 navController.navigate("contactos") {
-                    navController.graph.startDestinationRoute?.let {
-                        popUpTo(it) { saveState = true }
-                    }
+                    popUpTo(navController.graph.startDestinationRoute ?: "") { saveState = true }
                     launchSingleTop = true
-                    restoreState = true
+                    restoreState    = true
                 }
             },
-            icon = {
+            icon       = {
                 Icon(
-                    painterResource(Res.drawable.ic_chats),
+                    painter           = painterResource(Res.drawable.ic_chats),
                     contentDescription = traducir("chats"),
-                    modifier = Modifier.size(20.dp)
+                    modifier          = Modifier.size(20.dp)
                 )
             },
-            label = { Text(traducir("chats")) }
+            label      = { Text(traducir("chats")) },
+            colors     = NavigationBarItemDefaults.colors(
+                selectedIconColor    = colorScheme.primary,
+                unselectedIconColor  = colorScheme.onSurfaceVariant,
+                selectedTextColor    = colorScheme.primary,
+                unselectedTextColor  = colorScheme.onSurfaceVariant
+            )
         )
 
-        // Ítem de Foros
         NavigationBarItem(
-            selected = currentRoute == "foroLocal"/*"foro"*/,
-            onClick = {
-                navController.navigate("foroLocal"/*"foro"*/) {
-                    navController.graph.startDestinationRoute?.let {
-                        popUpTo(it) { saveState = true }
-                    }
+            selected   = currentRoute == "foroLocal",
+            onClick    = {
+                navController.navigate("foroLocal") {
+                    popUpTo(navController.graph.startDestinationRoute ?: "") { saveState = true }
                     launchSingleTop = true
-                    restoreState = true
+                    restoreState    = true
                 }
             },
-            icon = {
+            icon       = {
                 Icon(
-                    painterResource(Res.drawable.ic_foros),
+                    painter           = painterResource(Res.drawable.ic_foros),
                     contentDescription = traducir("foro"),
-                    modifier = Modifier.size(20.dp)
+                    modifier          = Modifier.size(20.dp)
                 )
             },
-            label = { Text(traducir("foro")) }
+            label      = { Text(traducir("foro")) },
+            colors     = NavigationBarItemDefaults.colors(
+                selectedIconColor    = colorScheme.primary,
+                unselectedIconColor  = colorScheme.onSurfaceVariant,
+                selectedTextColor    = colorScheme.primary,
+                unselectedTextColor  = colorScheme.onSurfaceVariant
+            )
         )
     }
 }
+
 
 // --- Muestra Usuarios ---
 @Composable
@@ -595,11 +615,9 @@ fun ChatCard(
     }
 }
 
-
-
 // --- Chats PorDefecto ---
 @Composable
-fun muestraChats(navController: NavHostController) {
+fun muestraChats(navController: NavHostController, settingsState: SettingsState) {
     val currentUserId = UsuarioPrincipal?.getIdUnicoMio() ?: return
 
     val repo = remember { SupabaseRepositorioGenerico() }
@@ -676,7 +694,10 @@ fun muestraChats(navController: NavHostController) {
                     muestraEngranaje = true
                 )
             },
-            bottomBar = { MiBottomBar(navController) }
+            bottomBar = { MiBottomBar(
+                navController = navController,
+                settingsState = settingsState
+            ) }
         ) { padding ->
             LimitaTamanioAncho { modifier ->
                 Box(
@@ -713,10 +734,6 @@ fun muestraChats(navController: NavHostController) {
         }
     }
 }
-
-
-
-
 
 // --- Contactos ---
 @Composable

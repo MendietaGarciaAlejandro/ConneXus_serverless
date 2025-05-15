@@ -2,15 +2,24 @@ package org.connexuss.project.interfaces
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.Badge
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
-import androidx.compose.material.Text
-import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material3.Badge
+//import androidx.compose.material.Badge
+//import androidx.compose.material.Icon
+//import androidx.compose.material.IconButton
+//import androidx.compose.material.Text
+//import androidx.compose.material.TopAppBar
+//import androidx.compose.material.icons.Icons
+//import androidx.compose.material.icons.automirrored.filled.ArrowBack
+//import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
@@ -156,6 +165,7 @@ class HiloState(hiloId: String) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HiloTopBar(
     title: String,
@@ -171,7 +181,7 @@ fun HiloTopBar(
             IconButton(onClick = {
                 navController?.popBackStack()
             }) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás")
+                Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Atrás")
             }
         },
         actions = {
@@ -181,7 +191,7 @@ fun HiloTopBar(
                     modifier = Modifier.padding(end = 8.dp)
                 ) {
                     IconButton(onClick = onRefresh) {
-                        Icon(Icons.Default.Refresh, contentDescription = "Refrescar")
+                        Icon(Icons.Rounded.Refresh, contentDescription = "Refrescar")
                     }
                 }
             }
