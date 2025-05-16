@@ -45,6 +45,7 @@ import kotlinx.serialization.Serializable
 import org.connexuss.project.comunicacion.generateId
 import org.connexuss.project.interfaces.DefaultTopBar
 import org.connexuss.project.interfaces.LimitaTamanioAncho
+import org.connexuss.project.supabase.SupabaseSecretosRepo
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlin.uuid.ExperimentalUuidApi
@@ -733,7 +734,7 @@ data class SecretoRPC(
 class EncriptacionSimplificada{
 
     /** Genera y devuelve una clave AES‑GCM de 256 bits */
-    suspend fun generarClaveAES(): AES.GCM.Key {
+    private suspend fun generarClaveAES(): AES.GCM.Key {
         val provider = CryptographyProvider.Default
         return provider.get(AES.GCM)
             .keyGenerator(AES.Key.Size.B256)
@@ -754,7 +755,7 @@ class EncriptacionSimplificada{
      * El méto-do cipher().encrypt() ya devuelve nonce||ciphertext||tag.
      * Aquí extraemos nonce (12 bytes) y el resto.
      */
-    suspend fun AES.GCM.Key.encriptarSplit(plaintext: ByteArray): Pair<ByteArray, ByteArray> {
+    private suspend fun AES.GCM.Key.encriptarSplit(plaintext: ByteArray): Pair<ByteArray, ByteArray> {
         val encrypted = this.cipher().encrypt(plaintext)
         // 12 bytes de nonce (96 bits) según NIST
         val nonce = encrypted.copyOfRange(0, 12)
@@ -848,73 +849,98 @@ class EncriptacionSimplificada{
         return this.cipher().decrypt(encryptedFull)
     }
 
+    data class TemaInsertResult(val id: String)
+
+    /**
+     * Crea un tema:
+     * 1) Genera clave y cifra nombre.
+     * 2) Inserta clave + nonce en vault.secrets vía RPC.
+     * 3) Inserta tema cifrado en la tabla temas.
+     */
     @OptIn(ExperimentalEncodingApi::class)
     suspend fun crearTemaSinPadding(
         repoForo: SupabaseClient,
-        repoVault: SupabaseClient,
-        nombrePlain: String
-    ) {
+        nombrePlain: String,
+        secretsRpcRepo: SupabaseSecretosRepo
+    ): TemaInsertResult {
+        // 1) Generar clave y cifrar
         val key = generarClaveAES()
-        val (nonce, cipherText) = key.encriptarSplit(
-            nombrePlain.encodeToByteArray()
-        )
+        val (nonce, cipherText) = key.encriptarSplit(nombrePlain.encodeToByteArray())
         val temaId = generateId()
 
-        insertarClaveEnVault(repoVault, key, temaId)
+        // 2) Insertar secreto en vault via RPC
+        // convertimos key a Base64 estándar (con padding) o hex según tu función RPC
+        val keyB64 = Base64.Default.encode(key.encodeToByteArray(AES.Key.Format.RAW))
+        secretsRpcRepo.insertarSecretoConRpc(
+            temaId = temaId,
+            claveHex = keyB64,
+            nonceHex = nonce.toHex()
+        ) ?: throw IllegalStateException("No se pudo insertar secreto en vault")
 
-        // Usamos una instancia sin padding
-        val noPadEncoder = Base64.Default
-            .withPadding(Base64.PaddingOption.ABSENT)
-        val nombreB64: String = noPadEncoder.encode(cipherText)
-        // —> e.g. "Y2lwaGVydGV4dA" (sin '==')
+        // 3) Codificar ciphertext sin padding para la tabla temas
+        val noPad = Base64.Default.withPadding(Base64.PaddingOption.ABSENT)
+        val nombreB64 = noPad.encode(cipherText)
 
+        // 4) Insertar tema cifrado
         repoForo.postgrest
             .from("temas")
             .insert(
                 mapOf(
-                    "id" to temaId,
-                    "nombre_cifrado" to nombreB64,
-                    "nonce_hex" to nonce.toHex()
+                    "idtema"             to temaId,
+                    "nombre" to nombreB64
                 )
             )
-            .decodeSingleOrNull<SecretoInsertado>()
+            .decodeSingleOrNull<Any>()
             ?: throw IllegalStateException("Error al insertar tema cifrado")
+
+        return TemaInsertResult(id = temaId)
     }
 
+    /**
+     * Recupera y desencripta un tema:
+     * 1) Recupera clave y nonce desde vault via Edge Function.
+     * 2) Recupera ciphertext de la tabla temas.
+     * 3) Reconstruye y desencripta.
+     */
     @OptIn(ExperimentalEncodingApi::class)
     suspend fun leerTema(
         repoForo: SupabaseClient,
-        repoVault: SupabaseClient,
-        temaId: String
+        temaId: String,
+        secretsRpcRepo: SupabaseSecretosRepo
     ): String {
-        // 1) Recuperar clave
-        val key = obtenerClaveDesdeVault(repoVault, temaId)
+        // 1) Recuperar secreto (clave + nonce) vía Edge Function
+        val secretoRpc = secretsRpcRepo.recuperarSecretoRpc(temaId)
+            ?: throw IllegalStateException("Secreto no disponible para tema $temaId")
 
-        // 2) Recuperar ciphertext y nonce
-        val row = repoForo.from("temas")
+        // 2) Decodificar clave RAW (Base64 estándar con padding)
+        val keyBytes = Base64.Default.decode(secretoRpc.decryptedSecret!!)
+        val aesKey = CryptographyProvider.Default
+            .get(AES.GCM)
+            .keyDecoder()
+            .decodeFromByteArray(AES.Key.Format.RAW, keyBytes)
+
+        // 3) Decodificar nonce (viene como hex en el campo `nonce`)
+        val nonce: ByteArray = secretoRpc.nonce.hexToByteArray()
+
+        // 4) Recuperar solo el ciphertext de la tabla temas
+        val row = repoForo
+            .from("temas")
             .select {
-                Columns.raw("nombre_cifrado")
-                Columns.raw("nonce_hex")
-                filter {
-                    eq("id", temaId)
-                }
-            }.decodeSingleOrNull<Map<String, String>>()
-            ?: throw IllegalStateException("Error al recuperar tema cifrado")
+                Columns.raw("nombre")
+                filter { eq("idtema", temaId) }
+            }
+            .decodeSingleOrNull<Map<String, String>>()
+            ?: throw IllegalStateException("Tema $temaId no encontrado")
 
-        // 3) Decodificar Base64 sin padding
+        // 5) Decodificar ciphertext+tag (Base64 sin padding)
         val noPad = Base64.Default.withPadding(Base64.PaddingOption.ABSENT)
-        val cipherAndTag: ByteArray = noPad.decode(row["nombre_cifrado"]!!)
+        val cipherAndTag: ByteArray = noPad.decode(row["nombre"]!!)
 
-        // 4) Decodificar nonce
-        val nonce: ByteArray = row["nonce_hex"]!!.hexToByteArray()
-
-        // 5) Reconstruir encryptedFull = nonce || cipherAndTag
+        // 6) Reconstruir encryptedFull = nonce || ciphertext || tag
         val encryptedFull = nonce + cipherAndTag
 
-        // 6) Desencriptar
-        val plainBytes: ByteArray = key.desencriptarFull(encryptedFull)
-
-        // 7) Devolver texto
+        // 7) Desencriptar con la clave y devolver texto
+        val plainBytes: ByteArray = aesKey.cipher().decrypt(encryptedFull)
         return plainBytes.decodeToString()
     }
 }
