@@ -98,7 +98,7 @@ fun ForoScreen(navController: NavHostController) {
     }
 
     // Flujos de temas y hilos
-    val temas by repoForo.getAll<Tema>(tablaTemas).collectAsState(initial = emptyList())
+    //val temas by repoForo.getAll<Tema>(tablaTemas).collectAsState(initial = emptyList())
     val hilos by repoForo.getAll<Hilo>(tablaHilos).collectAsState(initial = emptyList())
 
     // Filtrar temas y contar hilos
@@ -343,7 +343,7 @@ fun HiloScreen(navController: NavHostController, hiloId: String) {
     var refreshTrigger by remember { mutableStateOf(0) }
 
     // Tablas de temas y hilos
-    val tablaTemas = "tema"
+    //val tablaTemas = "tema"
     val tablaHilos = "hilo"
     val tablaPosts = "post"
 

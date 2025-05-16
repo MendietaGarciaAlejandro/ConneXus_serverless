@@ -20,61 +20,61 @@ import io.ktor.client.request.setBody
 import io.ktor.http.contentType
 
 interface ISecretosRepositorio {
-    suspend fun upsertSecret(secret: Secreto)
-    suspend fun upsertSecretAdmin(secret: Secreto)
-    fun getSecretByName(name: String): Flow<Secreto?>
-    fun getSecretByNameAdmin(name: String): Flow<Secreto?>
+//    suspend fun upsertSecret(secret: Secreto)
+//    suspend fun upsertSecretAdmin(secret: Secreto)
+//    fun getSecretByName(name: String): Flow<Secreto?>
+//    fun getSecretByNameAdmin(name: String): Flow<Secreto?>
     suspend fun insertarSecretoConRpc(temaId: String, claveHex: String, nonceHex: String): SecretoInsertado?
     suspend fun recuperarSecretoRpc(name: String): SecretoRPC?
 }
 
 class SupabaseSecretosRepo : ISecretosRepositorio {
-    private val tablaSecretos = "vault.secrets"     // <— aquí indicamos el esquema
-    private val vistaSecretosDescifrados = "vault.decrypted_secrets"     // <— aquí indicamos el esquema
+//    private val tablaSecretos = "vault.secrets"     // <— aquí indicamos el esquema
+//    private val vistaSecretosDescifrados = "vault.decrypted_secrets"     // <— aquí indicamos el esquema
 
-    override suspend fun upsertSecret(secret: Secreto) {
-        // Performs an UPSERT and returns the upserted row
-        Supabase.client
-            .from(tablaSecretos)
-            .upsert(secret) {
-                // 1) Indica la columna de conflicto (primary key = "id")
-                onConflict = "id"
-                // 2) Solicita devolver la fila resultante
-                select()
-            }
-            .decodeSingleOrNull<Secreto>()  // ahora recibes el SecretRecord o null :contentReference[oaicite:0]{index=0}
-    }
-
-    override suspend fun upsertSecretAdmin(secret: Secreto) {
-        // Performs an UPSERT and returns the upserted row
-        SupabaseAdmin.client
-            .from(tablaSecretos)
-            .upsert(secret) {
-                // 1) Indica la columna de conflicto (primary key = "id")
-                onConflict = "id"
-                // 2) Solicita devolver la fila resultante
-                select()
-            }
-            .decodeSingleOrNull<Secreto>()  // ahora recibes el SecretRecord o null :contentReference[oaicite:0]{index=0}
-    }
-
-    override fun getSecretByName(name: String): Flow<Secreto?> = flow {
-        val found = Supabase.client
-            .from(vistaSecretosDescifrados)
-            .select { filter { eq("name", name) } }
-            .decodeList<Secreto>()
-            .firstOrNull()
-        emit(found)
-    }
-
-    override fun getSecretByNameAdmin(name: String): Flow<Secreto?> = flow {
-        val found = SupabaseAdmin.client
-            .from(vistaSecretosDescifrados)
-            .select { filter { eq("name", name) } }
-            .decodeList<Secreto>()
-            .firstOrNull()
-        emit(found)
-    }
+//    override suspend fun upsertSecret(secret: Secreto) {
+//        // Performs an UPSERT and returns the upserted row
+//        Supabase.client
+//            .from(tablaSecretos)
+//            .upsert(secret) {
+//                // 1) Indica la columna de conflicto (primary key = "id")
+//                onConflict = "id"
+//                // 2) Solicita devolver la fila resultante
+//                select()
+//            }
+//            .decodeSingleOrNull<Secreto>()  // ahora recibes el SecretRecord o null :contentReference[oaicite:0]{index=0}
+//    }
+//
+//    override suspend fun upsertSecretAdmin(secret: Secreto) {
+//        // Performs an UPSERT and returns the upserted row
+//        SupabaseAdmin.client
+//            .from(tablaSecretos)
+//            .upsert(secret) {
+//                // 1) Indica la columna de conflicto (primary key = "id")
+//                onConflict = "id"
+//                // 2) Solicita devolver la fila resultante
+//                select()
+//            }
+//            .decodeSingleOrNull<Secreto>()  // ahora recibes el SecretRecord o null :contentReference[oaicite:0]{index=0}
+//    }
+//
+//    override fun getSecretByName(name: String): Flow<Secreto?> = flow {
+//        val found = Supabase.client
+//            .from(vistaSecretosDescifrados)
+//            .select { filter { eq("name", name) } }
+//            .decodeList<Secreto>()
+//            .firstOrNull()
+//        emit(found)
+//    }
+//
+//    override fun getSecretByNameAdmin(name: String): Flow<Secreto?> = flow {
+//        val found = SupabaseAdmin.client
+//            .from(vistaSecretosDescifrados)
+//            .select { filter { eq("name", name) } }
+//            .decodeList<Secreto>()
+//            .firstOrNull()
+//        emit(found)
+//    }
 
     override suspend fun insertarSecretoConRpc(temaId: String, claveHex: String, nonceHex: String): SecretoInsertado? {
         // Asegúrate de usar el cliente admin con service_role
