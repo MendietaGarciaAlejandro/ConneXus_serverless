@@ -101,9 +101,9 @@ fun App() {
             ProveedorDeFuente((settingsState)) {
                 val temaConfig by settingsState.getTemaConfigFlow().collectAsState(initial = TemaConfig())
 
-                AppTheme {
+                AppTheme(settingsState) {
                     // Calcula la paleta de colores según el estado actual
-                    AppThemeWrapper(settingsState) {
+                    //AppThemeWrapper(settingsState) {
                         Navegacion(
                             temaConfig = temaConfig,
                             onToggleTheme = {
@@ -121,7 +121,7 @@ fun App() {
                             listaUsuariosGrupo = usuariosGrupoGeneral,
                             settingsState = settingsState
                         )
-                    }
+                    //}
                 }
             }
         }

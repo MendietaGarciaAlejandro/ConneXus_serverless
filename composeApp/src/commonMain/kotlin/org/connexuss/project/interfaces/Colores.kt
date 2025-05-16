@@ -108,6 +108,14 @@ fun AppThemeWrapper(settingsState: SettingsState, content: @Composable () -> Uni
 
     val colorScheme = getColorsForTheme(isLight, colorKey)
 
+    val shapes      = Shapes(
+        small = MaterialTheme.shapes.small,
+        medium = MaterialTheme.shapes.medium,
+        large = MaterialTheme.shapes.large,
+        extraSmall = MaterialTheme.shapes.extraSmall,
+        extraLarge = MaterialTheme.shapes.extraLarge
+    )
+
     // 3) Pásalos a getColorsForTheme
     MaterialTheme(
         colorScheme = colorScheme,

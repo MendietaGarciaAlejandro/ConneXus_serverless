@@ -34,13 +34,14 @@ import kotlinx.coroutines.launch
 import org.connexuss.project.persistencia.FontKeys
 import org.connexuss.project.persistencia.SettingsState
 import org.connexuss.project.persistencia.getFontKeyFlow
+import org.connexuss.project.persistencia.getTemaConfigFlow
 import org.connexuss.project.persistencia.setFontKey
 
 /**
  * CompositionLocal that holds the mutable state of the current FontFamily.
  */
-val LocalFontState = staticCompositionLocalOf<MutableState<FontFamily>> {
-    error("No se ha proporcionado un estado de fuente")
+val LocalFontState = staticCompositionLocalOf<FontFamily> {
+    error("No se ha proporcionado FontFamily")
 }
 
 data class FontOption(
@@ -69,41 +70,21 @@ fun ProveedorDeFuente(
     settingsState: SettingsState,
     content: @Composable () -> Unit
 ) {
-    // 1) Leemos la clave guardada como String
-    val fontKey by settingsState.getFontKeyFlow()
-        .collectAsState(initial = FontKeys.DEFAULT)
+    val fontKey by settingsState.getFontKeyFlow().collectAsState(initial = FontKeys.DEFAULT)
 
-    // 2) La mapeamos inmediatamente a FontFamily
-    val fontFamily = remember(fontKey) {
-        when (fontKey) {
-            FontKeys.SERIF      -> FontFamily.Serif
-            FontKeys.MONOSPACE  -> FontFamily.Monospace
-            FontKeys.CURSIVE    -> FontFamily.Cursive
-            FontKeys.SANS_SERIF -> FontFamily.SansSerif
-            else                -> FontFamily.Default
-        }
+    val fontFamily = when (fontKey) {
+        FontKeys.SERIF      -> FontFamily.Serif
+        FontKeys.MONOSPACE  -> FontFamily.Monospace
+        FontKeys.CURSIVE    -> FontFamily.Cursive
+        FontKeys.SANS_SERIF -> FontFamily.SansSerif
+        else                -> FontFamily.Default
     }
 
-    // 3) Exponemos un MutableState que Compose reobserve
-    val fontState = remember { mutableStateOf(fontFamily as FontFamily) }
-
-    // 4) Cada vez que cambie `fontFamily` actualizamos fontState
-    LaunchedEffect(fontFamily) {
-        fontState.value = fontFamily
-    }
-
-    CompositionLocalProvider(LocalFontState provides fontState) {
+    // Exponemos directamente FontFamily (no MutableState intermedio)
+    CompositionLocalProvider(LocalFontState provides fontFamily) {
         content()
     }
 }
-
-val shapes = Shapes(
-    extraSmall = Shapes().extraSmall,
-    small = Shapes().small,
-    medium = Shapes().medium,
-    large = Shapes().large,
-    extraLarge = Shapes().extraLarge
-)
 
 /**
  * Applies MaterialTheme using the global font state.
@@ -111,13 +92,38 @@ val shapes = Shapes(
  * @param content Composable lambda representing the themed UI.
  */
 @Composable
-fun AppTheme(content: @Composable () -> Unit) {
-    // 1) Obtén la familia actual del estado
-    val fontFamily = LocalFontState.current.value
+fun AppTheme(settingsState: SettingsState, content: @Composable () -> Unit) {
 
     // 2) Crea tu esquema de Material 3 (colores, shapes…)
-    val colorScheme = MaterialTheme.colorScheme // o tu propio esquema
-    val typography = Typography() // el M3 completo por defecto
+    val temaConfig by settingsState.getTemaConfigFlow().collectAsState(initial = TemaConfig())
+    val colorScheme = getColorsForTheme(temaConfig.temaClaro, temaConfig.colorTemaKey)
+
+    val base        = Typography()
+    val ff          = LocalFontState.current
+    val typography  = Typography(
+        displayLarge   = base.displayLarge.copy(fontFamily = ff),
+        displayMedium  = base.displayMedium.copy(fontFamily = ff),
+        displaySmall   = base.displaySmall.copy(fontFamily = ff),
+        headlineLarge  = base.headlineLarge.copy(fontFamily = ff),
+        headlineMedium = base.headlineMedium.copy(fontFamily = ff),
+        headlineSmall  = base.headlineSmall.copy(fontFamily = ff),
+        titleLarge     = base.titleLarge.copy(fontFamily = ff),
+        titleMedium    = base.titleMedium.copy(fontFamily = ff),
+        titleSmall     = base.titleSmall.copy(fontFamily = ff),
+        bodyLarge      = base.bodyLarge.copy(fontFamily = ff),
+        bodyMedium     = base.bodyMedium.copy(fontFamily = ff),
+        bodySmall      = base.bodySmall.copy(fontFamily = ff),
+        labelLarge     = base.labelLarge.copy(fontFamily = ff),
+        labelMedium    = base.labelMedium.copy(fontFamily = ff),
+        labelSmall     = base.labelSmall.copy(fontFamily = ff)
+    )
+    val shapes      = Shapes(
+        small = MaterialTheme.shapes.small,
+        medium = MaterialTheme.shapes.medium,
+        large = MaterialTheme.shapes.large,
+        extraSmall = MaterialTheme.shapes.extraSmall,
+        extraLarge = MaterialTheme.shapes.extraLarge
+    )
 
     // 3) Aplica MaterialTheme y, dentro, overridea el TextStyle global
     MaterialTheme(
@@ -125,13 +131,14 @@ fun AppTheme(content: @Composable () -> Unit) {
         typography = typography,
         shapes = shapes
     ) {
-        CompositionLocalProvider(
-            // TODO: si quieres también un LocalTextStyle específico para body/heading,
-            // puedes cambiar el estilo base aquí (size, weight…)
-            LocalTextStyle provides TextStyle(fontFamily = fontFamily)
-        ) {
-            content()
-        }
+//        CompositionLocalProvider(
+//            // TO-DO: si quieres también un LocalTextStyle específico para body/heading,
+//            // puedes cambiar el estilo base aquí (size, weight…)
+//            LocalTextStyle provides TextStyle(fontFamily = fontFamily)
+//        ) {
+//            content()
+//        }
+        content()
     }
 }
 
