@@ -770,28 +770,6 @@ class EncriptacionSimplificada{
     )
 
     @OptIn(ExperimentalEncodingApi::class)
-    fun Base64.encode(source: ByteArray, startIndex: Int = 0, endIndex: Int = source.size): String {
-        return Base64.Default.encode(source, startIndex, endIndex)
-    }
-
-    @OptIn(ExperimentalEncodingApi::class)
-    fun Base64.encodeIntoByteArray(
-        source: ByteArray,
-        destination: ByteArray,
-        destinationOffset: Int = 0,
-        startIndex: Int = 0,
-        endIndex: Int = source.size
-    ): Int {
-        return Base64.Default.encodeIntoByteArray(
-            source,
-            destination,
-            destinationOffset,
-            startIndex,
-            endIndex
-        )
-    }
-
-    @OptIn(ExperimentalEncodingApi::class)
     suspend fun insertarClaveEnVault(
         repo: SupabaseClient,
         key: AES.GCM.Key,
