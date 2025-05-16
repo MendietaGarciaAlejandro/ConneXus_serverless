@@ -245,7 +245,8 @@ fun TemaScreen(navController: NavHostController, temaId: String, settingsState: 
                             modifier = modifier
                                 .fillMaxSize()
                                 .padding(padding)
-                                .padding(vertical = 8.dp)
+                                .padding(vertical = 8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             items(hilos) { hilo ->
                                 HiloCard(hilo = hilo) {
