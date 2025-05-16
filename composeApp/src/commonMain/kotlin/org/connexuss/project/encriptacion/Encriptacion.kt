@@ -751,7 +751,7 @@ class EncriptacionSimplificada{
 
     /**
      * Cifra `plaintext`, devuelve Pair(nonce, ciphertextWithTag).
-     * El método cipher().encrypt() ya devuelve nonce||ciphertext||tag.
+     * El méto-do cipher().encrypt() ya devuelve nonce||ciphertext||tag.
      * Aquí extraemos nonce (12 bytes) y el resto.
      */
     suspend fun AES.GCM.Key.encriptarSplit(plaintext: ByteArray): Pair<ByteArray, ByteArray> {
