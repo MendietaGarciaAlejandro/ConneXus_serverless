@@ -60,11 +60,11 @@ import org.connexuss.project.comunicacion.generateId
 import org.connexuss.project.encriptacion.EncriptacionSimplificada
 import org.connexuss.project.encriptacion.desencriptarTexto
 import org.connexuss.project.encriptacion.toHex
-import org.connexuss.project.misc.SupabaseAdmin
 import org.connexuss.project.misc.UsuarioPrincipal
 import org.connexuss.project.supabase.ISecretosRepositorio
 import org.connexuss.project.supabase.SupabaseRepositorioGenerico
 import org.connexuss.project.supabase.SupabaseSecretosRepo
+import org.connexuss.project.supabase.SupabaseTemasRepositorio
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 
@@ -85,6 +85,8 @@ fun ForoScreen(navController: NavHostController) {
     var searchText by remember { mutableStateOf("") }
     val refreshTrigger = remember { mutableStateOf(0) }
     val encHelper = remember { EncriptacionSimplificada() }
+
+    val repoTema = remember { SupabaseTemasRepositorio() }
 
     // Tablas de temas y hilos
     val tablaTemas = "tema"
@@ -160,8 +162,7 @@ fun ForoScreen(navController: NavHostController) {
                         scope.launch {
                             try {
                                 // 1) Llamada simplificada: genera clave, inserta en vault y en temas
-                                val result = encHelper.crearTemaSinPadding(
-                                    repoForo     = SupabaseAdmin.client,
+                                val temaResultado = encHelper.crearTemaSinPadding(
                                     nombrePlain  = nombre,
                                     secretsRpcRepo = SupabaseSecretosRepo()
                                 )
@@ -169,7 +170,7 @@ fun ForoScreen(navController: NavHostController) {
                                 // 2) Refresca UI y muestra notificación
                                 refreshTrigger.value++
                                 scaffoldState.snackbarHostState.showSnackbar(
-                                    "Tema '$nombre' creado (id=${result.id})",
+                                    "Tema '$nombre' creado (id=${temaResultado.idTema})",
                                     duration = SnackbarDuration.Short
                                 )
                             } catch (e: Exception) {
@@ -521,7 +522,7 @@ fun TemaCard(
         }
 
         // 2) Reconstruir AES Key
-        val aesKey = claveBytes?.let {
+        claveSimetricaTema = claveBytes?.let {
             CryptographyProvider.Default
                 .get(AES.GCM)
                 .keyDecoder()
@@ -529,23 +530,29 @@ fun TemaCard(
         }
 
         // 3) IV: hex → ByteArray (12 bytes)
-        val ivBytes = secreto.nonce.substring(2, secreto.nonce.length)
-            .removePrefix("\\x")
-            .hexToByteArray()
-        if (ivBytes.size != 12) {
-            println("IV inválido: ${ivBytes.size} bytes")
-            nombrePlano = "(clave no disponible) iv inválido"
-            return@LaunchedEffect
+        val ivBytes = secreto.nonce?.let {
+            secreto.nonce.substring(2, it.length)
+                .removePrefix("\\x")
+                .hexToByteArray()
         }
-        println("IV descifrado: ${ivBytes.toHex()}")
+        if (ivBytes != null) {
+            if (ivBytes.size != 12) {
+                println("IV inválido: ${ivBytes.size} bytes")
+                nombrePlano = "(clave no disponible) iv inválido"
+                return@LaunchedEffect
+            }
+        }
+        if (ivBytes != null) {
+            println("IV descifrado: ${ivBytes.toHex()}")
+        }
 
         // 4) Ciphertext: tema.nombre hex → ByteArray
         val cipherBytes = tema.nombre.hexToByteArray()
 
         // 5) Desencriptar con tu helper
-        if (aesKey != null) {
+        if (claveSimetricaTema != null) {
             nombrePlano = try {
-                aesKey.desencriptarTexto(ivBytes, cipherBytes)
+                claveSimetricaTema!!.desencriptarTexto(ivBytes, cipherBytes)
             } catch (e: Exception) {
                 println("Error descifrado: ${e.message}")
                 "(clave no disponible) aesKey inválida"

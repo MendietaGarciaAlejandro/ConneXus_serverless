@@ -2,22 +2,17 @@ package org.connexuss.project.supabase
 
 import io.github.jan.supabase.exceptions.RestException
 import io.github.jan.supabase.functions.functions
-import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.postgrest
 import io.ktor.client.call.body
+import io.ktor.client.request.setBody
+import io.ktor.http.ContentType
+import io.ktor.http.contentType
 import io.ktor.http.isSuccess
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
-import org.connexuss.project.encriptacion.Secreto
-import org.connexuss.project.encriptacion.SecretoRPC
 import org.connexuss.project.encriptacion.SecretoInsertado
-import org.connexuss.project.misc.Supabase
+import org.connexuss.project.encriptacion.SecretoRPC
 import org.connexuss.project.misc.SupabaseAdmin
-import io.ktor.http.ContentType
-import io.ktor.client.request.setBody
-import io.ktor.http.contentType
 
 interface ISecretosRepositorio {
 //    suspend fun upsertSecret(secret: Secreto)
@@ -76,7 +71,7 @@ class SupabaseSecretosRepo : ISecretosRepositorio {
 //        emit(found)
 //    }
 
-    override suspend fun insertarSecretoConRpc(temaId: String, claveHex: String, nonceHex: String): SecretoInsertado? {
+    override suspend fun insertarSecretoConRpc(temaId: String, claveHex: String, nonceHex: String): SecretoInsertado {
         // Asegúrate de usar el cliente admin con service_role
         val supabaseAdmin = SupabaseAdmin.client
 
@@ -92,13 +87,9 @@ class SupabaseSecretosRepo : ISecretosRepositorio {
                 function   = "insert_secret",
                 parameters = params
             )
-            .decodeSingleOrNull<SecretoInsertado>()  // ahora recibes el SecretRecord o null
+            .decodeSingle<SecretoInsertado>()  // ahora recibes el SecretRecord o null
             .also { response ->
-                if (response == null) {
-                    println("Error al insertar el secreto")
-                } else {
-                    println("Secreto insertado: $response")
-                }
+                println("Secreto insertado: $response")
             }
     }
 

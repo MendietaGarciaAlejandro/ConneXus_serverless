@@ -34,18 +34,20 @@ import dev.whyoleg.cryptography.algorithms.ECDSA
 import dev.whyoleg.cryptography.algorithms.HMAC
 import dev.whyoleg.cryptography.algorithms.SHA512
 import io.github.jan.supabase.SupabaseClient
-import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import org.connexuss.project.comunicacion.Tema
 import org.connexuss.project.comunicacion.generateId
 import org.connexuss.project.interfaces.DefaultTopBar
 import org.connexuss.project.interfaces.LimitaTamanioAncho
 import org.connexuss.project.supabase.SupabaseSecretosRepo
+import org.connexuss.project.supabase.SupabaseTemasRepositorio
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlin.uuid.ExperimentalUuidApi
@@ -137,9 +139,12 @@ suspend fun AES.GCM.Key.encriptarTexto(textoPlano: String): Pair<ByteArray, Byte
  * @param textoCifrado El texto cifrado a desencriptar.
  * @return El texto desencriptado como cadena.
  */
-suspend fun AES.GCM.Key.desencriptarTexto(iv: ByteArray, textoCifrado: ByteArray): String {
-    val datosDesencriptados = this.desencriptarContenido(iv, textoCifrado)
-    return datosDesencriptados.decodeToString()
+suspend fun AES.GCM.Key.desencriptarTexto(iv: ByteArray?, textoCifrado: ByteArray): String {
+    val datosDesencriptados = iv?.let { this.desencriptarContenido(it, textoCifrado) }
+    if (datosDesencriptados != null) {
+        return datosDesencriptados.decodeToString()
+    }
+    return ""
 }
 
 /**
@@ -703,32 +708,47 @@ data class Secreto @OptIn(ExperimentalUuidApi::class) constructor(
 // Reutilizamos tu data class Secreto si tu función devuelve exactamente esas columnas:
 @Serializable
 data class SecretoInsertado(
-    val id: String,
-    val name: String,
-    val description: String?,
-    val secret: String,
-    @SerialName("key_id") val keyId: String,
-    val nonce: String,
-    @SerialName("created_at") val createdAt: Instant,
-    @SerialName("updated_at") val updatedAt: Instant?
+    @SerialName("id")
+    val id: String? = null,
+
+    @SerialName("name")
+    val name: String? = null,
+
+    @SerialName("description")
+    val description: String? = null,
+
+    @SerialName("secret")
+    val secret: String? = null,
+
+    @SerialName("key_id")
+    val keyId: String? = null,
+
+    @SerialName("nonce")
+    val nonce: String? = null,
+
+    @SerialName("created_at")
+    val createdAt: Instant? = null,
+
+    @SerialName("updated_at")
+    val updatedAt: Instant? = null
 )
 
 @Serializable
 data class SecretoRPC(
     @SerialName("id")
-    val id: String,
+    val id: String? = null,
 
     @SerialName("name")
-    val name: String,
+    val name: String? = null,
 
     @SerialName("secret")
-    val secret: String,
+    val secret: String? = null,
 
     @SerialName("decrypted_secret")
     val decryptedSecret: String? = null,
 
     @SerialName("nonce")
-    val nonce: String
+    val nonce: String? = null,
 )
 
 class EncriptacionSimplificada{
@@ -809,7 +829,6 @@ class EncriptacionSimplificada{
         return provider.get(AES.GCM)
             .keyDecoder()
             .decodeFromByteArray(AES.Key.Format.RAW, keyBytes)
-            ?: throw IllegalStateException("Error al decodificar clave AES")
     }
 
     /**
@@ -837,10 +856,9 @@ class EncriptacionSimplificada{
      */
     @OptIn(ExperimentalEncodingApi::class)
     suspend fun crearTemaSinPadding(
-        repoForo: SupabaseClient,
         nombrePlain: String,
         secretsRpcRepo: SupabaseSecretosRepo
-    ): TemaInsertResult {
+    ): Tema {
         // 1) Generar clave y cifrar
         val key = generarClaveAES()
         val (nonce, cipherText) = key.encriptarSplit(nombrePlain.encodeToByteArray())
@@ -849,29 +867,34 @@ class EncriptacionSimplificada{
         // 2) Insertar secreto en vault via RPC
         // convertimos key a Base64 estándar (con padding) o hex según tu función RPC
         val keyB64 = Base64.Default.encode(key.encodeToByteArray(AES.Key.Format.RAW))
-        secretsRpcRepo.insertarSecretoConRpc(
-            temaId = temaId,
-            claveHex = keyB64,
-            nonceHex = nonce.toHex()
-        ) ?: throw IllegalStateException("No se pudo insertar secreto en vault")
+        try {
+            secretsRpcRepo.insertarSecretoConRpc(
+                temaId = temaId,
+                claveHex = keyB64,
+                nonceHex = nonce.toHex()
+            )
+        } catch (e: Exception) {
+            throw IllegalStateException("Error al insertar clave en Vault: ${e.message}")
+        }
 
         // 3) Codificar ciphertext sin padding para la tabla temas
         val noPad = Base64.Default.withPadding(Base64.PaddingOption.ABSENT)
         val nombreB64 = noPad.encode(cipherText)
 
-        // 4) Insertar tema cifrado
-        repoForo.postgrest
-            .from("temas")
-            .insert(
-                mapOf(
-                    "idtema"             to temaId,
-                    "nombre" to nombreB64
-                )
-            )
-            .decodeSingleOrNull<Any>()
-            ?: throw IllegalStateException("Error al insertar tema cifrado")
+        val repoTema = SupabaseTemasRepositorio()
 
-        return TemaInsertResult(id = temaId)
+        val temaResultado = Tema(
+            idTema = temaId,
+            nombre = nombreB64
+        )
+
+        try {
+            repoTema.addTema(temaResultado)
+        } catch (e: Exception) {
+            // Ignora el error, ya que la inserción se hace en el RPC
+        }
+
+        return temaResultado
     }
 
     /**
@@ -882,7 +905,6 @@ class EncriptacionSimplificada{
      */
     @OptIn(ExperimentalEncodingApi::class)
     suspend fun leerTema(
-        repoForo: SupabaseClient,
         temaId: String,
         secretsRpcRepo: SupabaseSecretosRepo
     ): String {
@@ -898,21 +920,19 @@ class EncriptacionSimplificada{
             .decodeFromByteArray(AES.Key.Format.RAW, keyBytes)
 
         // 3) Decodificar nonce (viene como hex en el campo `nonce`)
-        val nonce: ByteArray = secretoRpc.nonce.hexToByteArray()
+        val nonce: ByteArray = secretoRpc.nonce?.hexToByteArray() ?: throw IllegalStateException(
+            "Nonce no disponible para tema $temaId"
+        )
 
+        val repoSupabaseTema = SupabaseTemasRepositorio()
         // 4) Recuperar solo el ciphertext de la tabla temas
-        val row = repoForo
-            .from("temas")
-            .select {
-                Columns.raw("nombre")
-                filter { eq("idtema", temaId) }
-            }
-            .decodeSingleOrNull<Map<String, String>>()
-            ?: throw IllegalStateException("Tema $temaId no encontrado")
+        val tema = repoSupabaseTema.getTemaPorId(temaId).first()
+        val temaNombre = tema?.nombre
+            ?: throw IllegalStateException("Tema no disponible para id $temaId")
 
         // 5) Decodificar ciphertext+tag (Base64 sin padding)
         val noPad = Base64.Default.withPadding(Base64.PaddingOption.ABSENT)
-        val cipherAndTag: ByteArray = noPad.decode(row["nombre"]!!)
+        val cipherAndTag: ByteArray = noPad.decode(temaNombre)
 
         // 6) Reconstruir encryptedFull = nonce || ciphertext || tag
         val encryptedFull = nonce + cipherAndTag
