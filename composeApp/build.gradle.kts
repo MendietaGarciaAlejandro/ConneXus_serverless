@@ -158,6 +158,12 @@ kotlin {
 //            implementation(libs.firebase.messaging)
 //            implementation(libs.firebase.storage)
             implementation(compose.components.resources)
+
+
+// Para Supabase Storage y Auth
+            implementation("io.github.jan-tennert.supabase:postgrest-kt:1.4.4")
+            implementation("io.github.jan-tennert.supabase:storage-kt:1.4.4")
+
         }
 
         androidMain.dependencies {
@@ -197,6 +203,16 @@ kotlin {
 //            implementation(libs.firebase.functions)
 //            implementation(libs.firebase.messaging)
 //            implementation(libs.firebase.storage)
+
+            //dependencias imagenes
+            // Para Jetpack Compose
+            implementation("androidx.activity:activity-compose:1.8.0")
+            implementation("androidx.compose.ui:ui:1.5.0")
+
+            //debug
+            implementation("io.coil-kt:coil-compose:2.4.0")
+
+
         }
 
         desktopMain.dependencies {
@@ -262,6 +278,9 @@ kotlin {
             //implementation(libs.skiko.wasm.js)
             //implementation(libs.multiplatform.settings.make.observable.js)
 
+            implementation(compose.runtime)
+
+
         }
 
         commonTest.dependencies {
@@ -291,6 +310,7 @@ dependencies {
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.serialization)
     implementation(libs.androidx.appcompat)
+
 
     // Firebase dependencies (commented)
 //    implementation(platform(libs.firebase.android.bom))
