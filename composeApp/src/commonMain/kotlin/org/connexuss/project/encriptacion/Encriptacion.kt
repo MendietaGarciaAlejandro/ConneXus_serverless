@@ -26,6 +26,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import com.ionspin.kotlin.crypto.LibsodiumInitializer
+import com.ionspin.kotlin.crypto.util.LibsodiumRandom
+import com.ionspin.kotlin.crypto.box.*
+import com.ionspin.kotlin.crypto.box.Box.easy
+import com.ionspin.kotlin.crypto.util.*
 import dev.whyoleg.cryptography.BinarySize.Companion.bytes
 import dev.whyoleg.cryptography.CryptographyProvider
 import dev.whyoleg.cryptography.algorithms.AES
@@ -33,12 +38,17 @@ import dev.whyoleg.cryptography.algorithms.EC
 import dev.whyoleg.cryptography.algorithms.ECDSA
 import dev.whyoleg.cryptography.algorithms.HMAC
 import dev.whyoleg.cryptography.algorithms.SHA512
+import io.ktor.utils.io.charsets.Charsets
+import io.ktor.utils.io.core.toByteArray
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import okio.ByteString.Companion.decodeBase64
 import org.connexuss.project.comunicacion.Tema
 import org.connexuss.project.comunicacion.generateId
 import org.connexuss.project.interfaces.DefaultTopBar
@@ -903,6 +913,100 @@ class EncriptacionSimetricaForo {
     }
 }
 
-class EncriptacionAsimetricaChats {
+/**
+ * CryptoChat: cifrado asimétrico autenticado para mensajería usando libsodium (crypto_box).
+ * • Usa libsodium.js en WASM y libsodium nativo en JVM/Native.
+ * • Basado en kotlin‑multiplatform‑libsodium 0.9.2 :contentReference[oaicite:0]{index=0}.
+ */
+class CryptoChat {
 
+    suspend fun inicializaSodium() {
+        // Inicializa libsodium en el hilo de fondo
+        LibsodiumInitializer.initialize()
+    }
+
+    // Longitudes para crypto_box según libsodium docs
+    private val NONCE_LEN = crypto_box_NONCEBYTES  // 24
+    private val MAC_LEN = crypto_box_MACBYTES    // 16
+
+    /** Par de claves (publica + secreta) codificadas en Base64. */
+    data class KeyPair(val publicKey: String, val secretKey: String)
+
+    /**
+     * Genera un par de claves (Ed25519 → Curve25519 para crypto_box).
+     * @return KeyPair con ambas claves en Base64.
+     */
+    @OptIn(ExperimentalUnsignedTypes::class)
+    suspend fun generateKeyPair(): KeyPair = withContext(Dispatchers.Default) {
+        val key =
+            com.ionspin.kotlin.crypto.signature.Signature.keypair()           // crypto_box keypair :contentReference[oaicite:2]{index=2}
+        KeyPair(
+            publicKey = key.publicKey.decodeFromUByteArray(),
+            secretKey = key.secretKey.decodeFromUByteArray()
+        )
+    }
+
+    /**
+     * Cifra un mensaje con la clave secreta del emisor y la pública del receptor.
+     * @param message Texto plano.
+     * @param senderSecretB64 Clave secreta del emisor en Base64.
+     * @param receiverPublicB64 Clave pública del receptor en Base64.
+     * @return String Base64 de (nonce||ciphertext+tag).
+     */
+    @OptIn(ExperimentalUnsignedTypes::class)
+    suspend fun encryptMessage(
+        message: String,
+        senderSecretB64: String,
+        receiverPublicB64: String
+    ): String = withContext(Dispatchers.Default) {
+        val sk = senderSecretB64.encodeToUByteArray()
+        val pk = receiverPublicB64.encodeToUByteArray()
+        val nonce =
+            LibsodiumRandom.buf(NONCE_LEN)               // nonce seguro :contentReference[oaicite:3]{index=3}
+        val cipher =
+            easy(                         // cifrado autenticado :contentReference[oaicite:4]{index=4}
+                message.encodeToUByteArray(),
+                nonce,
+                pk,
+                sk
+            )
+        // concatenar nonce + cipher
+        (nonce + cipher).decodeFromUByteArray()
+    }
+
+    /**
+     * Descifra un mensaje cifrado por encryptMessage().
+     * @param cipherB64 nonce||ciphertext+tag en Base64.
+     * @param receiverSecretB64 Clave secreta del receptor en Base64.
+     * @param senderPublicB64 Clave pública del emisor en Base64.
+     * @throws IllegalStateException si la MAC no coincide.
+     * @return Texto plano.
+     */
+    @OptIn(ExperimentalUnsignedTypes::class)
+    suspend fun decryptMessage(
+        cipherB64: String,
+        receiverSecretB64: String,
+        senderPublicB64: String
+    ): String = withContext(Dispatchers.Default) {
+        // 1) Decodifica Base64 a Uint8Array (JS) o ByteArray (JVM)
+        val sk = receiverSecretB64.encodeToUByteArray()    // ByteArray
+        val pk = senderPublicB64.encodeToUByteArray()      // ByteArray
+        val combined = cipherB64.encodeToUByteArray()            // Uint8Array on JS target
+
+        // 2) Validación mínima
+        require(combined.size > NONCE_LEN + MAC_LEN) {
+            "Datos demasiado cortos (nonce+MAC) para descifrar"
+        }
+
+        val nonce  = combined.sliceArray(0 until NONCE_LEN)
+        val cipher = combined.sliceArray(NONCE_LEN until combined.size)
+
+
+        // 5) Descifra con libsodium
+        val plain = easy(cipher, nonce, pk, sk)
+            ?: error("Fallo de autenticación: MAC inválida")
+
+        // 6) Devuelve texto
+        plain.toString()
+    }
 }
