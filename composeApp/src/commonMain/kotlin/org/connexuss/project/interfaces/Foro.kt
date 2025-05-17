@@ -38,7 +38,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.rememberScaffoldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -52,20 +51,18 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import dev.whyoleg.cryptography.CryptographyProvider
 import dev.whyoleg.cryptography.algorithms.AES
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import org.connexuss.project.comunicacion.Hilo
 import org.connexuss.project.comunicacion.Post
 import org.connexuss.project.comunicacion.Tema
 import org.connexuss.project.comunicacion.generateId
-import org.connexuss.project.encriptacion.EncriptacionCondensada
+import org.connexuss.project.encriptacion.EncriptacionSimetricaForo
 import org.connexuss.project.encriptacion.toHex
 import org.connexuss.project.misc.UsuarioPrincipal
 import org.connexuss.project.supabase.ISecretosRepositorio
 import org.connexuss.project.supabase.SupabaseRepositorioGenerico
 import org.connexuss.project.supabase.SupabaseSecretosRepo
-import org.connexuss.project.supabase.SupabaseTemasRepositorio
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 
@@ -87,7 +84,7 @@ fun ForoScreen(navController: NavHostController) {
     var showNewTopicDialog by remember { mutableStateOf(false) }
     var searchText by remember { mutableStateOf("") }
     val refreshTrigger = remember { mutableStateOf(0) }
-    val encHelper = remember { EncriptacionCondensada() }
+    val encHelper = remember { EncriptacionSimetricaForo() }
 
     // Tablas de temas y hilos
     val tablaTemas = "tema"
@@ -525,7 +522,7 @@ fun TemaCard(
 ) {
     var nombrePlano by remember { mutableStateOf("(cargando…)") }
 
-    val encHelper = remember { EncriptacionCondensada() }
+    val encHelper = remember { EncriptacionSimetricaForo() }
 
     val scope = rememberCoroutineScope()
 

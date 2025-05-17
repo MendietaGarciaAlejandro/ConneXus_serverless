@@ -4,16 +4,14 @@ import io.github.jan.supabase.annotations.SupabaseInternal
 import io.github.jan.supabase.exceptions.RestException
 import io.github.jan.supabase.functions.functions
 import io.github.jan.supabase.postgrest.postgrest
-import io.github.jan.supabase.toJsonObject
 import io.ktor.client.call.body
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.put
-import org.connexuss.project.encriptacion.EncriptacionCondensada
+import org.connexuss.project.encriptacion.EncriptacionSimetricaForo
 import org.connexuss.project.encriptacion.SecretoInsertado
 import org.connexuss.project.encriptacion.SecretoRPC
 import org.connexuss.project.misc.SupabaseAdmin
@@ -22,7 +20,7 @@ interface ISecretosRepositorio {
     suspend fun insertarSecretoConRpc(temaId: String, claveHex: String, nonceHex: String): SecretoInsertado?
     suspend fun insertarSecretoSimpleConRpc(temaId: String, claveHex: String)
     suspend fun recuperarSecretoRpc(name: String): SecretoRPC?
-    suspend fun recuperarSecretoSimpleRpc(name: String): EncriptacionCondensada.VaultSecretSelect?
+    suspend fun recuperarSecretoSimpleRpc(name: String): EncriptacionSimetricaForo.VaultSecretSelect?
 }
 
 class SupabaseSecretosRepo : ISecretosRepositorio {
@@ -95,7 +93,7 @@ class SupabaseSecretosRepo : ISecretosRepositorio {
         return arr.firstOrNull()
     }
 
-    override suspend fun recuperarSecretoSimpleRpc(name: String): EncriptacionCondensada.VaultSecretSelect? {
+    override suspend fun recuperarSecretoSimpleRpc(name: String): EncriptacionSimetricaForo.VaultSecretSelect? {
         val supabaseAdmin = SupabaseAdmin.client
 
         // Make the raw HTTP call
@@ -116,6 +114,6 @@ class SupabaseSecretosRepo : ISecretosRepositorio {
         }
 
         // Parseamos UN objeto, no una lista
-        return response.body<EncriptacionCondensada.VaultSecretSelect?>()
+        return response.body<EncriptacionSimetricaForo.VaultSecretSelect?>()
     }
 }
