@@ -48,8 +48,10 @@ import org.connexuss.project.interfaces.DefaultTopBar
 import org.connexuss.project.interfaces.LimitaTamanioAncho
 import org.connexuss.project.supabase.SupabaseSecretosRepo
 import org.connexuss.project.supabase.SupabaseTemasRepositorio
+import kotlin.experimental.inv
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
+import kotlin.random.Random
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -751,7 +753,7 @@ data class SecretoRPC(
     val nonce: String? = null,
 )
 
-class EncriptacionSimplificada{
+class EncriptacionCondensada {
 
     /** Genera y devuelve una clave AES‑GCM de 256 bits */
     private suspend fun generarClaveAES(): AES.GCM.Key {
@@ -941,4 +943,89 @@ class EncriptacionSimplificada{
         val plainBytes: ByteArray = aesKey.cipher().decrypt(encryptedFull)
         return plainBytes.decodeToString()
     }
+}
+
+class EncriptaciónSimplificada {
+
+    // Cifrado simétrico (XOR) -----------------------------------------------------
+
+    /** Genera una “clave” de longitud `size` bytes con entropía de kotlin.random */
+    private fun generarClaveSimetrica(size: Int = 32): ByteArray =
+        Random.nextBytes(size)
+
+    /**
+     * Cifra/descifra un ByteArray `data` aplicando XOR con la `key`.
+     * Si data es más largo que key, repite la key cíclicamente.
+     */
+    private fun xorCipher(data: ByteArray, key: ByteArray): ByteArray {
+        val out = ByteArray(data.size)
+        for (i in data.indices) {
+            out[i] = (data[i].toInt() xor key[i % key.size].toInt()).toByte()
+        }
+        return out
+    }
+
+    /** Helper que cifra un texto y devuelve Pair(nonce, cipherBytes). Aquí nonce = key. */
+    private fun encryptSymmetric(plain: String): Pair<ByteArray, ByteArray> {
+        val key = generarClaveSimetrica()
+        val cipher = xorCipher(plain.encodeToByteArray(), key)
+        return key to cipher
+    }
+
+    /** Helper que recibe Pair(nonce, cipherBytes) y devuelve el texto original */
+    private fun decryptSymmetric(key: ByteArray, cipher: ByteArray): String =
+        xorCipher(cipher, key).decodeToString()
+
+    // Firma y verificación “pública/privada” simulada -----------------------------
+
+    /** Genera par de “claves”: privada (size bytes) y pública (inversa) */
+    private fun generarKeyPair(size: Int = 32): Pair<ByteArray, ByteArray> {
+        val privateKey = Random.nextBytes(size)
+        // simulamos la “pública” como la inversión bit a bit
+        val publicKey  = privateKey.map { it.inv() }.toByteArray()
+        return privateKey to publicKey
+    }
+
+    /**
+     * “Firma” el texto:
+     * 1) Calcula un checksum trivial (sum mod 256) de los bytes del texto
+     * 2) XOR ese checksum con cada byte de la privateKey para obtener firma
+     */
+    private fun signText(message: String, privateKey: ByteArray): ByteArray {
+        val msgBytes = message.encodeToByteArray()
+        val checksum = msgBytes.fold(0) { acc, b -> (acc + b) and 0xFF }
+        // firma: cada byte = checksum xor privateKey[i]
+        return privateKey.map { keyByte -> (checksum xor keyByte.toInt()).toByte() }
+            .toByteArray()
+    }
+
+    /**
+     * Verifica la firma con la “clave pública”:
+     * Rehace el checksum y comprueba que existiría un privateKey tal que
+     * publicKey = privateKey.inv()
+     */
+    private fun verifySignature(
+        message: String,
+        signature: ByteArray,
+        publicKey: ByteArray
+    ): Boolean {
+        // reconstruimos el supuesto privateKey
+        val recoveredPrivate = publicKey.map { it.inv() }.toByteArray()
+        val expectedSig = signText(message, recoveredPrivate)
+        return expectedSig.contentEquals(signature)
+    }
+
+    // Hash y validación de texto (resúmenes) -----------------------------
+
+    /** Genera un “hash” simple: suma de bytes + salt */
+    private fun hashText(text: String, salt: String = "fixedSalt"): String {
+        val data = (salt + text).encodeToByteArray()
+        val sum = data.fold(0L) { acc, b -> acc + (b.toUByte().toLong()) }
+        // Convertir sum a hex
+        return sum.toString(16).padStart(16, '0')
+    }
+
+    /** Comprueba si el texto coincide con un hash dado */
+    private fun verifyTextHash(text: String, salt: String, expectedHash: String): Boolean =
+        hashText(text, salt) == expectedHash
 }

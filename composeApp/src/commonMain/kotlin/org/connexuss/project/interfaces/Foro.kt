@@ -57,7 +57,7 @@ import org.connexuss.project.comunicacion.Hilo
 import org.connexuss.project.comunicacion.Post
 import org.connexuss.project.comunicacion.Tema
 import org.connexuss.project.comunicacion.generateId
-import org.connexuss.project.encriptacion.EncriptacionSimplificada
+import org.connexuss.project.encriptacion.EncriptacionCondensada
 import org.connexuss.project.encriptacion.desencriptarTexto
 import org.connexuss.project.encriptacion.toHex
 import org.connexuss.project.misc.UsuarioPrincipal
@@ -84,7 +84,7 @@ fun ForoScreen(navController: NavHostController) {
     var showNewTopicDialog by remember { mutableStateOf(false) }
     var searchText by remember { mutableStateOf("") }
     val refreshTrigger = remember { mutableStateOf(0) }
-    val encHelper = remember { EncriptacionSimplificada() }
+    val encHelper = remember { EncriptacionCondensada() }
 
     val repoTema = remember { SupabaseTemasRepositorio() }
 
