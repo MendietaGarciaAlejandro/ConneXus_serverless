@@ -33,9 +33,6 @@ import dev.whyoleg.cryptography.algorithms.EC
 import dev.whyoleg.cryptography.algorithms.ECDSA
 import dev.whyoleg.cryptography.algorithms.HMAC
 import dev.whyoleg.cryptography.algorithms.SHA512
-import io.github.jan.supabase.SupabaseClient
-import io.github.jan.supabase.postgrest.postgrest
-import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
@@ -48,10 +45,8 @@ import org.connexuss.project.interfaces.DefaultTopBar
 import org.connexuss.project.interfaces.LimitaTamanioAncho
 import org.connexuss.project.supabase.SupabaseSecretosRepo
 import org.connexuss.project.supabase.SupabaseTemasRepositorio
-import kotlin.experimental.inv
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
-import kotlin.random.Random
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -791,47 +786,10 @@ class EncriptacionCondensada {
         val name: String       // Identificador, p.ej. "tema-123"
     )
 
-    @OptIn(ExperimentalEncodingApi::class)
-    suspend fun insertarClaveEnVault(
-        repo: SupabaseClient,
-        key: AES.GCM.Key,
-        temaId: String
-    ) {
-        val rawKey = key.encodeToByteArray(AES.Key.Format.RAW)
-        // Llamada correcta: devuelve directamente un String Base64
-        val keyB64: String = Base64.encode(rawKey)
-
-        val payload = VaultSecretInsert(secret = keyB64, name = temaId)
-        repo.postgrest
-            .from("vault.secrets")
-            .insert(payload)
-            .decodeSingleOrNull<SecretoInsertado>()
-            ?: throw IllegalStateException("Error al insertar clave en Vault")
-    }
-
     @Serializable
     data class VaultSecretSelect(
         val decrypted_secret: String
     )
-
-    @OptIn(ExperimentalEncodingApi::class)
-    suspend fun obtenerClaveDesdeVault(
-        repo: SupabaseClient,
-        temaId: String
-    ): AES.GCM.Key {
-        // 1) Leer la fila de Vault
-        val row = repo.postgrest
-            .from("vault.decrypted_secrets")
-            .select { Columns.raw("decrypted_secret"); filter { eq("name", temaId) } }
-            .decodeSingleOrNull<VaultSecretSelect>()
-            ?: throw IllegalStateException("Error al recuperar clave de Vault")
-
-        val keyBytes = Base64.Default.decode(row.decrypted_secret)
-        val provider = CryptographyProvider.Default
-        return provider.get(AES.GCM)
-            .keyDecoder()
-            .decodeFromByteArray(AES.Key.Format.RAW, keyBytes)
-    }
 
     /**
      * Dado el ciphertext con tag y el nonce, descifra.
@@ -945,87 +903,87 @@ class EncriptacionCondensada {
     }
 }
 
-class EncriptaciónSimplificada {
-
-    // Cifrado simétrico (XOR) -----------------------------------------------------
-
-    /** Genera una “clave” de longitud `size` bytes con entropía de kotlin.random */
-    private fun generarClaveSimetrica(size: Int = 32): ByteArray =
-        Random.nextBytes(size)
-
-    /**
-     * Cifra/descifra un ByteArray `data` aplicando XOR con la `key`.
-     * Si data es más largo que key, repite la key cíclicamente.
-     */
-    private fun xorCipher(data: ByteArray, key: ByteArray): ByteArray {
-        val out = ByteArray(data.size)
-        for (i in data.indices) {
-            out[i] = (data[i].toInt() xor key[i % key.size].toInt()).toByte()
-        }
-        return out
-    }
-
-    /** Helper que cifra un texto y devuelve Pair(nonce, cipherBytes). Aquí nonce = key. */
-    private fun encryptSymmetric(plain: String): Pair<ByteArray, ByteArray> {
-        val key = generarClaveSimetrica()
-        val cipher = xorCipher(plain.encodeToByteArray(), key)
-        return key to cipher
-    }
-
-    /** Helper que recibe Pair(nonce, cipherBytes) y devuelve el texto original */
-    private fun decryptSymmetric(key: ByteArray, cipher: ByteArray): String =
-        xorCipher(cipher, key).decodeToString()
-
-    // Firma y verificación “pública/privada” simulada -----------------------------
-
-    /** Genera par de “claves”: privada (size bytes) y pública (inversa) */
-    private fun generarKeyPair(size: Int = 32): Pair<ByteArray, ByteArray> {
-        val privateKey = Random.nextBytes(size)
-        // simulamos la “pública” como la inversión bit a bit
-        val publicKey  = privateKey.map { it.inv() }.toByteArray()
-        return privateKey to publicKey
-    }
-
-    /**
-     * “Firma” el texto:
-     * 1) Calcula un checksum trivial (sum mod 256) de los bytes del texto
-     * 2) XOR ese checksum con cada byte de la privateKey para obtener firma
-     */
-    private fun signText(message: String, privateKey: ByteArray): ByteArray {
-        val msgBytes = message.encodeToByteArray()
-        val checksum = msgBytes.fold(0) { acc, b -> (acc + b) and 0xFF }
-        // firma: cada byte = checksum xor privateKey[i]
-        return privateKey.map { keyByte -> (checksum xor keyByte.toInt()).toByte() }
-            .toByteArray()
-    }
-
-    /**
-     * Verifica la firma con la “clave pública”:
-     * Rehace el checksum y comprueba que existiría un privateKey tal que
-     * publicKey = privateKey.inv()
-     */
-    private fun verifySignature(
-        message: String,
-        signature: ByteArray,
-        publicKey: ByteArray
-    ): Boolean {
-        // reconstruimos el supuesto privateKey
-        val recoveredPrivate = publicKey.map { it.inv() }.toByteArray()
-        val expectedSig = signText(message, recoveredPrivate)
-        return expectedSig.contentEquals(signature)
-    }
-
-    // Hash y validación de texto (resúmenes) -----------------------------
-
-    /** Genera un “hash” simple: suma de bytes + salt */
-    private fun hashText(text: String, salt: String = "fixedSalt"): String {
-        val data = (salt + text).encodeToByteArray()
-        val sum = data.fold(0L) { acc, b -> acc + (b.toUByte().toLong()) }
-        // Convertir sum a hex
-        return sum.toString(16).padStart(16, '0')
-    }
-
-    /** Comprueba si el texto coincide con un hash dado */
-    private fun verifyTextHash(text: String, salt: String, expectedHash: String): Boolean =
-        hashText(text, salt) == expectedHash
-}
+//class EncriptaciónSimplificada {
+//
+//    // Cifrado simétrico (XOR) -----------------------------------------------------
+//
+//    /** Genera una “clave” de longitud `size` bytes con entropía de kotlin.random */
+//    private fun generarClaveSimetrica(size: Int = 32): ByteArray =
+//        Random.nextBytes(size)
+//
+//    /**
+//     * Cifra/descifra un ByteArray `data` aplicando XOR con la `key`.
+//     * Si data es más largo que key, repite la key cíclicamente.
+//     */
+//    private fun xorCipher(data: ByteArray, key: ByteArray): ByteArray {
+//        val out = ByteArray(data.size)
+//        for (i in data.indices) {
+//            out[i] = (data[i].toInt() xor key[i % key.size].toInt()).toByte()
+//        }
+//        return out
+//    }
+//
+//    /** Helper que cifra un texto y devuelve Pair(nonce, cipherBytes). Aquí nonce = key. */
+//    private fun encryptSymmetric(plain: String): Pair<ByteArray, ByteArray> {
+//        val key = generarClaveSimetrica()
+//        val cipher = xorCipher(plain.encodeToByteArray(), key)
+//        return key to cipher
+//    }
+//
+//    /** Helper que recibe Pair(nonce, cipherBytes) y devuelve el texto original */
+//    private fun decryptSymmetric(key: ByteArray, cipher: ByteArray): String =
+//        xorCipher(cipher, key).decodeToString()
+//
+//    // Firma y verificación “pública/privada” simulada -----------------------------
+//
+//    /** Genera par de “claves”: privada (size bytes) y pública (inversa) */
+//    private fun generarKeyPair(size: Int = 32): Pair<ByteArray, ByteArray> {
+//        val privateKey = Random.nextBytes(size)
+//        // simulamos la “pública” como la inversión bit a bit
+//        val publicKey  = privateKey.map { it.inv() }.toByteArray()
+//        return privateKey to publicKey
+//    }
+//
+//    /**
+//     * “Firma” el texto:
+//     * 1) Calcula un checksum trivial (sum mod 256) de los bytes del texto
+//     * 2) XOR ese checksum con cada byte de la privateKey para obtener firma
+//     */
+//    private fun signText(message: String, privateKey: ByteArray): ByteArray {
+//        val msgBytes = message.encodeToByteArray()
+//        val checksum = msgBytes.fold(0) { acc, b -> (acc + b) and 0xFF }
+//        // firma: cada byte = checksum xor privateKey[i]
+//        return privateKey.map { keyByte -> (checksum xor keyByte.toInt()).toByte() }
+//            .toByteArray()
+//    }
+//
+//    /**
+//     * Verifica la firma con la “clave pública”:
+//     * Rehace el checksum y comprueba que existiría un privateKey tal que
+//     * publicKey = privateKey.inv()
+//     */
+//    private fun verifySignature(
+//        message: String,
+//        signature: ByteArray,
+//        publicKey: ByteArray
+//    ): Boolean {
+//        // reconstruimos el supuesto privateKey
+//        val recoveredPrivate = publicKey.map { it.inv() }.toByteArray()
+//        val expectedSig = signText(message, recoveredPrivate)
+//        return expectedSig.contentEquals(signature)
+//    }
+//
+//    // Hash y validación de texto (resúmenes) -----------------------------
+//
+//    /** Genera un “hash” simple: suma de bytes + salt */
+//    private fun hashText(text: String, salt: String = "fixedSalt"): String {
+//        val data = (salt + text).encodeToByteArray()
+//        val sum = data.fold(0L) { acc, b -> acc + (b.toUByte().toLong()) }
+//        // Convertir sum a hex
+//        return sum.toString(16).padStart(16, '0')
+//    }
+//
+//    /** Comprueba si el texto coincide con un hash dado */
+//    private fun verifyTextHash(text: String, salt: String, expectedHash: String): Boolean =
+//        hashText(text, salt) == expectedHash
+//}
