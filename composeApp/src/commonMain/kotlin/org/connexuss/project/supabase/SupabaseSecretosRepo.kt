@@ -1,24 +1,28 @@
 package org.connexuss.project.supabase
 
+import io.github.jan.supabase.annotations.SupabaseInternal
 import io.github.jan.supabase.exceptions.RestException
 import io.github.jan.supabase.functions.functions
 import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.toJsonObject
 import io.ktor.client.call.body
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.put
+import org.connexuss.project.encriptacion.EncriptacionCondensada
 import org.connexuss.project.encriptacion.SecretoInsertado
 import org.connexuss.project.encriptacion.SecretoRPC
 import org.connexuss.project.misc.SupabaseAdmin
 
 interface ISecretosRepositorio {
     suspend fun insertarSecretoConRpc(temaId: String, claveHex: String, nonceHex: String): SecretoInsertado?
-    suspend fun insertarSecretoSimpleConRpc(temaId: String, claveHex: String): SecretoInsertado?
+    suspend fun insertarSecretoSimpleConRpc(temaId: String, claveHex: String)
     suspend fun recuperarSecretoRpc(name: String): SecretoRPC?
-    suspend fun recuperarSecretoSimpleRpc(name: String): String?
+    suspend fun recuperarSecretoSimpleRpc(name: String): EncriptacionCondensada.VaultSecretSelect?
 }
 
 class SupabaseSecretosRepo : ISecretosRepositorio {
@@ -45,7 +49,8 @@ class SupabaseSecretosRepo : ISecretosRepositorio {
             }
     }
 
-    override suspend fun insertarSecretoSimpleConRpc(temaId: String, claveHex: String): SecretoInsertado {
+    @OptIn(SupabaseInternal::class)
+    override suspend fun insertarSecretoSimpleConRpc(temaId: String, claveHex: String) {
         // Asegúrate de usar el cliente admin con service_role
         val supabaseAdmin = SupabaseAdmin.client
 
@@ -55,15 +60,11 @@ class SupabaseSecretosRepo : ISecretosRepositorio {
             put("p_secret", claveHex)
         }
 
-        // Invo­camos la RPC tipada a SecretoInsertado
-        return supabaseAdmin.postgrest.rpc(
-            function   = "insert_secret_simple",
-            parameters = params
-        )
-            .decodeSingle<SecretoInsertado>()  // ahora recibes el SecretRecord o null
-            .also { response ->
-                println("Secreto insertado: $response")
-            }
+            // Invo­camos la RPC tipada a SecretoInsertado
+            val response = supabaseAdmin.postgrest.rpc(
+                function   = "insert_secret_simple",
+                parameters = params
+            )
     }
 
     override suspend fun recuperarSecretoRpc(name: String): SecretoRPC? {
@@ -94,7 +95,7 @@ class SupabaseSecretosRepo : ISecretosRepositorio {
         return arr.firstOrNull()
     }
 
-    override suspend fun recuperarSecretoSimpleRpc(name: String): String? {
+    override suspend fun recuperarSecretoSimpleRpc(name: String): EncriptacionCondensada.VaultSecretSelect? {
         val supabaseAdmin = SupabaseAdmin.client
 
         // Make the raw HTTP call
@@ -114,10 +115,7 @@ class SupabaseSecretosRepo : ISecretosRepositorio {
             )
         }
 
-        // Deserialize the body into List<String>
-        // Edge functions always wrap results in an array
-        val arr: List<String> = response.body()
-        // Return first element or null
-        return arr.firstOrNull()
+        // Parseamos UN objeto, no una lista
+        return response.body<EncriptacionCondensada.VaultSecretSelect?>()
     }
 }

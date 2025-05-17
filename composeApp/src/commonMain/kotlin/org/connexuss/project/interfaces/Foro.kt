@@ -170,7 +170,7 @@ fun ForoScreen(navController: NavHostController) {
                                 // 2) Refresca UI y muestra notificación
                                 refreshTrigger.value++
                                 scaffoldState.snackbarHostState.showSnackbar(
-                                    "Tema '$nombre' creado (id=${temaResultado.idTema})",
+                                    "Tema '$nombre' creado correctamente",
                                     duration = SnackbarDuration.Short
                                 )
                             } catch (e: Exception) {
@@ -226,7 +226,7 @@ fun TemaScreen(
             val secretoRpc = secretsRepo.recuperarSecretoRpc(temaId)
                 ?: throw IllegalStateException("Secreto no disponible")
             // Decodificar clave RAW
-            val keyBytes = Base64.Default.decode(secretoRpc.decryptedSecret!!)
+            val keyBytes = Base64.decode(secretoRpc.decryptedSecret!!)
             claveSimetricaTema = CryptographyProvider.Default
                 .get(AES.GCM)
                 .keyDecoder()
@@ -498,65 +498,80 @@ fun TemaCard(
 ) {
     var nombrePlano by remember { mutableStateOf("(cargando…)") }
 
-    @OptIn(ExperimentalEncodingApi::class)
-    LaunchedEffect(tema.idTema) {
-        val secreto = secretsRepo.recuperarSecretoRpc(tema.idTema)
-            ?: return@LaunchedEffect run { nombrePlano = "(clave no disponible)" }
+    val encHelper = remember { EncriptacionCondensada() }
 
-        // 1) Base64 → ByteArray (32 bytes)
-        val claveBytes = try {
-            secreto.decryptedSecret?.let { Base64.Default.decode(it) }
-        } catch (e: Exception) {
-            println("Error Base64: ${e.message}")
-            nombrePlano = "(clave no disponible) clave no válida"
-            return@LaunchedEffect
-        }
-        println("Secreto descifrado: ${secreto.decryptedSecret}")
+    val scope = rememberCoroutineScope()
 
-        if (claveBytes != null) {
-            if (claveBytes.size != 32) {
-                println("Clave AES inválida: ${claveBytes.size} bytes")
-                nombrePlano = "(clave no disponible) inválida"
-                return@LaunchedEffect
-            }
-        }
+    val secretoRepositorio = remember { SupabaseSecretosRepo() }
 
-        // 2) Reconstruir AES Key
-        claveSimetricaTema = claveBytes?.let {
-            CryptographyProvider.Default
-                .get(AES.GCM)
-                .keyDecoder()
-                .decodeFromByteArray(AES.Key.Format.RAW, it)
-        }
+//    @OptIn(ExperimentalEncodingApi::class)
+//    LaunchedEffect(tema.idTema) {
+//        val secreto = secretsRepo.recuperarSecretoRpc(tema.idTema)
+//            ?: return@LaunchedEffect run { nombrePlano = "(clave no disponible)" }
+//
+//        // 1) Base64 → ByteArray (32 bytes)
+//        val claveBytes = try {
+//            secreto.decryptedSecret?.let { Base64.Default.decode(it) }
+//        } catch (e: Exception) {
+//            println("Error Base64: ${e.message}")
+//            nombrePlano = "(clave no disponible) clave no válida"
+//            return@LaunchedEffect
+//        }
+//        println("Secreto descifrado: ${secreto.decryptedSecret}")
+//
+//        if (claveBytes != null) {
+//            if (claveBytes.size != 32) {
+//                println("Clave AES inválida: ${claveBytes.size} bytes")
+//                nombrePlano = "(clave no disponible) inválida"
+//                return@LaunchedEffect
+//            }
+//        }
+//
+//        // 2) Reconstruir AES Key
+//        claveSimetricaTema = claveBytes?.let {
+//            CryptographyProvider.Default
+//                .get(AES.GCM)
+//                .keyDecoder()
+//                .decodeFromByteArray(AES.Key.Format.RAW, it)
+//        }
+//
+//        // 3) IV: hex → ByteArray (12 bytes)
+//        val ivBytes = secreto.nonce?.let {
+//            secreto.nonce.substring(2, it.length)
+//                .removePrefix("\\x")
+//                .hexToByteArray()
+//        }
+//        if (ivBytes != null) {
+//            if (ivBytes.size != 12) {
+//                println("IV inválido: ${ivBytes.size} bytes")
+//                nombrePlano = "(clave no disponible) iv inválido"
+//                return@LaunchedEffect
+//            }
+//        }
+//        if (ivBytes != null) {
+//            println("IV descifrado: ${ivBytes.toHex()}")
+//        }
+//
+//        // 4) Ciphertext: tema.nombre hex → ByteArray
+//        val cipherBytes = tema.nombre.hexToByteArray()
+//
+//        // 5) Desencriptar con tu helper
+//        if (claveSimetricaTema != null) {
+//            nombrePlano = try {
+//                claveSimetricaTema!!.desencriptarTexto(ivBytes, cipherBytes)
+//            } catch (e: Exception) {
+//                println("Error descifrado: ${e.message}")
+//                "(clave no disponible) aesKey inválida"
+//            }
+//        }
+//    }
 
-        // 3) IV: hex → ByteArray (12 bytes)
-        val ivBytes = secreto.nonce?.let {
-            secreto.nonce.substring(2, it.length)
-                .removePrefix("\\x")
-                .hexToByteArray()
-        }
-        if (ivBytes != null) {
-            if (ivBytes.size != 12) {
-                println("IV inválido: ${ivBytes.size} bytes")
-                nombrePlano = "(clave no disponible) iv inválido"
-                return@LaunchedEffect
-            }
-        }
-        if (ivBytes != null) {
-            println("IV descifrado: ${ivBytes.toHex()}")
-        }
-
-        // 4) Ciphertext: tema.nombre hex → ByteArray
-        val cipherBytes = tema.nombre.hexToByteArray()
-
-        // 5) Desencriptar con tu helper
-        if (claveSimetricaTema != null) {
-            nombrePlano = try {
-                claveSimetricaTema!!.desencriptarTexto(ivBytes, cipherBytes)
-            } catch (e: Exception) {
-                println("Error descifrado: ${e.message}")
-                "(clave no disponible) aesKey inválida"
-            }
+    scope.launch {
+        encHelper.leerTema(
+            temaId = tema.idTema,
+            secretsRpcRepo = secretoRepositorio,
+        ).let { nombre ->
+            nombrePlano = nombre
         }
     }
 

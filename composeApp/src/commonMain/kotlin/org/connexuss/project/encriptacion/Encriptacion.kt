@@ -782,13 +782,19 @@ class EncriptacionCondensada {
 
     @Serializable
     data class VaultSecretInsert(
+
+        @SerialName("secret")
         val secret: String,    // Base64(keyBytes)
+
+        @SerialName("name")
         val name: String       // Identificador, p.ej. "tema-123"
     )
 
     @Serializable
     data class VaultSecretSelect(
-        val decrypted_secret: String
+
+        @SerialName("decrypted_secret")
+        val decryptedSecret: String
     )
 
     /**
@@ -799,14 +805,14 @@ class EncriptacionCondensada {
         return this.cipher().decrypt(encrypted)
     }
 
-    /**
-     * Desencripta un ciphertextWithTag completo (nonce||ciphertext||tag).
-     */
-    suspend fun AES.GCM.Key.desencriptarFull(encryptedFull: ByteArray): ByteArray {
-        return this.cipher().decrypt(encryptedFull)
-    }
 
-    data class TemaInsertResult(val id: String)
+    /** Cifra y devuelve iv||ciphertext||tag juntos */
+    suspend fun AES.GCM.Key.encriptarFull(plaintext: ByteArray): ByteArray =
+        this.cipher().encrypt(plaintext)
+
+    /** Descifra iv||ciphertext||tag de un solo golpe */
+    suspend fun AES.GCM.Key.desencriptarFull(encrypted: ByteArray): ByteArray =
+        this.cipher().decrypt(encrypted)
 
     /**
      * Crea un tema:
@@ -821,17 +827,16 @@ class EncriptacionCondensada {
     ): Tema {
         // 1) Generar clave y cifrar
         val key = generarClaveAES()
-        val (nonce, cipherText) = key.encriptarSplit(nombrePlain.encodeToByteArray())
+        val fullEncrypted = key.encriptarFull(nombrePlain.encodeToByteArray())
         val temaId = generateId()
 
         // 2) Insertar secreto en vault via RPC
         // convertimos key a Base64 estándar (con padding) o hex según tu función RPC
         val keyB64 = Base64.Default.encode(key.encodeToByteArray(AES.Key.Format.RAW))
         try {
-            secretsRpcRepo.insertarSecretoConRpc(
+            secretsRpcRepo.insertarSecretoSimpleConRpc(
                 temaId = temaId,
-                claveHex = keyB64,
-                nonceHex = nonce.toHex()
+                claveHex = keyB64
             )
         } catch (e: Exception) {
             throw IllegalStateException("Error al insertar clave en Vault: ${e.message}")
@@ -839,7 +844,7 @@ class EncriptacionCondensada {
 
         // 3) Codificar ciphertext sin padding para la tabla temas
         val noPad = Base64.Default.withPadding(Base64.PaddingOption.ABSENT)
-        val nombreB64 = noPad.encode(cipherText)
+        val nombreB64 = noPad.encode(fullEncrypted)
 
         val repoTema = SupabaseTemasRepositorio()
 
@@ -868,23 +873,21 @@ class EncriptacionCondensada {
         temaId: String,
         secretsRpcRepo: SupabaseSecretosRepo
     ): String {
-        // 1) Recuperar secreto (clave + nonce) vía Edge Function
-        val secretoRpc = secretsRpcRepo.recuperarSecretoRpc(temaId)
+        // 1) Recuperar secreto desencriptado vía Edge Function
+        val secretoDesencriptado = secretsRpcRepo.recuperarSecretoSimpleRpc(temaId)
             ?: throw IllegalStateException("Secreto no disponible para tema $temaId")
 
         // 2) Decodificar clave RAW (Base64 estándar con padding)
-        val keyBytes = Base64.Default.decode(secretoRpc.decryptedSecret!!)
-        val aesKey = CryptographyProvider.Default
-            .get(AES.GCM)
-            .keyDecoder()
-            .decodeFromByteArray(AES.Key.Format.RAW, keyBytes)
-
-        // 3) Decodificar nonce (viene como hex en el campo `nonce`)
-        val nonce: ByteArray = secretoRpc.nonce?.hexToByteArray() ?: throw IllegalStateException(
-            "Nonce no disponible para tema $temaId"
-        )
+        val keyBytes = secretoDesencriptado.decryptedSecret.let { Base64.Default.decode(it) }
+        val aesKey = keyBytes.let {
+            CryptographyProvider.Default
+                .get(AES.GCM)
+                .keyDecoder()
+                .decodeFromByteArray(AES.Key.Format.RAW, it)
+        }
 
         val repoSupabaseTema = SupabaseTemasRepositorio()
+
         // 4) Recuperar solo el ciphertext de la tabla temas
         val tema = repoSupabaseTema.getTemaPorId(temaId).first()
         val temaNombre = tema?.nombre
@@ -892,10 +895,7 @@ class EncriptacionCondensada {
 
         // 5) Decodificar ciphertext+tag (Base64 sin padding)
         val noPad = Base64.Default.withPadding(Base64.PaddingOption.ABSENT)
-        val cipherAndTag: ByteArray = noPad.decode(temaNombre)
-
-        // 6) Reconstruir encryptedFull = nonce || ciphertext || tag
-        val encryptedFull = nonce + cipherAndTag
+        val encryptedFull: ByteArray = noPad.decode(temaNombre)
 
         // 7) Desencriptar con la clave y devolver texto
         val plainBytes: ByteArray = aesKey.cipher().decrypt(encryptedFull)
