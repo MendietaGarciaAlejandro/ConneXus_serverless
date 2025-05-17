@@ -1,13 +1,17 @@
 package org.connexuss.project.interfaces
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -25,6 +29,7 @@ import androidx.compose.material.Text
 import androidx.compose.material.TextButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -35,8 +40,11 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.semantics.Role.Companion.Image
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import connexus_serverless.composeapp.generated.resources.Res
@@ -47,8 +55,14 @@ import kotlinx.coroutines.launch
 import org.connexuss.project.comunicacion.Conversacion
 import org.connexuss.project.comunicacion.ConversacionesUsuario
 import org.connexuss.project.comunicacion.Mensaje
+import org.connexuss.project.misc.ChatEnviarImagen
 import org.connexuss.project.misc.Imagen
+import org.connexuss.project.misc.MostrarImagenRemota
 import org.connexuss.project.misc.UsuarioPrincipal
+import org.connexuss.project.misc.esAndroid
+import org.connexuss.project.misc.esDesktop
+import org.connexuss.project.misc.esWeb
+import org.connexuss.project.misc.rememberImagePainter
 import org.connexuss.project.supabase.SupabaseRepositorioGenerico
 import org.connexuss.project.supabase.instanciaSupabaseClient
 import org.connexuss.project.supabase.subscribeTableAsFlow
@@ -90,7 +104,7 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
 
     val mensajes = todosLosMensajes
         .filter { it.idconversacion == chatId }
-        .sortedBy { it.fechaMensaje } // ✅ ordena por la fecha del mensaje
+        .sortedBy { it.fechaMensaje }
 
     LaunchedEffect(chatId) {
         if (chatId == null) return@LaunchedEffect
@@ -101,15 +115,11 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
             .filter { it.idconversacion == chatId }
             .map { it.idusuario }
 
-        println("👥 Participantes cargados: $participantes")
-
         val otroUsuarioId = participantes.firstOrNull { it != currentUserId }
         if (otroUsuarioId != null) {
             val todosUsuarios = repo.getAll<Usuario>("usuario").first()
             val otroUsuario = todosUsuarios.find { it.getIdUnicoMio() == otroUsuarioId }
             otroUsuarioNombre = otroUsuario?.getNombreCompletoMio()
-            //otroUsuarioImagen = otroUsuario?.getImagenPerfilMio()
-            println("🙋 Nombre otro participante: $otroUsuarioNombre")
         }
     }
 
@@ -148,7 +158,7 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
                     .weight(1f)
                     .padding(8.dp)
             ) {
-                items(mensajes.sortedBy { it.fechaMensaje }) { mensaje ->
+                items(mensajes) { mensaje ->
                     val esMio = mensaje.idusuario == currentUserId
                     var expanded by remember { mutableStateOf(false) }
                     var showEditDialog by remember { mutableStateOf(false) }
@@ -167,7 +177,7 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
                             },
                         contentAlignment = if (esMio) Alignment.CenterEnd else Alignment.CenterStart
                     ) {
-                        Box(
+                        Column(
                             modifier = Modifier
                                 .background(
                                     if (esMio) Color(0xFFC8E6C9) else Color(0xFFB2EBF2),
@@ -176,7 +186,41 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
                                 .padding(12.dp)
                                 .widthIn(max = 280.dp)
                         ) {
-                            Text(mensaje.content)
+                            mensaje.imageUrl?.let { imageUrl ->
+                                when {
+                                    esAndroid() || esDesktop() -> {
+                                        val painter = rememberImagePainter(imageUrl)
+                                        if (painter != null) {
+                                            Image(
+                                                painter = painter,
+                                                contentDescription = null,
+                                                modifier = Modifier
+                                                    .size(200.dp)
+                                                    .clip(RoundedCornerShape(8.dp))
+                                            )
+                                        }
+                                    }
+                                    esWeb() -> {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(200.dp, 120.dp)
+                                                .clip(RoundedCornerShape(8.dp))
+                                                .background(Color.LightGray),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text("IMAGEN", color = Color.Black)
+                                        }
+                                    }
+                                }
+                            }
+
+
+
+
+
+                            if (mensaje.content.isNotBlank()) {
+                                Text(mensaje.content)
+                            }
                         }
 
                         if (esMio) {
@@ -242,7 +286,6 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
                         }
                     }
                 }
-
             }
 
             Row(
@@ -267,11 +310,19 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
                             )
                             supabaseClient.from("mensaje").insert(nuevo)
                             mensajeNuevo = ""
-                            println("📤 Mensaje enviado en realtime.")
                         }
                     }
                 }) {
                     Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Enviar")
+                }
+
+                if (esAndroid()) {
+                    chatId?.let {
+                        ChatEnviarImagen(
+                            chatId = it,
+                            currentUserId = currentUserId
+                        )
+                    }
                 }
             }
         }
@@ -290,11 +341,10 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
 fun mostrarChatGrupo(
     navController: NavHostController,
     chatId: String?,
-    imagenesPerfil: List<Imagen>   // (No se usa de momento, opcional en el futuro)
+    imagenesPerfil: List<Imagen> // (No se usa de momento)
 ) {
     val currentUserId = UsuarioPrincipal?.getIdUnicoMio() ?: return
     var todosUsuarios by remember { mutableStateOf<List<Usuario>>(emptyList()) }
-
 
     val supabaseClient = remember {
         instanciaSupabaseClient(
@@ -306,7 +356,7 @@ fun mostrarChatGrupo(
     }
     val scope = rememberCoroutineScope()
 
-    var chatNombre by remember { mutableStateOf<String>("") }
+    var chatNombre by remember { mutableStateOf("Grupo") }
     var mensajeNuevo by remember { mutableStateOf("") }
 
     val todosLosMensajes by supabaseClient
@@ -324,9 +374,11 @@ fun mostrarChatGrupo(
         val repo = SupabaseRepositorioGenerico()
         todosUsuarios = repo.getAll<Usuario>("usuario").first()
 
-        // Cargamos el nombre del grupo
-        val conversaciones = repo.getAll<Conversacion>("conversacion").first()
-        chatNombre = conversaciones.find { it.id == chatId }?.nombre ?: "Grupo"
+        chatNombre = repo
+            .getAll<Conversacion>("conversacion")
+            .first()
+            .find { it.id == chatId }
+            ?.nombre ?: "Grupo"
     }
 
     if (chatId == null) {
@@ -355,7 +407,6 @@ fun mostrarChatGrupo(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // Lista de mensajes
             LazyColumn(
                 modifier = Modifier
                     .weight(1f)
@@ -389,7 +440,39 @@ fun mostrarChatGrupo(
                                     color = Color.DarkGray
                                 )
                             }
-                            Text(text = mensaje.content)
+
+                            mensaje.imageUrl?.let { imageUrl ->
+                                when {
+                                    esAndroid() || esDesktop() -> {
+                                        val painter = rememberImagePainter(imageUrl)
+                                        if (painter != null) {
+                                            Image(
+                                                painter = painter,
+                                                contentDescription = null,
+                                                modifier = Modifier
+                                                    .size(200.dp)
+                                                    .clip(RoundedCornerShape(8.dp))
+                                            )
+                                        }
+                                    }
+
+                                    esWeb() -> {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(200.dp, 120.dp)
+                                                .clip(RoundedCornerShape(8.dp))
+                                                .background(Color.LightGray),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text("IMAGEN", color = Color.Black)
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (mensaje.content.isNotBlank()) {
+                                Text(mensaje.content)
+                            }
                         }
                     }
                 }
@@ -407,6 +490,7 @@ fun mostrarChatGrupo(
                     modifier = Modifier.weight(1f),
                     placeholder = { Text("Escribe un mensaje...") }
                 )
+
                 IconButton(onClick = {
                     if (mensajeNuevo.isNotBlank()) {
                         scope.launch {
@@ -423,10 +507,20 @@ fun mostrarChatGrupo(
                 }) {
                     Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Enviar")
                 }
+
+                if (esAndroid()) {
+                    chatId?.let {
+                        ChatEnviarImagen(
+                            chatId = it,
+                            currentUserId = currentUserId
+                        )
+                    }
+                }
             }
         }
     }
 }
+
 
 
 /*
