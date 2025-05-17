@@ -6,35 +6,22 @@ import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.navigation.compose.rememberNavController
 import com.russhwolf.settings.ExperimentalSettingsApi
-import io.github.jan.supabase.auth.auth
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
-import org.connexuss.project.interfaces.TemaConfig
-import org.connexuss.project.interfaces.TemaConfigSaver
-import org.connexuss.project.interfaces.getColorsForTheme
 import org.connexuss.project.interfaces.AppTheme
 import org.connexuss.project.interfaces.AppThemeWrapper
 import org.connexuss.project.interfaces.ProveedorDeFuente
 import org.connexuss.project.interfaces.ProveedorDeIdioma
-import org.connexuss.project.misc.Supabase
+import org.connexuss.project.interfaces.TemaConfig
 import org.connexuss.project.navegacion.Navegacion
 import org.connexuss.project.persistencia.SettingsState
 import org.connexuss.project.persistencia.flowSettings
-import org.connexuss.project.persistencia.getSessionFlow
 import org.connexuss.project.persistencia.getTemaConfigFlow
 import org.connexuss.project.persistencia.setTemaConfig
 import org.connexuss.project.usuario.Usuario
@@ -60,6 +47,7 @@ fun actualizarUsuariosGrupoGeneral(nuevaLista: List<Usuario>) {
 @OptIn(ExperimentalSettingsApi::class)
 @Composable
 fun App() {
+
     val settingsState = remember { SettingsState(flowSettings) }
     //val navController  = rememberNavController()
     val scope = rememberCoroutineScope()

@@ -161,8 +161,6 @@ kotlin {
 
             // Encriptacion 2.0
 //            implementation(libs.indispensable)
-
-            implementation(libs.multiplatform.crypto.libsodium.bindings)
         }
 
         androidMain.dependencies {
@@ -272,8 +270,6 @@ kotlin {
 //            implementation(libs.indispensable.cosef.wasm.js)
 //            implementation(libs.indispensable.josef.wasm.js)
 //            implementation(libs.indispensable.js)
-
-            implementation(libs.multiplatform.crypto.libsodium.bindings.js)
         }
 
         commonTest.dependencies {
