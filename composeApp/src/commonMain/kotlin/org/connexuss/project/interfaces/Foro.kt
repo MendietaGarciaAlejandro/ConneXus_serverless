@@ -38,6 +38,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.rememberScaffoldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -51,6 +52,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import dev.whyoleg.cryptography.CryptographyProvider
 import dev.whyoleg.cryptography.algorithms.AES
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import org.connexuss.project.comunicacion.Hilo
@@ -58,7 +60,6 @@ import org.connexuss.project.comunicacion.Post
 import org.connexuss.project.comunicacion.Tema
 import org.connexuss.project.comunicacion.generateId
 import org.connexuss.project.encriptacion.EncriptacionCondensada
-import org.connexuss.project.encriptacion.desencriptarTexto
 import org.connexuss.project.encriptacion.toHex
 import org.connexuss.project.misc.UsuarioPrincipal
 import org.connexuss.project.supabase.ISecretosRepositorio
@@ -72,7 +73,9 @@ import kotlin.io.encoding.ExperimentalEncodingApi
 private val repoForo = SupabaseRepositorioGenerico()
 
 // Clave simétrica sobreescibible para cada vez que se entra en un tema, se sobreescribe
-private var claveSimetricaTema: AES.GCM.Key? = null
+object ClaveTemaHolder {
+    var clave: AES.GCM.Key? by mutableStateOf(null)
+}
 
 // -----------------------
 // Pantalla principal del foro
@@ -85,8 +88,6 @@ fun ForoScreen(navController: NavHostController) {
     var searchText by remember { mutableStateOf("") }
     val refreshTrigger = remember { mutableStateOf(0) }
     val encHelper = remember { EncriptacionCondensada() }
-
-    val repoTema = remember { SupabaseTemasRepositorio() }
 
     // Tablas de temas y hilos
     val tablaTemas = "tema"
@@ -205,8 +206,8 @@ fun TemaScreen(
     var refreshTrigger by remember { mutableStateOf(0) }
 
     //var aesKey by remember { mutableStateOf<AES.GCM.Key?>(null) }
-    var nombrePlano by remember { mutableStateOf("(cargando...)") }
-    var fetchingSecret by remember { mutableStateOf(true) }
+    var isLoading by remember { mutableStateOf(true) }
+    var nombrePlano by remember { mutableStateOf("(cargando tema…)") }
 
     // Instancia de tu helper
     //val encHelper = remember { EncriptacionSimplificada() }
@@ -214,34 +215,33 @@ fun TemaScreen(
     val tablaTemas = "tema"
     val tablaHilos = "hilo"
 
-    // 1) Obtener el Tema cifrado
-    val tema by repoForo
-        .getAll<Tema>(tablaTemas)
-        .map { list -> list.firstOrNull { it.idTema == temaId } }
-        .collectAsState(initial = null)
+    var claveLista by remember { mutableStateOf(false) }
 
+    val temaObj by repoForo.getAll<Tema>(tablaTemas)
+        .map { it.firstOrNull { t -> t.idTema == temaId } }
+        .collectAsState(null)
 
-    LaunchedEffect(temaId) {
+    LaunchedEffect(temaId, temaObj) {
+        if (temaObj == null) return@LaunchedEffect
         try {
-            val secretoRpc = secretsRepo.recuperarSecretoRpc(temaId)
+            val secretoRpc = secretsRepo.recuperarSecretoSimpleRpc(temaId)
                 ?: throw IllegalStateException("Secreto no disponible")
             // Decodificar clave RAW
-            val keyBytes = Base64.decode(secretoRpc.decryptedSecret!!)
-            claveSimetricaTema = CryptographyProvider.Default
+            val keyBytes = Base64.decode(secretoRpc.decryptedSecret)
+            val aesKey = CryptographyProvider.Default
                 .get(AES.GCM)
                 .keyDecoder()
                 .decodeFromByteArray(AES.Key.Format.RAW, keyBytes)
+            ClaveTemaHolder.clave = aesKey
+            claveLista = true
 
-            // Una vez tenemos clave, desencriptamos nombre del tema
-            tema?.let {
-                val encryptedFull = it.nombre.hexToByteArray()
-                val plain = claveSimetricaTema!!.cipher().decrypt(encryptedFull)
-                nombrePlano = plain.decodeToString()
-            }
+            nombrePlano = aesKey.cipher()
+                .decrypt(temaObj!!.nombre.hexToByteArray())
+                .decodeToString()
         } catch (e: Exception) {
             nombrePlano = "(clave no disponible)"
         } finally {
-            fetchingSecret = false
+            isLoading = false
         }
     }
 
@@ -252,7 +252,7 @@ fun TemaScreen(
     }.collectAsState(initial = emptyList())
 
     // Carga inicial
-    if (tema == null || fetchingSecret) {
+    if (isLoading || temaObj == null) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
         }
@@ -278,7 +278,9 @@ fun TemaScreen(
                 modifier = modifier
                     .fillMaxSize()
                     .padding(padding)
-                    .padding(vertical = 8.dp)
+                    .padding(vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+
             ) {
                 items(hilos) { hilo ->
                     HiloCard(
@@ -296,7 +298,7 @@ fun TemaScreen(
                     onConfirm = { titulo ->
                         scope.launch {
                             try {
-                                val key = claveSimetricaTema ?: throw IllegalStateException("Clave no lista")
+                                val key = ClaveTemaHolder.clave ?: throw IllegalStateException("Clave no lista")
                                 // Ciframos con nonce incluido
                                 val encryptedFull = key.cipher().encrypt(titulo.encodeToByteArray())
                                 val tituloHex = encryptedFull.toHex()
@@ -322,6 +324,7 @@ fun TemaScreen(
 // -----------------------
 // Pantalla de un hilo y sus posts
 // -----------------------
+@OptIn(ExperimentalStdlibApi::class)
 @Composable
 fun HiloScreen(navController: NavHostController, hiloId: String) {
     val scope = rememberCoroutineScope()
@@ -329,9 +332,12 @@ fun HiloScreen(navController: NavHostController, hiloId: String) {
     var refreshTrigger by remember { mutableStateOf(0) }
 
     // Tablas de temas y hilos
-    //val tablaTemas = "tema"
+    val tablaTemas = "tema"
     val tablaHilos = "hilo"
     val tablaPosts = "post"
+
+    var nombrePlano by remember { mutableStateOf("(cargando tema…)") }
+    var claveLista by remember { mutableStateOf(false) }
 
     // Creamos el Flow dentro de un remember que observe el trigger
     val postsFlow = remember(hiloId, refreshTrigger) {
@@ -357,10 +363,25 @@ fun HiloScreen(navController: NavHostController, hiloId: String) {
         return
     }
 
+    LaunchedEffect(hiloId, hilo) {
+        if (hilo == null) return@LaunchedEffect
+        nombrePlano = try {
+            hilo!!.nombre?.let {
+                ClaveTemaHolder.clave?.cipher()
+                    ?.decrypt(it.hexToByteArray())
+                    ?.decodeToString()
+            } ?: "(clave no disponible)"
+        } catch (e: Exception) {
+            "(clave no disponible)"
+        } finally {
+            claveLista = false
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(hilo!!.nombre ?: "Hilo") },
+                title = { Text(nombrePlano) },
                 navigationIcon = { BackButton(navController) }
             )
         },
@@ -403,10 +424,16 @@ fun HiloScreen(navController: NavHostController, hiloId: String) {
                                 contenido.isNotBlank().or(contenido.isNotEmpty())
                             )
                             scope.launch {
+
+                                val key = ClaveTemaHolder.clave ?: throw IllegalStateException("Clave no lista")
+                                // Ciframos con nonce incluido
+                                val encryptedFull = key.cipher().encrypt(contenido.encodeToByteArray())
+                                val contenidoHex = encryptedFull.toHex()
+
                                 UsuarioPrincipal?.let {
                                     val post = Post(
                                         idPost = generateId(),
-                                        content = contenido,
+                                        content = contenidoHex,
                                         idHilo = hiloId,
                                         idFirmante = it.idUnico,
                                         aliaspublico = it.aliasPublico
@@ -504,68 +531,6 @@ fun TemaCard(
 
     val secretoRepositorio = remember { SupabaseSecretosRepo() }
 
-//    @OptIn(ExperimentalEncodingApi::class)
-//    LaunchedEffect(tema.idTema) {
-//        val secreto = secretsRepo.recuperarSecretoRpc(tema.idTema)
-//            ?: return@LaunchedEffect run { nombrePlano = "(clave no disponible)" }
-//
-//        // 1) Base64 → ByteArray (32 bytes)
-//        val claveBytes = try {
-//            secreto.decryptedSecret?.let { Base64.Default.decode(it) }
-//        } catch (e: Exception) {
-//            println("Error Base64: ${e.message}")
-//            nombrePlano = "(clave no disponible) clave no válida"
-//            return@LaunchedEffect
-//        }
-//        println("Secreto descifrado: ${secreto.decryptedSecret}")
-//
-//        if (claveBytes != null) {
-//            if (claveBytes.size != 32) {
-//                println("Clave AES inválida: ${claveBytes.size} bytes")
-//                nombrePlano = "(clave no disponible) inválida"
-//                return@LaunchedEffect
-//            }
-//        }
-//
-//        // 2) Reconstruir AES Key
-//        claveSimetricaTema = claveBytes?.let {
-//            CryptographyProvider.Default
-//                .get(AES.GCM)
-//                .keyDecoder()
-//                .decodeFromByteArray(AES.Key.Format.RAW, it)
-//        }
-//
-//        // 3) IV: hex → ByteArray (12 bytes)
-//        val ivBytes = secreto.nonce?.let {
-//            secreto.nonce.substring(2, it.length)
-//                .removePrefix("\\x")
-//                .hexToByteArray()
-//        }
-//        if (ivBytes != null) {
-//            if (ivBytes.size != 12) {
-//                println("IV inválido: ${ivBytes.size} bytes")
-//                nombrePlano = "(clave no disponible) iv inválido"
-//                return@LaunchedEffect
-//            }
-//        }
-//        if (ivBytes != null) {
-//            println("IV descifrado: ${ivBytes.toHex()}")
-//        }
-//
-//        // 4) Ciphertext: tema.nombre hex → ByteArray
-//        val cipherBytes = tema.nombre.hexToByteArray()
-//
-//        // 5) Desencriptar con tu helper
-//        if (claveSimetricaTema != null) {
-//            nombrePlano = try {
-//                claveSimetricaTema!!.desencriptarTexto(ivBytes, cipherBytes)
-//            } catch (e: Exception) {
-//                println("Error descifrado: ${e.message}")
-//                "(clave no disponible) aesKey inválida"
-//            }
-//        }
-//    }
-
     scope.launch {
         encHelper.leerTema(
             temaId = tema.idTema,
@@ -610,10 +575,10 @@ fun HiloCard(
     //val scope = rememberCoroutineScope()
 
     // Desencriptar el nombre del hilo
-    LaunchedEffect(claveSimetricaTema, hilo.nombre) {
-        if (claveSimetricaTema != null) {
+    LaunchedEffect(ClaveTemaHolder.clave, hilo.nombre) {
+        if (ClaveTemaHolder.clave != null) {
             val cipherBytes = hilo.nombre?.hexToByteArray()
-            val plainBytes  = cipherBytes?.let { claveSimetricaTema!!.cipher().decrypt(ciphertext = it) }
+            val plainBytes  = cipherBytes?.let { ClaveTemaHolder.clave!!.cipher().decrypt(ciphertext = it) }
             if (plainBytes != null) {
                 nombrePlano    = plainBytes.decodeToString()
             }
@@ -633,8 +598,20 @@ fun HiloCard(
     }
 }
 
+@OptIn(ExperimentalStdlibApi::class)
 @Composable
 fun PostItem(post: Post) {
+
+    var nombrePlano by remember { mutableStateOf("(cargando...)") }
+
+    LaunchedEffect(ClaveTemaHolder.clave, post.content) {
+        if (ClaveTemaHolder.clave != null) {
+            val cipherBytes = post.content.hexToByteArray()
+            val plainBytes  = cipherBytes.let { ClaveTemaHolder.clave!!.cipher().decrypt(ciphertext = it) }
+            nombrePlano    = plainBytes.decodeToString()
+        }
+    }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = 2.dp,
@@ -649,7 +626,7 @@ fun PostItem(post: Post) {
                 Text(text = post.fechaPost.toString(), style = MaterialTheme.typography.caption)
             }
             Spacer(Modifier.height(8.dp))
-            Text(text = post.content, style = MaterialTheme.typography.body1)
+            Text(text = nombrePlano, style = MaterialTheme.typography.body1)
         }
     }
 }
