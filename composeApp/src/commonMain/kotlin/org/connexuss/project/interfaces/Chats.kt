@@ -35,19 +35,28 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import connexus_serverless.composeapp.generated.resources.Res
 import connexus_serverless.composeapp.generated.resources.connexus
+import dev.whyoleg.cryptography.CryptographyProvider
+import dev.whyoleg.cryptography.algorithms.AES
 import io.github.jan.supabase.postgrest.from
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.connexuss.project.comunicacion.Conversacion
 import org.connexuss.project.comunicacion.ConversacionesUsuario
 import org.connexuss.project.comunicacion.Mensaje
+import org.connexuss.project.encriptacion.EncriptacionSimetricaChats
+import org.connexuss.project.encriptacion.toHex
 import org.connexuss.project.misc.Imagen
+import org.connexuss.project.misc.Supabase
 import org.connexuss.project.misc.UsuarioPrincipal
 import org.connexuss.project.supabase.SupabaseRepositorioGenerico
+import org.connexuss.project.supabase.SupabaseSecretosRepo
 import org.connexuss.project.supabase.instanciaSupabaseClient
 import org.connexuss.project.supabase.subscribeTableAsFlow
 import org.connexuss.project.usuario.Usuario
 import org.jetbrains.compose.resources.DrawableResource
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
 
 /**
  * Muestra el chat entre dos usuarios.
@@ -56,17 +65,18 @@ import org.jetbrains.compose.resources.DrawableResource
  * @param navController Controlador de navegación.
  * @param chatId Identificador de la conversación.
  */
+@OptIn(ExperimentalEncodingApi::class, ExperimentalStdlibApi::class, DelicateCoroutinesApi::class)
 @Composable
 fun mostrarChat(navController: NavHostController, chatId: String?) {
     val currentUserId = UsuarioPrincipal?.getIdUnicoMio() ?: return
-    val supabaseClient = remember {
-        instanciaSupabaseClient(
-            tieneStorage = true,
-            tieneAuth = true,
-            tieneRealtime = true,
-            tienePostgrest = true
-        )
-    }
+//    val supabaseClient = remember {
+//        instanciaSupabaseClient(
+//            tieneStorage = true,
+//            tieneAuth = true,
+//            tieneRealtime = true,
+//            tienePostgrest = true
+//        )
+//    }
     val scope = rememberCoroutineScope()
 
     var participantes by remember { mutableStateOf<List<String>>(emptyList()) }
@@ -74,7 +84,11 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
     var otroUsuarioImagen by remember { mutableStateOf<DrawableResource?>(null) }
     var mensajeNuevo by remember { mutableStateOf("") }
 
-    val todosLosMensajes by supabaseClient
+    val secretoRepositorio = remember { SupabaseSecretosRepo() }
+
+    var claveLista by remember { mutableStateOf(false) }
+
+    val todosLosMensajes by Supabase.client
         .subscribeTableAsFlow<Mensaje, String>(
             table = "mensaje",
             primaryKey = Mensaje::id,
@@ -86,6 +100,29 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
 
     LaunchedEffect(chatId) {
         if (chatId == null) return@LaunchedEffect
+
+        try {
+            val secretoRpc = secretoRepositorio.recuperarSecretoSimpleRpc(chatId)
+                ?: throw IllegalStateException("Secreto no disponible")
+            // Decodificar clave RAW
+            val keyBytes = Base64.decode(secretoRpc.decryptedSecret)
+            val aesKey = CryptographyProvider.Default
+                .get(AES.GCM)
+                .keyDecoder()
+                .decodeFromByteArray(AES.Key.Format.RAW, keyBytes)
+            ClaveSimetricaChats.clave = aesKey
+            claveLista = true
+        } catch (e: Exception) {
+            println("Error al recuperar la clave: ${e.message}")
+            return@LaunchedEffect
+        } finally {
+            if (claveLista) {
+                println("🔑 Clave lista para usar.")
+            } else {
+                println("❌ Clave no lista.")
+            }
+        }
+
         val repo = SupabaseRepositorioGenerico()
 
         val relaciones = repo.getAll<ConversacionesUsuario>("conversaciones_usuario").first()
@@ -142,24 +179,11 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
             ) {
                 items(mensajes.sortedBy { it.fechaMensaje }) { mensaje ->
                     val esMio = mensaje.idusuario == currentUserId
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(8.dp),
-                        contentAlignment = if (esMio) Alignment.CenterEnd else Alignment.CenterStart
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .background(
-                                    if (esMio) Color(0xFFC8E6C9) else Color(0xFFB2EBF2),
-                                    shape = RoundedCornerShape(8.dp)
-                                )
-                                .padding(12.dp)
-                                .widthIn(max = 280.dp)
-                        ) {
-                            Text(mensaje.content)
-                        }
-                    }
+
+                    MensajeCard(
+                        mensaje = mensaje,
+                        esMio = esMio
+                    )
                 }
             }
 
@@ -178,12 +202,17 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
                 IconButton(onClick = {
                     if (mensajeNuevo.isNotBlank()) {
                         scope.launch {
+                            val key = ClaveSimetricaChats.clave ?: throw IllegalStateException("Clave no lista")
+                            // Ciframos con nonce incluido
+                            val encryptedFull = key.cipher().encrypt(mensajeNuevo.encodeToByteArray())
+                            val contenidoHex = encryptedFull.toHex()
+
                             val nuevo = Mensaje(
-                                content = mensajeNuevo.trim(),
+                                content = contenidoHex,
                                 idusuario = currentUserId,
                                 idconversacion = chatId
                             )
-                            supabaseClient.from("mensaje").insert(nuevo)
+                            Supabase.client.from("mensaje").insert(nuevo)
                             mensajeNuevo = ""
                             println("📤 Mensaje enviado en realtime.")
                         }
@@ -204,6 +233,7 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
  * @param chatId Identificador de la conversación grupal.
  * @param imagenesPerfil Lista de imágenes de perfil de los participantes.
  */
+@OptIn(ExperimentalEncodingApi::class, ExperimentalStdlibApi::class)
 @Composable
 fun mostrarChatGrupo(
     navController: NavHostController,
@@ -213,21 +243,25 @@ fun mostrarChatGrupo(
     val currentUserId = UsuarioPrincipal?.getIdUnicoMio() ?: return
     var todosUsuarios by remember { mutableStateOf<List<Usuario>>(emptyList()) }
 
+    val secretoRepositorio = remember { SupabaseSecretosRepo() }
 
-    val supabaseClient = remember {
-        instanciaSupabaseClient(
-            tieneStorage = true,
-            tieneAuth = true,
-            tieneRealtime = true,
-            tienePostgrest = true
-        )
-    }
+    var claveLista by remember { mutableStateOf(false) }
+
+//    val supabaseClient = remember {
+//        instanciaSupabaseClient(
+//            tieneStorage = true,
+//            tieneAuth = true,
+//            tieneRealtime = true,
+//            tienePostgrest = true
+//        )
+//    }
     val scope = rememberCoroutineScope()
 
     var chatNombre by remember { mutableStateOf<String>("") }
+    var chatNombreDesencriptado by remember { mutableStateOf<String>("") }
     var mensajeNuevo by remember { mutableStateOf("") }
 
-    val todosLosMensajes by supabaseClient
+    val todosLosMensajes by Supabase.client
         .subscribeTableAsFlow<Mensaje, String>(
             table = "mensaje",
             primaryKey = Mensaje::id,
@@ -239,12 +273,46 @@ fun mostrarChatGrupo(
 
     LaunchedEffect(chatId) {
         if (chatId == null) return@LaunchedEffect
+
+        try {
+            val secretoRpc = secretoRepositorio.recuperarSecretoSimpleRpc(chatId)
+                ?: throw IllegalStateException("Secreto no disponible")
+            // Decodificar clave RAW
+            val keyBytes = Base64.decode(secretoRpc.decryptedSecret)
+            val aesKey = CryptographyProvider.Default
+                .get(AES.GCM)
+                .keyDecoder()
+                .decodeFromByteArray(AES.Key.Format.RAW, keyBytes)
+            ClaveSimetricaChats.clave = aesKey
+            claveLista = true
+        } catch (e: Exception) {
+            println("Error al recuperar la clave: ${e.message}")
+            return@LaunchedEffect
+        } finally {
+            if (claveLista) {
+                println("🔑 Clave lista para usar.")
+            } else {
+                println("❌ Clave no lista.")
+            }
+        }
+
         val repo = SupabaseRepositorioGenerico()
         todosUsuarios = repo.getAll<Usuario>("usuario").first()
 
         // Cargamos el nombre del grupo
         val conversaciones = repo.getAll<Conversacion>("conversacion").first()
         chatNombre = conversaciones.find { it.id == chatId }?.nombre ?: "Grupo"
+    }
+
+    LaunchedEffect(chatNombre) {
+        chatNombreDesencriptado = try {
+            val cipherBytes = chatNombre.hexToByteArray()
+            val plainBytes  = cipherBytes.let { ClaveSimetricaChats.clave!!.cipher().decrypt(ciphertext = it) }
+            plainBytes.decodeToString()
+        } catch (e: Exception) {
+            println("Error al desencriptar el nombre del grupo: ${e.message}")
+            "Grupo"
+        }
     }
 
     if (chatId == null) {
@@ -257,7 +325,7 @@ fun mostrarChatGrupo(
     Scaffold(
         topBar = {
             TopBarGrupo(
-                title = chatNombre,
+                title = chatNombreDesencriptado,
                 navController = navController,
                 showBackButton = true,
                 irParaAtras = true,
@@ -285,31 +353,11 @@ fun mostrarChatGrupo(
                         .find { it.getIdUnicoMio() == mensaje.idusuario }
                         ?.getAliasPrivadoMio() ?: "Usuario"
 
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(8.dp),
-                        contentAlignment = if (esMio) Alignment.CenterEnd else Alignment.CenterStart
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .background(
-                                    if (esMio) Color(0xFFC8E6C9) else Color(0xFFB2EBF2),
-                                    shape = RoundedCornerShape(8.dp)
-                                )
-                                .padding(12.dp)
-                                .widthIn(max = 280.dp)
-                        ) {
-                            if (!esMio) {
-                                Text(
-                                    text = senderAlias,
-                                    style = MaterialTheme.typography.caption,
-                                    color = Color.DarkGray
-                                )
-                            }
-                            Text(text = mensaje.content)
-                        }
-                    }
+                    MensajeCard(
+                        mensaje = mensaje,
+                        esMio = esMio,
+                        senderAlias = senderAlias
+                    )
                 }
             }
 
@@ -328,12 +376,17 @@ fun mostrarChatGrupo(
                 IconButton(onClick = {
                     if (mensajeNuevo.isNotBlank()) {
                         scope.launch {
+                            val key = ClaveSimetricaChats.clave ?: throw IllegalStateException("Clave no lista")
+                            // Ciframos con nonce incluido
+                            val encryptedFull = key.cipher().encrypt(mensajeNuevo.encodeToByteArray())
+                            val contenidoHex = encryptedFull.toHex()
+
                             val nuevo = Mensaje(
-                                content = mensajeNuevo.trim(),
+                                content = contenidoHex,
                                 idusuario = currentUserId,
                                 idconversacion = chatId
                             )
-                            supabaseClient.from("mensaje").insert(nuevo)
+                            Supabase.client.from("mensaje").insert(nuevo)
                             mensajeNuevo = ""
                             println("📤 Mensaje enviado en realtime.")
                         }
@@ -346,218 +399,49 @@ fun mostrarChatGrupo(
     }
 }
 
-
-/*
-// --- Nuevo Chat ---
+@OptIn(ExperimentalStdlibApi::class)
 @Composable
-@Preview
-fun muestraNuevoChat() {
-    var nombreChat by remember { mutableStateOf("") }
-    val participantes = remember { mutableStateListOf<String>() }
-    var nuevoParticipante by remember { mutableStateOf("") }
+fun MensajeCard(
+    mensaje: Mensaje,
+    esMio: Boolean,
+    senderAlias: String? = null
+) {
 
-    MaterialTheme {
-        Scaffold(
-            topBar = {
-                DefaultTopBar(
-                    title = traducir("nombre_del_chat"),
-                    navController = null,
-                    showBackButton = true,
-                    irParaAtras = true,
-                    muestraEngranaje = false
+    var nombrePlano by remember { mutableStateOf("(cargando...)") }
+
+    LaunchedEffect(ClaveSimetricaChats.clave, mensaje.content) {
+        if (ClaveSimetricaChats.clave != null) {
+            val cipherBytes = mensaje.content.hexToByteArray()
+            val plainBytes  = cipherBytes.let { ClaveSimetricaChats.clave!!.cipher().decrypt(ciphertext = it) }
+            nombrePlano    = plainBytes.decodeToString()
+        }
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp),
+        contentAlignment = if (esMio) Alignment.CenterEnd else Alignment.CenterStart
+    ) {
+        Column(
+            modifier = Modifier
+                .background(
+                    if (esMio) Color(0xFFC8E6C9) else Color(0xFFB2EBF2),
+                    shape = RoundedCornerShape(8.dp)
                 )
-            }
-        ) { padding ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .padding(16.dp)
-            ) {
-                OutlinedTextField(
-                    value = nombreChat,
-                    onValueChange = { nombreChat = it },
-                    label = { Text(traducir("nombre_del_chat")) },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(modifier = Modifier.fillMaxWidth()) {
-                    OutlinedTextField(
-                        value = nuevoParticipante,
-                        onValueChange = { nuevoParticipante = it },
-                        label = { Text(traducir("agregar_participante")) },
-                        modifier = Modifier.weight(1f)
+                .padding(12.dp)
+                .widthIn(max = 280.dp)
+        ) {
+            if (!esMio) {
+                if (senderAlias != null) {
+                    Text(
+                        text = senderAlias,
+                        style = MaterialTheme.typography.caption,
+                        color = Color.DarkGray
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Button(onClick = {
-                        if (nuevoParticipante.isNotEmpty()) {
-                            participantes.add(nuevoParticipante)
-                            nuevoParticipante = ""
-                        }
-                    }) {
-                        Text(traducir("agregar"))
-                    }
-                }
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(traducir("participantes"), style = MaterialTheme.typography.subtitle1)
-                LazyColumn {
-                    items(participantes) { participante ->
-                        Text(participante, modifier = Modifier.padding(4.dp))
-                    }
-                }
-                Spacer(modifier = Modifier.height(16.dp))
-                Button(
-                    onClick = { /* Lógica para crear el chat con 'nombreChat' y 'participantes' */ },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(traducir("crear_chat"))
                 }
             }
+            Text(nombrePlano)
         }
     }
 }
-
-// --- Chat Room ---
-@Composable
-@Preview
-fun muestraChatRoom() {
-    val mensajes = remember { mutableStateListOf<Mensaje>() }
-    var nuevoMensaje by remember { mutableStateOf("") }
-
-    MaterialTheme {
-        Scaffold(
-            topBar = {
-                DefaultTopBar(
-                    title = traducir("chat_room"),
-                    navController = null,
-                    showBackButton = true,
-                    irParaAtras = true,
-                    muestraEngranaje = false
-                )
-            }
-        ) { padding ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-            ) {
-                LazyColumn(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(16.dp)
-                ) {
-                    items(mensajes) { mensaje ->
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp),
-                            elevation = 4.dp
-                        ) {
-                            Text(
-                                text = mensaje.content,
-                                modifier = Modifier.padding(16.dp),
-                                style = MaterialTheme.typography.body1
-                            )
-                        }
-                    }
-                }
-                Divider()
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    OutlinedTextField(
-                        value = nuevoMensaje,
-                        onValueChange = { nuevoMensaje = it },
-                        label = { Text(traducir("nuevo_mensaje")) },
-                        modifier = Modifier.weight(1f)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Button(onClick = {
-                        if (nuevoMensaje.isNotEmpty()) {
-                            mensajes.add(
-                                Mensaje(
-                                    id = Clock.System.now().toEpochMilliseconds().toString(),
-                                    senderId = "user", // Aquí usar el ID del usuario autenticado
-                                    receiverId = "user", // Aquí usar el ID del destinatario
-                                    content = nuevoMensaje,
-                                    fechaMensaje = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
-                                )
-                            )
-                            nuevoMensaje = ""
-                        }
-                    }) {
-                        Text(traducir("enviar"))
-                    }
-                }
-            }
-        }
-    }
-}
-
-// --- Chats ---
-@Composable
-@Preview
-fun muestraChats() {
-    val chats = remember { mutableStateListOf<Conversacion>() }
-    var nuevoChat by remember { mutableStateOf("") }
-
-    MaterialTheme {
-        Scaffold(
-            topBar = {
-                DefaultTopBar(
-                    title = traducir("chats"),
-                    navController = null,
-                    showBackButton = true,
-                    irParaAtras = true,
-                    muestraEngranaje = false
-                )
-            }
-        ) { padding ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .padding(16.dp)
-            ) {
-                OutlinedTextField(
-                    value = nuevoChat,
-                    onValueChange = { nuevoChat = it },
-                    label = { Text(traducir("nuevo_chat")) },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Button(
-                    onClick = {
-                        if (nuevoChat.isNotEmpty()) {
-                            chats.add(Conversacion(id = nuevoChat, participants = listOf("user1", "user2")))
-                            nuevoChat = ""
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(traducir("agregar_chat"))
-                }
-                Spacer(modifier = Modifier.height(16.dp))
-                LazyColumn {
-                    items(chats) { chat ->
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp),
-                            elevation = 4.dp
-                        ) {
-                            Column(modifier = Modifier.padding(16.dp)) {
-                                Text(traducir("chat") + ": ${chat.id}", style = MaterialTheme.typography.subtitle1)
-                                Text(traducir("participantes_chat") + "${chat.participants.joinToString(", ")}", style = MaterialTheme.typography.body2)
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
- */

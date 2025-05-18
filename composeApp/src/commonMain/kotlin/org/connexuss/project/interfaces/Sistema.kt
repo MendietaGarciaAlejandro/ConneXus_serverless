@@ -70,6 +70,8 @@ import connexus_serverless.composeapp.generated.resources.ic_foros
 import connexus_serverless.composeapp.generated.resources.usuarios
 import connexus_serverless.composeapp.generated.resources.visibilidadOff
 import connexus_serverless.composeapp.generated.resources.visibilidadOn
+import dev.whyoleg.cryptography.CryptographyProvider
+import dev.whyoleg.cryptography.algorithms.AES
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
 import kotlinx.coroutines.delay
@@ -81,6 +83,8 @@ import org.connexuss.project.comunicacion.Conversacion
 import org.connexuss.project.comunicacion.ConversacionesUsuario
 import org.connexuss.project.comunicacion.Mensaje
 import org.connexuss.project.comunicacion.generateId
+import org.connexuss.project.encriptacion.EncriptacionSimetricaChats
+import org.connexuss.project.encriptacion.EncriptacionSimetricaForo
 import org.connexuss.project.misc.Imagen
 import org.connexuss.project.misc.Supabase
 import org.connexuss.project.misc.SupabaseAdmin
@@ -91,6 +95,7 @@ import org.connexuss.project.persistencia.clearSession
 import org.connexuss.project.persistencia.getRestoredSessionFlow
 import org.connexuss.project.persistencia.saveSession
 import org.connexuss.project.supabase.SupabaseRepositorioGenerico
+import org.connexuss.project.supabase.SupabaseSecretosRepo
 import org.connexuss.project.supabase.SupabaseUsuariosRepositorio
 import org.connexuss.project.usuario.AlmacenamientoUsuario
 import org.connexuss.project.usuario.Usuario
@@ -100,6 +105,12 @@ import org.connexuss.project.usuario.UtilidadesUsuario
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
+
+object ClaveSimetricaChats {
+    var clave:AES.GCM.Key? by mutableStateOf(null)
+}
 
 @Composable
 fun DefaultTopBar(
@@ -483,6 +494,7 @@ fun muestraUsuarios(navController: NavHostController) {
 
 // --- elemento chat ---
 //Muestra el id del usuarioPrincipal ya que no esta incluido en la lista de usuarios precreados
+@OptIn(ExperimentalStdlibApi::class, ExperimentalEncodingApi::class)
 @Composable
 fun ChatCard(
     conversacion: Conversacion,
@@ -494,6 +506,48 @@ fun ChatCard(
     val currentUserId = UsuarioPrincipal?.getIdUnicoMio()
     val esGrupo = !conversacion.nombre.isNullOrBlank()
 
+    var nombrePlano by remember { mutableStateOf("(cargando…)") }
+
+    var claveChat: AES.GCM.Key?
+
+    var ultimoMensajeDesencriptado by remember { mutableStateOf("") }
+
+    val encHelper = remember { EncriptacionSimetricaChats() }
+
+    val scope = rememberCoroutineScope()
+
+    val secretoRepositorio = remember { SupabaseSecretosRepo() }
+
+    if (ultimoMensaje != null) {
+        LaunchedEffect(ultimoMensaje.content) {
+            val secretoRpc = secretoRepositorio.recuperarSecretoSimpleRpc(conversacion.id)
+                ?: throw IllegalStateException("Secreto no disponible")
+            // Decodificar clave RAW
+            val keyBytes = Base64.decode(secretoRpc.decryptedSecret)
+            claveChat = CryptographyProvider.Default
+                .get(AES.GCM)
+                .keyDecoder()
+                .decodeFromByteArray(AES.Key.Format.RAW, keyBytes)
+
+            if (claveChat != null) {
+                val cipherBytes = ultimoMensaje.content.hexToByteArray()
+                val plainBytes  = cipherBytes.let { claveChat!!.cipher().decrypt(ciphertext = it) }
+                ultimoMensajeDesencriptado    = plainBytes.decodeToString()
+            }
+        }
+    }
+
+    scope.launch {
+        encHelper.leerConversacion(
+            converId = conversacion.id,
+            secretsRpcRepo = secretoRepositorio,
+        ).let { nombre ->
+            if (nombre != null) {
+                nombrePlano = nombre
+            }
+        }
+    }
+
     println("👥 Participantes en la conversación ${conversacion.id}:")
     participantes.forEach {
         println(" - ${it.getNombreCompletoMio()} (id: ${it.getIdUnicoMio()})")
@@ -504,7 +558,7 @@ fun ChatCard(
     val estaBloqueado = otroUsuario?.getIdUnicoMio() in bloqueados
 
     val displayName = if (esGrupo) {
-        conversacion.nombre!!
+        nombrePlano
     } else {
         otroUsuario?.getNombreCompletoMio() ?: conversacion.id
     }
@@ -552,7 +606,7 @@ fun ChatCard(
 
             if (ultimoMensaje != null) {
                 Text(
-                    text = ultimoMensaje.content,
+                    text = ultimoMensajeDesencriptado,
                     style = MaterialTheme.typography.body1,
                     color = if (estaBloqueado) Color.Red else MaterialTheme.colors.onSurface,
                     maxLines = 1,
@@ -693,6 +747,8 @@ fun muestraContactos(navController: NavHostController) {
     println("🪪 ID usuario actual: $currentUserId")
     val repo = remember { SupabaseRepositorioGenerico() }
     val scope = rememberCoroutineScope()
+    val encHelper = remember { EncriptacionSimetricaChats() }
+    val secretsRepo = remember { SupabaseSecretosRepo() }
 
     var registrosContacto by remember { mutableStateOf<List<UsuarioContacto>>(emptyList()) }
     var contactos by remember { mutableStateOf<List<Usuario>>(emptyList()) }
@@ -926,10 +982,10 @@ fun muestraContactos(navController: NavHostController) {
                                 scope.launch {
                                     try {
                                         val participantes = contactosSeleccionados + currentUserId
-                                        val nuevaConversacion = Conversacion(
-                                            nombre = if (contactosSeleccionados.size > 1) nombreGrupo else null
+                                        val nuevaConversacion = encHelper.crearChatSinPadding(
+                                            nombrePlain = if (contactosSeleccionados.size > 1) nombreGrupo else null,
+                                            secretsRpcRepo = secretsRepo
                                         )
-                                        repo.addItem("conversacion", nuevaConversacion)
 
                                         participantes.forEach { idUsuario ->
                                             val relacion = ConversacionesUsuario(
