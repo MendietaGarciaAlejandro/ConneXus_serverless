@@ -26,13 +26,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import dev.whyoleg.cryptography.BinarySize
 import dev.whyoleg.cryptography.BinarySize.Companion.bytes
 import dev.whyoleg.cryptography.CryptographyProvider
 import dev.whyoleg.cryptography.algorithms.AES
 import dev.whyoleg.cryptography.algorithms.EC
+import dev.whyoleg.cryptography.algorithms.ECDH
 import dev.whyoleg.cryptography.algorithms.ECDSA
+import dev.whyoleg.cryptography.algorithms.HKDF
 import dev.whyoleg.cryptography.algorithms.HMAC
+import dev.whyoleg.cryptography.algorithms.SHA256
 import dev.whyoleg.cryptography.algorithms.SHA512
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -834,7 +839,7 @@ class EncriptacionSimetricaForo {
 
         // 2) Insertar secreto en vault via RPC
         // convertimos key a Base64 estándar (con padding) o hex según tu función RPC
-        val keyB64 = Base64.Default.encode(key.encodeToByteArray(AES.Key.Format.RAW))
+        val keyB64 = Base64.encode(key.encodeToByteArray(AES.Key.Format.RAW))
         try {
             secretsRpcRepo.insertarSecretoSimpleConRpc(
                 temaId = temaId,
@@ -845,7 +850,7 @@ class EncriptacionSimetricaForo {
         }
 
         // 3) Codificar ciphertext sin padding para la tabla temas
-        val noPad = Base64.Default.withPadding(Base64.PaddingOption.ABSENT)
+        val noPad = Base64.withPadding(Base64.PaddingOption.ABSENT)
         val nombreB64 = noPad.encode(fullEncrypted)
 
         val repoTema = SupabaseTemasRepositorio()
@@ -880,7 +885,7 @@ class EncriptacionSimetricaForo {
             ?: throw IllegalStateException("Secreto no disponible para tema $temaId")
 
         // 2) Decodificar clave RAW (Base64 estándar con padding)
-        val keyBytes = secretoDesencriptado.decryptedSecret.let { Base64.Default.decode(it) }
+        val keyBytes = secretoDesencriptado.decryptedSecret.let { Base64.decode(it) }
         val aesKey = keyBytes.let {
             CryptographyProvider.Default
                 .get(AES.GCM)
@@ -896,7 +901,7 @@ class EncriptacionSimetricaForo {
             ?: throw IllegalStateException("Tema no disponible para id $temaId")
 
         // 5) Decodificar ciphertext+tag (Base64 sin padding)
-        val noPad = Base64.Default.withPadding(Base64.PaddingOption.ABSENT)
+        val noPad = Base64.withPadding(Base64.PaddingOption.ABSENT)
         val encryptedFull: ByteArray = noPad.decode(temaNombre)
 
         // 7) Desencriptar con la clave y devolver texto
@@ -905,62 +910,103 @@ class EncriptacionSimetricaForo {
     }
 }
 
-//object GroupCrypto {
-//
-//    private val provider = CryptographyProvider.Default
-//
-//    /** 1) Cada usuario genera su par ECDH P‑256. */
-//    suspend fun generateECDHKeyPair(): KeyPair =
-//        provider.get(ECDH.P256).keyGenerator().generateKeyPair()
-//
-//    /**
-//     * 2) Derivar clave de grupo:
-//     *    – El admin elige un miembro “rodaja” de la lista de claves públicas
-//     *    – Calcula sharedSecret = ECDH.deriveBits(privAdmin, pubMember)
-//     *    – Repite para cada miembro en cadena, o usa un árbol de acuerdos.
-//     *    – Aplica HKDF para obtener 256 bits:
-//     */
-//    suspend fun deriveGroupKey(
-//        adminPriv: ByteArray,
-//        memberPubs: List<ByteArray>
-//    ): ByteArray = withContext(Dispatchers.Default) {
-//        val ecdh = provider.get(ECDH.P256)
-//        val hkdf = provider.get(HKDF.SHA256)
-//        // Deriva paso a paso (simplificado):
-//        var secret = ecdh.deriveBits(adminPriv, memberPubs.first(), 256)
-//        // Para más miembros, encadena con HKDF
-//        val groupKey = hkdf.extractAndExpand(
-//            salt = null,
-//            inputKeyingMaterial = secret,
-//            info = "chat‑group‑key".encodeToByteArray(),
-//            length = 32 // 256 bits
-//        )
-//        groupKey
-//    }
-//
-//    /**
-//     * 3) Cifrados AES‑GCM:
-//     */
-//    suspend fun encryptMessage(
-//        groupKey: ByteArray,
-//        plaintext: ByteArray,
-//        groupId: ByteArray
-//    ): ByteArray = withContext(Dispatchers.Default) {
-//        val aes = provider.get(AES.GCM)
-//        val key = aes.keyDecoder()
-//            .decodeFromByteArray(AES.Key.Format.RAW, groupKey)
-//        val cipher = key.cipher().encrypt(plaintext, aad = groupId)
-//        cipher // nonce||ciphertext||tag, implícito en libs
-//    }
-//
-//    suspend fun decryptMessage(
-//        groupKey: ByteArray,
-//        encryptedFull: ByteArray,
-//        groupId: ByteArray
-//    ): ByteArray = withContext(Dispatchers.Default) {
-//        val aes = provider.get(AES.GCM)
-//        val key = aes.keyDecoder()
-//            .decodeFromByteArray(AES.Key.Format.RAW, groupKey)
-//        key.cipher().decrypt(encryptedFull, aad = groupId)
-//    }
-//}
+object GroupCrypto {
+
+    private val provider = CryptographyProvider.Default
+
+    /** 1) Cada usuario genera su par ECDH P‑256. */
+    private suspend fun generateECDHKeyPair(): ECDH.KeyPair {
+        val curve = EC.Curve.P256
+        return provider.get(ECDH).keyPairGenerator(curve).generateKey()
+    }
+
+    /**
+     * Genera un par de claves ECDH y devuelve la clave privada y pública en formato RAW.
+     * La clave privada es de 32 bytes y la pública es de 65 bytes.
+     */
+    suspend fun cretePublicAndPrivateKeyPair(): Pair<ByteArray, ByteArray> {
+        val keyPair = generateECDHKeyPair()
+        val privateKey = keyPair.privateKey.encodeToByteArray(EC.PrivateKey.Format.RAW)
+        val publicKey = keyPair.publicKey.encodeToByteArray(EC.PublicKey.Format.RAW)
+        return privateKey to publicKey
+    }
+
+    /**
+     * 2) Deriva la clave de grupo a partir de la clave privada del admin y la pública del miembro.
+     *    – La clave de grupo es de 32 bytes.
+     */
+    suspend fun deriveGroupKey(
+        adminPrivRaw: ByteArray,
+        memberPubsRaw: List<ByteArray>,
+        groupId: ByteArray
+    ): ByteArray = withContext(Dispatchers.Default) {
+        // 1) Obtén el algoritmo ECDH para la curva P‑256
+        val ecdh = provider.get(ECDH)
+        val curveP256 = EC.Curve.P256
+
+        // 2) Decodifica la clave privada RAW (32 bytes)
+        val privKey = ecdh.privateKeyDecoder(curveP256)
+            .decodeFromByteArray(EC.PrivateKey.Format.RAW, adminPrivRaw)
+
+        // 4) Decodifica la clave pública RAW (65 bytes, SEC1 uncompressed)
+        val pubKey = ecdh.publicKeyDecoder(curveP256)
+            .decodeFromByteArray(EC.PublicKey.Format.RAW, memberPubsRaw.first())
+
+        val sharedSecretRaw: ByteArray = ecdh.privateKeyDecoder(curveP256)
+            .decodeFromByteArray(
+                EC.PrivateKey.Format.RAW,
+                privKey.encodeToByteArray(
+                    format = EC.PrivateKey.Format.RAW))
+            .sharedSecretGenerator().generateSharedSecretToByteArray(pubKey)
+
+        val tamaniaBInario: BinarySize = 32.bytes
+
+        val hkdf = provider.get(HKDF)
+        hkdf.secretDerivation(
+            SHA256,
+            tamaniaBInario,
+            null,
+            groupId
+        ).deriveSecretToByteArray(sharedSecretRaw)
+    }
+
+    /**
+     * 3) Cifra el mensaje con AES‑GCM y la clave de grupo.
+     *    – El nonce es de 12 bytes (96 bits).
+     */
+    suspend fun encryptMessage(
+        groupKey: ByteArray,
+        plaintext: ByteArray,
+        groupId: ByteArray
+    ): ByteArray = withContext(Dispatchers.Default) {
+        val aes = provider.get(AES.GCM)
+        val key = aes.keyDecoder()
+            .decodeFromByteArray(AES.Key.Format.RAW, groupKey)
+
+        // Cifra el mensaje, incluyendo groupId como AAD
+        key.cipher().encrypt(
+            plaintext       = plaintext,
+            associatedData  = groupId
+        )
+    }
+
+    /**
+     * 4) Desencripta el mensaje con AES‑GCM y la clave de grupo.
+     *    – El nonce es de 12 bytes (96 bits).
+     */
+    suspend fun decryptMessage(
+        groupKey: ByteArray,
+        encryptedFull: ByteArray,
+        groupId: ByteArray
+    ): ByteArray = withContext(Dispatchers.Default) {
+        val aes = provider.get(AES.GCM)
+        val key = aes.keyDecoder()
+            .decodeFromByteArray(AES.Key.Format.RAW, groupKey)
+
+        // Desencripta pasando el mismo groupId como AAD
+        key.cipher().decrypt(
+            ciphertext      = encryptedFull,
+            associatedData  = groupId
+        )
+    }
+}
