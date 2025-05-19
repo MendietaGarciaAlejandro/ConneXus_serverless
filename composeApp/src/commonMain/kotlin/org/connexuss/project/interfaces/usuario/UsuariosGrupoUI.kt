@@ -1,4 +1,4 @@
-package org.connexuss.project.interfaces
+package org.connexuss.project.interfaces.usuario
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -19,6 +19,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import org.connexuss.project.interfaces.comun.LimitaTamanioAncho
+import org.connexuss.project.interfaces.comun.traducir
+import org.connexuss.project.interfaces.navegacion.DefaultTopBar
 import org.connexuss.project.usuario.Usuario
 import org.jetbrains.compose.ui.tooling.preview.Preview
 

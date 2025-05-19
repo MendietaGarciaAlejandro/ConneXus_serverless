@@ -1,4 +1,4 @@
-package org.connexuss.project.interfaces
+package org.connexuss.project.interfaces.tema
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -28,6 +28,9 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.russhwolf.settings.ExperimentalSettingsApi
 import kotlinx.coroutines.launch
+import org.connexuss.project.interfaces.comun.LimitaTamanioAncho
+import org.connexuss.project.interfaces.navegacion.DefaultTopBar
+import org.connexuss.project.interfaces.comun.traducir
 import org.connexuss.project.persistencia.FontKeys
 import org.connexuss.project.persistencia.SettingsState
 import org.connexuss.project.persistencia.getFontKeyFlow

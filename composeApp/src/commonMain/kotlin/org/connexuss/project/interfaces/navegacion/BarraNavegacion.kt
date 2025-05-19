@@ -1,4 +1,4 @@
-package org.connexuss.project.interfaces
+package org.connexuss.project.interfaces.navegacion
 
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
@@ -16,10 +16,10 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import connexus_serverless.composeapp.generated.resources.Res
 import connexus_serverless.composeapp.generated.resources.ic_chats
 import connexus_serverless.composeapp.generated.resources.ic_foros
+import org.connexuss.project.interfaces.comun.traducir
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
-//BottomBar
 @Composable
 @Preview
 fun MiBottomBar(navController: NavHostController) {

@@ -23,7 +23,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.russhwolf.settings.ExperimentalSettingsApi
@@ -40,9 +39,9 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
-import org.connexuss.project.interfaces.DefaultTopBar
-import org.connexuss.project.interfaces.LimitaTamanioAncho
-import org.connexuss.project.interfaces.TemaConfig
+import org.connexuss.project.interfaces.navegacion.DefaultTopBar
+import org.connexuss.project.interfaces.comun.LimitaTamanioAncho
+import org.connexuss.project.interfaces.tema.TemaConfig
 import org.connexuss.project.usuario.Usuario
 
 val settings: Settings = Settings() // SharedPreferences en Android, Preferences.userRoot() en Desktop, localStorage en JS

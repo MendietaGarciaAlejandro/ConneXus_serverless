@@ -1,7 +1,6 @@
-package org.connexuss.project.interfaces
+package org.connexuss.project.interfaces.tema
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -22,14 +21,15 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.Saver
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.russhwolf.settings.ExperimentalSettingsApi
 import kotlinx.coroutines.launch
+import org.connexuss.project.interfaces.comun.LimitaTamanioAncho
+import org.connexuss.project.interfaces.navegacion.DefaultTopBar
+import org.connexuss.project.interfaces.comun.traducir
 import org.connexuss.project.persistencia.SettingsState
 import org.connexuss.project.persistencia.getTemaConfigFlow
 import org.connexuss.project.persistencia.setTemaConfig
@@ -112,10 +112,6 @@ fun AppThemeWrapper(settingsState: SettingsState, content: @Composable () -> Uni
 /**
  * Pantalla para cambiar el tema de la aplicación.
  *
- * @param navController Controlador de navegación.
- * @param temaConfig Configuración actual del tema.
- * @param onToggleTheme Función callback para alternar entre tema claro y oscuro.
- * @param onColorChange Función callback que espera una clave de color para cambiar el tema.
  */
 @Composable
 fun PantallaCambiarTema(
@@ -418,4 +414,3 @@ val coloresNaranjaOscuro = darkColorScheme(
     onSurface = Color.White,
     onError = Color.Black
 )
-
