@@ -5,12 +5,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.Button
-import androidx.compose.material.ButtonDefaults
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Scaffold
-import androidx.compose.material.Text
-import androidx.compose.material.Typography
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.Typography
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -103,8 +103,25 @@ fun ProveedorDeFuente(
 @Composable
 fun AppTheme(content: @Composable () -> Unit) {
     val fontFamily = LocalFontState.current.value
+
     MaterialTheme(
-        typography = Typography(defaultFontFamily = fontFamily),
+        colorScheme = MaterialTheme.colorScheme,
+        typography = with(MaterialTheme.typography) {
+            Typography(
+                bodyLarge = bodyLarge.copy(fontFamily = fontFamily),
+                bodyMedium = bodyMedium.copy(fontFamily = fontFamily),
+                bodySmall = bodySmall.copy(fontFamily = fontFamily),
+                titleLarge = titleLarge.copy(fontFamily = fontFamily),
+                titleMedium = titleMedium.copy(fontFamily = fontFamily),
+                titleSmall = titleSmall.copy(fontFamily = fontFamily),
+                headlineSmall = headlineSmall.copy(fontFamily = fontFamily),
+                headlineMedium = headlineMedium.copy(fontFamily = fontFamily),
+                headlineLarge = headlineLarge.copy(fontFamily = fontFamily),
+                labelSmall = labelSmall.copy(fontFamily = fontFamily),
+                labelMedium = labelMedium.copy(fontFamily = fontFamily),
+                labelLarge = labelLarge.copy(fontFamily = fontFamily)
+            )
+        },
         content = content
     )
 }
@@ -122,15 +139,6 @@ fun PantallaCambiarFuente(
     val scope = rememberCoroutineScope()
     val fontState = LocalFontState.current
     val currentKey by settingsState.getFontKeyFlow().collectAsState(initial = FontKeys.DEFAULT)
-
-    // Opciones: clave y familia (para mostrar la preview)
-//    val fontOptions = listOf(
-//        FontKeys.DEFAULT    to FontFamily.Default,
-//        FontKeys.SERIF      to FontFamily.Serif,
-//        FontKeys.MONOSPACE  to FontFamily.Monospace,
-//        FontKeys.CURSIVE    to FontFamily.Cursive,
-//        FontKeys.SANS_SERIF to FontFamily.SansSerif
-//    )
 
     Scaffold(
         topBar = {
@@ -152,7 +160,7 @@ fun PantallaCambiarFuente(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(traducir("cambiar_fuente"), style = MaterialTheme.typography.h6)
+                Text(traducir("cambiar_fuente"), style = MaterialTheme.typography.titleLarge)
                 fontOptions.forEach { option ->
                     val selected = option.code == currentKey
                     Button(
@@ -161,7 +169,7 @@ fun PantallaCambiarFuente(
                         },
                         modifier = Modifier.fillMaxWidth(),
                         colors = if (selected)
-                            ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.primaryVariant)
+                            ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
                         else
                             ButtonDefaults.buttonColors()
                     ) {
@@ -172,3 +180,4 @@ fun PantallaCambiarFuente(
         }
     }
 }
+

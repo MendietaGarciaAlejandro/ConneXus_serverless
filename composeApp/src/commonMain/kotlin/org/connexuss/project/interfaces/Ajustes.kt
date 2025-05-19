@@ -16,13 +16,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.Button
-import androidx.compose.material.Card
-import androidx.compose.material.Icon
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.OutlinedTextField
-import androidx.compose.material.Scaffold
-import androidx.compose.material.Text
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -99,7 +100,7 @@ fun PantallaAjustesControlCuentas(navController: NavHostController) {
                         .padding(padding)
                         .padding(16.dp)
                 ) {
-                    Text(traducir("lista_de_cuentas"), style = MaterialTheme.typography.h6)
+                    Text(traducir("lista_de_cuentas"), style = MaterialTheme.typography.titleLarge)
 
                     LazyColumn(
                         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -107,8 +108,12 @@ fun PantallaAjustesControlCuentas(navController: NavHostController) {
                     ) {
                         items(bloqueados) { usuario ->
                             Card(
-                                backgroundColor = Color(0xFFE1BEE7),
-                                elevation = 2.dp,
+                                colors = CardDefaults.cardColors(
+                                    containerColor = Color(0xFFE1BEE7)
+                                ),
+                                elevation = CardDefaults.cardElevation(
+                                    defaultElevation = 2.dp
+                                ),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Row(
@@ -220,8 +225,12 @@ fun PantallaAjustesAyuda(navController: NavHostController) {
                         ) {
                             items(faqs) { pregunta ->
                                 Card(
-                                    backgroundColor = Color(0xFFD1C4E9),
-                                    elevation = 2.dp,
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = Color(0xFFD1C4E9)
+                                    ),
+                                    elevation = CardDefaults.cardElevation(
+                                        defaultElevation = 2.dp
+                                    ),
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Text(
@@ -232,7 +241,7 @@ fun PantallaAjustesAyuda(navController: NavHostController) {
                             }
                         }
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text(traducir("envia_un_reporte"), style = MaterialTheme.typography.subtitle1)
+                        Text(traducir("envia_un_reporte"), style = MaterialTheme.typography.titleMedium)
                         Spacer(modifier = Modifier.height(8.dp))
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -245,23 +254,25 @@ fun PantallaAjustesAyuda(navController: NavHostController) {
                                 label = { Text(traducir("escribe_tu_reporte")) },
                                 modifier = Modifier.weight(1f)
                             )
-                            Button(onClick = {
-                                errorMessage = if (reporte.isBlank()) {
-                                    reporteVacio
-                                } else {
-                                    scope.launch {
-                                        Supabase.client.from("reporte").insert(
-                                            Reporte(
-                                                idReporte = generaIdLongAleatorio().toString(),
-                                                idUsuario = (UsuarioPrincipal?.getIdUnicoMio() ?: 0).toString(),
-                                                motivo = reporte,
-                                                resuelto = false,
+                            Button(
+                                onClick = {
+                                    errorMessage = if (reporte.isBlank()) {
+                                        reporteVacio
+                                    } else {
+                                        scope.launch {
+                                            Supabase.client.from("reporte").insert(
+                                                Reporte(
+                                                    idReporte = generaIdLongAleatorio().toString(),
+                                                    idUsuario = (UsuarioPrincipal?.getIdUnicoMio() ?: 0).toString(),
+                                                    motivo = reporte,
+                                                    resuelto = false,
+                                                )
                                             )
-                                        )
+                                        }
+                                        reporteEnviado
                                     }
-                                    reporteEnviado
                                 }
-                            }) {
+                            ) {
                                 Icon(
                                     painter = painterResource(Res.drawable.ic_email),
                                     contentDescription = traducir("enviar_reporte"),

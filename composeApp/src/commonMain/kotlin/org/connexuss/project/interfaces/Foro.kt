@@ -5,14 +5,27 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -42,10 +55,11 @@ private val repoForo = SupabaseRepositorioGenerico()
 // -----------------------
 // Pantalla principal del foro
 // -----------------------
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ForoScreen(navController: NavHostController) {
     val scope = rememberCoroutineScope()
-    val scaffoldState = rememberScaffoldState()
+    val snackbarHostState = remember { SnackbarHostState() }
     var showNewTopicDialog by remember { mutableStateOf(false) }
     var searchText by remember { mutableStateOf("") }
     val refreshTrigger = remember { mutableStateOf(0) }
@@ -67,7 +81,7 @@ fun ForoScreen(navController: NavHostController) {
     val filteredTemas = temasFlow.collectAsState(initial = emptyList()).value
 
     Scaffold(
-        scaffoldState = scaffoldState,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Foro General") },
@@ -77,8 +91,9 @@ fun ForoScreen(navController: NavHostController) {
                         onValueChange = { searchText = it },
                         placeholder = { Text("Buscar...") },
                         modifier = Modifier
-                            .fillMaxHeight()
-                            .width(150.dp)
+                            .fillMaxHeight(0.8f)
+                            .width(150.dp),
+                        singleLine = true
                     )
                     IconButton(onClick = { showNewTopicDialog = true }) {
                         Icon(Icons.Filled.Add, contentDescription = "Nuevo tema")
@@ -122,7 +137,7 @@ fun ForoScreen(navController: NavHostController) {
                         scope.launch {
                             repoForo.addItem(tablaTemas, Tema(nombre = nombre))
                             refreshTrigger.value++
-                            scaffoldState.snackbarHostState.showSnackbar(
+                            snackbarHostState.showSnackbar(
                                 "Tema '$nombre' creado",
                                 duration = SnackbarDuration.Short
                             )
@@ -138,6 +153,7 @@ fun ForoScreen(navController: NavHostController) {
 // -----------------------
 // Pantalla de un tema y sus hilos
 // -----------------------
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TemaScreen(navController: NavHostController, temaId: String) {
     val scope = rememberCoroutineScope()
@@ -247,6 +263,7 @@ fun TemaScreen(navController: NavHostController, temaId: String) {
 // -----------------------
 // Pantalla de un hilo y sus posts
 // -----------------------
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HiloScreen(navController: NavHostController, hiloId: String, startRoute: String) {
 
@@ -326,7 +343,7 @@ fun HiloScreen(navController: NavHostController, hiloId: String, startRoute: Str
                         PostItem(post = post)
                     }
                 }
-                Divider()
+                HorizontalDivider()
                 // Sección para nuevo post
                 Row(
                     modifier = Modifier
@@ -414,15 +431,14 @@ fun TemaCard(tema: Tema, hilosCount: Int, onTemaClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onTemaClick),
-        elevation = 4.dp,
         shape = RoundedCornerShape(8.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = tema.nombre, style = MaterialTheme.typography.h6)
+            Text(text = tema.nombre, style = MaterialTheme.typography.headlineSmall)
             Spacer(Modifier.height(4.dp))
             Text(
                 text = "$hilosCount ${if (hilosCount==1) "hilo" else "hilos"}",
-                style = MaterialTheme.typography.caption
+                style = MaterialTheme.typography.bodySmall
             )
         }
     }
@@ -434,13 +450,12 @@ fun HiloCard(hilo: Hilo, onClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() },
-        elevation = 4.dp,
         shape = RoundedCornerShape(8.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = hilo.nombre ?: "Hilo sin título", style = MaterialTheme.typography.subtitle1)
+            Text(text = hilo.nombre ?: "Hilo sin título", style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(2.dp))
-            Text(text = "ID Tema: ${hilo.idTema}", style = MaterialTheme.typography.caption)
+            Text(text = "ID Tema: ${hilo.idTema}", style = MaterialTheme.typography.bodySmall)
         }
     }
 }
@@ -449,7 +464,6 @@ fun HiloCard(hilo: Hilo, onClick: () -> Unit) {
 fun PostItem(post: Post) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        elevation = 2.dp,
         shape = RoundedCornerShape(8.dp)
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
@@ -458,10 +472,10 @@ fun PostItem(post: Post) {
                 Spacer(Modifier.width(8.dp))
                 Text(text = post.aliaspublico, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.weight(1f))
-                Text(text = post.fechaPost.toString(), style = MaterialTheme.typography.caption)
+                Text(text = post.fechaPost.toString(), style = MaterialTheme.typography.bodySmall)
             }
             Spacer(Modifier.height(8.dp))
-            Text(text = post.content, style = MaterialTheme.typography.body1)
+            Text(text = post.content, style = MaterialTheme.typography.bodyLarge)
         }
     }
 }
@@ -476,6 +490,10 @@ fun BackButton(navController: NavHostController) {
 @Composable
 fun EmptyStateMessage(message: String) {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(text = message, style = MaterialTheme.typography.h6, color = MaterialTheme.colors.onSurface.copy(alpha = 0.6f))
+        Text(
+            text = message,
+            style = MaterialTheme.typography.headlineSmall,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+        )
     }
 }
