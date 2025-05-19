@@ -3,6 +3,8 @@ package org.connexuss.project.interfaces.ajustes
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -60,6 +62,7 @@ fun PantallaAjustesAyuda(navController: NavHostController) {
                         .fillMaxSize()
                         .padding(padding)
                         .padding(16.dp)
+                        .verticalScroll(rememberScrollState())
                 ) {
                     LazyColumn(
                         modifier = Modifier
