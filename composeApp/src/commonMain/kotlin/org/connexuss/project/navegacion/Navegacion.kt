@@ -43,6 +43,7 @@ import org.connexuss.project.interfaces.PantallaIdiomas
 import org.connexuss.project.interfaces.PantallaLogin
 import org.connexuss.project.interfaces.PantallaRegistro
 import org.connexuss.project.interfaces.PantallaRestablecer
+import org.connexuss.project.interfaces.PantallaVerificaCorreo
 import org.connexuss.project.interfaces.PantallaZonaPruebas
 import org.connexuss.project.interfaces.SplashScreen
 import org.connexuss.project.interfaces.TemaConfig
@@ -106,7 +107,7 @@ fun Navegacion(
             PantallaLogin(navController, settingsState)
         }
         composable("registro") {
-            PantallaRegistro(navController, settingsState)
+            PantallaRegistro(navController)
         }
         composable("ajustes") {
             muestraAjustes(navController, settingsState)
@@ -279,6 +280,19 @@ fun Navegacion(
         }
         composable("pruebasPersistencia") {
             PantallaPruebasPersistencia(estadoFlowSettings, navController)
+        }
+        composable(
+            "registroVerificaCorreo/{email}/{nombre}/{password}",
+            arguments = listOf(
+                navArgument("email") { type = NavType.StringType },
+                navArgument("nombre") { type = NavType.StringType },
+                navArgument("password") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val email = backStackEntry.arguments?.getString("email")
+            val nombre = backStackEntry.arguments?.getString("nombre")
+            val password = backStackEntry.arguments?.getString("password")
+            PantallaVerificaCorreo(navController, email, nombre, password)
         }
     }
 }

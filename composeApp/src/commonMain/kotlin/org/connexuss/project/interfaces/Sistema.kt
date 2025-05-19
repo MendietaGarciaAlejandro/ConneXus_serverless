@@ -83,6 +83,7 @@ import org.connexuss.project.comunicacion.Conversacion
 import org.connexuss.project.comunicacion.ConversacionesUsuario
 import org.connexuss.project.comunicacion.Mensaje
 import org.connexuss.project.comunicacion.generateId
+import org.connexuss.project.encriptacion.EncriptacionResumenUsuario
 import org.connexuss.project.encriptacion.EncriptacionSimetricaChats
 import org.connexuss.project.encriptacion.EncriptacionSimetricaForo
 import org.connexuss.project.misc.Imagen
@@ -2220,13 +2221,11 @@ fun muestraRestablecimientoContasenna(navController: NavHostController) {
     }
 }
 
-
 //metodo que comprueba correo
 fun esEmailValido(email: String): Boolean {
     val regex = Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\$")
     return regex.matches(email)
 }
-
 
 /**
  * Composable que muestra la pantalla de registro de usuario.
@@ -2234,7 +2233,7 @@ fun esEmailValido(email: String): Boolean {
  * @param navController controlador de navegación.
  */
 @Composable
-fun PantallaRegistro(navController: NavHostController, settingsState: SettingsState) {
+fun PantallaRegistro(navController: NavHostController) {
     var nombre by remember { mutableStateOf("") }
     var emailInterno by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -2247,10 +2246,8 @@ fun PantallaRegistro(navController: NavHostController, settingsState: SettingsSt
     val errorEmailYaRegistrado =
         traducir("error_email_ya_registrado") // Falta implementar y mete en los mapas de idiomas
 
-    // Instanciamos un usuario vacío que se completará si el registro es correcto
     val usuario = Usuario()
 
-    // Usamos un scope para lanzar corrutinas
     val scope = rememberCoroutineScope()
 
     MaterialTheme {
@@ -2336,79 +2333,24 @@ fun PantallaRegistro(navController: NavHostController, settingsState: SettingsSt
                                                     return@launch
                                                 }
 
-                                                // 1) Verificar si el email ya está registrado
-                                                val existingUser = repoSupabase.getUsuarioPorEmail(emailTrimmed).firstOrNull()
-                                                if (existingUser != null) {
-                                                    errorMessage = errorEmailYaRegistrado
-                                                    return@launch
-                                                }
-                                                // 2) Si no está registrado, continuar con el registro
-                                                // 1.1) Trim y validación de email
-                                                if (emailTrimmed.isBlank()) {
-                                                    errorMessage = "El correo no puede estar vacío"
-                                                    return@launch
-                                                }
-                                                if (!esEmailValido(emailTrimmed)) {
-                                                    errorMessage = "Formato de correo inválido"
-                                                    return@launch
-                                                }
-                                                // 1.2) Trim y validación de contraseña
-                                                if (password.isBlank()) {
-                                                    errorMessage = "La contraseña no puede estar vacía"
-                                                    return@launch
-                                                }
-                                                if (password.length < 5) {
-                                                    errorMessage = "La contraseña debe tener al menos 5 caracteres"
-                                                    return@launch
-                                                }
-
-                                                // 1. Registro en Supabase Auth
-                                                val result = SupabaseAdmin.client.auth.signUpWith(Email) {
+                                                // Registro en Supabase Auth
+                                                val authResult = Supabase.client.auth.signUpWith(Email) {
                                                     this.email = emailTrimmed
                                                     this.password = password
                                                 }
+                                                navController.navigate("registroVerificaCorreo/${emailTrimmed}/${nombre}/${password}")
 
-                                                if (result != null) {
-                                                    errorMessage = "error_registro"
-                                                    return@launch
-                                                }
-
-                                                val authUser = result?.userMetadata
-                                                if (authUser == null) {
-                                                    errorMessage = "error_registro_desconocido"
-                                                    return@launch
-                                                }
-
-                                                // 2. Crear objeto Usuario con el mismo ID que auth.uid()
-                                                val nuevoUsuario = Usuario(
-                                                    idUnico = generateId(),
-                                                    nombre = nombre,
-                                                    correo = emailTrimmed,
-                                                    aliasPublico = UtilidadesUsuario().generarAliasPublico(),
-                                                    aliasPrivado = "Privado_$nombre",
-                                                    activo = true,
-                                                    descripcion = "Descripción de $nombre",
-                                                    contrasennia = password
-                                                )
-
-                                                println("Nuevo usuario: $nuevoUsuario")
-
-
-                                                // 3. Guardar en tabla usuario
-                                                repoSupabase.addUsuario(nuevoUsuario)
-
-                                                // 4. ir al login
-                                                navController.navigate("login") {
-                                                    popUpTo("registro") { inclusive = true }
-                                                }
 
                                             } catch (e: Exception) {
-                                                //errorMessage = "Error: ${e.message}"
-                                                navController.navigate("login")
+                                                errorMessage = "❌ Error al registrar: ${e.message}"
+                                                //navController.navigate("login")
                                             }
                                         }
                                     }
-                                },
+                                }
+
+
+                                ,
                                 modifier = Modifier.weight(1f)
                             ) {
                                 Text(traducir("registrar"))
@@ -2430,6 +2372,133 @@ fun PantallaRegistro(navController: NavHostController, settingsState: SettingsSt
                             )
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Composable que muestra la pantalla de verificación de correo.
+ *
+ * @param navController controlador de navegación.
+ */
+
+@Composable
+fun PantallaVerificaCorreo(
+    navController: NavHostController,
+    email: String?,
+    nombre: String?,
+    password: String?
+) {
+    val scope = rememberCoroutineScope()
+    val repo = remember { SupabaseUsuariosRepositorio() }
+
+    var mensaje by remember { mutableStateOf("") }
+
+    Scaffold(
+        topBar = {
+            DefaultTopBar(
+                title = "Verificación de correo",
+                navController = navController,
+                showBackButton = false,
+                muestraEngranaje = false,
+                irParaAtras = false
+            )
+        }
+    ) { padding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("Hemos enviado un correo de verificación a:")
+                Text(email ?: "", style = MaterialTheme.typography.h6)
+                Spacer(Modifier.height(16.dp))
+                Text("Verifica tu cuenta, y luego pulsa el botón para continuar.")
+                Spacer(Modifier.height(24.dp))
+
+                Button(onClick = {
+                    scope.launch {
+                        try {
+                            // 🛡Reautenticación
+                            if (!email.isNullOrBlank() && !password.isNullOrBlank()) {
+                                Supabase.client.auth.signInWith(Email) {
+                                    this.email = email
+                                    this.password = password
+                                }
+                            }
+
+                            val usuarioActual = Supabase.client.auth.currentUserOrNull()
+
+                            if (usuarioActual?.emailConfirmedAt != null) {
+                                val imagenAleatoria = UtilidadesUsuario().generarImagenPerfilAleatoria()
+                                // Suponiendo que ya tienes `password` en memoria:
+                                val hash = EncriptacionResumenUsuario.hashPassword(password ?: EncriptacionResumenUsuario.hashPassword("prueba123"))
+
+                                // Construye tu usuario con el hash
+                                val nuevoUsuario = Usuario(
+                                    idUnico = usuarioActual.id,
+                                    correo = email ?: "",
+                                    nombre = nombre ?: "",
+                                    aliasPrivado = "Privado_$nombre",
+                                    aliasPublico = UtilidadesUsuario().generarAliasPublico(),
+                                    activo = true,
+                                    descripcion = "Perfil creado automáticamente",
+                                    contrasennia = hash,
+                                    imagenPerfilId = imagenAleatoria.id
+                                ).apply {
+                                    // Guarda la contraseña en texto plano SOLO en propiedad transitoria
+                                    contrasenniaPlain = password
+                                    imagenPerfil = imagenAleatoria.resource
+                                }
+
+                                // Inserta en Supabase
+                                repo.addUsuario(nuevoUsuario)
+
+                                // Ahora `nuevoUsuario.contrasenniaPlain` sigue disponible en memoria
+                                navController.navigate("login") {
+                                    popUpTo("registroVerificaCorreo") { inclusive = true }
+                                }
+                            } else {
+                                mensaje = "❗ Tu correo aún no está verificado."
+                            }
+                        } catch (e: Exception) {
+                            //mensaje = "❌ Error: ${e.message}"
+                            navController.navigate("login")
+                        }
+                    }
+                }) {
+                    Text("Ya lo he verificado")
+                }
+
+                Spacer(Modifier.height(12.dp))
+
+                Button(onClick = {
+                    scope.launch {
+                        try {
+                            if (!email.isNullOrBlank() && !password.isNullOrBlank()) {
+                                Supabase.client.auth.signUpWith(Email) {
+                                    this.email = email
+                                    this.password = password
+                                }
+                                mensaje = "📧 Correo reenviado correctamente."
+                            } else {
+                                mensaje = "⚠️ Falta información para reenviar el correo."
+                            }
+                        } catch (e: Exception) {
+                            mensaje = "❌ Error al reenviar: ${e.message}"
+                        }
+                    }
+                }) {
+                    Text("Reenviar correo")
+                }
+
+                if (mensaje.isNotEmpty()) {
+                    Spacer(Modifier.height(12.dp))
+                    Text(mensaje, color = MaterialTheme.colors.error)
                 }
             }
         }
@@ -2559,55 +2628,47 @@ fun PantallaLogin(navController: NavHostController, settingsState: SettingsState
                                         return@launch
                                     }
 
-                                    val existingUser = repoSupabase.getUsuarioPorEmail(emailInterno.trim()).firstOrNull()
-                                    if (existingUser != null) {
-                                        if (existingUser.contrasennia != passwordInterno) {
-                                            errorMessage = "La contraseña no es correcta"
-                                            return@launch
-                                        } else {
-                                            errorMessage = ""
-                                        }
-                                    }
-
                                     try {
-                                        val usuario = repoSupabase.getUsuarioPorEmail(emailInterno.trim()).firstOrNull()
-                                            //?: run { errorMessage = errorEmailNingunUsuario; return@launch }
+                                        val usuario = repoSupabase.getUsuarioPorEmail(emailInterno.trim()).first()
+                                            ?: run { errorMessage = errorEmailNingunUsuario; return@launch }
 
-                                        if (usuario == null) {
-                                            errorMessage = errorEmailNingunUsuario
-                                        } else {
-                                            UsuarioPrincipal = usuario
-                                            println("Usuario autenticado: $UsuarioPrincipal")
+                                        UsuarioPrincipal = usuario
+                                        println("Usuario autenticado: $UsuarioPrincipal")
 
-                                            try {
-                                                // Iniciar sesión en Supabase
-                                                Supabase.client.auth.signInWith(
-                                                    provider = Email
-                                                ) {
-                                                    email = UsuarioPrincipal!!.correo
-                                                    password = UsuarioPrincipal!!.contrasennia
-                                                }
-                                            }catch (RestException: Exception){
-                                                mensajeBienvenido = "Bienvenido ${UsuarioPrincipal!!.nombre}"
-                                                delay(2000)
-                                                navController.navigate("contactos") {
-                                                    popUpTo("login") { inclusive = true }
-                                                }
+                                        // Validadmos la contraseña con el resumen
+                                        if (!EncriptacionResumenUsuario.checkPassword(passwordInterno, usuario.contrasennia)) {
+                                            errorMessage = errorContrasenaIncorrecta
+                                            return@launch
+                                        }
+
+                                        try {
+                                            // Iniciar sesión en Supabase
+                                            Supabase.client.auth.signInWith(
+                                                provider = Email
+                                            ) {
+                                                email = UsuarioPrincipal!!.correo
+                                                password = UsuarioPrincipal!!.contrasennia
                                             }
-
-                                            // Actualizar la sesión actual
-                                            sesionActualUsuario = Supabase.client.auth.currentSessionOrNull()
-                                            errorMessage = ""
-
-                                            // Persistir solo si rememberMe=true
-                                            if (rememberMe && sesionActualUsuario != null) {
-                                                val userJson = Json.encodeToString(Usuario.serializer(), usuario)
-                                                settingsState.saveSession(sesionActualUsuario!!, UsuarioPrincipal!!)
-                                            }
-
+                                        }catch (RestException: Exception){
+                                            mensajeBienvenido = "Bienvenido ${UsuarioPrincipal!!.nombre}"
+                                            delay(2000)
                                             navController.navigate("contactos") {
                                                 popUpTo("login") { inclusive = true }
                                             }
+                                        }
+
+                                        // Actualizar la sesión actual
+                                        sesionActualUsuario = Supabase.client.auth.currentSessionOrNull()
+                                        errorMessage = ""
+
+                                        // Persistir solo si rememberMe=true
+                                        if (rememberMe && sesionActualUsuario != null) {
+                                            val userJson = Json.encodeToString(Usuario.serializer(), usuario)
+                                            settingsState.saveSession(sesionActualUsuario!!, UsuarioPrincipal!!)
+                                        }
+
+                                        navController.navigate("contactos") {
+                                            popUpTo("login") { inclusive = true }
                                         }
                                     } catch (e: Exception) {
                                         errorMessage = "Error: ${e.message}"

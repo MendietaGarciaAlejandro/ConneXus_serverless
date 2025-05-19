@@ -26,18 +26,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import dev.whyoleg.cryptography.BinarySize
 import dev.whyoleg.cryptography.BinarySize.Companion.bytes
 import dev.whyoleg.cryptography.CryptographyProvider
 import dev.whyoleg.cryptography.algorithms.AES
 import dev.whyoleg.cryptography.algorithms.EC
-import dev.whyoleg.cryptography.algorithms.ECDH
 import dev.whyoleg.cryptography.algorithms.ECDSA
-import dev.whyoleg.cryptography.algorithms.HKDF
 import dev.whyoleg.cryptography.algorithms.HMAC
 import dev.whyoleg.cryptography.algorithms.SHA256
 import dev.whyoleg.cryptography.algorithms.SHA512
-import kotlinx.coroutines.CoroutineScope
+import io.ktor.utils.io.core.toByteArray
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -51,7 +48,6 @@ import org.connexuss.project.comunicacion.Tema
 import org.connexuss.project.comunicacion.generateId
 import org.connexuss.project.interfaces.DefaultTopBar
 import org.connexuss.project.interfaces.LimitaTamanioAncho
-import org.connexuss.project.supabase.SupabaseConversacionesCRUD
 import org.connexuss.project.supabase.SupabaseConversacionesRepositorio
 import org.connexuss.project.supabase.SupabaseSecretosRepo
 import org.connexuss.project.supabase.SupabaseTemasRepositorio
@@ -1008,6 +1004,31 @@ class EncriptacionSimetricaChats {
         }
         return null
     }
+}
+
+object EncriptacionResumenUsuario {
+    private val provider = CryptographyProvider.Default
+    private val SALT     = "MiSaltFijo1234".encodeToByteArray()
+
+    /** Público: genera el hash hex de `password`. */
+    suspend fun hashPassword(password: String): String = withContext(Dispatchers.Default) {
+        val sha256 = provider.get(SHA256)
+        val hasher = sha256.hasher()
+        val input  = SALT + password.encodeToByteArray()
+        hasher.hash(input).toString() // ByteString.toString() produce hex
+    }
+
+    /** Público: verifica `password` frente a `hashHex`. */
+    suspend fun checkPassword(password: String, hashHex: String): Boolean =
+        withContext(Dispatchers.Default) {
+            val candidate = hashPassword(password)
+            if (candidate.length != hashHex.length) return@withContext false
+            var eq = true
+            for (i in candidate.indices) {
+                eq = eq and (candidate[i] == hashHex[i])
+            }
+            eq
+        }
 }
 
 //object GroupCrypto {

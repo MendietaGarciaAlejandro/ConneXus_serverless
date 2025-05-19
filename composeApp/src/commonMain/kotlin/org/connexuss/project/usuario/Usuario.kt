@@ -4,6 +4,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.connexuss.project.encriptacion.hash
+import org.connexuss.project.misc.Imagen
 import org.connexuss.project.misc.UsuariosPreCreados
 import org.connexuss.project.misc.imagenesPerfilAbstrasto
 import org.connexuss.project.misc.imagenesPerfilDibujo
@@ -356,6 +357,12 @@ class UtilidadesUsuario {
         aliasGenerados.add(alias)
         return alias
     }
+
+    fun generarImagenPerfilAleatoria(): Imagen {
+        val lista = imagenesPerfilPersona + imagenesPerfilDibujo + imagenesPerfilAbstrasto
+        return lista.random()
+    }
+
 }
 
 // NO BORRAR!!! Son las clases desarrolladas para implementar en la base de datos
@@ -385,33 +392,45 @@ data class Usuario(
     @SerialName("contrasennia")
     var contrasennia: String = "",
 
-    /**
-     * No mapeamos 'imagenPerfil' a la BD,
-     * pues es un @Transient en tu clase original.
-     */
+    @SerialName("imagen_perfil")
+    var imagenPerfilId: String? = null,
+
     @Transient
     var imagenPerfil: DrawableResource? = null
 ) {
-    // Constructor extra si quieres
+
+    @Transient
+    var contrasenniaPlain: String? = null  // solo en memoria, no se serializa
+
     constructor(
         nombre: String,
         correo: String,
         aliasPublico: String,
-        activo: Boolean
-    ) : this() {
-        this.idUnico = UtilidadesUsuario().generarIdUnico()
-        this.nombre = nombre
-        this.correo = correo
-        this.aliasPublico = aliasPublico
-        this.aliasPrivado = hash(aliasPublico)
-        this.activo = activo
-        //this.imagenPerfil = generarImagenPerfilRandom()
-    }
+        activo: Boolean,
+        imagenPerfilId: String? = null
+    ) : this(
+        idUnico = UtilidadesUsuario().generarIdUnico(),
+        nombre = nombre,
+        correo = correo,
+        aliasPublico = aliasPublico,
+        aliasPrivado = hash(aliasPublico),
+        activo = activo,
+        descripcion = "",
+        contrasennia = "",
+        imagenPerfilId = imagenPerfilId
+    )
+
 
     fun generarImagenPerfilRandom(): DrawableResource {
         val todasImagenes = imagenesPerfilPersona + imagenesPerfilAbstrasto + imagenesPerfilDibujo
         return todasImagenes.random().resource
     }
+
+    fun generarImagenPerfilAleatoria(): Imagen {
+        val lista = imagenesPerfilPersona + imagenesPerfilDibujo + imagenesPerfilAbstrasto
+        return lista.random()
+    }
+
 
     // Contructor con idUnico (el bueno creo)
     constructor(idUnico: String, nombre: String, correo: String, aliasPublico: String, activo: Boolean, descripcion: String ,contrasennia: String) : this() {
@@ -502,6 +521,12 @@ data class Usuario(
         this.imagenPerfil = imagenPerfil
     }
 
+    fun getImagenPerfilIdMio(): String? = imagenPerfilId
+    fun setImagenPerfilIdMia(id: String) {
+        this.imagenPerfilId = id
+    }
+
+
 //    // Metodo para imprimir los datos públicos del usuario
 //    @Composable
 //    fun imprimirDatosPublicos() {
@@ -533,4 +558,15 @@ data class UsuarioContacto(
     val idUsuario: String,   // ID del usuario
     @SerialName("idcontacto")
     val idContacto: String   // ID del contacto
+)
+
+@Serializable
+data class UsuarioUpdate(
+    val nombre: String,
+    val correo: String,
+    val contrasennia: String,
+    val aliasprivado: String,
+    val aliaspublico: String,
+    val descripcion: String,
+    val activo: Boolean
 )
