@@ -2646,8 +2646,8 @@ fun PantallaLogin(navController: NavHostController, settingsState: SettingsState
                                             Supabase.client.auth.signInWith(
                                                 provider = Email
                                             ) {
-                                                email = UsuarioPrincipal!!.correo
-                                                password = UsuarioPrincipal!!.contrasennia
+                                                email = usuario.correo
+                                                password = passwordInterno
                                             }
                                         }catch (RestException: Exception){
                                             mensajeBienvenido = "Bienvenido ${UsuarioPrincipal!!.nombre}"
