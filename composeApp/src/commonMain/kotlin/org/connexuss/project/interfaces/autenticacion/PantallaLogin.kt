@@ -25,6 +25,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -72,6 +73,7 @@ fun PantallaLogin(
     var emailInterno by rememberSaveable { mutableStateOf("") }
     var passwordInterno by rememberSaveable { mutableStateOf("") }
     var rememberMe by rememberSaveable { mutableStateOf(false) }
+    var recordarEmail by rememberSaveable { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
     var showDebug by remember { mutableStateOf(false) }
     var logoTapCount by remember { mutableStateOf(0) }
@@ -82,6 +84,18 @@ fun PantallaLogin(
     // Mensajes de error
     val porFavorCompleta = traducir("completa_todos_campos")
     val errorEmailNingunUsuario = traducir("email_no_encontrado")
+
+    // Cargar email guardado si existe
+    LaunchedEffect(Unit) {
+        val savedEmail = settingsState.getEmail()
+        if (savedEmail.isNotEmpty()) {
+            emailInterno = savedEmail
+        }
+
+        // Cargar estado de los checkboxes
+        rememberMe = settingsState.getRememberMeState()
+        recordarEmail = settingsState.getRememberEmailState()
+    }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -142,17 +156,44 @@ fun PantallaLogin(
                 )
 
                 Row(
-                    verticalAlignment = Alignment.CenterVertically
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
                 ) {
                     Checkbox(
                         checked = rememberMe,
-                        onCheckedChange = { rememberMe = it },
+                        onCheckedChange = {
+                            rememberMe = it
+                            // Guardar el estado del checkbox cuando cambia
+                            scope.launch {
+                                settingsState.saveRememberMeState(it)
+                            }
+                        },
                         colors = CheckboxDefaults.colors(
                             checkedColor = MaterialTheme.colorScheme.primary
                         )
                     )
                     Text(
-                        text = traducir("recuerdame"),
+                        text = "Mantener sesión",
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.padding(end = 16.dp)
+                    )
+
+                    Checkbox(
+                        checked = recordarEmail,
+                        onCheckedChange = {
+                            recordarEmail = it
+                            // Guardar el estado del checkbox cuando cambia
+                            scope.launch {
+                                settingsState.saveRememberEmailState(it)
+                            }
+                        },
+                        colors = CheckboxDefaults.colors(
+                            checkedColor = MaterialTheme.colorScheme.primary
+                        )
+                    )
+                    Text(
+                        text = "Recordar email",
                         style = MaterialTheme.typography.bodyLarge
                     )
                 }
@@ -215,6 +256,7 @@ fun PantallaLogin(
                                         Supabase.client.auth.currentSessionOrNull()
                                     errorMessage = ""
 
+                                    // Guardar sesión si "mantener sesión" está marcado
                                     if (rememberMe && sesionActualUsuario != null) {
                                         val userJson = Json.encodeToString(
                                             Usuario.serializer(),
@@ -224,6 +266,14 @@ fun PantallaLogin(
                                             sesionActualUsuario!!,
                                             UsuarioPrincipal!!
                                         )
+                                    }
+
+                                    // Guardar email si "recordar email" está marcado
+                                    if (recordarEmail) {
+                                        settingsState.saveEmail(emailInterno.trim())
+                                    } else {
+                                        // Si no está marcado, eliminar el email guardado
+                                        settingsState.removeEmail()
                                     }
 
                                     navController.navigate("contactos") {
