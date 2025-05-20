@@ -21,10 +21,10 @@ import org.connexuss.project.comunicacion.Post
 import org.connexuss.project.comunicacion.generateId
 import org.connexuss.project.interfaces.comun.LimitaTamanioAncho
 import org.connexuss.project.interfaces.foro.componentes.EmptyStateMessage
-import org.connexuss.project.interfaces.foro.componentes.HiloTopBar
 import org.connexuss.project.interfaces.foro.componentes.PostItem
 import org.connexuss.project.interfaces.foro.estado.HiloState
 import org.connexuss.project.interfaces.navegacion.MiBottomBar
+import org.connexuss.project.interfaces.notificaciones.HiloTopBar
 import org.connexuss.project.misc.UsuarioPrincipal
 import org.connexuss.project.supabase.SupabaseHiloRepositorio
 import org.connexuss.project.supabase.SupabaseRepositorioGenerico

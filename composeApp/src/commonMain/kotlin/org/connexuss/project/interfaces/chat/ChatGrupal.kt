@@ -1,5 +1,6 @@
 package org.connexuss.project.interfaces.chat
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -7,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -25,6 +27,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
@@ -34,8 +37,13 @@ import io.github.jan.supabase.postgrest.from
 import org.connexuss.project.comunicacion.Conversacion
 import org.connexuss.project.comunicacion.Mensaje
 import org.connexuss.project.interfaces.navegacion.TopBarGrupo
+import org.connexuss.project.misc.ChatEnviarImagen
 import org.connexuss.project.misc.Imagen
 import org.connexuss.project.misc.UsuarioPrincipal
+import org.connexuss.project.misc.esAndroid
+import org.connexuss.project.misc.esDesktop
+import org.connexuss.project.misc.esWeb
+import org.connexuss.project.misc.rememberImagePainter
 import org.connexuss.project.supabase.SupabaseRepositorioGenerico
 import org.connexuss.project.supabase.instanciaSupabaseClient
 import org.connexuss.project.supabase.subscribeTableAsFlow
@@ -53,7 +61,7 @@ import org.connexuss.project.usuario.Usuario
 fun mostrarChatGrupo(
     navController: NavHostController,
     chatId: String?,
-    imagenesPerfil: List<Imagen> = emptyList()  // Opcional para uso futuro
+    imagenesPerfil: List<Imagen> // (No se usa de momento)
 ) {
     val currentUserId = UsuarioPrincipal?.getIdUnicoMio() ?: return
     var todosUsuarios by remember { mutableStateOf<List<Usuario>>(emptyList()) }
@@ -68,7 +76,7 @@ fun mostrarChatGrupo(
     }
     val scope = rememberCoroutineScope()
 
-    var chatNombre by remember { mutableStateOf<String>("") }
+    var chatNombre by remember { mutableStateOf("Grupo") }
     var mensajeNuevo by remember { mutableStateOf("") }
 
     val todosLosMensajes by supabaseClient
@@ -86,9 +94,11 @@ fun mostrarChatGrupo(
         val repo = SupabaseRepositorioGenerico()
         todosUsuarios = repo.getAll<Usuario>("usuario").first()
 
-        // Cargamos el nombre del grupo
-        val conversaciones = repo.getAll<Conversacion>("conversacion").first()
-        chatNombre = conversaciones.find { it.id == chatId }?.nombre ?: "Grupo"
+        chatNombre = repo
+            .getAll<Conversacion>("conversacion")
+            .first()
+            .find { it.id == chatId }
+            ?.nombre ?: "Grupo"
     }
 
     if (chatId == null) {
@@ -115,7 +125,6 @@ fun mostrarChatGrupo(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // Lista de mensajes
             LazyColumn(
                 modifier = Modifier
                     .weight(1f)
@@ -149,7 +158,39 @@ fun mostrarChatGrupo(
                                     color = Color.DarkGray
                                 )
                             }
-                            Text(text = mensaje.content)
+
+                            mensaje.imageUrl?.let { imageUrl ->
+                                when {
+                                    esAndroid() || esDesktop() -> {
+                                        val painter = rememberImagePainter(imageUrl)
+                                        if (painter != null) {
+                                            Image(
+                                                painter = painter,
+                                                contentDescription = null,
+                                                modifier = Modifier
+                                                    .size(200.dp)
+                                                    .clip(RoundedCornerShape(8.dp))
+                                            )
+                                        }
+                                    }
+
+                                    esWeb() -> {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(200.dp, 120.dp)
+                                                .clip(RoundedCornerShape(8.dp))
+                                                .background(Color.LightGray),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text("IMAGEN", color = Color.Black)
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (mensaje.content.isNotBlank()) {
+                                Text(mensaje.content)
+                            }
                         }
                     }
                 }
@@ -179,6 +220,15 @@ fun mostrarChatGrupo(
                             mensajeNuevo = ""
                             println("📤 Mensaje enviado en realtime.")
                         }
+                    }
+                }
+
+                if (esAndroid()) {
+                    chatId?.let {
+                        ChatEnviarImagen(
+                            chatId = it,
+                            currentUserId = currentUserId
+                        )
                     }
                 }
             }

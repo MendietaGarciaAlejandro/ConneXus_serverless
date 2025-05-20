@@ -49,5 +49,10 @@ fun HiloTopBar(
                 }
             }
         }
+//            if (showRefresh) {
+//                IconButton(onClick = onRefresh) {
+//                    Icon(Icons.Default.Refresh, contentDescription = "Refrescar")
+//                }
+//            }
     )
 }

@@ -52,7 +52,7 @@ val flow: Flow<List<Post>> = Supabase.client
 
 class HiloState(hiloId: String) {
     // Expuesto a la UI
-    var newPostsCount: MutableState<Int> = mutableStateOf(0)
+    private var newPostsCount: MutableState<Int> = mutableStateOf(0)
 
     private val scope: CoroutineScope = MainScope()
     private val channel: RealtimeChannel =

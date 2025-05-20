@@ -3,10 +3,10 @@ package org.connexuss.project.misc
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
@@ -60,6 +60,6 @@ actual fun ChatEnviarImagen(
     IconButton(onClick = {
         launcher.launch("image/*")
     }) {
-        Icon(Icons.Default.Add, contentDescription = "Enviar imagen")
+        Icon(Icons.Rounded.Add, contentDescription = "Enviar imagen")
     }
 }

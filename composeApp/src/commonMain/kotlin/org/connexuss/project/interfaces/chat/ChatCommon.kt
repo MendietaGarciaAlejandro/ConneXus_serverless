@@ -1,23 +1,30 @@
 package org.connexuss.project.interfaces.chat
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import org.connexuss.project.comunicacion.Mensaje
+import org.connexuss.project.misc.esAndroid
+import org.connexuss.project.misc.esDesktop
+import org.connexuss.project.misc.esWeb
+import org.connexuss.project.misc.rememberImagePainter
 
 /**
  * Componentes y utilidades comunes para interfaces de chat en la aplicación.
@@ -49,7 +56,7 @@ fun BurbujaMensaje(
     modifier: Modifier = Modifier,
     nombreRemitente: String? = null
 ) {
-    Box(
+    Column(
         modifier = modifier
             .background(
                 if (esMio) Color(0xFFC8E6C9) else Color(0xFFB2EBF2),
@@ -58,7 +65,38 @@ fun BurbujaMensaje(
             .padding(12.dp)
             .widthIn(max = 280.dp)
     ) {
-        Text(mensaje.content)
+        mensaje.imageUrl?.let { imageUrl ->
+            when {
+                esAndroid() || esDesktop() -> {
+                    val painter = rememberImagePainter(imageUrl)
+                    if (painter != null) {
+                        Image(
+                            painter = painter,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(200.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                        )
+                    }
+                }
+
+                esWeb() -> {
+                    Box(
+                        modifier = Modifier
+                            .size(200.dp, 120.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color.LightGray),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("IMAGEN", color = Color.Black)
+                    }
+                }
+            }
+        }
+
+        if (mensaje.content.isNotBlank()) {
+            Text(mensaje.content)
+        }
     }
 }
 
