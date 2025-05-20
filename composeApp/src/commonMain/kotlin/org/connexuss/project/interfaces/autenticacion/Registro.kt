@@ -57,6 +57,7 @@ import connexus_serverless.composeapp.generated.resources.connexus
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
 import kotlinx.coroutines.launch
+import org.connexuss.project.encriptacion.EncriptacionResumenUsuario
 import org.connexuss.project.interfaces.comun.LimitaTamanioAncho
 import org.connexuss.project.interfaces.comun.traducir
 import org.connexuss.project.misc.Supabase
@@ -379,8 +380,9 @@ fun PantallaVerificaCorreo(
                                     val usuarioActual = Supabase.client.auth.currentUserOrNull()
 
                                     if (usuarioActual?.emailConfirmedAt != null) {
-                                        val imagenAleatoria =
-                                            UtilidadesUsuario().generarImagenPerfilAleatoria()
+                                        val imagenAleatoria = UtilidadesUsuario().generarImagenPerfilAleatoria()
+                                        // Suponiendo que ya tienes `password` en memoria:
+                                        val hash = EncriptacionResumenUsuario.hashPassword(password ?: EncriptacionResumenUsuario.hashPassword("prueba123"))
 
                                         val nuevoUsuario = Usuario(
                                             idUnico = usuarioActual.id,
@@ -390,14 +392,18 @@ fun PantallaVerificaCorreo(
                                             aliasPublico = UtilidadesUsuario().generarAliasPublico(),
                                             activo = true,
                                             descripcion = "Perfil creado automáticamente",
-                                            contrasennia = password ?: "",
+                                            contrasennia = hash,
                                             imagenPerfilId = imagenAleatoria.id
                                         ).apply {
+                                            // Guarda la contraseña en texto plano SOLO en propiedad transitoria
+                                            contrasenniaPlain = password
                                             imagenPerfil = imagenAleatoria.resource
                                         }
 
+                                        // Inserta en Supabase
                                         repo.addUsuario(nuevoUsuario)
 
+                                        // Ahora `nuevoUsuario.contrasenniaPlain` sigue disponible en memoria
                                         navController.navigate("login") {
                                             popUpTo("registroVerificaCorreo") { inclusive = true }
                                         }

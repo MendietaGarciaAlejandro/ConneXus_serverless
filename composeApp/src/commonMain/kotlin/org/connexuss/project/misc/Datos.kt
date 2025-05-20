@@ -28,8 +28,6 @@ import kotlinx.serialization.Serializable
 import org.connexuss.project.comunicacion.Hilo
 import org.connexuss.project.comunicacion.Post
 import org.connexuss.project.comunicacion.Tema
-import org.connexuss.project.supabase.SUPABASE_KEY
-import org.connexuss.project.supabase.SUPABASE_URL
 import org.connexuss.project.supabase.instanciaSupabaseAdmin
 import org.connexuss.project.supabase.instanciaSupabaseClient
 import org.connexuss.project.usuario.AlmacenamientoUsuario

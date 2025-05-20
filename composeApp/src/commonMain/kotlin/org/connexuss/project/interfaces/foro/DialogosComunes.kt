@@ -1,4 +1,4 @@
-package org.connexuss.project.interfaces.foro.componentes
+package org.connexuss.project.interfaces.foro
 
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -6,7 +6,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
 
 @Composable
 fun CrearElementoDialog(

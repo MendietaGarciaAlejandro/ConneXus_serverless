@@ -13,7 +13,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
@@ -43,16 +42,17 @@ import connexus_serverless.composeapp.generated.resources.Res
 import connexus_serverless.composeapp.generated.resources.connexus
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
-import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
+import org.connexuss.project.encriptacion.EncriptacionResumenUsuario
 import org.connexuss.project.interfaces.comun.LimitaTamanioAncho
 import org.connexuss.project.interfaces.comun.traducir
 import org.connexuss.project.misc.Supabase
 import org.connexuss.project.misc.UsuarioPrincipal
 import org.connexuss.project.misc.sesionActualUsuario
 import org.connexuss.project.persistencia.SettingsState
-import org.connexuss.project.persistencia.saveSession
 import org.connexuss.project.supabase.SupabaseUsuariosRepositorio
 import org.connexuss.project.usuario.Usuario
 import org.jetbrains.compose.resources.painterResource
@@ -75,6 +75,7 @@ fun PantallaLogin(
     var rememberMe by rememberSaveable { mutableStateOf(false) }
     var recordarEmail by rememberSaveable { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
+    var mensajeBienvenido by remember { mutableStateOf("") }
     var showDebug by remember { mutableStateOf(false) }
     var logoTapCount by remember { mutableStateOf(0) }
     val tapsToReveal = 5
@@ -82,8 +83,9 @@ fun PantallaLogin(
     val repoSupabase = remember { SupabaseUsuariosRepositorio() }
 
     // Mensajes de error
-    val porFavorCompleta = traducir("completa_todos_campos")
-    val errorEmailNingunUsuario = traducir("email_no_encontrado")
+    val errorEmailNingunUsuario = traducir("error_email_ningun_usuario")
+    val errorContrasenaIncorrecta = traducir("error_contrasena_incorrecta")
+    val porFavorCompleta = traducir("por_favor_completa")
 
     // Cargar email guardado si existe
     LaunchedEffect(Unit) {
@@ -213,7 +215,7 @@ fun PantallaLogin(
                         )
                     }
 
-                    Button(
+                    FilledTonalButton(
                         onClick = { navController.navigate("registro") },
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(12.dp),
@@ -237,48 +239,46 @@ fun PantallaLogin(
                             }
 
                             try {
-                                val usuario =
-                                    repoSupabase.getUsuarioPorEmail(emailInterno.trim())
-                                        .firstOrNull()
+                                val usuario = repoSupabase.getUsuarioPorEmail(emailInterno.trim()).first()
+                                    ?: run { errorMessage = errorEmailNingunUsuario; return@launch }
 
-                                if (usuario == null) {
-                                    errorMessage = errorEmailNingunUsuario
-                                } else {
-                                    UsuarioPrincipal = usuario
-                                    println("Usuario autenticado: $UsuarioPrincipal")
+                                UsuarioPrincipal = usuario
+                                println("Usuario autenticado: $UsuarioPrincipal")
 
-                                    Supabase.client.auth.signInWith(Email) {
-                                        email = emailInterno.trim()
-                                        password = passwordInterno.trim()
+                                // Validadmos la contraseña con el resumen
+                                if (!EncriptacionResumenUsuario.checkPassword(passwordInterno, usuario.contrasennia)) {
+                                    errorMessage = errorContrasenaIncorrecta
+                                    return@launch
+                                }
+
+                                try {
+                                    // Iniciar sesión en Supabase
+                                    Supabase.client.auth.signInWith(
+                                        provider = Email
+                                    ) {
+                                        email = usuario.correo
+                                        password = passwordInterno
                                     }
-
-                                    sesionActualUsuario =
-                                        Supabase.client.auth.currentSessionOrNull()
-                                    errorMessage = ""
-
-                                    // Guardar sesión si "mantener sesión" está marcado
-                                    if (rememberMe && sesionActualUsuario != null) {
-                                        val userJson = Json.encodeToString(
-                                            Usuario.serializer(),
-                                            usuario
-                                        )
-                                        settingsState.saveSession(
-                                            sesionActualUsuario!!,
-                                            UsuarioPrincipal!!
-                                        )
-                                    }
-
-                                    // Guardar email si "recordar email" está marcado
-                                    if (recordarEmail) {
-                                        settingsState.saveEmail(emailInterno.trim())
-                                    } else {
-                                        // Si no está marcado, eliminar el email guardado
-                                        settingsState.removeEmail()
-                                    }
-
+                                }catch (RestException: Exception){
+                                    mensajeBienvenido = "Bienvenido ${UsuarioPrincipal!!.nombre}"
+                                    delay(2000)
                                     navController.navigate("contactos") {
                                         popUpTo("login") { inclusive = true }
                                     }
+                                }
+
+                                // Actualizar la sesión actual
+                                sesionActualUsuario = Supabase.client.auth.currentSessionOrNull()
+                                errorMessage = ""
+
+                                // Persistir solo si rememberMe=true
+                                if (rememberMe && sesionActualUsuario != null) {
+                                    val userJson = Json.encodeToString(Usuario.serializer(), usuario)
+                                    settingsState.saveSession(sesionActualUsuario!!, UsuarioPrincipal!!)
+                                }
+
+                                navController.navigate("contactos") {
+                                    popUpTo("login") { inclusive = true }
                                 }
                             } catch (e: Exception) {
                                 errorMessage = "Error: ${e.message}"
@@ -309,6 +309,15 @@ fun PantallaLogin(
                             style = MaterialTheme.typography.labelLarge
                         )
                     }
+                }
+
+                if (mensajeBienvenido.isNotEmpty()) {
+                    Text(
+                        mensajeBienvenido,
+                        color = MaterialTheme.colorScheme.primary,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
 
                 if (errorMessage.isNotEmpty()) {

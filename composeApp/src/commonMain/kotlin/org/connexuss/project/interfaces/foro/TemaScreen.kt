@@ -1,6 +1,9 @@
 package org.connexuss.project.interfaces.foro
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -13,39 +16,61 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import dev.whyoleg.cryptography.CryptographyProvider
+import dev.whyoleg.cryptography.algorithms.AES
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import org.connexuss.project.comunicacion.Hilo
 import org.connexuss.project.comunicacion.Tema
 import org.connexuss.project.comunicacion.generateId
+import org.connexuss.project.encriptacion.toHex
 import org.connexuss.project.interfaces.comun.LimitaTamanioAncho
-import org.connexuss.project.interfaces.foro.componentes.BackButton
-import org.connexuss.project.interfaces.foro.componentes.CrearElementoDialog
-import org.connexuss.project.interfaces.foro.componentes.HiloCard
 import org.connexuss.project.interfaces.navegacion.MiBottomBar
+import org.connexuss.project.supabase.ISecretosRepositorio
 import org.connexuss.project.supabase.SupabaseRepositorioGenerico
 import org.connexuss.project.supabase.SupabaseTemasRepositorio
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
 
-// Repositorio genérico compartido (mismo que en ForoScreen)
-private val repoForo = SupabaseRepositorioGenerico()
-
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalStdlibApi::class, ExperimentalEncodingApi::class,
+    ExperimentalMaterial3Api::class
+)
 @Composable
-fun TemaScreen(navController: NavHostController, temaId: String) {
+fun TemaScreen(
+    navController: NavHostController,
+    temaId: String,
+    repoForo: SupabaseRepositorioGenerico,
+    secretsRepo: ISecretosRepositorio
+) {
     val scope = rememberCoroutineScope()
     var showNewThreadDialog by remember { mutableStateOf(false) }
     var refreshTrigger by remember { mutableStateOf(0) }
 
+    //var aesKey by remember { mutableStateOf<AES.GCM.Key?>(null) }
+    var isLoading by remember { mutableStateOf(true) }
+    var nombrePlano by remember { mutableStateOf("(cargando tema…)") }
+
+    // Instancia de tu helper
+    //val encHelper = remember { EncriptacionSimplificada() }
+
     // Tablas de temas y hilos
     val tablaTemas = "tema"
     val tablaHilos = "hilo"
+
+    var claveLista by remember { mutableStateOf(false) }
 
     // Flujo del tema y flujo de hilos filtrados
     val tema by repoForo
@@ -58,19 +83,42 @@ fun TemaScreen(navController: NavHostController, temaId: String) {
         }
         .collectAsState(initial = null)
 
+    LaunchedEffect(temaId, tema) {
+        if (tema == null) return@LaunchedEffect
+        try {
+            val secretoRpc = secretsRepo.recuperarSecretoSimpleRpc(temaId)
+                ?: throw IllegalStateException("Secreto no disponible")
+            // Decodificar clave RAW
+            val keyBytes = Base64.decode(secretoRpc.decryptedSecret)
+            val aesKey = CryptographyProvider.Default
+                .get(AES.GCM)
+                .keyDecoder()
+                .decodeFromByteArray(AES.Key.Format.RAW, keyBytes)
+            ClaveTemaHolder.clave = aesKey
+            claveLista = true
+
+            nombrePlano = aesKey.cipher()
+                .decrypt(tema!!.nombre.hexToByteArray())
+                .decodeToString()
+        } catch (e: Exception) {
+            nombrePlano = "(clave no disponible)"
+        } finally {
+            isLoading = false
+        }
+    }
+
     val hilosFlow = remember(temaId, refreshTrigger) {
         repoForo.getAll<Hilo>(tablaHilos)
             .map { list -> list.filter { it.idTema == temaId } }
     }
     val hilos by hilosFlow.collectAsState(initial = emptyList())
 
-    // Si el tema es nulo, mostrar un indicador de carga
-    when {
-        tema == null -> {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
+    // Carga inicial
+    if (isLoading || tema == null) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
         }
+        return
     }
 
     val repoTemas = SupabaseTemasRepositorio()
@@ -134,10 +182,22 @@ fun TemaScreen(navController: NavHostController, temaId: String) {
                             onDismiss = { showNewThreadDialog = false },
                             onConfirm = { titulo ->
                                 scope.launch {
-                                    val nuevo = Hilo(idHilo = generateId(), nombre = titulo, idTema = temaId)
-                                    repoForo.addItem(tablaHilos, nuevo)
-                                    refreshTrigger++ // Incrementamos el trigger para refrescar la lista
-                                    showNewThreadDialog = false
+                                    try {
+                                        val key = ClaveTemaHolder.clave ?: throw IllegalStateException("Clave no lista")
+                                        // Ciframos con nonce incluido
+                                        val encryptedFull = key.cipher().encrypt(titulo.encodeToByteArray())
+                                        val tituloHex = encryptedFull.toHex()
+                                        val nuevo = Hilo(
+                                            idHilo = generateId(),
+                                            nombre = tituloHex,
+                                            idTema = temaId
+                                        )
+                                        repoForo.addItem("hilo", nuevo)
+                                        refreshTrigger++
+                                        showNewThreadDialog = false
+                                    } catch (e: Exception) {
+                                        println("Error creando hilo: ${e.message}")
+                                    }
                                 }
                             }
                         )

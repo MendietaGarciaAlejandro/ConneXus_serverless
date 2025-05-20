@@ -119,6 +119,8 @@ fun mostrarPerfil(navController: NavHostController, usuarioU: Usuario?) {
     // Dialogs
     var showDialogNombre by remember { mutableStateOf(false) }
     var nuevoNombre by remember { mutableStateOf("") }
+    var showDialogEmail by remember { mutableStateOf(false) }
+    var nuevoEmail by remember { mutableStateOf("") }
 
     // Campos del usuario
     var aliasPrivado by remember { mutableStateOf("") }
@@ -318,16 +320,29 @@ fun mostrarPerfil(navController: NavHostController, usuarioU: Usuario?) {
                                     }
 
                                     // Email
-                                    OutlinedTextField(
-                                        value = email,
-                                        onValueChange = {},
-                                        label = { Text(text = traducir("email")) },
-                                        readOnly = true,
+                                    Row(
                                         modifier = Modifier.fillMaxWidth(),
-                                        colors = OutlinedTextFieldDefaults.colors(
-                                            unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        OutlinedTextField(
+                                            value = email,
+                                            onValueChange = {},
+                                            label = { Text(text = traducir("email")) },
+                                            readOnly = true,
+                                            modifier = Modifier.weight(1f),
+                                            colors = OutlinedTextFieldDefaults.colors(
+                                                unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                                            )
                                         )
-                                    )
+                                        FilledTonalButton(
+                                            onClick = {
+                                                nuevoEmail = email
+                                                showDialogEmail = true
+                                            }
+                                        ) {
+                                            Text(text = traducir("modificar"))
+                                        }
+                                    }
                                 }
                             }
 
@@ -353,8 +368,16 @@ fun mostrarPerfil(navController: NavHostController, usuarioU: Usuario?) {
                                                             password = contrasennia
                                                         }
                                                     }
+                                                    println(" Enviando actualización a Supabase...")
                                                     repo.updateUsuario(it)
-                                                    usuario = repo.getUsuarioAutenticado()
+
+                                                    // Recarga el usuario actualizado desde Supabase
+                                                    val usuarioActualizado = repo.getUsuarioAutenticado()
+                                                    usuario = usuarioActualizado
+
+                                                    println("Usuario recargado tras actualización: $usuarioActualizado")
+
+                                                    // Navegación atrás (opcional)
                                                     navController.popBackStack()
                                                 } catch (e: Exception) {
                                                     println("Error al actualizar usuario: ${e.message}")
@@ -379,6 +402,49 @@ fun mostrarPerfil(navController: NavHostController, usuarioU: Usuario?) {
             }
         }
     }
+    // AlertDialog para modificar Email
+    if (showDialogEmail) {
+        AlertDialog(
+            onDismissRequest = { showDialogEmail = false },
+            title = { Text(text = traducir("modificar_email")) },
+            text = {
+                OutlinedTextField(
+                    value = nuevoEmail,
+                    onValueChange = { nuevoEmail = it },
+                    label = { Text(text = traducir("nuevo_email")) }
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        email = nuevoEmail
+                        usuario?.setCorreoMio(nuevoEmail)
+                        showDialogEmail = false
+
+                        usuario?.let {
+                            coroutineScope.launch {
+                                try {
+                                    repo.updateUsuario(it)
+                                } catch (e: Exception) {
+                                    //Log.e("Perfil", "Error actualizando email: ${e.message}")
+                                }
+                            }
+                        }
+                    }
+                ) {
+                    Text(text = traducir("guardar"))
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showDialogEmail = false }
+                ) {
+                    Text(text = traducir("cancelar"))
+                }
+            }
+        )
+    }
+    // AlertDialog para modificar Nombre
     if (showDialogNombre) {
         AlertDialog(
             onDismissRequest = { showDialogNombre = false },

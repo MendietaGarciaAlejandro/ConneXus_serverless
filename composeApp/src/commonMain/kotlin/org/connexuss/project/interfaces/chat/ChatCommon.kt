@@ -15,16 +15,24 @@ import androidx.compose.material3.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import dev.whyoleg.cryptography.algorithms.AES
 import org.connexuss.project.comunicacion.Mensaje
 import org.connexuss.project.misc.esAndroid
 import org.connexuss.project.misc.esDesktop
 import org.connexuss.project.misc.esWeb
 import org.connexuss.project.misc.rememberImagePainter
+
+object ClaveSimetricaChats {
+    var clave: AES.GCM.Key? by mutableStateOf(null)
+}
 
 /**
  * Componentes y utilidades comunes para interfaces de chat en la aplicación.

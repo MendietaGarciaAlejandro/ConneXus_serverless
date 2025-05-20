@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.serialization.SerialName
 import org.connexuss.project.misc.Supabase
 import org.connexuss.project.usuario.Usuario
+import org.connexuss.project.usuario.UsuarioUpdate
 
 // Interfaz para simular una aplicacion CRUD que comunica con Supabase
 interface ISupabaseUsuariosRepositorio {
@@ -96,12 +97,12 @@ class SupabaseUsuariosRepositorio : ISupabaseUsuariosRepositorio {
     }
 
     override suspend fun updateUsuario(usuario: Usuario) {
-        val updateData = UsuarioUpdate(
+        val updateData = Usuario(
             nombre = usuario.getNombreCompletoMio(),
             correo = usuario.getCorreoMio(),
             contrasennia = usuario.getContrasenniaMio(),
-            aliasprivado = usuario.getAliasPrivadoMio(),
-            aliaspublico = usuario.getAliasMio(),
+            aliasPrivado = usuario.getAliasPrivadoMio(),
+            aliasPublico = usuario.getAliasMio(),
             descripcion = usuario.getDescripcionMio(),
             activo = usuario.getActivoMio(),
             imagenPerfilId = usuario.getImagenPerfilIdMio() // <- NUEVO
