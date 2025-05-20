@@ -1,13 +1,13 @@
-package org.connexuss.project.interfaces
+package org.connexuss.project.interfaces.comun
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.Button
-import androidx.compose.material.Scaffold
-import androidx.compose.material.Text
+import androidx.compose.material3.Button
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.russhwolf.settings.ExperimentalSettingsApi
 import kotlinx.coroutines.launch
+import org.connexuss.project.interfaces.navegacion.DefaultTopBar
 import org.connexuss.project.persistencia.SettingsState
 import org.connexuss.project.persistencia.getIdiomaKeyFlow
 import org.connexuss.project.persistencia.setIdiomaKey
@@ -296,6 +297,9 @@ val espannol = Idioma(
         "eliminar_chats" to "(Eliminar Chats)",
         "control_de_cuentas" to "(Control de Cuentas)",
         "ayuda" to "Ayuda",
+        /**
+         * Localization strings for the Spanish language.
+         */
         /**
          * Localization strings for the Spanish language.
          */
@@ -1388,3 +1392,4 @@ val italiano = Idioma(
         "sans_serif_font" to "Senza grazie"
     )
 )
+
