@@ -16,6 +16,8 @@ import connexus_serverless.composeapp.generated.resources.visibilidadOff
 import connexus_serverless.composeapp.generated.resources.visibilidadOn
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.user.UserSession
+import io.github.jan.supabase.createSupabaseClient
+import io.github.jan.supabase.postgrest.Postgrest
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDateTime
@@ -26,6 +28,9 @@ import kotlinx.serialization.Serializable
 import org.connexuss.project.comunicacion.Hilo
 import org.connexuss.project.comunicacion.Post
 import org.connexuss.project.comunicacion.Tema
+import org.connexuss.project.supabase.SUPABASE_KEY
+import org.connexuss.project.supabase.SUPABASE_URL
+import org.connexuss.project.supabase.instanciaSupabaseAdmin
 import org.connexuss.project.supabase.instanciaSupabaseClient
 import org.connexuss.project.usuario.AlmacenamientoUsuario
 import org.connexuss.project.usuario.UtilidadesUsuario
@@ -1353,7 +1358,20 @@ object Supabase {
             tieneStorage = true,
             tieneAuth = true,
             tieneRealtime = true,
-            tienePostgrest = true
+            tienePostgrest = true,
+            tieneFunciones = true
+        )
+    }
+}
+
+object SupabaseAdmin {
+    val client: SupabaseClient by lazy {
+        instanciaSupabaseAdmin(
+            tieneStorage = true,
+            tieneAuth = true,
+            tieneRealtime = true,
+            tienePostgrest = true,
+            tieneFunciones = true
         )
     }
 }

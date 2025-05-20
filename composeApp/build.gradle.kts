@@ -37,7 +37,7 @@ android {
 
     packaging {
         resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += "META-INF/versions/9/OSGI-INF/MANIFEST.MF"
         }
     }
 
@@ -159,11 +159,12 @@ kotlin {
 //            implementation(libs.firebase.storage)
             implementation(compose.components.resources)
 
-
 // Para Supabase Storage y Auth
             implementation("io.github.jan-tennert.supabase:postgrest-kt:1.4.4")
             implementation("io.github.jan-tennert.supabase:storage-kt:1.4.4")
 
+            // Encriptacion 2.0
+//            implementation(libs.indispensable)
         }
 
         androidMain.dependencies {
@@ -281,6 +282,13 @@ kotlin {
             implementation(compose.runtime)
 
 
+            implementation(compose.runtime)
+
+            // Encriptacion 2.0
+//            implementation(libs.indispensable.asn1.wasm.js)
+//            implementation(libs.indispensable.cosef.wasm.js)
+//            implementation(libs.indispensable.josef.wasm.js)
+//            implementation(libs.indispensable.js)
         }
 
         commonTest.dependencies {
@@ -311,6 +319,8 @@ dependencies {
     implementation(libs.kotlinx.serialization)
     implementation(libs.androidx.appcompat)
 
+    implementation(libs.androidx.runtime.android)
+    implementation(libs.identity.jvm)
 
     // Firebase dependencies (commented)
 //    implementation(platform(libs.firebase.android.bom))

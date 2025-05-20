@@ -95,20 +95,6 @@ class SupabaseUsuariosRepositorio : ISupabaseUsuariosRepositorio {
         }
     }
 
-    @kotlinx.serialization.Serializable
-    data class UsuarioUpdate(
-        val nombre: String,
-        val correo: String,
-        val contrasennia: String,
-        val aliasprivado: String,
-        val aliaspublico: String,
-        val descripcion: String,
-        val activo: Boolean,
-        @SerialName("imagen_perfil")
-        val imagenPerfilId: String? = null
-    )
-
-
     override suspend fun updateUsuario(usuario: Usuario) {
         val updateData = UsuarioUpdate(
             nombre = usuario.getNombreCompletoMio(),

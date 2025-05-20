@@ -398,6 +398,10 @@ data class Usuario(
     @Transient
     var imagenPerfil: DrawableResource? = null
 ) {
+
+    @Transient
+    var contrasenniaPlain: String? = null  // solo en memoria, no se serializa
+
     constructor(
         nombre: String,
         correo: String,
