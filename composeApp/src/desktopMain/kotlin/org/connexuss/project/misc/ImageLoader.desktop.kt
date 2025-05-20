@@ -7,13 +7,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.toComposeImageBitmap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.net.URL
-import javax.imageio.ImageIO
+import org.jetbrains.skia.Image.Companion.makeFromEncoded
+import java.net.URI
 
 @Composable
 actual fun rememberImagePainter(url: String): Painter? {
@@ -22,9 +22,9 @@ actual fun rememberImagePainter(url: String): Painter? {
     LaunchedEffect(url) {
         image = withContext(Dispatchers.IO) {
             try {
-                val connection = URL(url).openStream()
+                val connection = URI(url).toURL().openStream()
                 val bytes = connection.readBytes()
-                org.jetbrains.skia.Image.makeFromEncoded(bytes).asImageBitmap()
+                makeFromEncoded(bytes).toComposeImageBitmap()
 
             } catch (e: Exception) {
                 println("❌ Error loading image on desktop: ${e.message}")
