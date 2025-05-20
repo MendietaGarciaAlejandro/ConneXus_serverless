@@ -4,9 +4,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.AccountCircle
+import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -61,7 +61,7 @@ fun PostItem(post: Post) {
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.AccountCircle, contentDescription = null, modifier = Modifier.size(24.dp))
+                Icon(Icons.Rounded.AccountCircle, contentDescription = null, modifier = Modifier.size(24.dp))
                 Spacer(Modifier.width(8.dp))
                 Text(text = post.aliaspublico, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.weight(1f))
@@ -76,7 +76,7 @@ fun PostItem(post: Post) {
 @Composable
 fun BackButton(navController: NavHostController) {
     IconButton(onClick = { navController.navigateUp() }) {
-        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás")
+        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Atrás")
     }
 }
 
@@ -114,7 +114,7 @@ fun HiloTopBar(
         actions = {
             if (showRefresh) {
                 IconButton(onClick = onRefresh) {
-                    Icon(Icons.Default.Refresh, contentDescription = "Refrescar")
+                    Icon(Icons.Rounded.Refresh, contentDescription = "Refrescar")
                 }
             }
         }

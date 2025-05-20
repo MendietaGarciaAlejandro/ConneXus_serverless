@@ -3,8 +3,8 @@ package org.connexuss.project.interfaces.notificaciones
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -34,7 +34,7 @@ fun HiloTopBar(
             IconButton(onClick = {
                 navController?.popBackStack()
             }) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás")
+                Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Atrás")
             }
         },
         actions = {
@@ -44,7 +44,7 @@ fun HiloTopBar(
                     modifier = Modifier.padding(end = 8.dp)
                 ) {
                     IconButton(onClick = onRefresh) {
-                        Icon(Icons.Default.Refresh, contentDescription = "Refrescar")
+                        Icon(Icons.Rounded.Refresh, contentDescription = "Refrescar")
                     }
                 }
             }

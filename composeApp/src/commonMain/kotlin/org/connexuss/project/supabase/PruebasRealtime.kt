@@ -26,7 +26,7 @@ import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.material.TextFieldDefaults
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -129,7 +129,7 @@ fun ChatScreen(
                     mensajeInput = ""
                 }
             }) {
-                Icon(imageVector = Icons.AutoMirrored.Filled.Send, contentDescription = "Enviar")
+                Icon(imageVector = Icons.AutoMirrored.Rounded.Send, contentDescription = "Enviar")
             }
         }
     }
