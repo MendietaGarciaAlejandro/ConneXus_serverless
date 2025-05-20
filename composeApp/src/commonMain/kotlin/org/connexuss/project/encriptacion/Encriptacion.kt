@@ -46,8 +46,8 @@ import kotlinx.serialization.Serializable
 import org.connexuss.project.comunicacion.Conversacion
 import org.connexuss.project.comunicacion.Tema
 import org.connexuss.project.comunicacion.generateId
-import org.connexuss.project.interfaces.DefaultTopBar
-import org.connexuss.project.interfaces.LimitaTamanioAncho
+import org.connexuss.project.interfaces.navegacion.DefaultTopBar
+import org.connexuss.project.interfaces.comun.LimitaTamanioAncho
 import org.connexuss.project.supabase.SupabaseConversacionesRepositorio
 import org.connexuss.project.supabase.SupabaseSecretosRepo
 import org.connexuss.project.supabase.SupabaseTemasRepositorio

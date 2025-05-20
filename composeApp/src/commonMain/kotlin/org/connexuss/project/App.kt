@@ -14,11 +14,11 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import com.russhwolf.settings.ExperimentalSettingsApi
 import kotlinx.coroutines.launch
-import org.connexuss.project.interfaces.AppTheme
-import org.connexuss.project.interfaces.AppThemeWrapper
-import org.connexuss.project.interfaces.ProveedorDeFuente
-import org.connexuss.project.interfaces.ProveedorDeIdioma
-import org.connexuss.project.interfaces.TemaConfig
+import org.connexuss.project.interfaces.tema.TemaConfig
+import org.connexuss.project.interfaces.tema.AppTheme
+import org.connexuss.project.interfaces.tema.AppThemeWrapper
+import org.connexuss.project.interfaces.tema.ProveedorDeFuente
+import org.connexuss.project.interfaces.comun.ProveedorDeIdioma
 import org.connexuss.project.navegacion.Navegacion
 import org.connexuss.project.persistencia.SettingsState
 import org.connexuss.project.persistencia.flowSettings

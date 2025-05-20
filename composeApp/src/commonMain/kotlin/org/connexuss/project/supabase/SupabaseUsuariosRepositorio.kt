@@ -5,6 +5,7 @@ import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.serialization.SerialName
 import org.connexuss.project.misc.Supabase
 import org.connexuss.project.usuario.Usuario
 
@@ -95,41 +96,44 @@ class SupabaseUsuariosRepositorio : ISupabaseUsuariosRepositorio {
     }
 
     override suspend fun updateUsuario(usuario: Usuario) {
-        val updateData = mapOf(
-            "nombre" to usuario.getNombreCompletoMio(),
-            "correo" to usuario.getCorreoMio(),
-            "contrasennia" to usuario.getContrasenniaMio(),
-            "aliasprivado" to usuario.getAliasPrivadoMio(),
-            "aliaspublico" to usuario.getAliasMio(),
-            "descripcion" to usuario.getDescripcionMio(),
-            "activo" to usuario.getActivoMio()
+        val updateData = UsuarioUpdate(
+            nombre = usuario.getNombreCompletoMio(),
+            correo = usuario.getCorreoMio(),
+            contrasennia = usuario.getContrasenniaMio(),
+            aliasprivado = usuario.getAliasPrivadoMio(),
+            aliaspublico = usuario.getAliasMio(),
+            descripcion = usuario.getDescripcionMio(),
+            activo = usuario.getActivoMio(),
+            imagenPerfilId = usuario.getImagenPerfilIdMio() // <- NUEVO
         )
 
+
         try {
-            println("updateData: $updateData")
-            println(" idunico: ${usuario.getIdUnicoMio()}")
+            println("🟡 updateData: $updateData")
+            println("🆔 idunico: ${usuario.getIdUnicoMio()}")
 
             val updated = Supabase.client
                 .from(nombreTabla)
                 .update(updateData) {
                     filter {
-                        eq("idunico", usuario.getIdUnicoMio()) // ¡asegúrate que es minúscula!
+                        eq("idunico", usuario.getIdUnicoMio())
                     }
                     select(Columns.ALL)
                 }
                 .decodeSingleOrNull<Usuario>()
 
             if (updated != null) {
-                println("Usuario actualizado correctamente: $updated")
+                println("✅ Usuario actualizado correctamente: $updated")
             } else {
-                println(" No se actualizó ningún usuario")
+                println("⚠️ No se actualizó ningún usuario")
             }
 
         } catch (e: Exception) {
-            println(" Error al actualizar usuario: ${e.message}")
+            println("❌ Error al actualizar usuario: ${e.message}")
             throw e
         }
     }
+
 
 
 
@@ -167,4 +171,28 @@ class SupabaseUsuariosRepositorio : ISupabaseUsuariosRepositorio {
             }
             .decodeSingle<Usuario>()
     }
+
+    suspend fun updateCampo(
+        tabla: String,
+        campo: String,
+        valor: Any,
+        idCampo: String,
+        idValor: Any
+    ) {
+        try {
+            Supabase.client
+                .from(tabla)
+                .update(mapOf(campo to valor)) {
+                    filter {
+                        eq(idCampo, idValor)
+                    }
+                    select()
+                }
+            println("✅ Campo '$campo' actualizado correctamente en $tabla")
+        } catch (e: Exception) {
+            println("❌ Error actualizando campo: ${e.message}")
+            throw e
+        }
+    }
+
 }

@@ -40,9 +40,9 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
-import org.connexuss.project.interfaces.DefaultTopBar
-import org.connexuss.project.interfaces.LimitaTamanioAncho
-import org.connexuss.project.interfaces.TemaConfig
+import org.connexuss.project.interfaces.navegacion.DefaultTopBar
+import org.connexuss.project.interfaces.comun.LimitaTamanioAncho
+import org.connexuss.project.interfaces.tema.TemaConfig
 import org.connexuss.project.usuario.Usuario
 
 val settings: Settings = Settings() // SharedPreferences en Android, Preferences.userRoot() en Desktop, localStorage en JS
@@ -116,34 +116,39 @@ const val KEY_REFRESH = "refresh_token"
 const val KEY_EXPIRES  = "expires_in"
 const val KEY_USER    = "user_data"
 const val KEY_USER_JSON = "user_data_json"
+const val KEY_REMEMBERED_EMAIL = "remembered_email"
+const val KEY_REMEMBER_ME_CHECKED = "remember_me_checked"
+const val KEY_REMEMBER_EMAIL_CHECKED = "remember_email_checked"
 
 @OptIn(ExperimentalSettingsApi::class)
-suspend fun SettingsState.clearSession() {
+suspend fun clearSession() {
     flowSettings.remove(KEY_ACCESS)
     flowSettings.remove(KEY_REFRESH)
     flowSettings.remove(KEY_EXPIRES)
     flowSettings.remove(KEY_USER_JSON)
+    flowSettings.remove(KEY_REMEMBERED_EMAIL)
+    flowSettings.putBoolean(KEY_REMEMBER_ME_CHECKED, false)
+    flowSettings.putBoolean(KEY_REMEMBER_EMAIL_CHECKED, false)
 }
 
 @OptIn(ExperimentalSettingsApi::class)
-suspend fun SettingsState.saveSession(
+suspend fun saveSession(
     session: UserSession,
     usuario: Usuario
 ) {
     flowSettings.putString(KEY_ACCESS,  session.accessToken)
     flowSettings.putString(KEY_REFRESH, session.refreshToken)
-    flowSettings.putLong(  KEY_EXPIRES, session.expiresIn.toLong())
+    flowSettings.putLong(  KEY_EXPIRES, session.expiresIn)
     // Serializa tu Usuario a JSON
     val userJson = Json.encodeToString(Usuario.serializer(), usuario)
     flowSettings.putString(KEY_USER_JSON, userJson)
 }
 
 @OptIn(ExperimentalSettingsApi::class)
-fun SettingsState.getUserJsonFlow(): Flow<String?> =
+fun getUserJsonFlow(): Flow<String?> =
     flowSettings.getStringFlow(KEY_USER_JSON, defaultValue = "")
         .map { it.ifBlank { null } }
 
-@OptIn(ExperimentalSettingsApi::class)
 fun SettingsState.getRestoredSessionFlow(): Flow<Pair<UserSession, Usuario>?> =
     combine(
         getSessionFlow(),             // Flow<UserSession?>
@@ -185,6 +190,8 @@ class SettingsState @OptIn(ExperimentalSettingsApi::class) constructor(
     val thresholdFlow: Flow<Double> = flowSettings.getDoubleFlow("threshold", defaultValue = 0.0)
     @OptIn(ExperimentalSettingsApi::class)
     val launchCountFlow: Flow<Long> = flowSettings.getLongFlow("launch_count", defaultValue = 0L)
+    @OptIn(ExperimentalSettingsApi::class)
+    val rememberedEmailFlow: Flow<String> = flowSettings.getStringFlow("remembered_email", defaultValue = "")
 
     // Funciones suspend para escritura
     @OptIn(ExperimentalSettingsApi::class)
@@ -201,6 +208,53 @@ class SettingsState @OptIn(ExperimentalSettingsApi::class) constructor(
     suspend fun setThreshold(value: Double) = flowSettings.putDouble("threshold", value)
     @OptIn(ExperimentalSettingsApi::class)
     suspend fun incrementLaunchCount() = flowSettings.putLong("launch_count", flowSettings.getLong("launch_count", 0L) + 1)
+
+    // Funciones para manejar el email y los estados de los checkboxes
+    @OptIn(ExperimentalSettingsApi::class)
+    suspend fun saveEmail(email: String) = flowSettings.putString(KEY_REMEMBERED_EMAIL, email)
+
+    @OptIn(ExperimentalSettingsApi::class)
+    suspend fun removeEmail() = flowSettings.remove(KEY_REMEMBERED_EMAIL)
+
+    @OptIn(ExperimentalSettingsApi::class)
+    suspend fun getEmail(): String = flowSettings.getString(KEY_REMEMBERED_EMAIL, "")
+
+    @OptIn(ExperimentalSettingsApi::class)
+    suspend fun saveRememberMeState(checked: Boolean) = flowSettings.putBoolean(KEY_REMEMBER_ME_CHECKED, checked)
+
+    @OptIn(ExperimentalSettingsApi::class)
+    suspend fun getRememberMeState(): Boolean = flowSettings.getBoolean(KEY_REMEMBER_ME_CHECKED, false)
+
+    @OptIn(ExperimentalSettingsApi::class)
+    suspend fun saveRememberEmailState(checked: Boolean) = flowSettings.putBoolean(KEY_REMEMBER_EMAIL_CHECKED, checked)
+
+    @OptIn(ExperimentalSettingsApi::class)
+    suspend fun getRememberEmailState(): Boolean = flowSettings.getBoolean(KEY_REMEMBER_EMAIL_CHECKED, false)
+
+    // Funciones para manejo de sesión
+    @OptIn(ExperimentalSettingsApi::class)
+    suspend fun clearSession() {
+        flowSettings.remove(KEY_ACCESS)
+        flowSettings.remove(KEY_REFRESH)
+        flowSettings.remove(KEY_EXPIRES)
+        flowSettings.remove(KEY_USER_JSON)
+        flowSettings.remove(KEY_REMEMBERED_EMAIL)
+        flowSettings.putBoolean(KEY_REMEMBER_ME_CHECKED, false)
+        flowSettings.putBoolean(KEY_REMEMBER_EMAIL_CHECKED, false)
+    }
+
+    @OptIn(ExperimentalSettingsApi::class)
+    suspend fun saveSession(
+        session: UserSession,
+        usuario: Usuario
+    ) {
+        flowSettings.putString(KEY_ACCESS, session.accessToken)
+        flowSettings.putString(KEY_REFRESH, session.refreshToken)
+        flowSettings.putLong(KEY_EXPIRES, session.expiresIn.toLong())
+        // Serializa tu Usuario a JSON
+        val userJson = Json.encodeToString(Usuario.serializer(), usuario)
+        flowSettings.putString(KEY_USER_JSON, userJson)
+    }
 }
 
 expect fun provideObservableSettings(): ObservableSettings

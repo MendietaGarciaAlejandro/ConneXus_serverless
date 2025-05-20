@@ -1,4 +1,4 @@
-package org.connexuss.project.interfaces
+package org.connexuss.project.interfaces.comun
 
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
