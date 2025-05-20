@@ -37,7 +37,9 @@ import kotlinx.coroutines.launch
 import org.connexuss.project.comunicacion.ConversacionesUsuario
 import org.connexuss.project.comunicacion.Mensaje
 import org.connexuss.project.interfaces.navegacion.TopBarUsuario
+import org.connexuss.project.misc.ChatEnviarImagen
 import org.connexuss.project.misc.UsuarioPrincipal
+import org.connexuss.project.misc.esAndroid
 import org.connexuss.project.supabase.SupabaseRepositorioGenerico
 import org.connexuss.project.supabase.instanciaSupabaseClient
 import org.connexuss.project.supabase.subscribeTableAsFlow
@@ -77,7 +79,9 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
         )
         .collectAsState(initial = emptyList())
 
-    val mensajes = todosLosMensajes.filter { it.idconversacion == chatId }
+    val mensajes = todosLosMensajes
+        .filter { it.idconversacion == chatId }
+        .sortedBy { it.fechaMensaje }
 
     LaunchedEffect(chatId) {
         if (chatId == null) return@LaunchedEffect
@@ -88,15 +92,11 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
             .filter { it.idconversacion == chatId }
             .map { it.idusuario }
 
-        println("👥 Participantes cargados: $participantes")
-
         val otroUsuarioId = participantes.firstOrNull { it != currentUserId }
         if (otroUsuarioId != null) {
             val todosUsuarios = repo.getAll<Usuario>("usuario").first()
             val otroUsuario = todosUsuarios.find { it.getIdUnicoMio() == otroUsuarioId }
             otroUsuarioNombre = otroUsuario?.getNombreCompletoMio()
-            //otroUsuarioImagen = otroUsuario?.getImagenPerfilMio()
-            println("🙋 Nombre otro participante: $otroUsuarioNombre")
         }
     }
 
@@ -133,7 +133,7 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
                     .weight(1f)
                     .padding(8.dp)
             ) {
-                items(mensajes.sortedBy { it.fechaMensaje }) { mensaje ->
+                items(mensajes) { mensaje ->
                     val esMio = mensaje.idusuario == currentUserId
                     var expanded by remember { mutableStateOf(false) }
                     var showEditDialog by remember { mutableStateOf(false) }
@@ -243,8 +243,16 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
                             )
                             supabaseClient.from("mensaje").insert(nuevo)
                             mensajeNuevo = ""
-                            println("📤 Mensaje enviado en realtime.")
                         }
+                    }
+                }
+
+                if (esAndroid()) {
+                    chatId?.let {
+                        ChatEnviarImagen(
+                            chatId = it,
+                            currentUserId = currentUserId
+                        )
                     }
                 }
             }
