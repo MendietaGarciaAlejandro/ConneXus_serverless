@@ -71,6 +71,12 @@ fun muestraContactos(navController: NavHostController) {
     var contactosSeleccionados by remember { mutableStateOf<Set<String>>(emptySet()) }
     var nombreGrupo by remember { mutableStateOf("") }
 
+    LaunchedEffect(currentUserId) {
+        repo.getAll<UsuarioContacto>("usuario_contacto").collect { lista ->
+            registrosContacto = lista.filter { it.idUsuario == currentUserId }
+        }
+    }
+
     LaunchedEffect(registrosContacto) {
         val idsDeContactos = registrosContacto.map { it.idContacto }
         if (idsDeContactos.isNotEmpty()) {

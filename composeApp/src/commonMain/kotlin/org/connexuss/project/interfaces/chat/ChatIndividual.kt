@@ -188,7 +188,10 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
                             },
                         contentAlignment = if (esMio) Alignment.CenterEnd else Alignment.CenterStart
                     ) {
-                        BurbujaMensaje(mensaje = mensaje, esMio = esMio)
+                        MensajeCard(
+                            mensaje = mensaje,
+                            esMio = esMio,
+                        )
 
                         if (esMio) {
                             DropdownMenu(

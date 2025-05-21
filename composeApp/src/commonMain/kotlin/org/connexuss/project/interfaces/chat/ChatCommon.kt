@@ -4,6 +4,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -14,9 +15,12 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Send
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,73 +53,92 @@ fun ChatLoading(modifier: Modifier = Modifier) {
     }
 }
 
-/**
- * Componente que renderiza una burbuja de mensaje.
- *
- * @param mensaje El mensaje a mostrar
- * @param esMio Indica si el mensaje pertenece al usuario actual
- * @param modifier Modificador opcional para personalizar el componente
- * @param nombreRemitente Nombre del remitente para mostrar (opcional, solo para grupos)
- */
+@OptIn(ExperimentalStdlibApi::class)
 @Composable
-fun BurbujaMensaje(
+fun MensajeCard(
     mensaje: Mensaje,
     esMio: Boolean,
     modifier: Modifier = Modifier,
-    nombreRemitente: String? = null
+    senderAlias: String? = null
 ) {
-    Column(
-        modifier = modifier
-            .background(
-                if (esMio) Color(0xFFC8E6C9) else Color(0xFFB2EBF2),
-                shape = RoundedCornerShape(8.dp)
-            )
-            .padding(12.dp)
-            .widthIn(max = 280.dp)
-    ) {
-        mensaje.imageUrl?.let { imageUrl ->
-            when {
-                esAndroid() || esDesktop() -> {
-                    val painter = rememberImagePainter(imageUrl)
-                    if (painter != null) {
-                        Image(
-                            painter = painter,
-                            contentDescription = null,
-                            modifier = Modifier
-                                .size(200.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                        )
-                    }
-                }
+    var nombrePlano by remember { mutableStateOf("(cargando...)") }
 
-                esWeb() -> {
-                    Box(
-                        modifier = Modifier
-                            .size(200.dp, 120.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(Color.LightGray),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text("IMAGEN", color = Color.Black)
+    LaunchedEffect(ClaveSimetricaChats.clave, mensaje.content) {
+        if (ClaveSimetricaChats.clave != null) {
+            val cipherBytes = mensaje.content.hexToByteArray()
+            val plainBytes = cipherBytes.let {
+                ClaveSimetricaChats.clave!!.cipher().decrypt(ciphertext = it)
+            }
+            nombrePlano = plainBytes.decodeToString()
+        }
+    }
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp),
+        contentAlignment = if (esMio) Alignment.CenterEnd else Alignment.CenterStart
+    ) {
+        Column(
+            modifier = modifier
+                .background(
+                    if (esMio) Color(0xFFC8E6C9) else Color(0xFFB2EBF2),
+                    shape = RoundedCornerShape(8.dp)
+                )
+                .padding(12.dp)
+                .widthIn(max = 280.dp)
+        ) {
+            if (!esMio) {
+                if (senderAlias != null) {
+                    Text(
+                        text = senderAlias,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.DarkGray
+                    )
+                }
+            }
+
+            Text(nombrePlano)
+
+            mensaje.imageUrl?.let { imageUrl ->
+                when {
+                    esAndroid() || esDesktop() -> {
+                        val painter = rememberImagePainter(imageUrl)
+                        if (painter != null) {
+                            Image(
+                                painter = painter,
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .size(200.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                            )
+                        }
+                    }
+
+                    esWeb() -> {
+                        Box(
+                            modifier = Modifier
+                                .size(200.dp, 120.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color.LightGray),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("IMAGEN", color = Color.Black)
+                        }
                     }
                 }
             }
         }
+    }
+}
 
-        if (mensaje.content.isNotBlank()) {
-            Text(mensaje.content)
+    /**
+     * Componente de botón para enviar mensajes.
+     *
+     * @param onClick Acción a realizar cuando se hace clic en el botón
+     */
+    @Composable
+    fun BotonEnviarMensaje(onClick: () -> Unit) {
+        IconButton(onClick = onClick) {
+            Icon(Icons.AutoMirrored.Rounded.Send, contentDescription = "Enviar")
         }
     }
-}
-
-/**
- * Componente de botón para enviar mensajes.
- *
- * @param onClick Acción a realizar cuando se hace clic en el botón
- */
-@Composable
-fun BotonEnviarMensaje(onClick: () -> Unit) {
-    IconButton(onClick = onClick) {
-        Icon(Icons.AutoMirrored.Rounded.Send, contentDescription = "Enviar")
-    }
-}

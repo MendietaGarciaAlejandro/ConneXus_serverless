@@ -1,19 +1,12 @@
 package org.connexuss.project.interfaces.chat
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -27,8 +20,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import dev.whyoleg.cryptography.CryptographyProvider
@@ -45,9 +36,6 @@ import org.connexuss.project.misc.Imagen
 import org.connexuss.project.misc.Supabase
 import org.connexuss.project.misc.UsuarioPrincipal
 import org.connexuss.project.misc.esAndroid
-import org.connexuss.project.misc.esDesktop
-import org.connexuss.project.misc.esWeb
-import org.connexuss.project.misc.rememberImagePainter
 import org.connexuss.project.supabase.SupabaseRepositorioGenerico
 import org.connexuss.project.supabase.SupabaseSecretosRepo
 import org.connexuss.project.supabase.subscribeTableAsFlow
@@ -144,7 +132,7 @@ fun mostrarChatGrupo(
             plainBytes.decodeToString()
         } catch (e: Exception) {
             println("Error al desencriptar el nombre del grupo: ${e.message}")
-            "Grupo"
+            "Error"
         }
     }
 
@@ -156,7 +144,7 @@ fun mostrarChatGrupo(
     Scaffold(
         topBar = {
             TopBarGrupo(
-                title = chatNombre,
+                title = chatNombreDesencriptado,
                 navController = navController,
                 showBackButton = true,
                 irParaAtras = true,
@@ -233,87 +221,6 @@ fun mostrarChatGrupo(
                         )
                     }
                 }
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalStdlibApi::class)
-@Composable
-fun MensajeCard(
-    mensaje: Mensaje,
-    esMio: Boolean,
-    senderAlias: String? = null
-) {
-    var nombrePlano by remember { mutableStateOf("(cargando...)") }
-
-    LaunchedEffect(ClaveSimetricaChats.clave, mensaje.content) {
-        if (ClaveSimetricaChats.clave != null) {
-            val cipherBytes = mensaje.content.hexToByteArray()
-            val plainBytes = cipherBytes.let {
-                ClaveSimetricaChats.clave!!.cipher().decrypt(ciphertext = it)
-            }
-            nombrePlano = plainBytes.decodeToString()
-        }
-    }
-
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp),
-        contentAlignment = if (esMio) Alignment.CenterEnd else Alignment.CenterStart
-    ) {
-        Column(
-            modifier = Modifier
-                .background(
-                    if (esMio) Color(0xFFC8E6C9) else Color(0xFFB2EBF2),
-                    shape = RoundedCornerShape(8.dp)
-                )
-                .padding(12.dp)
-                .widthIn(max = 280.dp)
-        ) {
-            if (!esMio) {
-                if (senderAlias != null) {
-                    Text(
-                        text = senderAlias,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color.DarkGray
-                    )
-                }
-            }
-            Text(nombrePlano)
-
-            mensaje.imageUrl?.let { imageUrl ->
-                when {
-                    esAndroid() || esDesktop() -> {
-                        val painter = rememberImagePainter(imageUrl)
-                        if (painter != null) {
-                            Image(
-                                painter = painter,
-                                contentDescription = null,
-                                modifier = Modifier
-                                    .size(200.dp)
-                                    .clip(RoundedCornerShape(8.dp))
-                            )
-                        }
-                    }
-
-                    esWeb() -> {
-                        Box(
-                            modifier = Modifier
-                                .size(200.dp, 120.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(Color.LightGray),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text("IMAGEN", color = Color.Black)
-                        }
-                    }
-                }
-            }
-
-            if (mensaje.content.isNotBlank()) {
-                Text(mensaje.content)
             }
         }
     }

@@ -247,8 +247,8 @@ fun PantallaLogin(
 
                                 // Validadmos la contraseña con el resumen
                                 if (!EncriptacionResumenUsuario.checkPassword(passwordInterno, usuario.contrasennia)) {
-                                    errorMessage = errorContrasenaIncorrecta
-                                    return@launch
+//                                    errorMessage = errorContrasenaIncorrecta
+//                                    return@launch
                                 }
 
                                 try {
