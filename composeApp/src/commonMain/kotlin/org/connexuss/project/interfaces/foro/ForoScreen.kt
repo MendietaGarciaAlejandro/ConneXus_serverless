@@ -1,6 +1,12 @@
 package org.connexuss.project.interfaces.foro
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -16,10 +22,14 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
@@ -27,15 +37,10 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import org.connexuss.project.comunicacion.Hilo
 import org.connexuss.project.comunicacion.Tema
+import org.connexuss.project.encriptacion.EncriptacionSimetricaForo
 import org.connexuss.project.interfaces.comun.LimitaTamanioAncho
-import org.connexuss.project.interfaces.foro.componentes.CrearElementoDialog
-import org.connexuss.project.interfaces.foro.componentes.EmptyStateMessage
-import org.connexuss.project.interfaces.foro.componentes.TemaCard
 import org.connexuss.project.interfaces.navegacion.MiBottomBar
-import org.connexuss.project.supabase.SupabaseRepositorioGenerico
-
-// Repositorio genérico instanciado
-private val repoForo = SupabaseRepositorioGenerico()
+import org.connexuss.project.supabase.SupabaseSecretosRepo
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,6 +50,7 @@ fun ForoScreen(navController: NavHostController) {
     var showNewTopicDialog by remember { mutableStateOf(false) }
     var searchText by remember { mutableStateOf("") }
     val refreshTrigger = remember { mutableStateOf(0) }
+    val encHelper = remember { EncriptacionSimetricaForo() }
 
     // Tablas de temas y hilos
     val tablaTemas = "tema"
@@ -56,11 +62,13 @@ fun ForoScreen(navController: NavHostController) {
     }
 
     // Flujos de temas y hilos
-    val temas by repoForo.getAll<Tema>(tablaTemas).collectAsState(initial = emptyList())
+    //val temas by repoForo.getAll<Tema>(tablaTemas).collectAsState(initial = emptyList())
     val hilos by repoForo.getAll<Hilo>(tablaHilos).collectAsState(initial = emptyList())
 
     // Filtrar temas y contar hilos
     val filteredTemas = temasFlow.collectAsState(initial = emptyList()).value
+
+    //val secretsRepo = remember { SupabaseSecretosRepo() }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -121,13 +129,27 @@ fun ForoScreen(navController: NavHostController) {
                     onDismiss = { showNewTopicDialog = false },
                     onConfirm = { nombre ->
                         scope.launch {
-                            repoForo.addItem(tablaTemas, Tema(nombre = nombre))
-                            refreshTrigger.value++
-                            snackbarHostState.showSnackbar(
-                                "Tema '$nombre' creado",
-                                duration = SnackbarDuration.Short
-                            )
-                            showNewTopicDialog = false
+                            try {
+                                // 1) Llamada simplificada: genera clave, inserta en vault y en temas
+                                val temaResultado = encHelper.crearTemaSinPadding(
+                                    nombrePlain  = nombre,
+                                    secretsRpcRepo = SupabaseSecretosRepo()
+                                )
+
+                                // 2) Refresca UI y muestra notificación
+                                refreshTrigger.value++
+                                snackbarHostState.showSnackbar(
+                                    "Tema '$nombre' creado correctamente",
+                                    duration = SnackbarDuration.Short
+                                )
+                            } catch (e: Exception) {
+                                snackbarHostState.showSnackbar(
+                                    "Error al crear tema: ${e.message}",
+                                    duration = SnackbarDuration.Long
+                                )
+                            } finally {
+                                showNewTopicDialog = false
+                            }
                         }
                     }
                 )

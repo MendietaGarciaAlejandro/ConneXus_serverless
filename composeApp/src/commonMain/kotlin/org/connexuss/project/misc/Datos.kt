@@ -1,16 +1,127 @@
 package org.connexuss.project.misc
 
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import connexus_serverless.composeapp.generated.resources.Res
+import connexus_serverless.composeapp.generated.resources.abstracto001
+import connexus_serverless.composeapp.generated.resources.abstracto002
+import connexus_serverless.composeapp.generated.resources.abstracto003
+import connexus_serverless.composeapp.generated.resources.abstracto004
+import connexus_serverless.composeapp.generated.resources.abstracto005
+import connexus_serverless.composeapp.generated.resources.abstracto006
+import connexus_serverless.composeapp.generated.resources.abstracto007
+import connexus_serverless.composeapp.generated.resources.abstracto008
+import connexus_serverless.composeapp.generated.resources.abstracto009
+import connexus_serverless.composeapp.generated.resources.abstracto010
+import connexus_serverless.composeapp.generated.resources.abstracto011
+import connexus_serverless.composeapp.generated.resources.abstracto012
+import connexus_serverless.composeapp.generated.resources.abstracto013
+import connexus_serverless.composeapp.generated.resources.abstracto014
+import connexus_serverless.composeapp.generated.resources.abstracto015
+import connexus_serverless.composeapp.generated.resources.abstracto016
+import connexus_serverless.composeapp.generated.resources.abstracto017
+import connexus_serverless.composeapp.generated.resources.abstracto018
+import connexus_serverless.composeapp.generated.resources.abstracto019
+import connexus_serverless.composeapp.generated.resources.abstracto020
+import connexus_serverless.composeapp.generated.resources.abstracto021
+import connexus_serverless.composeapp.generated.resources.abstracto022
+import connexus_serverless.composeapp.generated.resources.abstracto023
+import connexus_serverless.composeapp.generated.resources.abstracto024
+import connexus_serverless.composeapp.generated.resources.abstracto025
+import connexus_serverless.composeapp.generated.resources.abstracto026
+import connexus_serverless.composeapp.generated.resources.abstracto027
+import connexus_serverless.composeapp.generated.resources.abstracto028
+import connexus_serverless.composeapp.generated.resources.abstracto029
+import connexus_serverless.composeapp.generated.resources.abstracto030
+import connexus_serverless.composeapp.generated.resources.abstracto031
+import connexus_serverless.composeapp.generated.resources.abstracto032
+import connexus_serverless.composeapp.generated.resources.abstracto033
+import connexus_serverless.composeapp.generated.resources.abstracto034
+import connexus_serverless.composeapp.generated.resources.abstracto035
+import connexus_serverless.composeapp.generated.resources.abstracto036
+import connexus_serverless.composeapp.generated.resources.abstracto037
+import connexus_serverless.composeapp.generated.resources.abstracto038
+import connexus_serverless.composeapp.generated.resources.abstracto039
+import connexus_serverless.composeapp.generated.resources.abstracto040
+import connexus_serverless.composeapp.generated.resources.abstracto041
+import connexus_serverless.composeapp.generated.resources.abstracto042
+import connexus_serverless.composeapp.generated.resources.abstracto043
+import connexus_serverless.composeapp.generated.resources.abstracto044
+import connexus_serverless.composeapp.generated.resources.abstracto045
+import connexus_serverless.composeapp.generated.resources.abstracto046
+import connexus_serverless.composeapp.generated.resources.abstracto047
+import connexus_serverless.composeapp.generated.resources.abstracto048
+import connexus_serverless.composeapp.generated.resources.abstracto049
+import connexus_serverless.composeapp.generated.resources.abstracto050
+import connexus_serverless.composeapp.generated.resources.abstracto051
 import connexus_serverless.composeapp.generated.resources.avatar
 import connexus_serverless.composeapp.generated.resources.connexus
+import connexus_serverless.composeapp.generated.resources.dibujo001
+import connexus_serverless.composeapp.generated.resources.dibujo002
+import connexus_serverless.composeapp.generated.resources.dibujo003
+import connexus_serverless.composeapp.generated.resources.dibujo004
+import connexus_serverless.composeapp.generated.resources.dibujo005
+import connexus_serverless.composeapp.generated.resources.dibujo006
+import connexus_serverless.composeapp.generated.resources.dibujo007
+import connexus_serverless.composeapp.generated.resources.dibujo008
+import connexus_serverless.composeapp.generated.resources.dibujo009
+import connexus_serverless.composeapp.generated.resources.dibujo010
+import connexus_serverless.composeapp.generated.resources.dibujo011
+import connexus_serverless.composeapp.generated.resources.dibujo012
+import connexus_serverless.composeapp.generated.resources.dibujo013
+import connexus_serverless.composeapp.generated.resources.dibujo014
+import connexus_serverless.composeapp.generated.resources.dibujo015
+import connexus_serverless.composeapp.generated.resources.dibujo016
+import connexus_serverless.composeapp.generated.resources.dibujo017
+import connexus_serverless.composeapp.generated.resources.dibujo018
+import connexus_serverless.composeapp.generated.resources.dibujo019
+import connexus_serverless.composeapp.generated.resources.dibujo020
+import connexus_serverless.composeapp.generated.resources.dibujo021
+import connexus_serverless.composeapp.generated.resources.dibujo022
+import connexus_serverless.composeapp.generated.resources.dibujo023
+import connexus_serverless.composeapp.generated.resources.dibujo024
+import connexus_serverless.composeapp.generated.resources.dibujo025
+import connexus_serverless.composeapp.generated.resources.dibujo026
+import connexus_serverless.composeapp.generated.resources.dibujo027
+import connexus_serverless.composeapp.generated.resources.dibujo028
+import connexus_serverless.composeapp.generated.resources.dibujo029
+import connexus_serverless.composeapp.generated.resources.dibujo030
+import connexus_serverless.composeapp.generated.resources.dibujo031
+import connexus_serverless.composeapp.generated.resources.dibujo032
 import connexus_serverless.composeapp.generated.resources.ic_chats
 import connexus_serverless.composeapp.generated.resources.ic_email
 import connexus_serverless.composeapp.generated.resources.ic_foros
 import connexus_serverless.composeapp.generated.resources.ic_person
-import connexus_serverless.composeapp.generated.resources.*
+import connexus_serverless.composeapp.generated.resources.persona001
+import connexus_serverless.composeapp.generated.resources.persona002
+import connexus_serverless.composeapp.generated.resources.persona003
+import connexus_serverless.composeapp.generated.resources.persona004
+import connexus_serverless.composeapp.generated.resources.persona005
+import connexus_serverless.composeapp.generated.resources.persona006
+import connexus_serverless.composeapp.generated.resources.persona007
+import connexus_serverless.composeapp.generated.resources.persona008
+import connexus_serverless.composeapp.generated.resources.persona009
+import connexus_serverless.composeapp.generated.resources.persona010
+import connexus_serverless.composeapp.generated.resources.persona011
+import connexus_serverless.composeapp.generated.resources.persona012
+import connexus_serverless.composeapp.generated.resources.persona013
+import connexus_serverless.composeapp.generated.resources.persona014
+import connexus_serverless.composeapp.generated.resources.persona015
+import connexus_serverless.composeapp.generated.resources.persona016
+import connexus_serverless.composeapp.generated.resources.persona017
+import connexus_serverless.composeapp.generated.resources.persona018
+import connexus_serverless.composeapp.generated.resources.persona019
+import connexus_serverless.composeapp.generated.resources.persona020
+import connexus_serverless.composeapp.generated.resources.persona021
+import connexus_serverless.composeapp.generated.resources.persona022
+import connexus_serverless.composeapp.generated.resources.persona023
+import connexus_serverless.composeapp.generated.resources.persona024
+import connexus_serverless.composeapp.generated.resources.persona025
+import connexus_serverless.composeapp.generated.resources.persona026
+import connexus_serverless.composeapp.generated.resources.persona027
+import connexus_serverless.composeapp.generated.resources.persona028
+import connexus_serverless.composeapp.generated.resources.persona029
+import connexus_serverless.composeapp.generated.resources.persona030
 import connexus_serverless.composeapp.generated.resources.unblock
 import connexus_serverless.composeapp.generated.resources.visibilidadOff
 import connexus_serverless.composeapp.generated.resources.visibilidadOn
@@ -26,10 +137,11 @@ import kotlinx.serialization.Serializable
 import org.connexuss.project.comunicacion.Hilo
 import org.connexuss.project.comunicacion.Post
 import org.connexuss.project.comunicacion.Tema
+import org.connexuss.project.supabase.instanciaSupabaseAdmin
 import org.connexuss.project.supabase.instanciaSupabaseClient
 import org.connexuss.project.usuario.AlmacenamientoUsuario
-import org.connexuss.project.usuario.UtilidadesUsuario
 import org.connexuss.project.usuario.Usuario
+import org.connexuss.project.usuario.UtilidadesUsuario
 
 // Imagenes App -----------------------------------------------------
 
@@ -1353,7 +1465,20 @@ object Supabase {
             tieneStorage = true,
             tieneAuth = true,
             tieneRealtime = true,
-            tienePostgrest = true
+            tienePostgrest = true,
+            tieneFunciones = true
+        )
+    }
+}
+
+object SupabaseAdmin {
+    val client: SupabaseClient by lazy {
+        instanciaSupabaseAdmin(
+            tieneStorage = true,
+            tieneAuth = true,
+            tieneRealtime = true,
+            tienePostgrest = true,
+            tieneFunciones = true
         )
     }
 }

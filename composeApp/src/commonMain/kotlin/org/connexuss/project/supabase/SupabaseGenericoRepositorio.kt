@@ -1,30 +1,26 @@
 package org.connexuss.project.supabase
 
 import io.github.jan.supabase.SupabaseClient
-import io.github.jan.supabase.annotations.SupabaseExperimental
 import io.github.jan.supabase.auth.Auth
-import io.github.jan.supabase.auth.auth
-import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.createSupabaseClient
+import io.github.jan.supabase.functions.Functions
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.Columns
 import io.github.jan.supabase.postgrest.query.PostgrestQueryBuilder
-import io.github.jan.supabase.postgrest.query.filter.FilterOperation
-import io.github.jan.supabase.realtime.PostgresAction
 import io.github.jan.supabase.realtime.Realtime
-import io.github.jan.supabase.realtime.channel
-import io.github.jan.supabase.realtime.postgresChangeFlow
-import io.github.jan.supabase.realtime.realtime
-import io.github.jan.supabase.realtime.selectAsFlow
 import io.github.jan.supabase.storage.Storage
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import org.connexuss.project.misc.Supabase
-import kotlin.reflect.KProperty1
 
-private const val SUPABASE_URL = "https://yrpvwyewzsvxqwkacbao.supabase.co"
-private const val SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlycHZ3eWV3enN2eHF3a2FjYmFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQzOTIxMDEsImV4cCI6MjA1OTk2ODEwMX0.llu6uixyc3-VyOziE2GwdjoWcW16Jnez65GYWzX8esI"
+// Credenciales de Supabase Connexus
+const val SUPABASE_URL = "https://yrpvwyewzsvxqwkacbao.supabase.co"
+const val SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlycHZ3eWV3enN2eHF3a2FjYmFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQzOTIxMDEsImV4cCI6MjA1OTk2ODEwMX0.llu6uixyc3-VyOziE2GwdjoWcW16Jnez65GYWzX8esI"
+
+// Credenciales de Base de datos Supabase de prueba
+//const val SUPABASE_URL = "https://aitsngvbqluaisjzunwv.supabase.co"
+//const val SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFpdHNuZ3ZicWx1YWlzanp1bnd2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NjQ2NDk4OCwiZXhwIjoyMDYyMDQwOTg4fQ.qFetqDUMBYS1_3YAKHGWGsm9ziSL-7VqkKdN0gC5W00"
 
 // Interfaz sin el modificador inline en deleteItemGeneric:
 //interface ISupabaseRepository<T : Any> {
@@ -56,7 +52,8 @@ fun instanciaSupabaseClient(
     tieneStorage: Boolean = true,
     tieneAuth: Boolean = true,
     tieneRealtime: Boolean = true,
-    tienePostgrest: Boolean = true
+    tienePostgrest: Boolean = true,
+    tieneFunciones: Boolean = true
 ): SupabaseClient {
     return createSupabaseClient(
         supabaseUrl = SUPABASE_URL,
@@ -66,10 +63,28 @@ fun instanciaSupabaseClient(
         if (tieneAuth) install(Auth)
         if (tieneRealtime) install(Realtime)
         if (tienePostgrest) install(Postgrest)
+        if (tieneFunciones) install(Functions)
     }
 }
 
-
+fun instanciaSupabaseAdmin(
+    tieneStorage: Boolean = true,
+    tieneAuth: Boolean = true,
+    tieneRealtime: Boolean = true,
+    tienePostgrest: Boolean = true,
+    tieneFunciones: Boolean = true
+): SupabaseClient {
+    return createSupabaseClient(
+        supabaseUrl = SUPABASE_URL,
+        supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlycHZ3eWV3enN2eHF3a2FjYmFvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NDM5MjEwMSwiZXhwIjoyMDU5OTY4MTAxfQ.stQz04hp-QfQ97Xo8gUoqebGKc9Jnsh4adOkiZ-YvIc"
+    ) {
+        if (tieneStorage) install(Storage)
+        if (tieneAuth) install(Auth)
+        if (tieneRealtime) install(Realtime)
+        if (tienePostgrest) install(Postgrest)
+        if (tieneFunciones) install(Functions)
+    }
+}
 
 class SupabaseRepositorioGenerico {
 

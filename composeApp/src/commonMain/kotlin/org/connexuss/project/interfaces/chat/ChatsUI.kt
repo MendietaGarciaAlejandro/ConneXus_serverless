@@ -28,25 +28,37 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import dev.whyoleg.cryptography.CryptographyProvider
+import dev.whyoleg.cryptography.algorithms.AES
+import kotlinx.coroutines.launch
 import org.connexuss.project.comunicacion.Conversacion
 import org.connexuss.project.comunicacion.ConversacionesUsuario
 import org.connexuss.project.comunicacion.Mensaje
+import org.connexuss.project.encriptacion.EncriptacionSimetricaChats
 import org.connexuss.project.interfaces.comun.LimitaTamanioAncho
 import org.connexuss.project.interfaces.comun.traducir
 import org.connexuss.project.interfaces.navegacion.DefaultTopBar
 import org.connexuss.project.interfaces.navegacion.MiBottomBar
 import org.connexuss.project.misc.UsuarioPrincipal
 import org.connexuss.project.supabase.SupabaseRepositorioGenerico
+import org.connexuss.project.supabase.SupabaseSecretosRepo
 import org.connexuss.project.usuario.Usuario
 import org.connexuss.project.usuario.UsuarioBloqueado
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
 
+// --- elemento chat ---
+//Muestra el id del usuarioPrincipal ya que no esta incluido en la lista de usuarios precreados
+@OptIn(ExperimentalEncodingApi::class, ExperimentalStdlibApi::class)
 @Composable
 @Preview
 fun ChatCard(
@@ -59,6 +71,48 @@ fun ChatCard(
     val currentUserId = UsuarioPrincipal?.getIdUnicoMio()
     val esGrupo = !conversacion.nombre.isNullOrBlank()
 
+    var nombrePlano by remember { mutableStateOf("(cargando…)") }
+
+    var claveChat: AES.GCM.Key?
+
+    var ultimoMensajeDesencriptado by remember { mutableStateOf("") }
+
+    val encHelper = remember { EncriptacionSimetricaChats() }
+
+    val scope = rememberCoroutineScope()
+
+    val secretoRepositorio = remember { SupabaseSecretosRepo() }
+
+    if (ultimoMensaje != null) {
+        LaunchedEffect(ultimoMensaje.content) {
+            val secretoRpc = secretoRepositorio.recuperarSecretoSimpleRpc(conversacion.id)
+                ?: throw IllegalStateException("Secreto no disponible")
+            // Decodificar clave RAW
+            val keyBytes = Base64.decode(secretoRpc.decryptedSecret)
+            claveChat = CryptographyProvider.Default
+                .get(AES.GCM)
+                .keyDecoder()
+                .decodeFromByteArray(AES.Key.Format.RAW, keyBytes)
+
+            if (claveChat != null) {
+                val cipherBytes = ultimoMensaje.content.hexToByteArray()
+                val plainBytes  = cipherBytes.let { claveChat!!.cipher().decrypt(ciphertext = it) }
+                ultimoMensajeDesencriptado    = plainBytes.decodeToString()
+            }
+        }
+    }
+
+    scope.launch {
+        encHelper.leerConversacion(
+            converId = conversacion.id,
+            secretsRpcRepo = secretoRepositorio,
+        ).let { nombre ->
+            if (nombre != null) {
+                nombrePlano = nombre
+            }
+        }
+    }
+
     println("👥 Participantes en la conversación ${conversacion.id}:")
     participantes.forEach {
         println(" - ${it.getNombreCompletoMio()} (id: ${it.getIdUnicoMio()})")
@@ -69,7 +123,7 @@ fun ChatCard(
     val estaBloqueado = otroUsuario?.getIdUnicoMio() in bloqueados
 
     val displayName = if (esGrupo) {
-        conversacion.nombre!!
+        nombrePlano
     } else {
         otroUsuario?.getNombreCompletoMio() ?: conversacion.id
     }
@@ -133,11 +187,11 @@ fun ChatCard(
                 )
             }
 
-            if (ultimoMensaje != null && !estaBloqueado) {
+            if (ultimoMensaje != null) {
                 Text(
-                    text = ultimoMensaje.content,
+                    text = ultimoMensajeDesencriptado,
                     style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = if (estaBloqueado) Color.Red else MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )

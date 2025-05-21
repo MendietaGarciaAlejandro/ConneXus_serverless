@@ -78,5 +78,8 @@ data class Tema(
     val idTema: String = generateId(),
 
     @SerialName("nombre")
-    val nombre: String
+    val nombre: String,
+
+//    @SerialName("claveSimetrica")
+//    val claveSimetrica: String? = null,
 )

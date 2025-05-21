@@ -47,6 +47,7 @@ fun actualizarUsuariosGrupoGeneral(nuevaLista: List<Usuario>) {
 @OptIn(ExperimentalSettingsApi::class)
 @Composable
 fun App() {
+
     val settingsState = remember { SettingsState(flowSettings) }
     //val navController  = rememberNavController()
     val scope = rememberCoroutineScope()

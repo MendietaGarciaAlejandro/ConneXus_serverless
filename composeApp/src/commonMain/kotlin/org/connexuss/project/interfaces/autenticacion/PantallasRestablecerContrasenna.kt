@@ -8,15 +8,13 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.Email
-import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -35,7 +33,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -46,13 +43,9 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import connexus_serverless.composeapp.generated.resources.Res
 import connexus_serverless.composeapp.generated.resources.connexus
-import io.github.jan.supabase.auth.auth
-import kotlinx.coroutines.launch
 import org.connexuss.project.interfaces.comun.LimitaTamanioAncho
-import org.connexuss.project.interfaces.navegacion.DefaultTopBar
 import org.connexuss.project.interfaces.comun.traducir
-import org.connexuss.project.misc.Supabase
-import org.connexuss.project.supabase.SupabaseUsuariosRepositorio
+import org.connexuss.project.interfaces.navegacion.DefaultTopBar
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
@@ -66,9 +59,10 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 @Preview
 fun PantallaRestablecer(navController: NavHostController) {
     var email by remember { mutableStateOf("") }
-    var mensaje by remember { mutableStateOf("") }
-    var error by remember { mutableStateOf("") }
-    val scope = rememberCoroutineScope()
+    var errorMessage by remember { mutableStateOf("") }
+
+    // Realiza la traducción fuera del bloque onClick
+    val errorCorreoVacio = traducir("error_correo_vacio")
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -114,7 +108,7 @@ fun PantallaRestablecer(navController: NavHostController) {
                     ) {
                         Image(
                             painter = painterResource(Res.drawable.connexus),
-                            contentDescription = "Logo",
+                            contentDescription = traducir("icono_app"),
                             modifier = Modifier.padding(16.dp)
                         )
                     }
@@ -132,59 +126,54 @@ fun PantallaRestablecer(navController: NavHostController) {
                         )
                     )
 
-                    FilledTonalButton(
-                        onClick = {
-                            scope.launch {
-                                if (email.isBlank()) {
-                                    error = "Introduce tu correo"
-                                    return@launch
-                                }
-
-                                try {
-                                    Supabase.client.auth.resetPasswordForEmail(email)
-                                    mensaje =
-                                        "📧 Se ha enviado un correo para restablecer tu contraseña. Ábrelo desde tu navegador y sigue los pasos."
-                                    error = ""
-                                } catch (e: Exception) {
-                                    error = "❌ Error al enviar el correo: ${e.message}"
-                                }
-                            }
-                        },
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp)
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        Row(
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
+                        FilledTonalButton(
+                            onClick = {
+                                errorMessage = if (email.isNotBlank()) {
+                                    ""
+                                } else {
+                                    errorCorreoVacio
+                                }
+                            },
+                            modifier = Modifier.weight(1f)
                         ) {
-                            Icon(
-                                imageVector = Icons.Rounded.Email,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            Text(
-                                traducir("enviar_correo_restablecimiento"),
-                                style = MaterialTheme.typography.labelLarge
-                            )
+                            Text(traducir("enviar_correo"))
+                        }
+                        FilledTonalButton(
+                            onClick = { navController.navigate("login") },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(traducir("cancelar"))
+                        }
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        FilledTonalButton(
+                            onClick = { navController.navigate("emailEnSistema") },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(traducir("degug_restablecer_ok"))
+                        }
+                        FilledTonalButton(
+                            onClick = { navController.navigate("emailNoEnSistema") },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(traducir("degug_restablecer_fail"))
                         }
                     }
 
-                    if (mensaje.isNotEmpty()) {
+                    if (errorMessage.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            mensaje,
-                            color = MaterialTheme.colorScheme.tertiary,
-                            textAlign = TextAlign.Center,
-                            style = MaterialTheme.typography.bodyLarge
-                        )
-                    }
-
-                    if (error.isNotEmpty()) {
-                        Text(
-                            error,
+                            errorMessage,
                             color = MaterialTheme.colorScheme.error,
                             textAlign = TextAlign.Center,
-                            style = MaterialTheme.typography.bodyLarge
+                            modifier = Modifier.fillMaxWidth()
                         )
                     }
 
@@ -233,10 +222,8 @@ fun PantallaRestablecimientoContrasenna(navController: NavHostController) {
     var contrasenna by remember { mutableStateOf("") }
     var confirmarContrasenna by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
-    var mensaje by remember { mutableStateOf("") }
-    val scope = rememberCoroutineScope()
-    val repo = remember { SupabaseUsuariosRepositorio() }
 
+    // Realiza la traducción fuera del bloque onClick
     val errorContrasenas = traducir("error_contrasenas")
 
     Scaffold(
@@ -246,8 +233,8 @@ fun PantallaRestablecimientoContrasenna(navController: NavHostController) {
                 title = traducir("restablecer_contrasena"),
                 navController = navController,
                 showBackButton = true,
-                muestraEngranaje = false,
-                irParaAtras = false
+                muestraEngranaje = true,
+                irParaAtras = true
             )
         }
     ) { padding ->
@@ -259,7 +246,9 @@ fun PantallaRestablecimientoContrasenna(navController: NavHostController) {
         ) {
             LimitaTamanioAncho { modifier ->
                 Column(
-                    modifier = modifier.padding(24.dp),
+                    modifier = modifier
+                        .padding(padding)
+                        .padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
@@ -301,80 +290,37 @@ fun PantallaRestablecimientoContrasenna(navController: NavHostController) {
                         )
                     )
 
-                    FilledTonalButton(
-                        onClick = {
-                            if (contrasenna != confirmarContrasenna || contrasenna.isBlank()) {
-                                errorMessage = errorContrasenas
-                                return@FilledTonalButton
-                            }
-
-                            scope.launch {
-                                try {
-                                    val user = Supabase.client.auth.currentUserOrNull()
-                                    if (user == null) {
-                                        errorMessage = "⚠️ No hay sesión activa para actualizar."
-                                        return@launch
-                                    }
-
-                                    // 1. Actualizar en Auth
-                                    Supabase.client.auth.updateUser {
-                                        password = contrasenna
-                                    }
-
-                                    // 2. Actualizar también en la tabla usuario
-                                    repo.updateCampo(
-                                        tabla = "usuario",
-                                        campo = "contrasennia",
-                                        valor = contrasenna,
-                                        idCampo = "idunico",
-                                        idValor = user.id
-                                    )
-
-                                    mensaje = "✅ Contraseña restablecida con éxito"
-                                    errorMessage = ""
-                                    navController.navigate("login") {
-                                        popUpTo("restablecerNueva") { inclusive = true }
-                                    }
-                                } catch (e: Exception) {
-                                    errorMessage = "❌ Error: ${e.message}"
-                                }
-                            }
-                        },
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp)
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        Row(
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
+                        FilledTonalButton(
+                            onClick = {
+                                errorMessage =
+                                    if (contrasenna == confirmarContrasenna && contrasenna.isNotBlank()) {
+                                        ""
+                                    } else {
+                                        errorContrasenas
+                                    }
+                            },
+                            modifier = Modifier.weight(1f)
                         ) {
-                            Icon(
-                                imageVector = Icons.Rounded.Lock,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            Text(
-                                traducir("restablecer"),
-                                style = MaterialTheme.typography.labelLarge
-                            )
+                            Text(traducir("restablecer"))
+                        }
+                        FilledTonalButton(
+                            onClick = { navController.navigate("login") },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(traducir("cancelar"))
                         }
                     }
-
-                    if (mensaje.isNotEmpty()) {
-                        Text(
-                            mensaje,
-                            color = MaterialTheme.colorScheme.tertiary,
-                            style = MaterialTheme.typography.bodyLarge,
-                            textAlign = TextAlign.Center
-                        )
-                    }
-
                     if (errorMessage.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             errorMessage,
                             color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodyLarge,
-                            textAlign = TextAlign.Center
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
                         )
                     }
                 }

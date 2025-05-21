@@ -31,20 +31,27 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import connexus_serverless.composeapp.generated.resources.Res
 import connexus_serverless.composeapp.generated.resources.connexus
+import dev.whyoleg.cryptography.CryptographyProvider
+import dev.whyoleg.cryptography.algorithms.AES
 import io.github.jan.supabase.postgrest.from
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.connexuss.project.comunicacion.ConversacionesUsuario
 import org.connexuss.project.comunicacion.Mensaje
+import org.connexuss.project.encriptacion.toHex
 import org.connexuss.project.interfaces.navegacion.TopBarUsuario
 import org.connexuss.project.misc.ChatEnviarImagen
+import org.connexuss.project.misc.Supabase
 import org.connexuss.project.misc.UsuarioPrincipal
 import org.connexuss.project.misc.esAndroid
 import org.connexuss.project.supabase.SupabaseRepositorioGenerico
-import org.connexuss.project.supabase.instanciaSupabaseClient
+import org.connexuss.project.supabase.SupabaseSecretosRepo
 import org.connexuss.project.supabase.subscribeTableAsFlow
+import org.connexuss.project.supabase.supabaseClient
 import org.connexuss.project.usuario.Usuario
 import org.jetbrains.compose.resources.DrawableResource
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
 
 /**
  * Muestra el chat entre dos usuarios.
@@ -53,23 +60,28 @@ import org.jetbrains.compose.resources.DrawableResource
  * @param navController Controlador de navegación.
  * @param chatId Identificador de la conversación.
  */
+@OptIn(ExperimentalEncodingApi::class)
 @Composable
 fun mostrarChat(navController: NavHostController, chatId: String?) {
     val currentUserId = UsuarioPrincipal?.getIdUnicoMio() ?: return
-    val supabaseClient = remember {
-        instanciaSupabaseClient(
-            tieneStorage = true,
-            tieneAuth = true,
-            tieneRealtime = true,
-            tienePostgrest = true
-        )
-    }
+//    val supabaseClient = remember {
+//        instanciaSupabaseClient(
+//            tieneStorage = true,
+//            tieneAuth = true,
+//            tieneRealtime = true,
+//            tienePostgrest = true
+//        )
+//    }
     val scope = rememberCoroutineScope()
 
     var participantes by remember { mutableStateOf<List<String>>(emptyList()) }
     var otroUsuarioNombre by remember { mutableStateOf<String?>(null) }
     var otroUsuarioImagen by remember { mutableStateOf<DrawableResource?>(null) }
     var mensajeNuevo by remember { mutableStateOf("") }
+
+    val secretoRepositorio = remember { SupabaseSecretosRepo() }
+
+    var claveLista by remember { mutableStateOf(false) }
 
     val todosLosMensajes by supabaseClient
         .subscribeTableAsFlow<Mensaje, String>(
@@ -85,6 +97,29 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
 
     LaunchedEffect(chatId) {
         if (chatId == null) return@LaunchedEffect
+
+        try {
+            val secretoRpc = secretoRepositorio.recuperarSecretoSimpleRpc(chatId)
+                ?: throw IllegalStateException("Secreto no disponible")
+            // Decodificar clave RAW
+            val keyBytes = Base64.decode(secretoRpc.decryptedSecret)
+            val aesKey = CryptographyProvider.Default
+                .get(AES.GCM)
+                .keyDecoder()
+                .decodeFromByteArray(AES.Key.Format.RAW, keyBytes)
+            ClaveSimetricaChats.clave = aesKey
+            claveLista = true
+        } catch (e: Exception) {
+            println("Error al recuperar la clave: ${e.message}")
+            return@LaunchedEffect
+        } finally {
+            if (claveLista) {
+                println("🔑 Clave lista para usar.")
+            } else {
+                println("❌ Clave no lista.")
+            }
+        }
+
         val repo = SupabaseRepositorioGenerico()
 
         val relaciones = repo.getAll<ConversacionesUsuario>("conversaciones_usuario").first()
@@ -97,6 +132,7 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
             val todosUsuarios = repo.getAll<Usuario>("usuario").first()
             val otroUsuario = todosUsuarios.find { it.getIdUnicoMio() == otroUsuarioId }
             otroUsuarioNombre = otroUsuario?.getNombreCompletoMio()
+            println("🙋 Nombre otro participante: $otroUsuarioNombre")
         }
     }
 
@@ -152,7 +188,10 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
                             },
                         contentAlignment = if (esMio) Alignment.CenterEnd else Alignment.CenterStart
                     ) {
-                        BurbujaMensaje(mensaje = mensaje, esMio = esMio)
+                        MensajeCard(
+                            mensaje = mensaje,
+                            esMio = esMio,
+                        )
 
                         if (esMio) {
                             DropdownMenu(
@@ -236,13 +275,19 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
                 BotonEnviarMensaje {
                     if (mensajeNuevo.isNotBlank()) {
                         scope.launch {
+                            val key = ClaveSimetricaChats.clave ?: throw IllegalStateException("Clave no lista")
+                            // Ciframos con nonce incluido
+                            val encryptedFull = key.cipher().encrypt(mensajeNuevo.encodeToByteArray())
+                            val contenidoHex = encryptedFull.toHex()
+
                             val nuevo = Mensaje(
-                                content = mensajeNuevo.trim(),
+                                content = contenidoHex,
                                 idusuario = currentUserId,
                                 idconversacion = chatId
                             )
-                            supabaseClient.from("mensaje").insert(nuevo)
+                            Supabase.client.from("mensaje").insert(nuevo)
                             mensajeNuevo = ""
+                            println("📤 Mensaje enviado en realtime.")
                         }
                     }
                 }

@@ -39,10 +39,12 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.connexuss.project.comunicacion.Conversacion
 import org.connexuss.project.comunicacion.ConversacionesUsuario
+import org.connexuss.project.encriptacion.EncriptacionSimetricaChats
 import org.connexuss.project.interfaces.comun.traducir
 import org.connexuss.project.interfaces.navegacion.DefaultTopBar
 import org.connexuss.project.misc.UsuarioPrincipal
 import org.connexuss.project.supabase.SupabaseRepositorioGenerico
+import org.connexuss.project.supabase.SupabaseSecretosRepo
 import org.connexuss.project.usuario.Usuario
 import org.connexuss.project.usuario.UsuarioBloqueado
 import org.connexuss.project.usuario.UsuarioContacto
@@ -55,6 +57,8 @@ fun muestraContactos(navController: NavHostController) {
     println("🪪 ID usuario actual: $currentUserId")
     val repo = remember { SupabaseRepositorioGenerico() }
     val scope = rememberCoroutineScope()
+    val encHelper = remember { EncriptacionSimetricaChats() }
+    val secretsRepo = remember { SupabaseSecretosRepo() }
 
     var registrosContacto by remember { mutableStateOf<List<UsuarioContacto>>(emptyList()) }
     var contactos by remember { mutableStateOf<List<Usuario>>(emptyList()) }
@@ -324,10 +328,10 @@ fun muestraContactos(navController: NavHostController) {
                                 scope.launch {
                                     try {
                                         val participantes = contactosSeleccionados + currentUserId
-                                        val nuevaConversacion = Conversacion(
-                                            nombre = if (contactosSeleccionados.size > 1) nombreGrupo else null
+                                        val nuevaConversacion = encHelper.crearChatSinPadding(
+                                            nombrePlain = if (contactosSeleccionados.size > 1) nombreGrupo else null,
+                                            secretsRpcRepo = secretsRepo
                                         )
-                                        repo.addItem("conversacion", nuevaConversacion)
 
                                         participantes.forEach { idUsuario ->
                                             val relacion = ConversacionesUsuario(

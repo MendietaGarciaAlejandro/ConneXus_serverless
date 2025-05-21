@@ -1,15 +1,29 @@
 package org.connexuss.project.interfaces.foro
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -19,19 +33,15 @@ import kotlinx.coroutines.launch
 import org.connexuss.project.comunicacion.Hilo
 import org.connexuss.project.comunicacion.Post
 import org.connexuss.project.comunicacion.generateId
+import org.connexuss.project.encriptacion.toHex
 import org.connexuss.project.interfaces.comun.LimitaTamanioAncho
-import org.connexuss.project.interfaces.foro.componentes.EmptyStateMessage
-import org.connexuss.project.interfaces.foro.componentes.PostItem
 import org.connexuss.project.interfaces.navegacion.MiBottomBar
 import org.connexuss.project.interfaces.notificaciones.HiloState
 import org.connexuss.project.interfaces.notificaciones.HiloTopBar
 import org.connexuss.project.misc.UsuarioPrincipal
 import org.connexuss.project.supabase.SupabaseHiloRepositorio
-import org.connexuss.project.supabase.SupabaseRepositorioGenerico
 
-// Repositorio genérico compartido (mismo que en ForoScreen y TemaScreen)
-private val repoForo = SupabaseRepositorioGenerico()
-
+@OptIn(ExperimentalStdlibApi::class)
 @Composable
 fun HiloScreen(navController: NavHostController, hiloId: String, startRoute: String) {
 
@@ -47,8 +57,12 @@ fun HiloScreen(navController: NavHostController, hiloId: String, startRoute: Str
     var refreshTrigger by remember { mutableStateOf(0) }
 
     // Tablas de temas y hilos
+    val tablaTemas = "tema"
     val tablaHilos = "hilo"
     val tablaPosts = "post"
+
+    var nombrePlano by remember { mutableStateOf("(cargando tema…)") }
+    var claveLista by remember { mutableStateOf(false) }
 
     // Creamos el Flow dentro de un remember que observe el trigger
     val postsFlow = remember(hiloId, refreshTrigger) {
@@ -76,6 +90,21 @@ fun HiloScreen(navController: NavHostController, hiloId: String, startRoute: Str
 
     val repoForoDedicado = SupabaseHiloRepositorio()
     val hiloBuscado = repoForoDedicado.getHiloPorId(hiloId).collectAsState(initial = null).value
+
+    LaunchedEffect(hiloId, hilo) {
+        if (hilo == null) return@LaunchedEffect
+        nombrePlano = try {
+            hilo!!.nombre?.let {
+                ClaveTemaHolder.clave?.cipher()
+                    ?.decrypt(it.hexToByteArray())
+                    ?.decodeToString()
+            } ?: "(clave no disponible)"
+        } catch (e: Exception) {
+            "(clave no disponible)"
+        } finally {
+            claveLista = false
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -131,15 +160,26 @@ fun HiloScreen(navController: NavHostController, hiloId: String, startRoute: Str
                                 contenido.isNotBlank().or(contenido.isNotEmpty())
                             )
                             scope.launch {
+
+                                val key = ClaveTemaHolder.clave
+                                    ?: throw IllegalStateException("Clave no lista")
+                                // Ciframos con nonce incluido
+                                val encryptedFull =
+                                    key.cipher().encrypt(contenido.encodeToByteArray())
+                                val contenidoHex = encryptedFull.toHex()
+
                                 UsuarioPrincipal?.let {
                                     val post = Post(
                                         idPost = generateId(),
-                                        content = contenido,
+                                        content = contenidoHex,
                                         idHilo = hiloId,
                                         idFirmante = it.idUnico,
                                         aliaspublico = it.aliasPublico
                                     )
-                                    repoForo.addItem(tablaPosts, post)
+                                    repoForo.addItem(
+                                        tablaPosts,
+                                        post
+                                    )
                                     refreshTrigger++ // Incrementamos el trigger para refrescar la lista
                                     contenido = ""
                                 } ?: println("Error: UsuarioPrincipal es nulo")
