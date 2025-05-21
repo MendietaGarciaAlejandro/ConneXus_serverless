@@ -76,7 +76,7 @@ fun instanciaSupabaseAdmin(
 ): SupabaseClient {
     return createSupabaseClient(
         supabaseUrl = SUPABASE_URL,
-        supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFpdHNuZ3ZicWx1YWlzanp1bnd2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NjQ2NDk4OCwiZXhwIjoyMDYyMDQwOTg4fQ.qFetqDUMBYS1_3YAKHGWGsm9ziSL-7VqkKdN0gC5W00"
+        supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlycHZ3eWV3enN2eHF3a2FjYmFvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NDM5MjEwMSwiZXhwIjoyMDU5OTY4MTAxfQ.stQz04hp-QfQ97Xo8gUoqebGKc9Jnsh4adOkiZ-YvIc"
     ) {
         if (tieneStorage) install(Storage)
         if (tieneAuth) install(Auth)
