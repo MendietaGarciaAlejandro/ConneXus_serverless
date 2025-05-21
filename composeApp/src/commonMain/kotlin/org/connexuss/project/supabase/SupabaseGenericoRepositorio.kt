@@ -15,12 +15,12 @@ import kotlinx.coroutines.flow.flow
 import org.connexuss.project.misc.Supabase
 
 // Credenciales de Supabase Connexus
-//private const val SUPABASE_URL = "https://yrpvwyewzsvxqwkacbao.supabase.co"
-//private const val SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlycHZ3eWV3enN2eHF3a2FjYmFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQzOTIxMDEsImV4cCI6MjA1OTk2ODEwMX0.llu6uixyc3-VyOziE2GwdjoWcW16Jnez65GYWzX8esI"
+const val SUPABASE_URL = "https://yrpvwyewzsvxqwkacbao.supabase.co"
+const val SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlycHZ3eWV3enN2eHF3a2FjYmFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQzOTIxMDEsImV4cCI6MjA1OTk2ODEwMX0.llu6uixyc3-VyOziE2GwdjoWcW16Jnez65GYWzX8esI"
 
 // Credenciales de Base de datos Supabase de prueba
-const val SUPABASE_URL = "https://aitsngvbqluaisjzunwv.supabase.co"
-const val SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFpdHNuZ3ZicWx1YWlzanp1bnd2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NjQ2NDk4OCwiZXhwIjoyMDYyMDQwOTg4fQ.qFetqDUMBYS1_3YAKHGWGsm9ziSL-7VqkKdN0gC5W00"
+//const val SUPABASE_URL = "https://aitsngvbqluaisjzunwv.supabase.co"
+//const val SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFpdHNuZ3ZicWx1YWlzanp1bnd2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NjQ2NDk4OCwiZXhwIjoyMDYyMDQwOTg4fQ.qFetqDUMBYS1_3YAKHGWGsm9ziSL-7VqkKdN0gC5W00"
 
 // Interfaz sin el modificador inline en deleteItemGeneric:
 //interface ISupabaseRepository<T : Any> {
@@ -76,7 +76,7 @@ fun instanciaSupabaseAdmin(
 ): SupabaseClient {
     return createSupabaseClient(
         supabaseUrl = SUPABASE_URL,
-        supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFpdHNuZ3ZicWx1YWlzanp1bnd2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NjQ2NDk4OCwiZXhwIjoyMDYyMDQwOTg4fQ.qFetqDUMBYS1_3YAKHGWGsm9ziSL-7VqkKdN0gC5W00"
+        supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlycHZ3eWV3enN2eHF3a2FjYmFvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NDM5MjEwMSwiZXhwIjoyMDU5OTY4MTAxfQ.stQz04hp-QfQ97Xo8gUoqebGKc9Jnsh4adOkiZ-YvIc"
     ) {
         if (tieneStorage) install(Storage)
         if (tieneAuth) install(Auth)

@@ -2638,7 +2638,7 @@ fun PantallaLogin(navController: NavHostController, settingsState: SettingsState
                                         // Validadmos la contraseña con el resumen
                                         if (!EncriptacionResumenUsuario.checkPassword(passwordInterno, usuario.contrasennia)) {
                                             errorMessage = errorContrasenaIncorrecta
-                                            return@launch
+                                            //return@launch
                                         }
 
                                         try {
