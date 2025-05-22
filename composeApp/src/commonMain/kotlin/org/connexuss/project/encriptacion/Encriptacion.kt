@@ -754,6 +754,27 @@ data class SecretoRPC(
     val nonce: String? = null,
 )
 
+@OptIn(ExperimentalEncodingApi::class)
+suspend fun encriptarTexto(
+    plaintext: ByteArray,
+    clave: AES.GCM.Key): String
+{
+    val noPad = Base64.withPadding(Base64.PaddingOption.ABSENT)
+    val bytesCifrados = clave.cipher().encrypt(plaintext)
+    return noPad.encode(bytesCifrados)
+}
+
+@OptIn(ExperimentalEncodingApi::class)
+suspend fun desencriptaTexto(
+    textoCifrado: String,
+    clave: AES.GCM.Key
+): String {
+    val noPad = Base64.withPadding(Base64.PaddingOption.ABSENT)
+    val bytesCifrados = noPad.decode(textoCifrado)
+    val textoDesencriptado = clave.cipher().decrypt(bytesCifrados)
+    return textoDesencriptado.decodeToString()
+}
+
 class EncriptacionSimetricaForo {
 
     /** Genera y devuelve una clave AES‑GCM de 256 bits */

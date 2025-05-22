@@ -99,6 +99,7 @@ fun TemaCard(
 @Composable
 fun HiloCard(
     hilo: Hilo,
+    postCount: Int = 0,
     onClick: () -> Unit
 ) {
 
@@ -128,7 +129,11 @@ fun HiloCard(
         Column(modifier = Modifier.padding(16.dp)) {
             Text(text = nombrePlano, style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(2.dp))
-            Text(text = "ID Tema: ${hilo.idTema}", style = MaterialTheme.typography.bodySmall)
+            Text(
+                text = "$postCount ${if (postCount==1) "post" else "posts"}",
+                style = MaterialTheme.typography.bodySmall
+            )
+            //Text(text = "ID Tema: ${hilo.idTema}", style = MaterialTheme.typography.bodySmall)
         }
     }
 }

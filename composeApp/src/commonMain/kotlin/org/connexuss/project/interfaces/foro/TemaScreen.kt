@@ -111,6 +111,8 @@ fun TemaScreen(
         repoForo.getAll<Hilo>(tablaHilos)
             .map { list -> list.filter { it.idTema == temaId } }
     }
+
+    val posts by repoForo.getAll<Hilo>("post").collectAsState(initial = emptyList())
     val hilos by hilosFlow.collectAsState(initial = emptyList())
 
     // Carga inicial
@@ -168,7 +170,10 @@ fun TemaScreen(
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             items(hilos) { hilo ->
-                                HiloCard(hilo = hilo) {
+                                HiloCard(
+                                    hilo = hilo,
+                                    postCount = posts.count { it.idHilo == hilo.idHilo },
+                                ) {
                                     navController.navigate("hilo/${hilo.idHilo}")
                                 }
                             }
