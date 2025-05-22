@@ -756,11 +756,11 @@ data class SecretoRPC(
 
 @OptIn(ExperimentalEncodingApi::class)
 suspend fun encriptarTexto(
-    plaintext: ByteArray,
+    textoPlano: String,
     clave: AES.GCM.Key): String
 {
     val noPad = Base64.withPadding(Base64.PaddingOption.ABSENT)
-    val bytesCifrados = clave.cipher().encrypt(plaintext)
+    val bytesCifrados = clave.cipher().encrypt(textoPlano.toByteArray())
     return noPad.encode(bytesCifrados)
 }
 

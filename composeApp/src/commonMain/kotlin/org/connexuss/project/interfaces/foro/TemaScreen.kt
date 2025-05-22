@@ -36,6 +36,7 @@ import kotlinx.coroutines.launch
 import org.connexuss.project.comunicacion.Hilo
 import org.connexuss.project.comunicacion.Tema
 import org.connexuss.project.comunicacion.generateId
+import org.connexuss.project.encriptacion.desencriptaTexto
 import org.connexuss.project.encriptacion.toHex
 import org.connexuss.project.interfaces.comun.LimitaTamanioAncho
 import org.connexuss.project.interfaces.navegacion.MiBottomBar
@@ -126,6 +127,22 @@ fun TemaScreen(
     val repoTemas = SupabaseTemasRepositorio()
     val temaBuscado = repoTemas.getTemaPorId(temaId).collectAsState(initial = null).value
 
+    var nombreTemaDesencriptado: String by remember { mutableStateOf("(cargando tema…)") }
+    try {
+        scope.launch {
+            nombreTemaDesencriptado = if (temaBuscado != null && ClaveTemaHolder.clave != null) {
+                desencriptaTexto(
+                    temaBuscado.nombre,
+                    ClaveTemaHolder.clave!!
+                )
+            } else {
+                "(clave o tema no disponible)"
+            }
+        }
+    } catch (e: Exception) {
+        nombreTemaDesencriptado = "(clave o tema no disponible)"
+    }
+
     // Si el tema no es nulo, mostrar la lista de hilos
     when {
         tema != null -> {
@@ -134,7 +151,7 @@ fun TemaScreen(
                     CenterAlignedTopAppBar(
                         title = {
                             if (temaBuscado != null) {
-                                Text(temaBuscado.nombre)
+                                Text(nombreTemaDesencriptado)
                             }
                         },
                         navigationIcon = { BackButton(navController) },
