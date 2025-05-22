@@ -930,7 +930,9 @@ class EncriptacionSimetricaForo {
     @OptIn(ExperimentalEncodingApi::class)
     suspend fun crearPostSinPadding(
         nombrePlain: String,
-        idHilo: String
+        idHilo: String,
+        aliaspublico: String,
+        idFirmante: String
     ): Post {
         // 1) Generar clave y cifrar
         val key = ClaveTemaHolder.clave
@@ -942,27 +944,23 @@ class EncriptacionSimetricaForo {
         val noPad = Base64.withPadding(Base64.PaddingOption.ABSENT)
         val contenido64 = noPad.encode(fullEncrypted)
 
-        val repoTema = SupabasePostsRepositorio()
+        val repoPosts = SupabasePostsRepositorio()
 
-        val postResultado = UsuarioPrincipal?.let {
-            Post(
+            val postResultado = Post(
                 idPost = postId,
                 content = contenido64,
                 idHilo = idHilo,
-                aliaspublico = it.aliasPublico,
-                idFirmante = UsuarioPrincipal!!.idUnico,
+                aliaspublico = aliaspublico,
+                idFirmante = idFirmante,
             )
-        }
 
         try {
-            if (postResultado != null) {
-                repoTema.addPost(postResultado)
-            }
+            repoPosts.addPost(postResultado)
         } catch (e: Exception) {
             // Ignora el error, ya que la inserción se hace en el RPC
         }
 
-        return postResultado!!
+        return postResultado
     }
 
     /**
@@ -1005,73 +1003,49 @@ class EncriptacionSimetricaForo {
         return plainBytes.decodeToString()
     }
 
-//    @OptIn(ExperimentalEncodingApi::class)
-//    suspend fun leerHilo(
-//        temaId: String,
-//        secretsRpcRepo: SupabaseSecretosRepo
-//    ): String {
-//        // 1) Recuperar secreto desencriptado vía Edge Function
-//        val secretoDesencriptado = secretsRpcRepo.recuperarSecretoSimpleRpc(temaId)
-//            ?: throw IllegalStateException("Secreto no disponible para tema $temaId")
-//
-//        // 2) Decodificar clave RAW (Base64 estándar con padding)
-//        val keyBytes = secretoDesencriptado.decryptedSecret.let { Base64.decode(it) }
-//        val aesKey = keyBytes.let {
-//            CryptographyProvider.Default
-//                .get(AES.GCM)
-//                .keyDecoder()
-//                .decodeFromByteArray(AES.Key.Format.RAW, it)
-//        }
-//
-//        val repoSupabaseTema = SupabaseTemasRepositorio()
-//
-//        // 4) Recuperar solo el ciphertext de la tabla temas
-//        val tema = repoSupabaseTema.getTemaPorId(temaId).first()
-//        val temaNombre = tema?.nombre
-//            ?: throw IllegalStateException("Tema no disponible para id $temaId")
-//
-//        // 5) Decodificar ciphertext+tag (Base64 sin padding)
-//        val noPad = Base64.withPadding(Base64.PaddingOption.ABSENT)
-//        val encryptedFull: ByteArray = noPad.decode(temaNombre)
-//
-//        // 7) Desencriptar con la clave y devolver texto
-//        val plainBytes: ByteArray = aesKey.cipher().decrypt(encryptedFull)
-//        return plainBytes.decodeToString()
-//    }
-//
-//    @OptIn(ExperimentalEncodingApi::class)
-//    suspend fun leerPost(
-//        temaId: String,
-//        secretsRpcRepo: SupabaseSecretosRepo
-//    ): String {
-//        // 1) Recuperar secreto desencriptado vía Edge Function
-//        val secretoDesencriptado = secretsRpcRepo.recuperarSecretoSimpleRpc(temaId)
-//            ?: throw IllegalStateException("Secreto no disponible para tema $temaId")
-//
-//        // 2) Decodificar clave RAW (Base64 estándar con padding)
-//        val keyBytes = secretoDesencriptado.decryptedSecret.let { Base64.decode(it) }
-//        val aesKey = keyBytes.let {
-//            CryptographyProvider.Default
-//                .get(AES.GCM)
-//                .keyDecoder()
-//                .decodeFromByteArray(AES.Key.Format.RAW, it)
-//        }
-//
-//        val repoSupabaseTema = SupabaseTemasRepositorio()
-//
-//        // 4) Recuperar solo el ciphertext de la tabla temas
-//        val tema = repoSupabaseTema.getTemaPorId(temaId).first()
-//        val temaNombre = tema?.nombre
-//            ?: throw IllegalStateException("Tema no disponible para id $temaId")
-//
-//        // 5) Decodificar ciphertext+tag (Base64 sin padding)
-//        val noPad = Base64.withPadding(Base64.PaddingOption.ABSENT)
-//        val encryptedFull: ByteArray = noPad.decode(temaNombre)
-//
-//        // 7) Desencriptar con la clave y devolver texto
-//        val plainBytes: ByteArray = aesKey.cipher().decrypt(encryptedFull)
-//        return plainBytes.decodeToString()
-//    }
+    @OptIn(ExperimentalEncodingApi::class)
+    suspend fun leerHilo(
+        hiloId: String,
+        clave: AES.GCM.Key,
+    ): String {
+
+        val repoSupabaseHilo = SupabaseHiloRepositorio()
+
+        // 4) Recuperar solo el ciphertext de la tabla temas
+        val hilo = repoSupabaseHilo.getHiloPorId(hiloId).first()
+        val hiloNombre = hilo?.nombre
+            ?: throw IllegalStateException("Hilo no disponible para id $hiloId")
+
+        // 5) Decodificar ciphertext+tag (Base64 sin padding)
+        val noPad = Base64.withPadding(Base64.PaddingOption.ABSENT)
+        val encryptedFull: ByteArray = noPad.decode(hiloNombre)
+
+        // 7) Desencriptar con la clave y devolver texto
+        val plainBytes: ByteArray = clave.cipher().decrypt(encryptedFull)
+        return plainBytes.decodeToString()
+    }
+
+    @OptIn(ExperimentalEncodingApi::class)
+    suspend fun leerPost(
+        postId: String,
+        clave: AES.GCM.Key,
+    ): String {
+
+        val repoSupabaseTema = SupabasePostsRepositorio()
+
+        // 4) Recuperar solo el ciphertext de la tabla temas
+        val post = repoSupabaseTema.getPostPorId(postId).first()
+        val postContenido = post?.content
+            ?: throw IllegalStateException("Post no disponible para id $postId")
+
+        // 5) Decodificar ciphertext+tag (Base64 sin padding)
+        val noPad = Base64.withPadding(Base64.PaddingOption.ABSENT)
+        val encryptedFull: ByteArray = noPad.decode(postContenido)
+
+        // 7) Desencriptar con la clave y devolver texto
+        val plainBytes: ByteArray = clave.cipher().decrypt(encryptedFull)
+        return plainBytes.decodeToString()
+    }
 }
 
 class EncriptacionSimetricaChats {

@@ -36,6 +36,7 @@ import kotlinx.coroutines.launch
 import org.connexuss.project.comunicacion.Hilo
 import org.connexuss.project.comunicacion.Tema
 import org.connexuss.project.comunicacion.generateId
+import org.connexuss.project.encriptacion.EncriptacionSimetricaForo
 import org.connexuss.project.encriptacion.desencriptaTexto
 import org.connexuss.project.encriptacion.toHex
 import org.connexuss.project.interfaces.comun.LimitaTamanioAncho
@@ -59,6 +60,7 @@ fun TemaScreen(
     val scope = rememberCoroutineScope()
     var showNewThreadDialog by remember { mutableStateOf(false) }
     var refreshTrigger by remember { mutableStateOf(0) }
+    val encHelper = remember { EncriptacionSimetricaForo() }
 
     //var aesKey by remember { mutableStateOf<AES.GCM.Key?>(null) }
     var isLoading by remember { mutableStateOf(true) }
@@ -205,16 +207,10 @@ fun TemaScreen(
                             onConfirm = { titulo ->
                                 scope.launch {
                                     try {
-                                        val key = ClaveTemaHolder.clave ?: throw IllegalStateException("Clave no lista")
-                                        // Ciframos con nonce incluido
-                                        val encryptedFull = key.cipher().encrypt(titulo.encodeToByteArray())
-                                        val tituloHex = encryptedFull.toHex()
-                                        val nuevo = Hilo(
-                                            idHilo = generateId(),
-                                            nombre = tituloHex,
-                                            idTema = temaId
+                                        val nuevoHilo = encHelper.crearHiloSinPadding(
+                                            nombrePlain = titulo,
+                                            idTema = temaId,
                                         )
-                                        repoForo.addItem("hilo", nuevo)
                                         refreshTrigger++
                                         showNewThreadDialog = false
                                     } catch (e: Exception) {

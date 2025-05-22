@@ -103,19 +103,20 @@ fun HiloCard(
     onClick: () -> Unit
 ) {
 
-    // Estado para la clave AES reconstruida
-    //var aesKey by remember { mutableStateOf<AES.GCM.Key?>(null) }
-    // Estado para el nombre desencriptado
-    var nombrePlano by remember { mutableStateOf("(cargando...)") }
-    //val scope = rememberCoroutineScope()
+    var nombrePlano by remember { mutableStateOf("(cargando…)") }
+
+    val encHelper = remember { EncriptacionSimetricaForo() }
+
+    val scope = rememberCoroutineScope()
 
     // Desencriptar el nombre del hilo
-    LaunchedEffect(ClaveTemaHolder.clave, hilo.nombre) {
-        if (ClaveTemaHolder.clave != null) {
-            val cipherBytes = hilo.nombre?.hexToByteArray()
-            val plainBytes  = cipherBytes?.let { ClaveTemaHolder.clave!!.cipher().decrypt(ciphertext = it) }
-            if (plainBytes != null) {
-                nombrePlano    = plainBytes.decodeToString()
+    scope.launch {
+        ClaveTemaHolder.clave?.let {
+            encHelper.leerHilo(
+                hiloId = hilo.idHilo,
+                clave = it
+            ).let { nombre ->
+                nombrePlano = nombre
             }
         }
     }
@@ -144,11 +145,18 @@ fun PostItem(post: Post) {
 
     var nombrePlano by remember { mutableStateOf("(cargando...)") }
 
-    LaunchedEffect(ClaveTemaHolder.clave, post.content) {
-        if (ClaveTemaHolder.clave != null) {
-            val cipherBytes = post.content.hexToByteArray()
-            val plainBytes  = cipherBytes.let { ClaveTemaHolder.clave!!.cipher().decrypt(ciphertext = it) }
-            nombrePlano    = plainBytes.decodeToString()
+    val encHelper = remember { EncriptacionSimetricaForo() }
+
+    val scope = rememberCoroutineScope()
+
+    scope.launch {
+        ClaveTemaHolder.clave?.let {
+            encHelper.leerPost(
+                postId = post.idPost,
+                clave = it
+            ).let { nombre ->
+                nombrePlano = nombre
+            }
         }
     }
 

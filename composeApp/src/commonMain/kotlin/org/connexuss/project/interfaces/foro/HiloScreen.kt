@@ -33,6 +33,7 @@ import kotlinx.coroutines.launch
 import org.connexuss.project.comunicacion.Hilo
 import org.connexuss.project.comunicacion.Post
 import org.connexuss.project.comunicacion.generateId
+import org.connexuss.project.encriptacion.EncriptacionSimetricaForo
 import org.connexuss.project.encriptacion.desencriptaTexto
 import org.connexuss.project.encriptacion.toHex
 import org.connexuss.project.interfaces.comun.LimitaTamanioAncho
@@ -56,6 +57,7 @@ fun HiloScreen(navController: NavHostController, hiloId: String, startRoute: Str
 
     var contenido by remember { mutableStateOf("") }
     var refreshTrigger by remember { mutableStateOf(0) }
+    val encHelper = remember { EncriptacionSimetricaForo() }
 
     // Tablas de temas y hilos
     val tablaTemas = "tema"
@@ -91,24 +93,20 @@ fun HiloScreen(navController: NavHostController, hiloId: String, startRoute: Str
 
     val repoForoDedicado = SupabaseHiloRepositorio()
     val hiloBuscado = repoForoDedicado.getHiloPorId(hiloId).collectAsState(initial = null).value
-    val hiloBuscadoNombre = hiloBuscado?.nombre
 
-    var nombreHiloDesencriptado: String by remember { mutableStateOf("(cargando tema…)") }
-    try {
-        scope.launch {
-            nombreHiloDesencriptado = if (hiloBuscadoNombre != null && ClaveTemaHolder.clave != null) {
-                desencriptaTexto(
-                    hiloBuscadoNombre,
-                    ClaveTemaHolder.clave!!
-                )
-            } else {
-                "(clave no disponible)"
+    var nombreDesencriptado: String by remember { mutableStateOf("") }
+
+    scope.launch {
+        if (hiloBuscado != null) {
+            ClaveTemaHolder.clave?.let {
+                encHelper.leerHilo(
+                    hiloId = hiloBuscado.idHilo,
+                    clave = it
+                ).let { nombre ->
+                    nombreDesencriptado = nombre
+                }
             }
         }
-    } catch (e: Exception) {
-        nombreHiloDesencriptado = "(clave no disponible)"
-    } finally {
-        claveLista = true
     }
 
     LaunchedEffect(hiloId, hilo) {
@@ -129,16 +127,14 @@ fun HiloScreen(navController: NavHostController, hiloId: String, startRoute: Str
     Scaffold(
         topBar = {
             if (hiloBuscado != null) {
-                hiloBuscado.nombre?.let {
-                    HiloTopBar(
-                        title = it,
-                        navController = navController,
-                        newPostsCount = hiloState.newPostsCount.value,
-                        onRefresh = { hiloState.reset(); refreshTrigger++ },
-                        showRefresh = true,
-                        startRoute = startRoute
-                    )
-                }
+                HiloTopBar(
+                    title = nombreDesencriptado,
+                    navController = navController,
+                    newPostsCount = hiloState.newPostsCount.value,
+                    onRefresh = { hiloState.reset(); refreshTrigger++ },
+                    showRefresh = true,
+                    startRoute = startRoute
+                )
             }
         },
         bottomBar = { MiBottomBar(navController) }
@@ -181,28 +177,18 @@ fun HiloScreen(navController: NavHostController, hiloId: String, startRoute: Str
                             )
                             scope.launch {
 
-                                val key = ClaveTemaHolder.clave
-                                    ?: throw IllegalStateException("Clave no lista")
-                                // Ciframos con nonce incluido
-                                val encryptedFull =
-                                    key.cipher().encrypt(contenido.encodeToByteArray())
-                                val contenidoHex = encryptedFull.toHex()
-
-                                UsuarioPrincipal?.let {
-                                    val post = Post(
-                                        idPost = generateId(),
-                                        content = contenidoHex,
+                                val nuevoPost = UsuarioPrincipal?.let {
+                                    encHelper.crearPostSinPadding(
+                                        nombrePlain = contenido,
                                         idHilo = hiloId,
-                                        idFirmante = it.idUnico,
-                                        aliaspublico = it.aliasPublico
+                                        aliaspublico = it.aliasPublico,
+                                        idFirmante = UsuarioPrincipal!!.idUnico,
                                     )
-                                    repoForo.addItem(
-                                        tablaPosts,
-                                        post
-                                    )
-                                    refreshTrigger++ // Incrementamos el trigger para refrescar la lista
-                                    contenido = ""
-                                } ?: println("Error: UsuarioPrincipal es nulo")
+                                }
+
+                                refreshTrigger++ // Incrementamos el trigger para refrescar la lista
+                                contenido = ""
+
                             }
                         } catch (e: Exception) {
                             println("Error al enviar el post: ${e.message}")
