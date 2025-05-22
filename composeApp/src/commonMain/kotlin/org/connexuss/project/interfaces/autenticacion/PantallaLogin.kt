@@ -232,6 +232,7 @@ fun PantallaLogin(
 
                 ElevatedButton(
                     onClick = {
+                        //TODO: Borrar autenticación local y ponerla solo con Supabase
                         scope.launch {
                             if (emailInterno.isBlank() || passwordInterno.isBlank()) {
                                 errorMessage = porFavorCompleta
@@ -239,18 +240,27 @@ fun PantallaLogin(
                             }
 
                             try {
-                                val usuario = repoSupabase.getUsuarioPorEmail(emailInterno.trim()).first()
-                                    ?: run { errorMessage = errorEmailNingunUsuario; return@launch }
+                                // Verificamos primero si el usuario existe en nuestra base de datos
+                                val usuario =
+                                    repoSupabase.getUsuarioPorEmail(emailInterno.trim()).first()
+                                        ?: run {
+                                            errorMessage = errorEmailNingunUsuario; return@launch
+                                        }
 
-                                UsuarioPrincipal = usuario
-                                println("Usuario autenticado: $UsuarioPrincipal")
-
-                                // Validadmos la contraseña con el resumen
-                                if (!EncriptacionResumenUsuario.checkPassword(passwordInterno, usuario.contrasennia)) {
+                                // Validamos la contraseña con el resumen local
+                                if (!EncriptacionResumenUsuario.checkPassword(
+                                        passwordInterno,
+                                        usuario.contrasennia
+                                    )
+                                ) {
 //                                    errorMessage = errorContrasenaIncorrecta
 //                                    return@launch
                                 }
 
+                                // Almacenamos el usuario para su uso en la aplicación
+                                UsuarioPrincipal = usuario
+
+                                // Intentamos autenticar con Supabase
                                 try {
                                     // Iniciar sesión en Supabase
                                     Supabase.client.auth.signInWith(
@@ -259,26 +269,46 @@ fun PantallaLogin(
                                         email = usuario.correo
                                         password = passwordInterno
                                     }
-                                }catch (RestException: Exception){
-                                    mensajeBienvenido = "Bienvenido ${UsuarioPrincipal!!.nombre}"
-                                    delay(2000)
-                                    navController.navigate("contactos") {
-                                        popUpTo("login") { inclusive = true }
+
+                                    // Si llegamos aquí, la autenticación con Supabase fue exitosa
+                                    // Actualizar la sesión actual
+                                    sesionActualUsuario =
+                                        Supabase.client.auth.currentSessionOrNull()
+
+                                    // Solo si tenemos sesión válida procedemos
+                                    if (sesionActualUsuario != null) {
+                                        // Mostrar mensaje de bienvenida
+                                        mensajeBienvenido =
+                                            "Bienvenido ${UsuarioPrincipal!!.nombre}"
+                                        
+                                        //TODO: Hacer que los checkboxes sean excluyentes
+
+                                        // Persistir si rememberMe está activo
+                                        if (rememberMe) {
+                                            settingsState.saveSession(
+                                                sesionActualUsuario!!,
+                                                UsuarioPrincipal!!
+                                            )
+                                        }
+
+                                        // Guardar email si el usuario lo solicitó
+                                        if (recordarEmail) {
+                                            settingsState.saveEmail(emailInterno)
+                                        }
+
+                                        // Esperar para mostrar el mensaje antes de navegar
+                                        delay(1000)
+
+                                        // Navegar a contactos
+                                        navController.navigate("contactos") {
+                                            popUpTo("login") { inclusive = true }
+                                        }
+                                    } else {
+                                        errorMessage = "Error de autenticación en Supabase"
                                     }
-                                }
-
-                                // Actualizar la sesión actual
-                                sesionActualUsuario = Supabase.client.auth.currentSessionOrNull()
-                                errorMessage = ""
-
-                                // Persistir solo si rememberMe=true
-                                if (rememberMe && sesionActualUsuario != null) {
-                                    val userJson = Json.encodeToString(Usuario.serializer(), usuario)
-                                    settingsState.saveSession(sesionActualUsuario!!, UsuarioPrincipal!!)
-                                }
-
-                                navController.navigate("contactos") {
-                                    popUpTo("login") { inclusive = true }
+                                } catch (e: Exception) {
+                                    // Error de autenticación en Supabase
+                                    errorMessage = "Error en autenticación: ${e.message}"
                                 }
                             } catch (e: Exception) {
                                 errorMessage = "Error: ${e.message}"

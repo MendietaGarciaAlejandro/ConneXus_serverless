@@ -1021,13 +1021,8 @@ object EncriptacionResumenUsuario {
     /** Público: verifica `password` frente a `hashHex`. */
     suspend fun checkPassword(password: String, hashHex: String): Boolean =
         withContext(Dispatchers.Default) {
-            val candidate = hashPassword(password)
-            if (candidate.length != hashHex.length) return@withContext false
-            var eq = true
-            for (i in candidate.indices) {
-                eq = eq and (candidate[i] == hashHex[i])
-            }
-            eq
+            val candidateHash = hashPassword(password)
+            candidateHash == hashHex // Comparación directa de los hashes
         }
 }
 
@@ -1043,91 +1038,3 @@ object EncriptacionResumenUsuario {
 //
 //    /**
 //     * Genera un par de claves ECDH y devuelve la clave privada y pública en formato RAW.
-//     * La clave privada es de 32 bytes y la pública es de 65 bytes.
-//     */
-//    suspend fun cretePublicAndPrivateKeyPair(): Pair<ByteArray, ByteArray> {
-//        val keyPair = generateECDHKeyPair()
-//        val privateKey = keyPair.privateKey.encodeToByteArray(EC.PrivateKey.Format.RAW)
-//        val publicKey = keyPair.publicKey.encodeToByteArray(EC.PublicKey.Format.RAW)
-//        return privateKey to publicKey
-//    }
-//
-//    /**
-//     * 2) Deriva la clave de grupo a partir de la clave privada del admin y la pública del miembro.
-//     *    – La clave de grupo es de 32 bytes.
-//     */
-//    suspend fun deriveGroupKey(
-//        adminPrivRaw: ByteArray,
-//        memberPubsRaw: List<ByteArray>,
-//        groupId: ByteArray
-//    ): ByteArray = withContext(Dispatchers.Default) {
-//        // 1) Obtén el algoritmo ECDH para la curva P‑256
-//        val ecdh = provider.get(ECDH)
-//        val curveP256 = EC.Curve.P256
-//
-//        // 2) Decodifica la clave privada RAW (32 bytes)
-//        val privKey = ecdh.privateKeyDecoder(curveP256)
-//            .decodeFromByteArray(EC.PrivateKey.Format.RAW, adminPrivRaw)
-//
-//        // 4) Decodifica la clave pública RAW (65 bytes, SEC1 uncompressed)
-//        val pubKey = ecdh.publicKeyDecoder(curveP256)
-//            .decodeFromByteArray(EC.PublicKey.Format.RAW, memberPubsRaw.first())
-//
-//        val sharedSecretRaw: ByteArray = ecdh.privateKeyDecoder(curveP256)
-//            .decodeFromByteArray(
-//                EC.PrivateKey.Format.RAW,
-//                privKey.encodeToByteArray(
-//                    format = EC.PrivateKey.Format.RAW))
-//            .sharedSecretGenerator().generateSharedSecretToByteArray(pubKey)
-//
-//        val tamaniaBInario: BinarySize = 32.bytes
-//
-//        val hkdf = provider.get(HKDF)
-//        hkdf.secretDerivation(
-//            SHA256,
-//            tamaniaBInario,
-//            null,
-//            groupId
-//        ).deriveSecretToByteArray(sharedSecretRaw)
-//    }
-//
-//    /**
-//     * 3) Cifra el mensaje con AES‑GCM y la clave de grupo.
-//     *    – El nonce es de 12 bytes (96 bits).
-//     */
-//    suspend fun encryptMessage(
-//        groupKey: ByteArray,
-//        plaintext: ByteArray,
-//        groupId: ByteArray
-//    ): ByteArray = withContext(Dispatchers.Default) {
-//        val aes = provider.get(AES.GCM)
-//        val key = aes.keyDecoder()
-//            .decodeFromByteArray(AES.Key.Format.RAW, groupKey)
-//
-//        // Cifra el mensaje, incluyendo groupId como AAD
-//        key.cipher().encrypt(
-//            plaintext       = plaintext,
-//            associatedData  = groupId
-//        )
-//    }
-//
-//    /**
-//     * 4) Desencripta el mensaje con AES‑GCM y la clave de grupo.
-//     *    – El nonce es de 12 bytes (96 bits).
-//     */
-//    suspend fun decryptMessage(
-//        groupKey: ByteArray,
-//        encryptedFull: ByteArray,
-//        groupId: ByteArray
-//    ): ByteArray = withContext(Dispatchers.Default) {
-//        val aes = provider.get(AES.GCM)
-//        val key = aes.keyDecoder()
-//            .decodeFromByteArray(AES.Key.Format.RAW, groupKey)
-//
-//        // Desencripta pasando el mismo groupId como AAD
-//        key.cipher().decrypt(
-//            ciphertext      = encryptedFull,
-//            associatedData  = groupId
-//        )
-//    }
-//}
