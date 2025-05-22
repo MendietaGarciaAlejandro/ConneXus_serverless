@@ -14,6 +14,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalDateTime
 import org.connexuss.project.comunicacion.Hilo
 import org.connexuss.project.comunicacion.Post
 import org.connexuss.project.comunicacion.Tema
@@ -139,6 +140,15 @@ fun HiloCard(
     }
 }
 
+/** Extensión para formatear enteros a dos dígitos (“04”, “12”, etc.) */
+private fun Int.twoDigits(): String = this.toString().padStart(2, '0')
+
+/** Extensión en LocalDateTime para el formato "HH:mm dd/MM/yyyy" */
+fun LocalDateTime.toFormattedString(): String {
+    return "${hour.twoDigits()}:${minute.twoDigits()} " +
+            "${dayOfMonth.twoDigits()}/${monthNumber.twoDigits()}/$year"
+}
+
 @OptIn(ExperimentalStdlibApi::class)
 @Composable
 fun PostItem(post: Post) {
@@ -170,7 +180,7 @@ fun PostItem(post: Post) {
                 Spacer(Modifier.width(8.dp))
                 Text(text = post.aliaspublico, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.weight(1f))
-                Text(text = post.fechaPost.toString(), style = MaterialTheme.typography.bodySmall)
+                Text(text = post.fechaPost.toFormattedString(), style = MaterialTheme.typography.bodySmall)
             }
             Spacer(Modifier.height(8.dp))
             Text(text = nombrePlano, style = MaterialTheme.typography.bodyLarge)
