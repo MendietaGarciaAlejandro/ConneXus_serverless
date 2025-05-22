@@ -33,6 +33,7 @@ import kotlinx.coroutines.launch
 import org.connexuss.project.comunicacion.Hilo
 import org.connexuss.project.comunicacion.Post
 import org.connexuss.project.comunicacion.generateId
+import org.connexuss.project.encriptacion.desencriptaTexto
 import org.connexuss.project.encriptacion.toHex
 import org.connexuss.project.interfaces.comun.LimitaTamanioAncho
 import org.connexuss.project.interfaces.navegacion.MiBottomBar
@@ -90,6 +91,25 @@ fun HiloScreen(navController: NavHostController, hiloId: String, startRoute: Str
 
     val repoForoDedicado = SupabaseHiloRepositorio()
     val hiloBuscado = repoForoDedicado.getHiloPorId(hiloId).collectAsState(initial = null).value
+    val hiloBuscadoNombre = hiloBuscado?.nombre
+
+    var nombreHiloDesencriptado: String by remember { mutableStateOf("(cargando tema…)") }
+    try {
+        scope.launch {
+            nombreHiloDesencriptado = if (hiloBuscadoNombre != null && ClaveTemaHolder.clave != null) {
+                desencriptaTexto(
+                    hiloBuscadoNombre,
+                    ClaveTemaHolder.clave!!
+                )
+            } else {
+                "(clave no disponible)"
+            }
+        }
+    } catch (e: Exception) {
+        nombreHiloDesencriptado = "(clave no disponible)"
+    } finally {
+        claveLista = true
+    }
 
     LaunchedEffect(hiloId, hilo) {
         if (hilo == null) return@LaunchedEffect
