@@ -149,6 +149,10 @@ fun LocalDateTime.toFormattedString(): String {
             "${dayOfMonth.twoDigits()}/${monthNumber.twoDigits()}/$year"
 }
 
+fun LocalDateTime.toFormattedStringSmall(): String {
+    return "${hour.twoDigits()}:${minute.twoDigits()}"
+}
+
 @OptIn(ExperimentalStdlibApi::class)
 @Composable
 fun PostItem(post: Post) {

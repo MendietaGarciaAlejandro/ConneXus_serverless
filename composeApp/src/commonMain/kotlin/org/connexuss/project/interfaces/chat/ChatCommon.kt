@@ -29,6 +29,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import dev.whyoleg.cryptography.algorithms.AES
 import org.connexuss.project.comunicacion.Mensaje
+import org.connexuss.project.interfaces.foro.toFormattedString
+import org.connexuss.project.interfaces.foro.toFormattedStringSmall
 import org.connexuss.project.misc.esAndroid
 import org.connexuss.project.misc.esDesktop
 import org.connexuss.project.misc.esWeb
@@ -98,6 +100,15 @@ fun MensajeCard(
             }
 
             Text(nombrePlano)
+
+            // Abajo a la derecha en muy pequeñito se mostrará la fecha del mensaje
+            Text(
+                text = mensaje.fechaMensaje.toFormattedStringSmall(),
+                style = MaterialTheme.typography.bodySmall,
+                color = Color.DarkGray,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+
 
             mensaje.imageUrl?.let { imageUrl ->
                 when {
