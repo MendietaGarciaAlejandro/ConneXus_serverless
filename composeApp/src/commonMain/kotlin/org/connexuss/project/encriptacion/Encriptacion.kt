@@ -44,11 +44,17 @@ import kotlinx.datetime.Instant
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.connexuss.project.comunicacion.Conversacion
+import org.connexuss.project.comunicacion.Hilo
+import org.connexuss.project.comunicacion.Post
 import org.connexuss.project.comunicacion.Tema
 import org.connexuss.project.comunicacion.generateId
 import org.connexuss.project.interfaces.navegacion.DefaultTopBar
 import org.connexuss.project.interfaces.comun.LimitaTamanioAncho
+import org.connexuss.project.interfaces.foro.ClaveTemaHolder
+import org.connexuss.project.misc.UsuarioPrincipal
 import org.connexuss.project.supabase.SupabaseConversacionesRepositorio
+import org.connexuss.project.supabase.SupabaseHiloRepositorio
+import org.connexuss.project.supabase.SupabasePostsRepositorio
 import org.connexuss.project.supabase.SupabaseSecretosRepo
 import org.connexuss.project.supabase.SupabaseTemasRepositorio
 import kotlin.io.encoding.Base64
@@ -754,6 +760,27 @@ data class SecretoRPC(
     val nonce: String? = null,
 )
 
+@OptIn(ExperimentalEncodingApi::class)
+suspend fun encriptarTexto(
+    textoPlano: String,
+    clave: AES.GCM.Key): String
+{
+    val noPad = Base64.withPadding(Base64.PaddingOption.ABSENT)
+    val bytesCifrados = clave.cipher().encrypt(textoPlano.toByteArray())
+    return noPad.encode(bytesCifrados)
+}
+
+@OptIn(ExperimentalEncodingApi::class)
+suspend fun desencriptaTexto(
+    textoCifrado: String,
+    clave: AES.GCM.Key
+): String {
+    val noPad = Base64.withPadding(Base64.PaddingOption.ABSENT)
+    val bytesCifrados = noPad.decode(textoCifrado)
+    val textoDesencriptado = clave.cipher().decrypt(bytesCifrados)
+    return textoDesencriptado.decodeToString()
+}
+
 class EncriptacionSimetricaForo {
 
     /** Genera y devuelve una clave AES‑GCM de 256 bits */
@@ -868,6 +895,74 @@ class EncriptacionSimetricaForo {
         return temaResultado
     }
 
+    @OptIn(ExperimentalEncodingApi::class)
+    suspend fun crearHiloSinPadding(
+        nombrePlain: String,
+        idTema: String
+    ): Hilo {
+        // 1) Generar clave y cifrar
+        val key = ClaveTemaHolder.clave
+            ?: throw IllegalStateException("Clave AES no inicializada")
+        val fullEncrypted = key.encriptarFull(nombrePlain.encodeToByteArray())
+        val hiloId = generateId()
+
+        // 3) Codificar ciphertext sin padding para la tabla temas
+        val noPad = Base64.withPadding(Base64.PaddingOption.ABSENT)
+        val nombreB64 = noPad.encode(fullEncrypted)
+
+        val repoTema = SupabaseHiloRepositorio()
+
+        val hiloResultado = Hilo(
+            idHilo = hiloId,
+            nombre = nombreB64,
+            idTema = idTema,
+        )
+
+        try {
+            repoTema.addHilo(hiloResultado)
+        } catch (e: Exception) {
+            // Ignora el error, ya que la inserción se hace en el RPC
+        }
+
+        return hiloResultado
+    }
+
+    @OptIn(ExperimentalEncodingApi::class)
+    suspend fun crearPostSinPadding(
+        nombrePlain: String,
+        idHilo: String,
+        aliaspublico: String,
+        idFirmante: String
+    ): Post {
+        // 1) Generar clave y cifrar
+        val key = ClaveTemaHolder.clave
+            ?: throw IllegalStateException("Clave AES no inicializada")
+        val fullEncrypted = key.encriptarFull(nombrePlain.encodeToByteArray())
+        val postId = generateId()
+
+        // 3) Codificar ciphertext sin padding para la tabla temas
+        val noPad = Base64.withPadding(Base64.PaddingOption.ABSENT)
+        val contenido64 = noPad.encode(fullEncrypted)
+
+        val repoPosts = SupabasePostsRepositorio()
+
+            val postResultado = Post(
+                idPost = postId,
+                content = contenido64,
+                idHilo = idHilo,
+                aliaspublico = aliaspublico,
+                idFirmante = idFirmante,
+            )
+
+        try {
+            repoPosts.addPost(postResultado)
+        } catch (e: Exception) {
+            // Ignora el error, ya que la inserción se hace en el RPC
+        }
+
+        return postResultado
+    }
+
     /**
      * Recupera y desencripta un tema:
      * 1) Recupera clave y nonce desde vault via Edge Function.
@@ -905,6 +1000,50 @@ class EncriptacionSimetricaForo {
 
         // 7) Desencriptar con la clave y devolver texto
         val plainBytes: ByteArray = aesKey.cipher().decrypt(encryptedFull)
+        return plainBytes.decodeToString()
+    }
+
+    @OptIn(ExperimentalEncodingApi::class)
+    suspend fun leerHilo(
+        hiloId: String,
+        clave: AES.GCM.Key,
+    ): String {
+
+        val repoSupabaseHilo = SupabaseHiloRepositorio()
+
+        // 4) Recuperar solo el ciphertext de la tabla temas
+        val hilo = repoSupabaseHilo.getHiloPorId(hiloId).first()
+        val hiloNombre = hilo?.nombre
+            ?: throw IllegalStateException("Hilo no disponible para id $hiloId")
+
+        // 5) Decodificar ciphertext+tag (Base64 sin padding)
+        val noPad = Base64.withPadding(Base64.PaddingOption.ABSENT)
+        val encryptedFull: ByteArray = noPad.decode(hiloNombre)
+
+        // 7) Desencriptar con la clave y devolver texto
+        val plainBytes: ByteArray = clave.cipher().decrypt(encryptedFull)
+        return plainBytes.decodeToString()
+    }
+
+    @OptIn(ExperimentalEncodingApi::class)
+    suspend fun leerPost(
+        postId: String,
+        clave: AES.GCM.Key,
+    ): String {
+
+        val repoSupabaseTema = SupabasePostsRepositorio()
+
+        // 4) Recuperar solo el ciphertext de la tabla temas
+        val post = repoSupabaseTema.getPostPorId(postId).first()
+        val postContenido = post?.content
+            ?: throw IllegalStateException("Post no disponible para id $postId")
+
+        // 5) Decodificar ciphertext+tag (Base64 sin padding)
+        val noPad = Base64.withPadding(Base64.PaddingOption.ABSENT)
+        val encryptedFull: ByteArray = noPad.decode(postContenido)
+
+        // 7) Desencriptar con la clave y devolver texto
+        val plainBytes: ByteArray = clave.cipher().decrypt(encryptedFull)
         return plainBytes.decodeToString()
     }
 }

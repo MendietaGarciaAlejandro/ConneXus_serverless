@@ -21,7 +21,7 @@ interface ISupabasePostsRepositorio {
 class SupabasePostsRepositorio : ISupabasePostsRepositorio {
 
     private val supabaseClient = instanciaSupabaseClient( tieneStorage = true, tieneAuth = false, tieneRealtime = true, tienePostgrest = true)
-    private val nombreTabla = "posts"
+    private val nombreTabla = "post"
 
     override fun getPosts() = flow {
         val response = supabaseClient
@@ -32,7 +32,7 @@ class SupabasePostsRepositorio : ISupabasePostsRepositorio {
     }
 
     override fun getPostPorId(idPost: String) = flow {
-        val tableWithFilter = "$nombreTabla?id=eq.$idPost"
+        val tableWithFilter = "$nombreTabla?idpost=eq.$idPost"
         val response = supabaseClient
             .from(tableWithFilter)
             .select()
