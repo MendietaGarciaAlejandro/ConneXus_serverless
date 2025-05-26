@@ -36,6 +36,8 @@ import kotlinx.coroutines.launch
 import org.connexuss.project.comunicacion.Hilo
 import org.connexuss.project.comunicacion.Tema
 import org.connexuss.project.comunicacion.generateId
+import org.connexuss.project.encriptacion.EncriptacionSimetricaForo
+import org.connexuss.project.encriptacion.desencriptaTexto
 import org.connexuss.project.encriptacion.toHex
 import org.connexuss.project.interfaces.comun.LimitaTamanioAncho
 import org.connexuss.project.interfaces.navegacion.MiBottomBar
@@ -58,6 +60,7 @@ fun TemaScreen(
     val scope = rememberCoroutineScope()
     var showNewThreadDialog by remember { mutableStateOf(false) }
     var refreshTrigger by remember { mutableStateOf(0) }
+    val encHelper = remember { EncriptacionSimetricaForo() }
 
     //var aesKey by remember { mutableStateOf<AES.GCM.Key?>(null) }
     var isLoading by remember { mutableStateOf(true) }
@@ -111,6 +114,8 @@ fun TemaScreen(
         repoForo.getAll<Hilo>(tablaHilos)
             .map { list -> list.filter { it.idTema == temaId } }
     }
+
+    val posts by repoForo.getAll<Hilo>("post").collectAsState(initial = emptyList())
     val hilos by hilosFlow.collectAsState(initial = emptyList())
 
     // Carga inicial
@@ -124,6 +129,22 @@ fun TemaScreen(
     val repoTemas = SupabaseTemasRepositorio()
     val temaBuscado = repoTemas.getTemaPorId(temaId).collectAsState(initial = null).value
 
+    var nombreTemaDesencriptado: String by remember { mutableStateOf("(cargando tema…)") }
+    try {
+        scope.launch {
+            nombreTemaDesencriptado = if (temaBuscado != null && ClaveTemaHolder.clave != null) {
+                desencriptaTexto(
+                    temaBuscado.nombre,
+                    ClaveTemaHolder.clave!!
+                )
+            } else {
+                "(clave o tema no disponible)"
+            }
+        }
+    } catch (e: Exception) {
+        nombreTemaDesencriptado = "(clave o tema no disponible)"
+    }
+
     // Si el tema no es nulo, mostrar la lista de hilos
     when {
         tema != null -> {
@@ -132,7 +153,7 @@ fun TemaScreen(
                     CenterAlignedTopAppBar(
                         title = {
                             if (temaBuscado != null) {
-                                Text(temaBuscado.nombre)
+                                Text(nombreTemaDesencriptado)
                             }
                         },
                         navigationIcon = { BackButton(navController) },
@@ -168,7 +189,10 @@ fun TemaScreen(
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             items(hilos) { hilo ->
-                                HiloCard(hilo = hilo) {
+                                HiloCard(
+                                    hilo = hilo,
+                                    postCount = posts.count { it.idHilo == hilo.idHilo },
+                                ) {
                                     navController.navigate("hilo/${hilo.idHilo}")
                                 }
                             }
@@ -183,16 +207,10 @@ fun TemaScreen(
                             onConfirm = { titulo ->
                                 scope.launch {
                                     try {
-                                        val key = ClaveTemaHolder.clave ?: throw IllegalStateException("Clave no lista")
-                                        // Ciframos con nonce incluido
-                                        val encryptedFull = key.cipher().encrypt(titulo.encodeToByteArray())
-                                        val tituloHex = encryptedFull.toHex()
-                                        val nuevo = Hilo(
-                                            idHilo = generateId(),
-                                            nombre = tituloHex,
-                                            idTema = temaId
+                                        val nuevoHilo = encHelper.crearHiloSinPadding(
+                                            nombrePlain = titulo,
+                                            idTema = temaId,
                                         )
-                                        repoForo.addItem("hilo", nuevo)
                                         refreshTrigger++
                                         showNewThreadDialog = false
                                     } catch (e: Exception) {

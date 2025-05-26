@@ -14,6 +14,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalDateTime
 import org.connexuss.project.comunicacion.Hilo
 import org.connexuss.project.comunicacion.Post
 import org.connexuss.project.comunicacion.Tema
@@ -99,22 +100,24 @@ fun TemaCard(
 @Composable
 fun HiloCard(
     hilo: Hilo,
+    postCount: Int = 0,
     onClick: () -> Unit
 ) {
 
-    // Estado para la clave AES reconstruida
-    //var aesKey by remember { mutableStateOf<AES.GCM.Key?>(null) }
-    // Estado para el nombre desencriptado
-    var nombrePlano by remember { mutableStateOf("(cargando...)") }
-    //val scope = rememberCoroutineScope()
+    var nombrePlano by remember { mutableStateOf("(cargando…)") }
+
+    val encHelper = remember { EncriptacionSimetricaForo() }
+
+    val scope = rememberCoroutineScope()
 
     // Desencriptar el nombre del hilo
-    LaunchedEffect(ClaveTemaHolder.clave, hilo.nombre) {
-        if (ClaveTemaHolder.clave != null) {
-            val cipherBytes = hilo.nombre?.hexToByteArray()
-            val plainBytes  = cipherBytes?.let { ClaveTemaHolder.clave!!.cipher().decrypt(ciphertext = it) }
-            if (plainBytes != null) {
-                nombrePlano    = plainBytes.decodeToString()
+    scope.launch {
+        ClaveTemaHolder.clave?.let {
+            encHelper.leerHilo(
+                hiloId = hilo.idHilo,
+                clave = it
+            ).let { nombre ->
+                nombrePlano = nombre
             }
         }
     }
@@ -128,9 +131,26 @@ fun HiloCard(
         Column(modifier = Modifier.padding(16.dp)) {
             Text(text = nombrePlano, style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(2.dp))
-            Text(text = "ID Tema: ${hilo.idTema}", style = MaterialTheme.typography.bodySmall)
+            Text(
+                text = "$postCount ${if (postCount==1) "post" else "posts"}",
+                style = MaterialTheme.typography.bodySmall
+            )
+            //Text(text = "ID Tema: ${hilo.idTema}", style = MaterialTheme.typography.bodySmall)
         }
     }
+}
+
+/** Extensión para formatear enteros a dos dígitos (“04”, “12”, etc.) */
+private fun Int.twoDigits(): String = this.toString().padStart(2, '0')
+
+/** Extensión en LocalDateTime para el formato "HH:mm dd/MM/yyyy" */
+fun LocalDateTime.toFormattedString(): String {
+    return "${hour.twoDigits()}:${minute.twoDigits()} " +
+            "${dayOfMonth.twoDigits()}/${monthNumber.twoDigits()}/$year"
+}
+
+fun LocalDateTime.toFormattedStringSmall(): String {
+    return "${hour.twoDigits()}:${minute.twoDigits()}"
 }
 
 @OptIn(ExperimentalStdlibApi::class)
@@ -139,11 +159,18 @@ fun PostItem(post: Post) {
 
     var nombrePlano by remember { mutableStateOf("(cargando...)") }
 
-    LaunchedEffect(ClaveTemaHolder.clave, post.content) {
-        if (ClaveTemaHolder.clave != null) {
-            val cipherBytes = post.content.hexToByteArray()
-            val plainBytes  = cipherBytes.let { ClaveTemaHolder.clave!!.cipher().decrypt(ciphertext = it) }
-            nombrePlano    = plainBytes.decodeToString()
+    val encHelper = remember { EncriptacionSimetricaForo() }
+
+    val scope = rememberCoroutineScope()
+
+    scope.launch {
+        ClaveTemaHolder.clave?.let {
+            encHelper.leerPost(
+                postId = post.idPost,
+                clave = it
+            ).let { nombre ->
+                nombrePlano = nombre
+            }
         }
     }
 
@@ -157,7 +184,7 @@ fun PostItem(post: Post) {
                 Spacer(Modifier.width(8.dp))
                 Text(text = post.aliaspublico, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.weight(1f))
-                Text(text = post.fechaPost.toString(), style = MaterialTheme.typography.bodySmall)
+                Text(text = post.fechaPost.toFormattedString(), style = MaterialTheme.typography.bodySmall)
             }
             Spacer(Modifier.height(8.dp))
             Text(text = nombrePlano, style = MaterialTheme.typography.bodyLarge)
