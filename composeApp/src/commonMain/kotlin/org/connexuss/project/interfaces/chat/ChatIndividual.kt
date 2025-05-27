@@ -38,7 +38,10 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.connexuss.project.comunicacion.ConversacionesUsuario
 import org.connexuss.project.comunicacion.Mensaje
+import org.connexuss.project.encriptacion.encriptarContenido
+import org.connexuss.project.encriptacion.encriptarTexto
 import org.connexuss.project.encriptacion.toHex
+import org.connexuss.project.interfaces.foro.ClaveTemaHolder
 import org.connexuss.project.interfaces.navegacion.TopBarUsuario
 import org.connexuss.project.misc.ChatEnviarImagen
 import org.connexuss.project.misc.Supabase
@@ -80,6 +83,7 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
     var mensajeNuevo by remember { mutableStateOf("") }
 
     val secretoRepositorio = remember { SupabaseSecretosRepo() }
+    var textoMensajeBorrado: String? by mutableStateOf(null)
 
     var claveLista by remember { mutableStateOf(false) }
 
@@ -134,6 +138,9 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
             otroUsuarioNombre = otroUsuario?.getNombreCompletoMio()
             println("🙋 Nombre otro participante: $otroUsuarioNombre")
         }
+
+        textoMensajeBorrado =
+            ClaveSimetricaChats.clave?.let { encriptarTexto("Mensaje eliminado", it) }
     }
 
     if (chatId == null || participantes.isEmpty()) {
@@ -213,7 +220,7 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
                                         scope.launch {
                                             supabaseClient
                                                 .from("mensaje")
-                                                .update({ set("content", "Mensaje eliminado") }) {
+                                                .update({ set("content", textoMensajeBorrado) }) {
                                                     filter { eq("id", mensaje.id) }
                                                 }
                                         }
@@ -238,9 +245,14 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
                                 confirmButton = {
                                     TextButton(onClick = {
                                         scope.launch {
+                                            val nuevoContenidoEncriptado = ClaveSimetricaChats.clave?.let {
+                                                encriptarTexto(nuevoContenido,
+                                                    it
+                                                )
+                                            }
                                             supabaseClient
                                                 .from("mensaje")
-                                                .update({ set("content", nuevoContenido.trim()) }) {
+                                                .update({ set("content", nuevoContenidoEncriptado) }) {
                                                     filter { eq("id", mensaje.id) }
                                                 }
                                             showEditDialog = false
