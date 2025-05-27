@@ -1156,7 +1156,7 @@ class EncriptacionSimetricaChats {
             ?: throw IllegalStateException("Clave AES no inicializada")
         val fullEncrypted = key.encriptarFull(contenidoPlain.encodeToByteArray())
         val mensajeId = generateId()
-
+          
         // 3) Codificar ciphertext sin padding para la tabla temas
         val noPad = Base64.withPadding(Base64.PaddingOption.ABSENT)
         val contenidoB64 = noPad.encode(fullEncrypted)
