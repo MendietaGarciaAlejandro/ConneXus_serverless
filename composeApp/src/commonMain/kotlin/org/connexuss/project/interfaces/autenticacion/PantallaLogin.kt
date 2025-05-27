@@ -264,6 +264,7 @@ fun PantallaLogin(
                 ElevatedButton(
                     onClick = {
                         //TODO: Borrar autenticación local y ponerla solo con Supabase
+                        errorMessage = ""
                         scope.launch {
                             if (emailInterno.isBlank() || passwordInterno.isBlank()) {
                                 errorMessage = porFavorCompleta
@@ -339,10 +340,10 @@ fun PantallaLogin(
                                     }
                                 } catch (e: Exception) {
                                     // Error de autenticación en Supabase
-                                    errorMessage = "Error en autenticación: ${e.message}"
+                                    errorMessage = "Error en autenticación."
                                 }
                             } catch (e: Exception) {
-                                errorMessage = "Error: ${e.message}"
+                                errorMessage = "Error."
                             }
                         }
                     },
