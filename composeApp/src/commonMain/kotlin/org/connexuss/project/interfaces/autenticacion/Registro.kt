@@ -1,6 +1,7 @@
 package org.connexuss.project.interfaces.autenticacion
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -49,11 +50,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import connexus_serverless.composeapp.generated.resources.Res
 import connexus_serverless.composeapp.generated.resources.connexus
+import connexus_serverless.composeapp.generated.resources.visibilidadOff
+import connexus_serverless.composeapp.generated.resources.visibilidadOn
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
 import kotlinx.coroutines.launch
@@ -87,6 +91,12 @@ fun PantallaRegistro(navController: NavHostController) {
     val errorEmailYaRegistrado = traducir("error_email_ya_registrado")
     val usuario = Usuario()
     val scope = rememberCoroutineScope()
+
+    val visibilidadOn = Res.drawable.visibilidadOn
+    val visibilidadOff = Res.drawable.visibilidadOff
+    var verPass by remember { mutableStateOf(false) }
+    var verConfirmPass by remember { mutableStateOf(false) }
+
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -164,31 +174,67 @@ fun PantallaRegistro(navController: NavHostController) {
                         )
                     )
 
-                    OutlinedTextField(
-                        value = password,
-                        onValueChange = { password = it },
-                        label = { Text(traducir("contrasena")) },
-                        visualTransformation = PasswordVisualTransformation(),
+                    // Campo Password
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = MaterialTheme.colorScheme.primary,
-                            unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        OutlinedTextField(
+                            value = password,
+                            onValueChange = { password = it },
+                            label = { Text(traducir("contrasena")) },
+                            visualTransformation = if (verPass) VisualTransformation.None else PasswordVisualTransformation(),
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = if (verPass) KeyboardType.Text else KeyboardType.Password
+                            ),
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(end = 8.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                            )
                         )
-                    )
+                        Image(
+                            painter = painterResource(if (verPass) visibilidadOn else visibilidadOff),
+                            contentDescription = traducir("toggle_ver_contrasena"),
+                            modifier = Modifier
+                                .size(24.dp)
+                                .clickable { verPass = !verPass }
+                        )
+                    }
 
-                    OutlinedTextField(
-                        value = confirmPassword,
-                        onValueChange = { confirmPassword = it },
-                        label = { Text(traducir("confirmar_contrasena")) },
-                        visualTransformation = PasswordVisualTransformation(),
+                    // Campo Confirmar Password
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = MaterialTheme.colorScheme.primary,
-                            unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        OutlinedTextField(
+                            value = confirmPassword,
+                            onValueChange = { confirmPassword = it },
+                            label = { Text(traducir("confirmar_contrasena")) },
+                            visualTransformation = if (verConfirmPass) VisualTransformation.None else PasswordVisualTransformation(),
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = if (verConfirmPass) KeyboardType.Text else KeyboardType.Password
+                            ),
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(end = 8.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                            )
                         )
-                    )
+                        Image(
+                            painter = painterResource(if (verConfirmPass) visibilidadOn else visibilidadOff),
+                            contentDescription = traducir("toggle_ver_contrasena"),
+                            modifier = Modifier
+                                .size(24.dp)
+                                .clickable { verConfirmPass = !verConfirmPass }
+                        )
+                    }
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),

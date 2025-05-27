@@ -5,10 +5,12 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -33,13 +35,17 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import connexus_serverless.composeapp.generated.resources.Res
 import connexus_serverless.composeapp.generated.resources.connexus
+import connexus_serverless.composeapp.generated.resources.visibilidadOff
+import connexus_serverless.composeapp.generated.resources.visibilidadOn
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
 import kotlinx.coroutines.delay
@@ -86,6 +92,10 @@ fun PantallaLogin(
     val errorEmailNingunUsuario = traducir("error_email_ningun_usuario")
     val errorContrasenaIncorrecta = traducir("error_contrasena_incorrecta")
     val porFavorCompleta = traducir("por_favor_completa")
+
+    val visibilidadOn = Res.drawable.visibilidadOn
+    val visibilidadOff = Res.drawable.visibilidadOff
+    var verContra: Boolean by remember { mutableStateOf(false) }
 
     // Cargar email guardado si existe
     LaunchedEffect(Unit) {
@@ -144,18 +154,39 @@ fun PantallaLogin(
                     )
                 )
 
-                OutlinedTextField(
-                    value = passwordInterno,
-                    onValueChange = { passwordInterno = it },
-                    label = { Text(traducir("contrasena")) },
-                    visualTransformation = PasswordVisualTransformation(),
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    OutlinedTextField(
+                        value = passwordInterno,
+                        onValueChange = { passwordInterno = it },
+                        label = { Text(traducir("contrasena")) },
+                        // Cuando verContra == true mostramos texto plano, si no, puntos
+                        visualTransformation = if (verContra) VisualTransformation.None else PasswordVisualTransformation(),
+                        // Ajustamos también el tipo de teclado
+                        keyboardOptions = if (verContra) {
+                            KeyboardOptions(keyboardType = KeyboardType.Text)
+                        } else {
+                            KeyboardOptions(keyboardType = KeyboardType.Password)
+                        },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                        )
                     )
-                )
+                    Spacer(Modifier.width(8.dp))
+                    Image(
+                        painter = painterResource(if (verContra) visibilidadOn else visibilidadOff),
+                        contentDescription = traducir("toggle_ver_contrasena"),
+                        modifier = Modifier
+                            .size(24.dp)
+                            .clickable { verContra = !verContra }
+                    )
+                }
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
