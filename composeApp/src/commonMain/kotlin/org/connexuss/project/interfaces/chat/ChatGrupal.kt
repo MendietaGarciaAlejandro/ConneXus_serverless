@@ -101,7 +101,6 @@ fun mostrarChatGrupo(
         .collectAsState(initial = emptyList())
 
     val mensajes = todosLosMensajes.filter { it.idconversacion == chatId }
-    var textoMensajeBorrado: String? by mutableStateOf(null)
 
     LaunchedEffect(chatId) {
         if (chatId == null) return@LaunchedEffect
@@ -134,9 +133,6 @@ fun mostrarChatGrupo(
         // Cargamos el nombre del grupo
         val conversaciones = repo.getAll<Conversacion>("conversacion").first()
         chatNombre = conversaciones.find { it.id == chatId }?.nombre ?: "Grupo"
-
-        textoMensajeBorrado =
-            ClaveSimetricaChats.clave?.let { encriptarTexto("Mensaje eliminado", it) }
     }
 
     LaunchedEffect(chatNombre) {
@@ -226,6 +222,10 @@ fun mostrarChatGrupo(
                                     text = { Text("Eliminar") },
                                     onClick = {
                                         scope.launch {
+                                            val textoMensajeBorrado = escHelper.borrarMensaje(
+                                                mensajeId = mensaje.id,
+                                                clave = ClaveSimetricaChats.clave ?: throw IllegalStateException("Clave no lista")
+                                            )
                                             supabaseClient
                                                 .from("mensaje")
                                                 .update({ set("content", textoMensajeBorrado) }) {

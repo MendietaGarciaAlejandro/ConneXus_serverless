@@ -21,6 +21,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,7 +29,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import dev.whyoleg.cryptography.algorithms.AES
+import kotlinx.coroutines.launch
 import org.connexuss.project.comunicacion.Mensaje
+import org.connexuss.project.encriptacion.EncriptacionSimetricaChats
 import org.connexuss.project.interfaces.foro.toFormattedString
 import org.connexuss.project.interfaces.foro.toFormattedStringSmall
 import org.connexuss.project.misc.esAndroid
@@ -65,15 +68,32 @@ fun MensajeCard(
 ) {
     var nombrePlano by remember { mutableStateOf("(cargando...)") }
 
-    LaunchedEffect(ClaveSimetricaChats.clave, mensaje.content) {
-        if (ClaveSimetricaChats.clave != null) {
-            val cipherBytes = mensaje.content.hexToByteArray()
-            val plainBytes = cipherBytes.let {
-                ClaveSimetricaChats.clave!!.cipher().decrypt(ciphertext = it)
+    val scope = rememberCoroutineScope()
+
+    val escHelper = remember { EncriptacionSimetricaChats() }
+
+//    LaunchedEffect(ClaveSimetricaChats.clave, mensaje.content) {
+//        if (ClaveSimetricaChats.clave != null) {
+//            val cipherBytes = mensaje.content.hexToByteArray()
+//            val plainBytes = cipherBytes.let {
+//                ClaveSimetricaChats.clave!!.cipher().decrypt(ciphertext = it)
+//            }
+//            nombrePlano = plainBytes.decodeToString()
+//        }
+//    }
+
+    // Desencriptar el mensaje usando la clave simétrica
+    scope.launch {
+        ClaveSimetricaChats.clave?.let {
+            escHelper.leerMensaje(
+                mensajeId = mensaje.id,
+                clave = it
+            ).let { nombre ->
+                nombrePlano = nombre
             }
-            nombrePlano = plainBytes.decodeToString()
         }
     }
+
     Box(
         modifier = Modifier
             .fillMaxWidth()

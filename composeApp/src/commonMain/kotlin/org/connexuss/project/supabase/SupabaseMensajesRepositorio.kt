@@ -23,7 +23,7 @@ interface ISupabaseMensajesRepositorio {
 class SupabaseMensajesRepositorio : ISupabaseMensajesRepositorio {
 
     private val supabaseClient = instanciaSupabaseClient( tieneStorage = true, tieneAuth = false, tieneRealtime = true, tienePostgrest = true)
-    private val nombreTabla = "mensajes"
+    private val nombreTabla = "mensaje"
 
     override fun getMensajes() = flow {
         val response = supabaseClient

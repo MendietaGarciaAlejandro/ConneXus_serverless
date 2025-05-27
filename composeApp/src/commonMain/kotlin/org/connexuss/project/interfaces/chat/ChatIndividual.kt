@@ -82,7 +82,6 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
     var mensajeNuevo by remember { mutableStateOf("") }
 
     val secretoRepositorio = remember { SupabaseSecretosRepo() }
-    var textoMensajeBorrado: String? by mutableStateOf(null)
 
     var claveLista by remember { mutableStateOf(false) }
 
@@ -137,9 +136,6 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
             otroUsuarioNombre = otroUsuario?.getNombreCompletoMio()
             println("🙋 Nombre otro participante: $otroUsuarioNombre")
         }
-
-        textoMensajeBorrado =
-            ClaveSimetricaChats.clave?.let { encriptarTexto("Mensaje eliminado", it) }
     }
 
     if (chatId == null || participantes.isEmpty()) {
@@ -217,6 +213,10 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
                                     text = { Text("Eliminar") },
                                     onClick = {
                                         scope.launch {
+                                            val textoMensajeBorrado = escHelper.borrarMensaje(
+                                                mensajeId = mensaje.id,
+                                                clave = ClaveSimetricaChats.clave ?: throw IllegalStateException("Clave no lista")
+                                            )
                                             supabaseClient
                                                 .from("mensaje")
                                                 .update({ set("content", textoMensajeBorrado) }) {

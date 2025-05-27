@@ -49,6 +49,7 @@ import org.connexuss.project.comunicacion.Mensaje
 import org.connexuss.project.comunicacion.Post
 import org.connexuss.project.comunicacion.Tema
 import org.connexuss.project.comunicacion.generateId
+import org.connexuss.project.interfaces.chat.ClaveSimetricaChats
 import org.connexuss.project.interfaces.navegacion.DefaultTopBar
 import org.connexuss.project.interfaces.comun.LimitaTamanioAncho
 import org.connexuss.project.interfaces.foro.ClaveTemaHolder
@@ -1152,11 +1153,11 @@ class EncriptacionSimetricaChats {
         idUsuario: String
     ): Mensaje {
         // 1) Generar clave y cifrar
-        val key = ClaveTemaHolder.clave
+        val key = ClaveSimetricaChats.clave
             ?: throw IllegalStateException("Clave AES no inicializada")
         val fullEncrypted = key.encriptarFull(contenidoPlain.encodeToByteArray())
         val mensajeId = generateId()
-          
+
         // 3) Codificar ciphertext sin padding para la tabla temas
         val noPad = Base64.withPadding(Base64.PaddingOption.ABSENT)
         val contenidoB64 = noPad.encode(fullEncrypted)
@@ -1199,6 +1200,42 @@ class EncriptacionSimetricaChats {
         // 7) Desencriptar con la clave y devolver texto
         val plainBytes: ByteArray = clave.cipher().decrypt(encryptedFull)
         return plainBytes.decodeToString()
+    }
+
+    // Sustituye el texto del mensaje por el texto encriptado "Mensaje eliminado"
+    @OptIn(ExperimentalEncodingApi::class)
+    suspend fun borrarMensaje (
+        mensajeId: String,
+        clave: AES.GCM.Key
+    ): Mensaje {
+        val repoSupabaseMensajes = SupabaseMensajesRepositorio()
+
+        // 4) Recuperar solo el ciphertext de la tabla temas
+        val mensaje = repoSupabaseMensajes.getMensajePorId(mensajeId).first()
+            ?: throw IllegalStateException("Mensaje no disponible para id $mensajeId")
+
+        // 5) Decodificar ciphertext+tag (Base64 sin padding)
+        val noPad = Base64.withPadding(Base64.PaddingOption.ABSENT)
+        val encryptedFull: ByteArray = noPad.decode(mensaje.content)
+
+        // 7) Desencriptar con la clave y devolver texto
+        val plainBytes: ByteArray = clave.cipher().decrypt(encryptedFull)
+
+        // Actualizar el mensaje con "Mensaje eliminado"
+        val mensajeActualizado = plainBytes.decodeToString().replace(Regex(".+"), "Mensaje eliminado")
+        val mensajeCifrado = clave.encriptarFull(mensajeActualizado.encodeToByteArray())
+
+        // Actualizar el mensaje en la base de datos
+        val mensajeNuevo = Mensaje(
+            id = mensaje.id,
+            content = noPad.encode(mensajeCifrado),
+            idconversacion = mensaje.idconversacion,
+            idusuario = mensaje.idusuario
+        )
+
+        repoSupabaseMensajes.updateMensaje(mensajeNuevo)
+
+        return mensajeNuevo
     }
 }
 
