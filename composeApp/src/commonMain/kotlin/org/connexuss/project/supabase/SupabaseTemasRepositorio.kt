@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import org.connexuss.project.comunicacion.Post
 import org.connexuss.project.comunicacion.Tema
+import org.connexuss.project.misc.Supabase
 
 interface ISupabaseTemasRepositorio {
     fun getTemas(): Flow<List<Tema>>
@@ -21,12 +22,12 @@ interface ISupabaseTemasRepositorio {
 
 class SupabaseTemasRepositorio : ISupabaseTemasRepositorio {
 
-    private val supabaseClient = instanciaSupabaseClient( tieneStorage = true, tieneAuth = false, tieneRealtime = true, tienePostgrest = true)
-    private val nombreTabla = "temas"
+    //private val supabaseClient = instanciaSupabaseClient( tieneStorage = true, tieneAuth = false, tieneRealtime = true, tienePostgrest = true)
+    private val nombreTabla = "tema"
 
     // Implementación de los métodos de la interfaz
     override fun getTemas() = flow {
-        val response = supabaseClient
+        val response = Supabase.client
             .from(nombreTabla)
             .select()
             .decodeList<Tema>()
@@ -34,8 +35,8 @@ class SupabaseTemasRepositorio : ISupabaseTemasRepositorio {
     }
 
     override fun getTemaPorId(idTema: String) = flow {
-        val tableWithFilter = "$nombreTabla?id=eq.$idTema"
-        val response = supabaseClient
+        val tableWithFilter = "$nombreTabla?idtema=eq.$idTema"
+        val response = Supabase.client
             .from(tableWithFilter)
             .select()
             .decodeSingleOrNull<Tema>()
@@ -44,7 +45,7 @@ class SupabaseTemasRepositorio : ISupabaseTemasRepositorio {
 
     override fun getTemasPorIdBis(idTema: String) = flow {
         // Recojo todos los temas
-        val response = supabaseClient
+        val response = Supabase.client
             .from(nombreTabla)
             .select()
             .decodeList<Tema>()
@@ -54,7 +55,7 @@ class SupabaseTemasRepositorio : ISupabaseTemasRepositorio {
     }
 
     override suspend fun addTema(tema: Tema) {
-        val response = supabaseClient
+        val response = Supabase.client
             .from(nombreTabla)
             .insert(tema)
             .decodeSingleOrNull<Tema>()
@@ -71,7 +72,7 @@ class SupabaseTemasRepositorio : ISupabaseTemasRepositorio {
             "nombre" to tema.nombre,
         )
         try {
-            supabaseClient
+            Supabase.client
                 .from(nombreTabla)
                 .update(updateData) {
                     filter {
@@ -95,7 +96,7 @@ class SupabaseTemasRepositorio : ISupabaseTemasRepositorio {
 
     override suspend fun deleteTema(tema: Tema) {
         try {
-            supabaseClient
+            Supabase.client
                 .from(nombreTabla)
                 .delete {
                     filter {

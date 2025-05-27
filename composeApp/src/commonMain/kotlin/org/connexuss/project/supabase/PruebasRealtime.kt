@@ -26,7 +26,7 @@ import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.material.TextFieldDefaults
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -44,14 +44,12 @@ import io.github.jan.supabase.annotations.SupabaseExperimental
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.filter.FilterOperation
 import io.github.jan.supabase.realtime.selectAsFlow
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
-import org.connexuss.project.interfaces.DefaultTopBar
-import org.connexuss.project.interfaces.LimitaTamanioAncho
+import org.connexuss.project.interfaces.navegacion.DefaultTopBar
+import org.connexuss.project.interfaces.comun.LimitaTamanioAncho
 import org.connexuss.project.misc.Reporte
 import org.connexuss.project.misc.Supabase
 import org.connexuss.project.usuario.Usuario
@@ -131,7 +129,7 @@ fun ChatScreen(
                     mensajeInput = ""
                 }
             }) {
-                Icon(imageVector = Icons.AutoMirrored.Filled.Send, contentDescription = "Enviar")
+                Icon(imageVector = Icons.AutoMirrored.Rounded.Send, contentDescription = "Enviar")
             }
         }
     }

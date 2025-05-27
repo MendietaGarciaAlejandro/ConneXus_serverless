@@ -9,6 +9,7 @@ import io.github.jan.supabase.storage.Storage
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import org.connexuss.project.comunicacion.Conversacion
+import org.connexuss.project.misc.Supabase
 
 interface IConversacionesRepositorio {
     fun getConversaciones(): Flow<List<Conversacion>>
@@ -21,11 +22,11 @@ interface IConversacionesRepositorio {
 
 class SupabaseConversacionesRepositorio : IConversacionesRepositorio {
 
-    private val supabaseClient = instanciaSupabaseClient( tieneStorage = true, tieneAuth = false, tieneRealtime = true, tienePostgrest = true)
-    private val nombreTabla = "conversaciones"
+    //private val supabaseClient = instanciaSupabaseClient( tieneStorage = true, tieneAuth = false, tieneRealtime = true, tienePostgrest = true)
+    private val nombreTabla = "conversacion"
 
     override fun getConversaciones() = flow {
-        val response = supabaseClient
+        val response = Supabase.client
             .from(nombreTabla)
             .select()
             .decodeList<Conversacion>()
@@ -35,7 +36,7 @@ class SupabaseConversacionesRepositorio : IConversacionesRepositorio {
     override fun getConversacionPorId(id: String) = flow {
         // Construye la URL con el parámetro de consulta para filtrar por id
         val tableWithFilter = "$nombreTabla?id=eq.$id"
-        val response = supabaseClient
+        val response = Supabase.client
             .from(tableWithFilter)
             .select(Columns.ALL)
             .decodeSingleOrNull<Conversacion>()
@@ -43,7 +44,7 @@ class SupabaseConversacionesRepositorio : IConversacionesRepositorio {
     }
 
     override fun getConversacionPorIdBis(id: String) = flow {
-        val convers = supabaseClient
+        val convers = Supabase.client
             .from(nombreTabla)
             .select()
             .decodeList<Conversacion>()
@@ -53,7 +54,7 @@ class SupabaseConversacionesRepositorio : IConversacionesRepositorio {
 
     override suspend fun addConversacion(conversacion: Conversacion) {
         // Implementación para agregar un usuario a Supabase
-        val response = supabaseClient
+        val response = Supabase.client
             .from(nombreTabla)
             .insert(conversacion)
             .decodeSingleOrNull<Conversacion>()
@@ -70,7 +71,7 @@ class SupabaseConversacionesRepositorio : IConversacionesRepositorio {
             "nombre" to conversacion.nombre
         )
         try {
-            supabaseClient
+            Supabase.client
                 .from(nombreTabla)
                 .update(updateData) {
                     filter {
@@ -93,7 +94,7 @@ class SupabaseConversacionesRepositorio : IConversacionesRepositorio {
 
     override suspend fun deleteConversacion(conversacion: Conversacion) {
         try {
-            supabaseClient
+            Supabase.client
                 .from(nombreTabla)
                 .delete {
                     filter {

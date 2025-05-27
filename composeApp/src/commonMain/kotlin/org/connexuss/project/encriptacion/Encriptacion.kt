@@ -26,15 +26,41 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import dev.whyoleg.cryptography.BinarySize.Companion.bytes
 import dev.whyoleg.cryptography.CryptographyProvider
 import dev.whyoleg.cryptography.algorithms.AES
 import dev.whyoleg.cryptography.algorithms.EC
 import dev.whyoleg.cryptography.algorithms.ECDSA
 import dev.whyoleg.cryptography.algorithms.HMAC
+import dev.whyoleg.cryptography.algorithms.SHA256
 import dev.whyoleg.cryptography.algorithms.SHA512
+import io.ktor.utils.io.core.toByteArray
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import org.connexuss.project.interfaces.DefaultTopBar
-import org.connexuss.project.interfaces.LimitaTamanioAncho
+import kotlinx.coroutines.withContext
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import org.connexuss.project.comunicacion.Conversacion
+import org.connexuss.project.comunicacion.Hilo
+import org.connexuss.project.comunicacion.Post
+import org.connexuss.project.comunicacion.Tema
+import org.connexuss.project.comunicacion.generateId
+import org.connexuss.project.interfaces.navegacion.DefaultTopBar
+import org.connexuss.project.interfaces.comun.LimitaTamanioAncho
+import org.connexuss.project.interfaces.foro.ClaveTemaHolder
+import org.connexuss.project.misc.UsuarioPrincipal
+import org.connexuss.project.supabase.SupabaseConversacionesRepositorio
+import org.connexuss.project.supabase.SupabaseHiloRepositorio
+import org.connexuss.project.supabase.SupabasePostsRepositorio
+import org.connexuss.project.supabase.SupabaseSecretosRepo
+import org.connexuss.project.supabase.SupabaseTemasRepositorio
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 /**
  * Calcula el hash SHA-512 de un texto.
@@ -73,11 +99,61 @@ fun String.hexToByteArray(): ByteArray {
 /**
  * Genera una clave AES de 256 bits (una sola vez).
  */
-suspend fun generaClaveAES(): AES.GCM.Key {
+suspend fun generarClaveSimetricaAES(): AES.GCM.Key {
     val proveedor = CryptographyProvider.Default
     val algoritmoAES = proveedor.get(AES.GCM)
-    val claveGenerador = algoritmoAES.keyGenerator(AES.Key.Size.B256)
-    return claveGenerador.generateKey()
+    val generadorClave = algoritmoAES.keyGenerator(AES.Key.Size.B256)
+    return generadorClave.generateKey()
+}
+
+/**
+ * Encripta datos con una clave AES-GCM y devuelve el vector de inicialización y el texto cifrado.
+ *
+ * @param datosPlanos Los datos a encriptar.
+ * @return Un par con el vector de inicialización (IV) y el texto cifrado.
+ */
+suspend fun AES.GCM.Key.encriptarContenido(datosPlanos: ByteArray): Pair<ByteArray, ByteArray> {
+    val datosCifrados = this.cipher().encrypt(datosPlanos)
+    val vectorInicializacion = datosCifrados.sliceArray(0 until 12)
+    val textoCifrado = datosCifrados.sliceArray(12 until datosCifrados.size)
+    return vectorInicializacion to textoCifrado
+}
+
+/**
+ * Desencripta datos con una clave AES-GCM.
+ *
+ * @param iv El vector de inicialización (IV).
+ * @param textoCifrado El texto cifrado a desencriptar.
+ * @return Los datos desencriptados.
+ */
+suspend fun AES.GCM.Key.desencriptarContenido(iv: ByteArray, textoCifrado: ByteArray): ByteArray {
+    val cipher = this.cipher()
+    return cipher.decrypt(iv + textoCifrado)
+}
+
+/**
+ * Encripta una cadena de texto con una clave AES-GCM.
+ *
+ * @param textoPlano El texto a encriptar.
+ * @return Un par con el vector de inicialización (IV) y el texto cifrado.
+ */
+suspend fun AES.GCM.Key.encriptarTexto(textoPlano: String): Pair<ByteArray, ByteArray> {
+    return this.encriptarContenido(textoPlano.encodeToByteArray())
+}
+
+/**
+ * Desencripta un texto cifrado con una clave AES-GCM.
+ *
+ * @param iv El vector de inicialización (IV).
+ * @param textoCifrado El texto cifrado a desencriptar.
+ * @return El texto desencriptado como cadena.
+ */
+suspend fun AES.GCM.Key.desencriptarTexto(iv: ByteArray?, textoCifrado: ByteArray): String {
+    val datosDesencriptados = iv?.let { this.desencriptarContenido(it, textoCifrado) }
+    if (datosDesencriptados != null) {
+        return datosDesencriptados.decodeToString()
+    }
+    return ""
 }
 
 /**
@@ -327,7 +403,7 @@ fun PantallaPruebasEncriptacion(navController: NavHostController) {
 
     // Generamos las claves/pares una sola vez
     LaunchedEffect(Unit) {
-        claveAES = generaClaveAES()
+        claveAES = generarClaveSimetricaAES()
         claveHMAC = generaClaveHMAC(SHA512)
         keyPairECDSA = generaClaveECDSA()
     }
@@ -596,3 +672,596 @@ fun PantallaPruebasEncriptacion(navController: NavHostController) {
         }
     }
 }
+
+/**
+ * Clase para representar un secreto en la base de datos.
+ * Esta clase es utilizada para almacenar el resultado de la consulta a la tabla "vault.secrets".
+ */
+@Serializable
+data class Secreto @OptIn(ExperimentalUuidApi::class) constructor(
+    /** UUID único de la fila */
+    @SerialName("id")
+    val id: String = Uuid.random().toString(),
+
+    /** Nombre descriptivo de la clave */
+    @SerialName("name")
+    val name: String,
+
+    /** Descripción opcional */
+    @SerialName("description")
+    val description: String? = null,
+
+    /** Valor de la clave simétrica (hex o Base64) */
+    @SerialName("secret")
+    val secret: String,
+
+    /** UUID de la clave maestra en Vault o KMS */
+    @SerialName("key_id")
+    val keyId: String,
+
+    /** Nonce usado en el cifrado (hex)
+     *  Mapeado desde la columna bytea en formato hex
+     */
+    @SerialName("nonce")
+    val nonceHex: String,
+
+    /** Timestamp de creación (timestamptz) */
+    @SerialName("created_at")
+    val createdAt: Instant = Clock.System.now(),
+
+    /** Timestamp de última modificación (timestamptz) */
+    @SerialName("updated_at")
+    val updatedAt: Instant? = null
+)
+
+// Reutilizamos tu data class Secreto si tu función devuelve exactamente esas columnas:
+@Serializable
+data class SecretoInsertado(
+    @SerialName("id")
+    val id: String? = null,
+
+    @SerialName("name")
+    val name: String? = null,
+
+    @SerialName("description")
+    val description: String? = null,
+
+    @SerialName("secret")
+    val secret: String? = null,
+
+    @SerialName("key_id")
+    val keyId: String? = null,
+
+    @SerialName("nonce")
+    val nonce: String? = null,
+
+    @SerialName("created_at")
+    val createdAt: Instant? = null,
+
+    @SerialName("updated_at")
+    val updatedAt: Instant? = null
+)
+
+@Serializable
+data class SecretoRPC(
+    @SerialName("id")
+    val id: String? = null,
+
+    @SerialName("name")
+    val name: String? = null,
+
+    @SerialName("secret")
+    val secret: String? = null,
+
+    @SerialName("decrypted_secret")
+    val decryptedSecret: String? = null,
+
+    @SerialName("nonce")
+    val nonce: String? = null,
+)
+
+@OptIn(ExperimentalEncodingApi::class)
+suspend fun encriptarTexto(
+    textoPlano: String,
+    clave: AES.GCM.Key): String
+{
+    val noPad = Base64.withPadding(Base64.PaddingOption.ABSENT)
+    val bytesCifrados = clave.cipher().encrypt(textoPlano.toByteArray())
+    return noPad.encode(bytesCifrados)
+}
+
+@OptIn(ExperimentalEncodingApi::class)
+suspend fun desencriptaTexto(
+    textoCifrado: String,
+    clave: AES.GCM.Key
+): String {
+    val noPad = Base64.withPadding(Base64.PaddingOption.ABSENT)
+    val bytesCifrados = noPad.decode(textoCifrado)
+    val textoDesencriptado = clave.cipher().decrypt(bytesCifrados)
+    return textoDesencriptado.decodeToString()
+}
+
+class EncriptacionSimetricaForo {
+
+    /** Genera y devuelve una clave AES‑GCM de 256 bits */
+    private suspend fun generarClaveAES(): AES.GCM.Key {
+        val provider = CryptographyProvider.Default
+        return provider.get(AES.GCM)
+            .keyGenerator(AES.Key.Size.B256)
+            .generateKey()
+    }
+
+    /**
+     * Cifra `texto`, devuelve Pair(nonce, ciphertextConTag),
+     * donde nonce son los primeros 12 bytes de encrypted.
+     */
+    suspend fun AES.GCM.Key.encriptar(texto: ByteArray): ByteArray {
+        // encrypt() ya genera un nonce de 12 bytes y lo pone al principio
+        return this.cipher().encrypt(texto)
+    }
+
+    /**
+     * Cifra `plaintext`, devuelve Pair(nonce, ciphertextWithTag).
+     * El méto-do cipher().encrypt() ya devuelve nonce||ciphertext||tag.
+     * Aquí extraemos nonce (12 bytes) y el resto.
+     */
+    private suspend fun AES.GCM.Key.encriptarSplit(plaintext: ByteArray): Pair<ByteArray, ByteArray> {
+        val encrypted = this.cipher().encrypt(plaintext)
+        // 12 bytes de nonce (96 bits) según NIST
+        val nonce = encrypted.copyOfRange(0, 12)
+        val cipherAndTag = encrypted.copyOfRange(12, encrypted.size)
+        return nonce to cipherAndTag
+    }
+
+    @Serializable
+    data class VaultSecretInsert(
+
+        @SerialName("secret")
+        val secret: String,    // Base64(keyBytes)
+
+        @SerialName("name")
+        val name: String       // Identificador, p.ej. "tema-123"
+    )
+
+    @Serializable
+    data class VaultSecretSelect(
+
+        @SerialName("decrypted_secret")
+        val decryptedSecret: String
+    )
+
+    /**
+     * Dado el ciphertext con tag y el nonce, descifra.
+     */
+    suspend fun AES.GCM.Key.desencriptar(encrypted: ByteArray): ByteArray {
+        // decrypt() extrae internamente los primeros 12 bytes como nonce
+        return this.cipher().decrypt(encrypted)
+    }
+
+
+    /** Cifra y devuelve iv||ciphertext||tag juntos */
+    suspend fun AES.GCM.Key.encriptarFull(plaintext: ByteArray): ByteArray =
+        this.cipher().encrypt(plaintext)
+
+    /** Descifra iv||ciphertext||tag de un solo golpe */
+    suspend fun AES.GCM.Key.desencriptarFull(encrypted: ByteArray): ByteArray =
+        this.cipher().decrypt(encrypted)
+
+    /**
+     * Crea un tema:
+     * 1) Genera clave y cifra nombre.
+     * 2) Inserta clave + nonce en vault.secrets vía RPC.
+     * 3) Inserta tema cifrado en la tabla temas.
+     */
+    @OptIn(ExperimentalEncodingApi::class)
+    suspend fun crearTemaSinPadding(
+        nombrePlain: String,
+        secretsRpcRepo: SupabaseSecretosRepo
+    ): Tema {
+        // 1) Generar clave y cifrar
+        val key = generarClaveAES()
+        val fullEncrypted = key.encriptarFull(nombrePlain.encodeToByteArray())
+        val temaId = generateId()
+
+        // 2) Insertar secreto en vault via RPC
+        // convertimos key a Base64 estándar (con padding) o hex según tu función RPC
+        val keyB64 = Base64.encode(key.encodeToByteArray(AES.Key.Format.RAW))
+        try {
+            secretsRpcRepo.insertarSecretoSimpleConRpc(
+                temaId = temaId,
+                claveHex = keyB64
+            )
+        } catch (e: Exception) {
+            throw IllegalStateException("Error al insertar clave en Vault: ${e.message}")
+        }
+
+        // 3) Codificar ciphertext sin padding para la tabla temas
+        val noPad = Base64.withPadding(Base64.PaddingOption.ABSENT)
+        val nombreB64 = noPad.encode(fullEncrypted)
+
+        val repoTema = SupabaseTemasRepositorio()
+
+        val temaResultado = Tema(
+            idTema = temaId,
+            nombre = nombreB64
+        )
+
+        try {
+            repoTema.addTema(temaResultado)
+        } catch (e: Exception) {
+            // Ignora el error, ya que la inserción se hace en el RPC
+        }
+
+        return temaResultado
+    }
+
+    @OptIn(ExperimentalEncodingApi::class)
+    suspend fun crearHiloSinPadding(
+        nombrePlain: String,
+        idTema: String
+    ): Hilo {
+        // 1) Generar clave y cifrar
+        val key = ClaveTemaHolder.clave
+            ?: throw IllegalStateException("Clave AES no inicializada")
+        val fullEncrypted = key.encriptarFull(nombrePlain.encodeToByteArray())
+        val hiloId = generateId()
+
+        // 3) Codificar ciphertext sin padding para la tabla temas
+        val noPad = Base64.withPadding(Base64.PaddingOption.ABSENT)
+        val nombreB64 = noPad.encode(fullEncrypted)
+
+        val repoTema = SupabaseHiloRepositorio()
+
+        val hiloResultado = Hilo(
+            idHilo = hiloId,
+            nombre = nombreB64,
+            idTema = idTema,
+        )
+
+        try {
+            repoTema.addHilo(hiloResultado)
+        } catch (e: Exception) {
+            // Ignora el error, ya que la inserción se hace en el RPC
+        }
+
+        return hiloResultado
+    }
+
+    @OptIn(ExperimentalEncodingApi::class)
+    suspend fun crearPostSinPadding(
+        nombrePlain: String,
+        idHilo: String,
+        aliaspublico: String,
+        idFirmante: String
+    ): Post {
+        // 1) Generar clave y cifrar
+        val key = ClaveTemaHolder.clave
+            ?: throw IllegalStateException("Clave AES no inicializada")
+        val fullEncrypted = key.encriptarFull(nombrePlain.encodeToByteArray())
+        val postId = generateId()
+
+        // 3) Codificar ciphertext sin padding para la tabla temas
+        val noPad = Base64.withPadding(Base64.PaddingOption.ABSENT)
+        val contenido64 = noPad.encode(fullEncrypted)
+
+        val repoPosts = SupabasePostsRepositorio()
+
+            val postResultado = Post(
+                idPost = postId,
+                content = contenido64,
+                idHilo = idHilo,
+                aliaspublico = aliaspublico,
+                idFirmante = idFirmante,
+            )
+
+        try {
+            repoPosts.addPost(postResultado)
+        } catch (e: Exception) {
+            // Ignora el error, ya que la inserción se hace en el RPC
+        }
+
+        return postResultado
+    }
+
+    /**
+     * Recupera y desencripta un tema:
+     * 1) Recupera clave y nonce desde vault via Edge Function.
+     * 2) Recupera ciphertext de la tabla temas.
+     * 3) Reconstruye y desencripta.
+     */
+    @OptIn(ExperimentalEncodingApi::class)
+    suspend fun leerTema(
+        temaId: String,
+        secretsRpcRepo: SupabaseSecretosRepo
+    ): String {
+        // 1) Recuperar secreto desencriptado vía Edge Function
+        val secretoDesencriptado = secretsRpcRepo.recuperarSecretoSimpleRpc(temaId)
+            ?: throw IllegalStateException("Secreto no disponible para tema $temaId")
+
+        // 2) Decodificar clave RAW (Base64 estándar con padding)
+        val keyBytes = secretoDesencriptado.decryptedSecret.let { Base64.decode(it) }
+        val aesKey = keyBytes.let {
+            CryptographyProvider.Default
+                .get(AES.GCM)
+                .keyDecoder()
+                .decodeFromByteArray(AES.Key.Format.RAW, it)
+        }
+
+        val repoSupabaseTema = SupabaseTemasRepositorio()
+
+        // 4) Recuperar solo el ciphertext de la tabla temas
+        val tema = repoSupabaseTema.getTemaPorId(temaId).first()
+        val temaNombre = tema?.nombre
+            ?: throw IllegalStateException("Tema no disponible para id $temaId")
+
+        // 5) Decodificar ciphertext+tag (Base64 sin padding)
+        val noPad = Base64.withPadding(Base64.PaddingOption.ABSENT)
+        val encryptedFull: ByteArray = noPad.decode(temaNombre)
+
+        // 7) Desencriptar con la clave y devolver texto
+        val plainBytes: ByteArray = aesKey.cipher().decrypt(encryptedFull)
+        return plainBytes.decodeToString()
+    }
+
+    @OptIn(ExperimentalEncodingApi::class)
+    suspend fun leerHilo(
+        hiloId: String,
+        clave: AES.GCM.Key,
+    ): String {
+
+        val repoSupabaseHilo = SupabaseHiloRepositorio()
+
+        // 4) Recuperar solo el ciphertext de la tabla temas
+        val hilo = repoSupabaseHilo.getHiloPorId(hiloId).first()
+        val hiloNombre = hilo?.nombre
+            ?: throw IllegalStateException("Hilo no disponible para id $hiloId")
+
+        // 5) Decodificar ciphertext+tag (Base64 sin padding)
+        val noPad = Base64.withPadding(Base64.PaddingOption.ABSENT)
+        val encryptedFull: ByteArray = noPad.decode(hiloNombre)
+
+        // 7) Desencriptar con la clave y devolver texto
+        val plainBytes: ByteArray = clave.cipher().decrypt(encryptedFull)
+        return plainBytes.decodeToString()
+    }
+
+    @OptIn(ExperimentalEncodingApi::class)
+    suspend fun leerPost(
+        postId: String,
+        clave: AES.GCM.Key,
+    ): String {
+
+        val repoSupabaseTema = SupabasePostsRepositorio()
+
+        // 4) Recuperar solo el ciphertext de la tabla temas
+        val post = repoSupabaseTema.getPostPorId(postId).first()
+        val postContenido = post?.content
+            ?: throw IllegalStateException("Post no disponible para id $postId")
+
+        // 5) Decodificar ciphertext+tag (Base64 sin padding)
+        val noPad = Base64.withPadding(Base64.PaddingOption.ABSENT)
+        val encryptedFull: ByteArray = noPad.decode(postContenido)
+
+        // 7) Desencriptar con la clave y devolver texto
+        val plainBytes: ByteArray = clave.cipher().decrypt(encryptedFull)
+        return plainBytes.decodeToString()
+    }
+}
+
+class EncriptacionSimetricaChats {
+
+    /** Genera y devuelve una clave AES‑GCM de 256 bits */
+    private suspend fun generarClaveAES(): AES.GCM.Key {
+        val provider = CryptographyProvider.Default
+        return provider.get(AES.GCM)
+            .keyGenerator(AES.Key.Size.B256)
+            .generateKey()
+    }
+
+    /** Cifra y devuelve iv||ciphertext||tag juntos */
+    private suspend fun AES.GCM.Key.encriptarFull(plaintext: ByteArray): ByteArray =
+        this.cipher().encrypt(plaintext)
+
+    /** Descifra iv||ciphertext||tag de un solo golpe */
+    suspend fun AES.GCM.Key.desencriptarFull(encrypted: ByteArray): ByteArray =
+        this.cipher().decrypt(encrypted)
+
+    @OptIn(ExperimentalEncodingApi::class)
+    suspend fun crearChatSinPadding(
+        nombrePlain: String?,
+        secretsRpcRepo: SupabaseSecretosRepo
+    ): Conversacion {
+        // 1) Generar clave y cifrar
+        val key = generarClaveAES()
+        val fullEncrypted = nombrePlain?.let { key.encriptarFull(it.encodeToByteArray()) }
+        val chatId = generateId()
+
+        // 2) Insertar secreto en vault via RPC
+        // convertimos key a Base64 estándar (con padding) o hex según tu función RPC
+        val keyB64 = Base64.encode(key.encodeToByteArray(AES.Key.Format.RAW))
+        try {
+            secretsRpcRepo.insertarSecretoSimpleConRpc(
+                temaId = chatId,
+                claveHex = keyB64
+            )
+        } catch (e: Exception) {
+            throw IllegalStateException("Error al insertar clave en Vault: ${e.message}")
+        }
+
+        // 3) Codificar ciphertext sin padding para la tabla temas
+        val noPad = Base64.withPadding(Base64.PaddingOption.ABSENT)
+        val nombreB64 = fullEncrypted?.let { noPad.encode(it) }
+
+        val converRepo = SupabaseConversacionesRepositorio()
+
+        val converResultado = Conversacion(
+            id = chatId,
+            nombre = nombreB64
+        )
+
+        try {
+            converRepo.addConversacion(converResultado)
+        } catch (e: Exception) {
+            // Ignora el error, ya que la inserción se hace en el RPC
+        }
+
+        return converResultado
+    }
+
+    @OptIn(ExperimentalEncodingApi::class)
+    suspend fun leerConversacion(
+        converId: String,
+        secretsRpcRepo: SupabaseSecretosRepo
+    ): String? {
+        // 1) Recuperar secreto desencriptado vía Edge Function
+        val secretoDesencriptado = secretsRpcRepo.recuperarSecretoSimpleRpc(converId)
+            ?: throw IllegalStateException("Secreto no disponible para tema $converId")
+
+        // 2) Decodificar clave RAW (Base64 estándar con padding)
+        val keyBytes = secretoDesencriptado.decryptedSecret.let { Base64.decode(it) }
+        val aesKey = keyBytes.let {
+            CryptographyProvider.Default
+                .get(AES.GCM)
+                .keyDecoder()
+                .decodeFromByteArray(AES.Key.Format.RAW, it)
+        }
+
+        val repoSupabaseConvers = SupabaseConversacionesRepositorio()
+
+        // 4) Recuperar solo el ciphertext de la tabla temas
+        val conver = repoSupabaseConvers.getConversacionPorId(converId).first()
+        val converNombre = conver?.nombre
+
+        // 5) Decodificar ciphertext+tag (Base64 sin padding)
+        val noPad = Base64.withPadding(Base64.PaddingOption.ABSENT)
+        val encryptedFull: ByteArray? = converNombre?.let { noPad.decode(it) }
+
+        // 7) Desencriptar con la clave y devolver texto
+        val plainBytes: ByteArray? = encryptedFull?.let { aesKey.cipher().decrypt(it) }
+        if (plainBytes != null) {
+            return plainBytes.decodeToString()
+        }
+        return null
+    }
+}
+
+object EncriptacionResumenUsuario {
+    private val provider = CryptographyProvider.Default
+    private val SALT     = "MiSaltFijo1234".encodeToByteArray()
+
+    /** Público: genera el hash hex de `password`. */
+    suspend fun hashPassword(password: String): String = withContext(Dispatchers.Default) {
+        val sha256 = provider.get(SHA256)
+        val hasher = sha256.hasher()
+        val input  = SALT + password.encodeToByteArray()
+        hasher.hash(input).toString() // ByteString.toString() produce hex
+    }
+
+    /** Público: verifica `password` frente a `hashHex`. */
+    suspend fun checkPassword(password: String, hashHex: String): Boolean =
+        withContext(Dispatchers.Default) {
+            val candidateHash = hashPassword(password)
+            candidateHash == hashHex // Comparación directa de los hashes
+        }
+}
+
+//object GroupCrypto {
+//
+//    private val provider = CryptographyProvider.Default
+//
+//    /** 1) Cada usuario genera su par ECDH P‑256. */
+//    private suspend fun generateECDHKeyPair(): ECDH.KeyPair {
+//        val curve = EC.Curve.P256
+//        return provider.get(ECDH).keyPairGenerator(curve).generateKey()
+//    }
+//
+//    /**
+//     * Genera un par de claves ECDH y devuelve la clave privada y pública en formato RAW.
+//     * La clave privada es de 32 bytes y la pública es de 65 bytes.
+//     */
+//    suspend fun cretePublicAndPrivateKeyPair(): Pair<ByteArray, ByteArray> {
+//        val keyPair = generateECDHKeyPair()
+//        val privateKey = keyPair.privateKey.encodeToByteArray(EC.PrivateKey.Format.RAW)
+//        val publicKey = keyPair.publicKey.encodeToByteArray(EC.PublicKey.Format.RAW)
+//        return privateKey to publicKey
+//    }
+//
+//    /**
+//     * 2) Deriva la clave de grupo a partir de la clave privada del admin y la pública del miembro.
+//     *    – La clave de grupo es de 32 bytes.
+//     */
+//    suspend fun deriveGroupKey(
+//        adminPrivRaw: ByteArray,
+//        memberPubsRaw: List<ByteArray>,
+//        groupId: ByteArray
+//    ): ByteArray = withContext(Dispatchers.Default) {
+//        // 1) Obtén el algoritmo ECDH para la curva P‑256
+//        val ecdh = provider.get(ECDH)
+//        val curveP256 = EC.Curve.P256
+//
+//        // 2) Decodifica la clave privada RAW (32 bytes)
+//        val privKey = ecdh.privateKeyDecoder(curveP256)
+//            .decodeFromByteArray(EC.PrivateKey.Format.RAW, adminPrivRaw)
+//
+//        // 4) Decodifica la clave pública RAW (65 bytes, SEC1 uncompressed)
+//        val pubKey = ecdh.publicKeyDecoder(curveP256)
+//            .decodeFromByteArray(EC.PublicKey.Format.RAW, memberPubsRaw.first())
+//
+//        val sharedSecretRaw: ByteArray = ecdh.privateKeyDecoder(curveP256)
+//            .decodeFromByteArray(
+//                EC.PrivateKey.Format.RAW,
+//                privKey.encodeToByteArray(
+//                    format = EC.PrivateKey.Format.RAW))
+//            .sharedSecretGenerator().generateSharedSecretToByteArray(pubKey)
+//
+//        val tamaniaBInario: BinarySize = 32.bytes
+//
+//        val hkdf = provider.get(HKDF)
+//        hkdf.secretDerivation(
+//            SHA256,
+//            tamaniaBInario,
+//            null,
+//            groupId
+//        ).deriveSecretToByteArray(sharedSecretRaw)
+//    }
+//
+//    /**
+//     * 3) Cifra el mensaje con AES‑GCM y la clave de grupo.
+//     *    – El nonce es de 12 bytes (96 bits).
+//     */
+//    suspend fun encryptMessage(
+//        groupKey: ByteArray,
+//        plaintext: ByteArray,
+//        groupId: ByteArray
+//    ): ByteArray = withContext(Dispatchers.Default) {
+//        val aes = provider.get(AES.GCM)
+//        val key = aes.keyDecoder()
+//            .decodeFromByteArray(AES.Key.Format.RAW, groupKey)
+//
+//        // Cifra el mensaje, incluyendo groupId como AAD
+//        key.cipher().encrypt(
+//            plaintext       = plaintext,
+//            associatedData  = groupId
+//        )
+//    }
+//
+//    /**
+//     * 4) Desencripta el mensaje con AES‑GCM y la clave de grupo.
+//     *    – El nonce es de 12 bytes (96 bits).
+//     */
+//    suspend fun decryptMessage(
+//        groupKey: ByteArray,
+//        encryptedFull: ByteArray,
+//        groupId: ByteArray
+//    ): ByteArray = withContext(Dispatchers.Default) {
+//        val aes = provider.get(AES.GCM)
+//        val key = aes.keyDecoder()
+//            .decodeFromByteArray(AES.Key.Format.RAW, groupKey)
+//
+//        // Desencripta pasando el mismo groupId como AAD
+//        key.cipher().decrypt(
+//            ciphertext      = encryptedFull,
+//            associatedData  = groupId
+//        )
+//    }
+//}

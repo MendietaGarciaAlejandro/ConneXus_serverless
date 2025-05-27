@@ -96,7 +96,10 @@ data class Mensaje(
     val idusuario: String = generateId(),
 
     @SerialName("idconversacion")
-    val idconversacion: String
+    val idconversacion: String,
+
+    @SerialName("imageurl")
+    val imageUrl: String? = null
 )
 
 @Serializable

@@ -22,7 +22,7 @@ interface ISupabaseHiloRepositorio {
 class SupabaseHiloRepositorio : ISupabaseHiloRepositorio {
 
     private val supabaseClient = instanciaSupabaseClient( tieneStorage = true, tieneAuth = false, tieneRealtime = true, tienePostgrest = true)
-    private val nombreTabla = "hilos"
+    private val nombreTabla = "hilo"
 
     override fun getHilos() = flow {
         val response = supabaseClient
@@ -33,7 +33,7 @@ class SupabaseHiloRepositorio : ISupabaseHiloRepositorio {
     }
 
     override fun getHiloPorId(idHilo: String) = flow {
-        val tableWithFilter = "$nombreTabla?id=eq.$idHilo"
+        val tableWithFilter = "$nombreTabla?idhilo=eq.$idHilo"
         val response = supabaseClient
             .from(tableWithFilter)
             .select()

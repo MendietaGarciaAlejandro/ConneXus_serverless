@@ -5,8 +5,10 @@ import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.serialization.SerialName
 import org.connexuss.project.misc.Supabase
 import org.connexuss.project.usuario.Usuario
+import org.connexuss.project.usuario.UsuarioUpdate
 
 // Interfaz para simular una aplicacion CRUD que comunica con Supabase
 interface ISupabaseUsuariosRepositorio {
@@ -94,32 +96,22 @@ class SupabaseUsuariosRepositorio : ISupabaseUsuariosRepositorio {
         }
     }
 
-    @kotlinx.serialization.Serializable
-    data class UsuarioUpdate(
-        val nombre: String,
-        val correo: String,
-        val contrasennia: String,
-        val aliasprivado: String,
-        val aliaspublico: String,
-        val descripcion: String,
-        val activo: Boolean
-    )
-
-
     override suspend fun updateUsuario(usuario: Usuario) {
-        val updateData = UsuarioUpdate(
+        val updateData = Usuario(
             nombre = usuario.getNombreCompletoMio(),
             correo = usuario.getCorreoMio(),
             contrasennia = usuario.getContrasenniaMio(),
-            aliasprivado = usuario.getAliasPrivadoMio(),
-            aliaspublico = usuario.getAliasMio(),
+            aliasPrivado = usuario.getAliasPrivadoMio(),
+            aliasPublico = usuario.getAliasMio(),
             descripcion = usuario.getDescripcionMio(),
-            activo = usuario.getActivoMio()
+            activo = usuario.getActivoMio(),
+            imagenPerfilId = usuario.getImagenPerfilIdMio() // <- NUEVO
         )
 
+
         try {
-            println("updateData: $updateData")
-            println("idunico: ${usuario.getIdUnicoMio()}")
+            println("🟡 updateData: $updateData")
+            println("🆔 idunico: ${usuario.getIdUnicoMio()}")
 
             val updated = Supabase.client
                 .from(nombreTabla)
@@ -142,6 +134,7 @@ class SupabaseUsuariosRepositorio : ISupabaseUsuariosRepositorio {
             throw e
         }
     }
+
 
 
 

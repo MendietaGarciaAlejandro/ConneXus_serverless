@@ -54,7 +54,10 @@ data class Post(
     val idHilo: String,
 
     @SerialName("idfirmante")
-    val idFirmante: String
+    val idFirmante: String,
+
+    // @SerialName("creado_en")
+    //val creadoEn: LocalDateTime? = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
 )
 
 @Serializable
@@ -75,5 +78,8 @@ data class Tema(
     val idTema: String = generateId(),
 
     @SerialName("nombre")
-    val nombre: String
+    val nombre: String,
+
+//    @SerialName("claveSimetrica")
+//    val claveSimetrica: String? = null,
 )
