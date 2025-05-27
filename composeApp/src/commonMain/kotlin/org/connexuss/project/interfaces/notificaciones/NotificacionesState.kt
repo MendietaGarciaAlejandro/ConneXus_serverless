@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import org.connexuss.project.comunicacion.Post
 import org.connexuss.project.misc.Supabase
+import org.connexuss.project.misc.UsuarioPrincipal
 
 var currentHiloId = mutableStateOf("")
 var initialCount = mutableStateOf(0)
@@ -66,7 +67,9 @@ class HiloState(hiloId: String) {
         }.map { it.decodeRecord<Post>() }
             .onEach { change ->
                 if (change.idHilo == currentIdhilo) {
-                    onNewPost()
+                    if (change.idFirmante != UsuarioPrincipal?.idUnico) {
+                        onNewPost()
+                    }
                 }
             }.launchIn(scope)
 
