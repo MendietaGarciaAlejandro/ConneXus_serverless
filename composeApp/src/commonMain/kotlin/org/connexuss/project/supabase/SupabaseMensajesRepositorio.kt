@@ -64,12 +64,12 @@ class SupabaseMensajesRepositorio : ISupabaseMensajesRepositorio {
     }
 
     override suspend fun updateMensaje(mensaje: Mensaje) {
-        val updateData = mapOf(
-            "id" to mensaje.id,
-            "idusuario" to mensaje.idusuario,
-            "idconversacion" to mensaje.idconversacion,
-            "content" to mensaje.content,
-            "fechaMensaje" to mensaje.fechaMensaje
+        val updateData = Mensaje(
+            id = mensaje.id,
+            idusuario = mensaje.idusuario,
+            idconversacion = mensaje.idconversacion,
+            content = mensaje.content,
+            fechaMensaje = mensaje.fechaMensaje
         )
         try {
             supabaseClient
