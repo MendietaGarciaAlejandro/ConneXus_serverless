@@ -1207,7 +1207,7 @@ class EncriptacionSimetricaChats {
     suspend fun borrarMensaje (
         mensajeId: String,
         clave: AES.GCM.Key
-    ): Mensaje {
+    ): String {
         val repoSupabaseMensajes = SupabaseMensajesRepositorio()
 
         // 4) Recuperar solo el ciphertext de la tabla temas
@@ -1233,9 +1233,9 @@ class EncriptacionSimetricaChats {
             idusuario = mensaje.idusuario
         )
 
-        repoSupabaseMensajes.updateMensaje(mensajeNuevo)
+        //repoSupabaseMensajes.updateMensaje(mensajeNuevo)
 
-        return mensajeNuevo
+        return mensajeNuevo.content
     }
 }
 
