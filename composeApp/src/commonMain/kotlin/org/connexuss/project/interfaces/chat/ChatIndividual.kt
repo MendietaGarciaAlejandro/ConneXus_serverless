@@ -197,7 +197,7 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
                     ) {
                         MensajeCard(
                             mensaje = mensaje,
-                            esMio = esMio,
+                            esMio = esMio
                         )
 
                         if (esMio) {
