@@ -36,6 +36,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.connexuss.project.comunicacion.Conversacion
 import org.connexuss.project.comunicacion.Mensaje
+import org.connexuss.project.encriptacion.EncriptacionSimetricaChats
+import org.connexuss.project.encriptacion.desencriptaTexto
 import org.connexuss.project.encriptacion.encriptarTexto
 import org.connexuss.project.encriptacion.toHex
 import org.connexuss.project.interfaces.navegacion.TopBarGrupo
@@ -71,6 +73,7 @@ fun mostrarChatGrupo(
     var todosUsuarios by remember { mutableStateOf<List<Usuario>>(emptyList()) }
 
     val secretoRepositorio = remember { SupabaseSecretosRepo() }
+    val escHelper = remember { EncriptacionSimetricaChats() }
 
     var claveLista by remember { mutableStateOf(false) }
 
@@ -236,6 +239,9 @@ fun mostrarChatGrupo(
                         }
 
                         if (showEditDialog) {
+                            scope.launch {
+                                nuevoContenido = desencriptaTexto(nuevoContenido, ClaveSimetricaChats.clave ?: throw IllegalStateException("Clave no lista"))
+                            }
                             AlertDialog(
                                 onDismissRequest = { showEditDialog = false },
                                 title = { Text("Editar mensaje") },
@@ -292,19 +298,11 @@ fun mostrarChatGrupo(
                 BotonEnviarMensaje {
                     if (mensajeNuevo.isNotBlank()) {
                         scope.launch {
-                            val key = ClaveSimetricaChats.clave
-                                ?: throw IllegalStateException("Clave no lista")
-                            // Ciframos con nonce incluido
-                            val encryptedFull =
-                                key.cipher().encrypt(mensajeNuevo.encodeToByteArray())
-                            val contenidoHex = encryptedFull.toHex()
-
-                            val nuevo = Mensaje(
-                                content = contenidoHex,
-                                idusuario = currentUserId,
-                                idconversacion = chatId
+                            val nuevoMensaje = escHelper.crearMensajeSinPadding(
+                                contenidoPlain = mensajeNuevo,
+                                idConversacion = chatId,
+                                idUsuario = currentUserId,
                             )
-                            Supabase.client.from("mensaje").insert(nuevo)
                             mensajeNuevo = ""
                             println("📤 Mensaje enviado en realtime.")
                         }

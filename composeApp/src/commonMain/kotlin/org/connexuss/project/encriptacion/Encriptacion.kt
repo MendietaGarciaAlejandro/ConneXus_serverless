@@ -45,15 +45,16 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.connexuss.project.comunicacion.Conversacion
 import org.connexuss.project.comunicacion.Hilo
+import org.connexuss.project.comunicacion.Mensaje
 import org.connexuss.project.comunicacion.Post
 import org.connexuss.project.comunicacion.Tema
 import org.connexuss.project.comunicacion.generateId
 import org.connexuss.project.interfaces.navegacion.DefaultTopBar
 import org.connexuss.project.interfaces.comun.LimitaTamanioAncho
 import org.connexuss.project.interfaces.foro.ClaveTemaHolder
-import org.connexuss.project.misc.UsuarioPrincipal
 import org.connexuss.project.supabase.SupabaseConversacionesRepositorio
 import org.connexuss.project.supabase.SupabaseHiloRepositorio
+import org.connexuss.project.supabase.SupabaseMensajesRepositorio
 import org.connexuss.project.supabase.SupabasePostsRepositorio
 import org.connexuss.project.supabase.SupabaseSecretosRepo
 import org.connexuss.project.supabase.SupabaseTemasRepositorio
@@ -1142,6 +1143,62 @@ class EncriptacionSimetricaChats {
             return plainBytes.decodeToString()
         }
         return null
+    }
+
+    @OptIn(ExperimentalEncodingApi::class)
+    suspend fun crearMensajeSinPadding(
+        contenidoPlain: String,
+        idConversacion: String,
+        idUsuario: String
+    ): Mensaje {
+        // 1) Generar clave y cifrar
+        val key = ClaveTemaHolder.clave
+            ?: throw IllegalStateException("Clave AES no inicializada")
+        val fullEncrypted = key.encriptarFull(contenidoPlain.encodeToByteArray())
+        val mensajeId = generateId()
+
+        // 3) Codificar ciphertext sin padding para la tabla temas
+        val noPad = Base64.withPadding(Base64.PaddingOption.ABSENT)
+        val contenidoB64 = noPad.encode(fullEncrypted)
+
+        val repoMensajes = SupabaseMensajesRepositorio()
+
+        val mensajeResultado = Mensaje(
+            id = mensajeId,
+            content = contenidoB64,
+            idconversacion = idConversacion,
+            idusuario = idUsuario,
+        )
+
+        try {
+            repoMensajes.addMensaje(mensajeResultado)
+        } catch (e: Exception) {
+            // Ignora el error, ya que la inserción se hace en el RPC
+        }
+
+        return mensajeResultado
+    }
+
+    @OptIn(ExperimentalEncodingApi::class)
+    suspend fun leerMensaje(
+        mensajeId: String,
+        clave: AES.GCM.Key,
+    ): String {
+
+        val repoSupabaseMensajes = SupabaseMensajesRepositorio()
+
+        // 4) Recuperar solo el ciphertext de la tabla temas
+        val mensaje = repoSupabaseMensajes.getMensajePorId(mensajeId).first()
+        val mensajeContenido = mensaje?.content
+            ?: throw IllegalStateException("Mensaje no disponible para id $mensajeId")
+
+        // 5) Decodificar ciphertext+tag (Base64 sin padding)
+        val noPad = Base64.withPadding(Base64.PaddingOption.ABSENT)
+        val encryptedFull: ByteArray = noPad.decode(mensajeContenido)
+
+        // 7) Desencriptar con la clave y devolver texto
+        val plainBytes: ByteArray = clave.cipher().decrypt(encryptedFull)
+        return plainBytes.decodeToString()
     }
 }
 

@@ -38,13 +38,11 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.connexuss.project.comunicacion.ConversacionesUsuario
 import org.connexuss.project.comunicacion.Mensaje
-import org.connexuss.project.encriptacion.encriptarContenido
+import org.connexuss.project.encriptacion.EncriptacionSimetricaChats
+import org.connexuss.project.encriptacion.desencriptaTexto
 import org.connexuss.project.encriptacion.encriptarTexto
-import org.connexuss.project.encriptacion.toHex
-import org.connexuss.project.interfaces.foro.ClaveTemaHolder
 import org.connexuss.project.interfaces.navegacion.TopBarUsuario
 import org.connexuss.project.misc.ChatEnviarImagen
-import org.connexuss.project.misc.Supabase
 import org.connexuss.project.misc.UsuarioPrincipal
 import org.connexuss.project.misc.esAndroid
 import org.connexuss.project.supabase.SupabaseRepositorioGenerico
@@ -76,6 +74,7 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
 //        )
 //    }
     val scope = rememberCoroutineScope()
+    val escHelper = remember { EncriptacionSimetricaChats() }
 
     var participantes by remember { mutableStateOf<List<String>>(emptyList()) }
     var otroUsuarioNombre by remember { mutableStateOf<String?>(null) }
@@ -231,6 +230,9 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
                         }
 
                         if (showEditDialog) {
+                            scope.launch {
+                                nuevoContenido = desencriptaTexto(nuevoContenido, ClaveSimetricaChats.clave ?: throw IllegalStateException("Clave no lista"))
+                            }
                             AlertDialog(
                                 onDismissRequest = { showEditDialog = false },
                                 title = { Text("Editar mensaje") },
@@ -287,17 +289,11 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
                 BotonEnviarMensaje {
                     if (mensajeNuevo.isNotBlank()) {
                         scope.launch {
-                            val key = ClaveSimetricaChats.clave ?: throw IllegalStateException("Clave no lista")
-                            // Ciframos con nonce incluido
-                            val encryptedFull = key.cipher().encrypt(mensajeNuevo.encodeToByteArray())
-                            val contenidoHex = encryptedFull.toHex()
-
-                            val nuevo = Mensaje(
-                                content = contenidoHex,
-                                idusuario = currentUserId,
-                                idconversacion = chatId
+                            val nuevoMensaje = escHelper.crearMensajeSinPadding(
+                                contenidoPlain = mensajeNuevo,
+                                idConversacion = chatId,
+                                idUsuario = currentUserId,
                             )
-                            Supabase.client.from("mensaje").insert(nuevo)
                             mensajeNuevo = ""
                             println("📤 Mensaje enviado en realtime.")
                         }
