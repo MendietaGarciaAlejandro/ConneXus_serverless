@@ -43,9 +43,13 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import connexus_serverless.composeapp.generated.resources.Res
 import connexus_serverless.composeapp.generated.resources.connexus
+import io.github.jan.supabase.auth.auth
+import kotlinx.coroutines.launch
 import org.connexuss.project.interfaces.comun.LimitaTamanioAncho
 import org.connexuss.project.interfaces.comun.traducir
 import org.connexuss.project.interfaces.navegacion.DefaultTopBar
+import org.connexuss.project.interfaces.notificaciones.scope
+import org.connexuss.project.misc.Supabase
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
@@ -60,6 +64,7 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 fun PantallaRestablecer(navController: NavHostController) {
     var email by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
+    var mensaje by remember { mutableStateOf("") }
 
     // Realiza la traducción fuera del bloque onClick
     val errorCorreoVacio = traducir("error_correo_vacio")
@@ -132,12 +137,23 @@ fun PantallaRestablecer(navController: NavHostController) {
                     ) {
                         FilledTonalButton(
                             onClick = {
-                                errorMessage = if (email.isNotBlank()) {
-                                    ""
-                                } else {
-                                    errorCorreoVacio
+                                scope.launch {
+                                    if (email.isBlank()) {
+                                        errorMessage = "Introduce tu correo"
+                                        return@launch
+                                    }
+
+                                    try {
+                                        Supabase.client.auth.resetPasswordForEmail(email = email)
+                                        mensaje = "📧 Se ha enviado un correo para restablecer tu contraseña. Revisa tu bandeja de entrada."
+                                        errorMessage = ""
+                                    } catch (e: Exception) {
+                                        errorMessage = "❌ Error al enviar el correo: ${e.message}"
+                                        mensaje = ""
+                                    }
                                 }
-                            },
+                            }
+                            ,
                             modifier = Modifier.weight(1f)
                         ) {
                             Text(traducir("enviar_correo"))
