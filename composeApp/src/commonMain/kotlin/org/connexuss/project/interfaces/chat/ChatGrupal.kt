@@ -1,6 +1,8 @@
 package org.connexuss.project.interfaces.chat
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,6 +14,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -35,11 +39,13 @@ import io.github.jan.supabase.postgrest.from
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.connexuss.project.comunicacion.Conversacion
+import org.connexuss.project.comunicacion.ConversacionesUsuario
 import org.connexuss.project.comunicacion.Mensaje
 import org.connexuss.project.encriptacion.EncriptacionSimetricaChats
 import org.connexuss.project.encriptacion.desencriptaTexto
 import org.connexuss.project.encriptacion.encriptarTexto
 import org.connexuss.project.encriptacion.toHex
+import org.connexuss.project.interfaces.navegacion.DefaultTopBar
 import org.connexuss.project.interfaces.navegacion.TopBarGrupo
 import org.connexuss.project.misc.ChatEnviarImagen
 import org.connexuss.project.misc.Imagen
@@ -314,6 +320,73 @@ fun mostrarChatGrupo(
                         ChatEnviarImagen(
                             chatId = it,
                             currentUserId = currentUserId
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+@Composable
+fun mostrarParticipantesGrupo(
+    navController: NavHostController,
+    chatId: String
+) {
+    val currentUserId = UsuarioPrincipal?.idUnico ?: return
+    val repo = remember { SupabaseRepositorioGenerico() }
+    var participantes by remember { mutableStateOf<List<Usuario>>(emptyList()) }
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(chatId) {
+        try {
+            val relaciones = repo.getAll<ConversacionesUsuario>("conversaciones_usuario").first()
+            val ids = relaciones
+                .filter { it.idconversacion == chatId }
+                .map { it.idusuario }
+
+            val todosUsuarios = repo.getAll<Usuario>("usuario").first()
+            participantes = todosUsuarios.filter { it.idUnico in ids }
+        } catch (e: Exception) {
+            println("❌ Error cargando participantes: ${e.message}")
+        }
+    }
+
+    Scaffold(
+        topBar = {
+            DefaultTopBar(
+                title = "Participantes del grupo",
+                navController = navController,
+                showBackButton = true,
+                irParaAtras = true
+            )
+        }
+    ) { padding ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(participantes) { usuario ->
+                ElevatedCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            navController.navigate("mostrarPerfilUsuario/${usuario.idUnico}")
+                        }
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = "Nombre: ${usuario.getNombreCompletoMio()}",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Text(
+                            text = "Alias: ${usuario.getAliasMio()}",
+                            style = MaterialTheme.typography.bodyLarge
                         )
                     }
                 }
