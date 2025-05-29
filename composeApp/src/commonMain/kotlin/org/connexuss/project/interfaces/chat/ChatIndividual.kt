@@ -32,6 +32,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
@@ -142,10 +147,6 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
         mensajesDesencriptados = desencriptados
     }
 
-
-
-
-
     LaunchedEffect(chatId) {
         if (chatId == null) return@LaunchedEffect
 
@@ -190,6 +191,18 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
     if (chatId == null || participantes.isEmpty()) {
         ChatLoading(Modifier.fillMaxSize())
         return
+    }
+
+    fun enviarMensaje() {
+        scope.launch {
+            val nuevoMensaje = escHelper.crearMensajeSinPadding(
+                contenidoPlain = mensajeNuevo,
+                idConversacion = chatId,
+                idUsuario = currentUserId,
+            )
+            mensajeNuevo = ""
+            println("📤 Mensaje enviado en realtime.")
+        }
     }
 
     Scaffold(
@@ -334,22 +347,23 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 OutlinedTextField(
+                    singleLine = true,
                     value = mensajeNuevo,
                     onValueChange = { mensajeNuevo = it },
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f)
+                        .onKeyEvent { event ->
+                            if (event.key == Key.Enter && event.type == KeyEventType.KeyUp) {
+                                enviarMensaje()
+                                true
+                            } else {
+                                false
+                            }
+                        },
                     placeholder = { Text("Escribe un mensaje...") }
                 )
                 BotonEnviarMensaje {
                     if (mensajeNuevo.isNotBlank()) {
-                        scope.launch {
-                            val nuevoMensaje = escHelper.crearMensajeSinPadding(
-                                contenidoPlain = mensajeNuevo,
-                                idConversacion = chatId,
-                                idUsuario = currentUserId,
-                            )
-                            mensajeNuevo = ""
-                            println("📤 Mensaje enviado en realtime.")
-                        }
+                        enviarMensaje()
                     }
                 }
 

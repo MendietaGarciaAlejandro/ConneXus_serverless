@@ -119,6 +119,7 @@ fun PantallaRestablecer(navController: NavHostController) {
                     }
 
                     OutlinedTextField(
+                        singleLine = true,
                         value = email,
                         onValueChange = { email = it },
                         label = { Text(traducir("email")) },

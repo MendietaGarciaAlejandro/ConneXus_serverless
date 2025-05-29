@@ -6,6 +6,12 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 
 @Composable
 fun CrearElementoDialog(
@@ -20,9 +26,20 @@ fun CrearElementoDialog(
         title = { Text(title) },
         text = {
             OutlinedTextField(
+                singleLine = true,
                 value = text,
                 onValueChange = { text = it },
-                label = { Text(label) }
+                label = { Text(label) },
+                modifier = Modifier.onKeyEvent { event ->
+                    if (event.key == Key.Enter && event.type == KeyEventType.KeyUp) {
+                        if (text.isNotBlank()) {
+                            onConfirm(text)
+                        }
+                        true
+                    } else {
+                        false
+                    }
+                },
             )
         },
         confirmButton = {

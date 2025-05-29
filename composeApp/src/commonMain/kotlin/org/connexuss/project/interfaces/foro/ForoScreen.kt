@@ -70,6 +70,32 @@ fun ForoScreen(navController: NavHostController) {
 
     //val secretsRepo = remember { SupabaseSecretosRepo() }
 
+    fun crearTema(nombre: String) {
+        scope.launch {
+            try {
+                // 1) Llamada simplificada: genera clave, inserta en vault y en temas
+                val temaResultado = encHelper.crearTemaSinPadding(
+                    nombrePlain  = nombre,
+                    secretsRpcRepo = SupabaseSecretosRepo()
+                )
+
+                // 2) Refresca UI y muestra notificación
+                refreshTrigger.value++
+                snackbarHostState.showSnackbar(
+                    "Tema '$nombre' creado correctamente",
+                    duration = SnackbarDuration.Short
+                )
+            } catch (e: Exception) {
+                snackbarHostState.showSnackbar(
+                    "Error al crear tema: ${e.message}",
+                    duration = SnackbarDuration.Long
+                )
+            } finally {
+                showNewTopicDialog = false
+            }
+        }
+    }
+
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
@@ -128,29 +154,7 @@ fun ForoScreen(navController: NavHostController) {
                     label = "Nombre del tema",
                     onDismiss = { showNewTopicDialog = false },
                     onConfirm = { nombre ->
-                        scope.launch {
-                            try {
-                                // 1) Llamada simplificada: genera clave, inserta en vault y en temas
-                                val temaResultado = encHelper.crearTemaSinPadding(
-                                    nombrePlain  = nombre,
-                                    secretsRpcRepo = SupabaseSecretosRepo()
-                                )
-
-                                // 2) Refresca UI y muestra notificación
-                                refreshTrigger.value++
-                                snackbarHostState.showSnackbar(
-                                    "Tema '$nombre' creado correctamente",
-                                    duration = SnackbarDuration.Short
-                                )
-                            } catch (e: Exception) {
-                                snackbarHostState.showSnackbar(
-                                    "Error al crear tema: ${e.message}",
-                                    duration = SnackbarDuration.Long
-                                )
-                            } finally {
-                                showNewTopicDialog = false
-                            }
-                        }
+                        crearTema(nombre)
                     }
                 )
             }
