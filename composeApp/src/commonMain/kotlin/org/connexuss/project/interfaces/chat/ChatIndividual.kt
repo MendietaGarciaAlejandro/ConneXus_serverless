@@ -233,7 +233,7 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
                     .weight(1f)
                     .padding(8.dp)
             ) {
-                items(mensajesDesencriptados) { mensaje ->
+                items(mensajesDesencriptados.sortedBy { it.fechaMensaje }) { mensaje ->
                     val esMio = mensaje.idusuario == currentUserId
                     var expanded by remember { mutableStateOf(false) }
                     var showEditDialog by remember { mutableStateOf(false) }
