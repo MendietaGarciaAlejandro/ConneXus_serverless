@@ -112,6 +112,41 @@ fun mostrarChatGrupo(
         .collectAsState(initial = emptyList())
 
     val mensajes = todosLosMensajes.filter { it.idconversacion == chatId }
+    var mensajesDesencriptados by remember { mutableStateOf<List<Mensaje>>(emptyList()) }
+
+    LaunchedEffect(mensajes, claveLista) {
+        if (!claveLista) return@LaunchedEffect
+
+        val desencriptados = mensajes.map { mensaje ->
+            val content = mensaje.content?.trim()
+
+            // Validar contenido
+            val safeToDecrypt = mensaje.imageUrl == null &&
+                    !content.isNullOrBlank() &&
+                    content.length >= 24 &&
+                    content.matches(Regex("^[A-Za-z0-9+/=]+$")) &&
+                    try {
+                        val noPad = Base64.withPadding(Base64.PaddingOption.ABSENT)
+                        noPad.decode(content).size >= 16 // mínimo para IV + algo
+                    } catch (e: Exception) {
+                        false
+                    }
+
+            if (safeToDecrypt) {
+                try {
+                    val textoPlano = desencriptaTexto(content!!, ClaveSimetricaChats.clave!!)
+                    mensaje.copy(content = textoPlano)
+                } catch (e: Exception) {
+                    println("❌ Error al desencriptar id=${mensaje.id}: ${e.message}")
+                    mensaje.copy(content = "⚠️ Error al leer mensaje")
+                }
+            } else {
+                mensaje
+            }
+        }
+
+        mensajesDesencriptados = desencriptados
+    }
 
     LaunchedEffect(chatId) {
         if (chatId == null) return@LaunchedEffect
@@ -199,7 +234,7 @@ fun mostrarChatGrupo(
                     .weight(1f)
                     .padding(8.dp)
             ) {
-                items(mensajes.sortedBy { it.fechaMensaje }) { mensaje ->
+                items(mensajesDesencriptados.sortedBy { it.fechaMensaje }) { mensaje ->
                     val esMio = mensaje.idusuario == currentUserId
                     var expanded by remember { mutableStateOf(false) }
                     var showEditDialog by remember { mutableStateOf(false) }

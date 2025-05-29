@@ -125,7 +125,8 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
                     content.length >= 24 &&
                     content.matches(Regex("^[A-Za-z0-9+/=]+$")) &&
                     try {
-                        Base64.decode(content).size >= 16 // mínimo para IV + algo
+                        val noPad = Base64.withPadding(Base64.PaddingOption.ABSENT)
+                        noPad.decode(content).size >= 16 // mínimo para IV + algo
                     } catch (e: Exception) {
                         false
                     }
@@ -142,7 +143,6 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
                 mensaje
             }
         }
-
 
         mensajesDesencriptados = desencriptados
     }
