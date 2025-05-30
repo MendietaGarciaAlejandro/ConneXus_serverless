@@ -1190,8 +1190,11 @@ class EncriptacionSimetricaChats {
 
         // 4) Recuperar solo el ciphertext de la tabla temas
         val mensaje = repoSupabaseMensajes.getMensajePorId(mensajeId).first()
+        // 2) Si no tiene content, devolvemos cadena vacía
         val mensajeContenido = mensaje?.content
-            ?: throw IllegalStateException("Mensaje no disponible para id $mensajeId")
+        if (mensajeContenido.isNullOrBlank()) {
+            return ""
+        }
 
         // 5) Decodificar ciphertext+tag (Base64 sin padding)
         val noPad = Base64.withPadding(Base64.PaddingOption.ABSENT)

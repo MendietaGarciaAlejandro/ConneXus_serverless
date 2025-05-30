@@ -56,40 +56,45 @@ class HiloState(hiloId: String) {
     var newPostsCount: MutableState<Int> = mutableStateOf(0)
 
     private val scope: CoroutineScope = MainScope()
+    // Creamos un solo canal que reusaremos
     private val channel: RealtimeChannel =
         Supabase.client.realtime.channel("public:post")
 
-    private suspend fun startListeningToNewPosts(currentIdhilo: String) {
-        val channel = Supabase.client.realtime.channel("public:post")
-
-        channel.postgresChangeFlow<PostgresAction.Insert>("public") {
-            table = "post"
-        }.map { it.decodeRecord<Post>() }
-            .onEach { change ->
-                if (change.idHilo == currentIdhilo) {
-                    if (change.idFirmante != UsuarioPrincipal?.idUnico) {
-                        onNewPost()
-                    }
+    private fun startListeningToNewPosts(currentIdhilo: String) {
+        runCatching {
+            channel
+                .postgresChangeFlow<PostgresAction.Insert>(schema = "public") {
+                    table = "post"
                 }
-            }.launchIn(scope)
-
-        channel.subscribe()
+                .map { it.decodeRecord<Post>() }
+                .filter { it.idHilo == currentIdhilo }
+                .filter { it.idFirmante != UsuarioPrincipal?.idUnico }
+                .onEach { newPostsCount.value++ }
+                .launchIn(scope)
+        }.onFailure { e ->
+            // Si ya estás suscrito o cualquier otro fallo, simplemente lo ignoras
+            println("⚠️ No se pudo iniciar el flow de cambios: ${e.message}")
+        }
     }
 
     init {
         scope.launch {
-            startListeningToNewPosts(
-                hiloId.toString()
-            )
+            startListeningToNewPosts(hiloId)
+            // Suscríbete SOLO si no ha habido excepción al montar el flow
+            try {
+                channel.subscribe()
+            } catch (e: Exception) {
+                // loguea, pero no rompas la app
+                println("⚠️ No se pudo subscribe al canal de realtime: ${e.message}")
+            }
         }
     }
 
     /** Llamar para detener la escucha (por ejemplo al desmontar el Composable) */
     suspend fun stop() {
-        channel.unsubscribe()
-        scope.cancel(
-            "HiloState: stop()"
-        )
+        // intenta limpiar, pero sin lanzar
+        runCatching { channel.unsubscribe() }
+        scope.cancel()
     }
 
     /** Resetear contador (por ejemplo al pulsar refresh) */
