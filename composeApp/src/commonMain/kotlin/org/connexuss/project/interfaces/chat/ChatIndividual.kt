@@ -1,5 +1,7 @@
 package org.connexuss.project.interfaces.chat
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -7,8 +9,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -26,6 +30,13 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
@@ -34,16 +45,21 @@ import connexus_serverless.composeapp.generated.resources.connexus
 import dev.whyoleg.cryptography.CryptographyProvider
 import dev.whyoleg.cryptography.algorithms.AES
 import io.github.jan.supabase.postgrest.from
+import io.ktor.utils.io.core.toByteArray
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.connexuss.project.comunicacion.ConversacionesUsuario
 import org.connexuss.project.comunicacion.Mensaje
-import org.connexuss.project.encriptacion.toHex
+import org.connexuss.project.encriptacion.EncriptacionSimetricaChats
+import org.connexuss.project.encriptacion.desencriptaTexto
+import org.connexuss.project.encriptacion.encriptarTexto
 import org.connexuss.project.interfaces.navegacion.TopBarUsuario
 import org.connexuss.project.misc.ChatEnviarImagen
-import org.connexuss.project.misc.Supabase
 import org.connexuss.project.misc.UsuarioPrincipal
 import org.connexuss.project.misc.esAndroid
+import org.connexuss.project.misc.esDesktop
+import org.connexuss.project.misc.esWeb
+import org.connexuss.project.misc.rememberImagePainter
 import org.connexuss.project.supabase.SupabaseRepositorioGenerico
 import org.connexuss.project.supabase.SupabaseSecretosRepo
 import org.connexuss.project.supabase.subscribeTableAsFlow
@@ -73,6 +89,7 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
 //        )
 //    }
     val scope = rememberCoroutineScope()
+    val escHelper = remember { EncriptacionSimetricaChats() }
 
     var participantes by remember { mutableStateOf<List<String>>(emptyList()) }
     var otroUsuarioNombre by remember { mutableStateOf<String?>(null) }
@@ -94,6 +111,41 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
     val mensajes = todosLosMensajes
         .filter { it.idconversacion == chatId }
         .sortedBy { it.fechaMensaje }
+    var mensajesDesencriptados by remember { mutableStateOf<List<Mensaje>>(emptyList()) }
+
+    LaunchedEffect(mensajes, claveLista) {
+        if (!claveLista) return@LaunchedEffect
+
+        val desencriptados = mensajes.map { mensaje ->
+            val content = mensaje.content?.trim()
+
+            // Validar contenido
+            val safeToDecrypt = mensaje.imageUrl == null &&
+                    !content.isNullOrBlank() &&
+                    content.length >= 24 &&
+                    content.matches(Regex("^[A-Za-z0-9+/=]+$")) &&
+                    try {
+                        val noPad = Base64.withPadding(Base64.PaddingOption.ABSENT)
+                        noPad.decode(content).size >= 16 // mínimo para IV + algo
+                    } catch (e: Exception) {
+                        false
+                    }
+
+            if (safeToDecrypt) {
+                try {
+                    val textoPlano = desencriptaTexto(content!!, ClaveSimetricaChats.clave!!)
+                    mensaje.copy(content = textoPlano)
+                } catch (e: Exception) {
+                    println("❌ Error al desencriptar id=${mensaje.id}: ${e.message}")
+                    mensaje.copy(content = "⚠️ Error al leer mensaje")
+                }
+            } else {
+                mensaje
+            }
+        }
+
+        mensajesDesencriptados = desencriptados
+    }
 
     LaunchedEffect(chatId) {
         if (chatId == null) return@LaunchedEffect
@@ -141,6 +193,18 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
         return
     }
 
+    fun enviarMensaje() {
+        scope.launch {
+            val nuevoMensaje = escHelper.crearMensajeSinPadding(
+                contenidoPlain = mensajeNuevo,
+                idConversacion = chatId,
+                idUsuario = currentUserId,
+            )
+            mensajeNuevo = ""
+            println("📤 Mensaje enviado en realtime.")
+        }
+    }
+
     Scaffold(
         topBar = {
             TopBarUsuario(
@@ -169,7 +233,7 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
                     .weight(1f)
                     .padding(8.dp)
             ) {
-                items(mensajes) { mensaje ->
+                items(mensajesDesencriptados.sortedBy { it.fechaMensaje }) { mensaje ->
                     val esMio = mensaje.idusuario == currentUserId
                     var expanded by remember { mutableStateOf(false) }
                     var showEditDialog by remember { mutableStateOf(false) }
@@ -188,42 +252,53 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
                             },
                         contentAlignment = if (esMio) Alignment.CenterEnd else Alignment.CenterStart
                     ) {
-                        MensajeCard(
-                            mensaje = mensaje,
-                            esMio = esMio,
-                        )
 
-                        if (esMio) {
-                            DropdownMenu(
-                                expanded = expanded,
-                                onDismissRequest = { expanded = false }
-                            ) {
-                                DropdownMenuItem(
-                                    text = { Text("Editar") },
-                                    onClick = {
-                                        nuevoContenido = mensaje.content
-                                        showEditDialog = true
-                                        expanded = false
-                                    }
-                                )
-
-                                DropdownMenuItem(
-                                    text = { Text("Eliminar") },
-                                    onClick = {
-                                        scope.launch {
-                                            supabaseClient
-                                                .from("mensaje")
-                                                .update({ set("content", "Mensaje eliminado") }) {
-                                                    filter { eq("id", mensaje.id) }
-                                                }
-                                        }
-                                        expanded = false
-                                    }
-                                )
-                            }
+                        if (mensaje.content.isNotBlank()) {
+                            MensajeCard(
+                                mensaje = mensaje,
+                                esMio = esMio
+                            )
                         }
 
+
+                        if (mensaje.imageUrl != null) {
+                            when {
+                                esAndroid() || esDesktop() -> {
+                                    val painter = rememberImagePainter(mensaje.imageUrl)
+                                    if (painter != null) {
+                                        Image(
+                                            painter = painter,
+                                            contentDescription = "Imagen enviada",
+                                            modifier = Modifier
+                                                .size(200.dp)
+                                                .clip(RoundedCornerShape(8.dp))
+                                        )
+                                    }
+                                }
+                                esWeb() -> {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(200.dp, 120.dp)
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .background(Color.LightGray),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text("IMAGEN", color = Color.Black)
+                                    }
+                                }
+                            }
+                        }
                         if (showEditDialog) {
+                            scope.launch {
+                                if (nuevoContenido.isNotBlank()) {
+                                    try {
+                                        nuevoContenido = desencriptaTexto(nuevoContenido, ClaveSimetricaChats.clave ?: return@launch)
+                                    } catch (e: Exception) {
+                                        println("⚠️ Error desencriptando: ${e.message}")
+                                        nuevoContenido = ""
+                                    }
+                                }
+                            }
                             AlertDialog(
                                 onDismissRequest = { showEditDialog = false },
                                 title = { Text("Editar mensaje") },
@@ -238,9 +313,14 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
                                 confirmButton = {
                                     TextButton(onClick = {
                                         scope.launch {
+                                            val nuevoContenidoEncriptado = ClaveSimetricaChats.clave?.let {
+                                                encriptarTexto(nuevoContenido,
+                                                    it
+                                                )
+                                            }
                                             supabaseClient
                                                 .from("mensaje")
-                                                .update({ set("content", nuevoContenido.trim()) }) {
+                                                .update({ set("content", nuevoContenidoEncriptado) }) {
                                                     filter { eq("id", mensaje.id) }
                                                 }
                                             showEditDialog = false
@@ -267,28 +347,23 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 OutlinedTextField(
+                    singleLine = true,
                     value = mensajeNuevo,
                     onValueChange = { mensajeNuevo = it },
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f)
+                        .onKeyEvent { event ->
+                            if (event.key == Key.Enter && event.type == KeyEventType.KeyUp) {
+                                enviarMensaje()
+                                true
+                            } else {
+                                false
+                            }
+                        },
                     placeholder = { Text("Escribe un mensaje...") }
                 )
                 BotonEnviarMensaje {
                     if (mensajeNuevo.isNotBlank()) {
-                        scope.launch {
-                            val key = ClaveSimetricaChats.clave ?: throw IllegalStateException("Clave no lista")
-                            // Ciframos con nonce incluido
-                            val encryptedFull = key.cipher().encrypt(mensajeNuevo.encodeToByteArray())
-                            val contenidoHex = encryptedFull.toHex()
-
-                            val nuevo = Mensaje(
-                                content = contenidoHex,
-                                idusuario = currentUserId,
-                                idconversacion = chatId
-                            )
-                            Supabase.client.from("mensaje").insert(nuevo)
-                            mensajeNuevo = ""
-                            println("📤 Mensaje enviado en realtime.")
-                        }
+                        enviarMensaje()
                     }
                 }
 

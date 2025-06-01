@@ -45,6 +45,7 @@ import org.connexuss.project.interfaces.autenticacion.PantallaVerificaCorreo
 import org.connexuss.project.interfaces.autenticacion.SplashScreen
 import org.connexuss.project.interfaces.chat.mostrarChat
 import org.connexuss.project.interfaces.chat.mostrarChatGrupo
+import org.connexuss.project.interfaces.chat.mostrarParticipantesGrupo
 import org.connexuss.project.interfaces.chat.muestraChats
 import org.connexuss.project.interfaces.foro.ForoScreen
 import org.connexuss.project.interfaces.foro.HiloScreen
@@ -201,11 +202,12 @@ fun Navegacion(
             PantallaTema(repositorioTemas, navController)
         }
         */
-        composable("mostrarParticipantesGrupo/{chatId}" ) {
-            backStackEntry ->
+        composable("mostrarParticipantesGrupo/{chatId}") { backStackEntry ->
             val chatId = backStackEntry.arguments?.getString("chatId")
-            mostrarChatGrupo(navController, chatId, imagenesPerfilPersona)
+            mostrarParticipantesGrupo(navController, chatId!!)
         }
+
+
         composable("usuariosGrupo") {
             MuestraUsuariosGrupo(usuarios = listaUsuariosGrupo, navController = navController)
         }

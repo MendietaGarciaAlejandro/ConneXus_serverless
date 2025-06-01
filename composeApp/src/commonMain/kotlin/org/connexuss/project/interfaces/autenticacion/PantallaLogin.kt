@@ -35,7 +35,12 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -51,7 +56,6 @@ import io.github.jan.supabase.auth.providers.builtin.Email
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.serialization.json.Json
 import org.connexuss.project.encriptacion.EncriptacionResumenUsuario
 import org.connexuss.project.interfaces.comun.LimitaTamanioAncho
 import org.connexuss.project.interfaces.comun.traducir
@@ -60,7 +64,6 @@ import org.connexuss.project.misc.UsuarioPrincipal
 import org.connexuss.project.misc.sesionActualUsuario
 import org.connexuss.project.persistencia.SettingsState
 import org.connexuss.project.supabase.SupabaseUsuariosRepositorio
-import org.connexuss.project.usuario.Usuario
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
@@ -96,6 +99,7 @@ fun PantallaLogin(
     val visibilidadOn = Res.drawable.visibilidadOn
     val visibilidadOff = Res.drawable.visibilidadOff
     var verContra: Boolean by remember { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
 
     // Cargar email guardado si existe
     LaunchedEffect(Unit) {
@@ -107,6 +111,92 @@ fun PantallaLogin(
         // Cargar estado de los checkboxes
         rememberMe = settingsState.getRememberMeState()
         recordarEmail = settingsState.getRememberEmailState()
+    }
+
+    fun autenticarUsuario() {
+        errorMessage = ""
+        scope.launch {
+            if (emailInterno.isBlank() || passwordInterno.isBlank()) {
+                errorMessage = porFavorCompleta
+                return@launch
+            }
+
+            try {
+                // Verificamos primero si el usuario existe en nuestra base de datos
+                val usuario =
+                    repoSupabase.getUsuarioPorEmail(emailInterno.trim()).first()
+                        ?: run {
+                            errorMessage =
+                                errorEmailNingunUsuario; return@launch
+                        }
+
+                // Validamos la contraseña con el resumen local
+                if (!EncriptacionResumenUsuario.checkPassword(
+                        passwordInterno,
+                        usuario.contrasennia
+                    )
+                ) {
+//                                    errorMessage = errorContrasenaIncorrecta
+//                                    return@launch
+                }
+
+                // Almacenamos el usuario para su uso en la aplicación
+                UsuarioPrincipal = usuario
+
+                // Intentamos autenticar con Supabase
+                try {
+                    // Iniciar sesión en Supabase
+                    Supabase.client.auth.signInWith(
+                        provider = Email
+                    ) {
+                        email = usuario.correo
+                        password = passwordInterno
+                    }
+
+                    // Si llegamos aquí, la autenticación con Supabase fue exitosa
+                    // Actualizar la sesión actual
+                    sesionActualUsuario =
+                        Supabase.client.auth.currentSessionOrNull()
+
+                    // Solo si tenemos sesión válida procedemos
+                    if (sesionActualUsuario != null) {
+                        // Mostrar mensaje de bienvenida
+                        mensajeBienvenido =
+                            "Bienvenido ${UsuarioPrincipal!!.nombre}"
+
+                        //TODO: Hacer que los checkboxes sean excluyentes
+
+                        // Persistir si rememberMe está activo
+                        if (rememberMe) {
+                            settingsState.saveSession(
+                                sesionActualUsuario!!,
+                                UsuarioPrincipal!!
+                            )
+                        }
+
+                        // Guardar email si el usuario lo solicitó
+                        if (recordarEmail) {
+                            settingsState.saveEmail(emailInterno)
+                        }
+
+                        // Esperar para mostrar el mensaje antes de navegar
+                        delay(1000)
+
+                        // Navegar a contactos
+                        navController.navigate("contactos") {
+                            popUpTo("login") { inclusive = true }
+                        }
+                    } else {
+                        errorMessage = "Error de autenticación en Supabase"
+                    }
+                } catch (e: Exception) {
+                    // Error de autenticación en Supabase
+                    errorMessage = "Error en autenticación."
+                }
+            } catch (e: Exception) {
+                errorMessage = "Error."
+            }
+        }
     }
 
     Surface(
@@ -142,11 +232,20 @@ fun PantallaLogin(
                 }
 
                 OutlinedTextField(
+                    singleLine = true,
                     value = emailInterno,
                     onValueChange = { emailInterno = it },
                     label = { Text(traducir("email")) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth()
+                        .onKeyEvent { event ->
+                            if (event.key == Key.Enter && event.type == KeyEventType.KeyUp) {
+                                autenticarUsuario()
+                                true
+                            } else {
+                                false
+                            }
+                        },
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = MaterialTheme.colorScheme.primary,
@@ -160,6 +259,7 @@ fun PantallaLogin(
                     horizontalArrangement = Arrangement.Center
                 ) {
                     OutlinedTextField(
+                        singleLine = true,
                         value = passwordInterno,
                         onValueChange = { passwordInterno = it },
                         label = { Text(traducir("contrasena")) },
@@ -171,7 +271,15 @@ fun PantallaLogin(
                         } else {
                             KeyboardOptions(keyboardType = KeyboardType.Password)
                         },
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(1f)
+                            .onKeyEvent { event ->
+                            if (event.key == Key.Enter && event.type == KeyEventType.KeyUp) {
+                                autenticarUsuario()
+                                true
+                            } else {
+                                false
+                            }
+                        },
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = MaterialTheme.colorScheme.primary,
@@ -262,91 +370,7 @@ fun PantallaLogin(
                 }
 
                 ElevatedButton(
-                    onClick = {
-                        //TODO: Borrar autenticación local y ponerla solo con Supabase
-                        errorMessage = ""
-                        scope.launch {
-                            if (emailInterno.isBlank() || passwordInterno.isBlank()) {
-                                errorMessage = porFavorCompleta
-                                return@launch
-                            }
-
-                            try {
-                                // Verificamos primero si el usuario existe en nuestra base de datos
-                                val usuario =
-                                    repoSupabase.getUsuarioPorEmail(emailInterno.trim()).first()
-                                        ?: run {
-                                            errorMessage = errorEmailNingunUsuario; return@launch
-                                        }
-
-                                // Validamos la contraseña con el resumen local
-                                if (!EncriptacionResumenUsuario.checkPassword(
-                                        passwordInterno,
-                                        usuario.contrasennia
-                                    )
-                                ) {
-//                                    errorMessage = errorContrasenaIncorrecta
-//                                    return@launch
-                                }
-
-                                // Almacenamos el usuario para su uso en la aplicación
-                                UsuarioPrincipal = usuario
-
-                                // Intentamos autenticar con Supabase
-                                try {
-                                    // Iniciar sesión en Supabase
-                                    Supabase.client.auth.signInWith(
-                                        provider = Email
-                                    ) {
-                                        email = usuario.correo
-                                        password = passwordInterno
-                                    }
-
-                                    // Si llegamos aquí, la autenticación con Supabase fue exitosa
-                                    // Actualizar la sesión actual
-                                    sesionActualUsuario =
-                                        Supabase.client.auth.currentSessionOrNull()
-
-                                    // Solo si tenemos sesión válida procedemos
-                                    if (sesionActualUsuario != null) {
-                                        // Mostrar mensaje de bienvenida
-                                        mensajeBienvenido =
-                                            "Bienvenido ${UsuarioPrincipal!!.nombre}"
-                                        
-                                        //TODO: Hacer que los checkboxes sean excluyentes
-
-                                        // Persistir si rememberMe está activo
-                                        if (rememberMe) {
-                                            settingsState.saveSession(
-                                                sesionActualUsuario!!,
-                                                UsuarioPrincipal!!
-                                            )
-                                        }
-
-                                        // Guardar email si el usuario lo solicitó
-                                        if (recordarEmail) {
-                                            settingsState.saveEmail(emailInterno)
-                                        }
-
-                                        // Esperar para mostrar el mensaje antes de navegar
-                                        delay(1000)
-
-                                        // Navegar a contactos
-                                        navController.navigate("contactos") {
-                                            popUpTo("login") { inclusive = true }
-                                        }
-                                    } else {
-                                        errorMessage = "Error de autenticación en Supabase"
-                                    }
-                                } catch (e: Exception) {
-                                    // Error de autenticación en Supabase
-                                    errorMessage = "Error en autenticación."
-                                }
-                            } catch (e: Exception) {
-                                errorMessage = "Error."
-                            }
-                        }
-                    },
+                    onClick = { autenticarUsuario() },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.elevatedButtonColors(

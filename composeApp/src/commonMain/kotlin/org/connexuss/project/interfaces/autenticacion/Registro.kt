@@ -150,6 +150,7 @@ fun PantallaRegistro(navController: NavHostController) {
                     }
 
                     OutlinedTextField(
+                        singleLine = true,
                         value = nombre,
                         onValueChange = { nombre = it },
                         label = { Text(traducir("nombre")) },
@@ -162,6 +163,7 @@ fun PantallaRegistro(navController: NavHostController) {
                     )
 
                     OutlinedTextField(
+                        singleLine = true,
                         value = emailInterno,
                         onValueChange = { emailInterno = it },
                         label = { Text(traducir("email")) },
@@ -180,6 +182,7 @@ fun PantallaRegistro(navController: NavHostController) {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         OutlinedTextField(
+                            singleLine = true,
                             value = password,
                             onValueChange = { password = it },
                             label = { Text(traducir("contrasena")) },
@@ -211,6 +214,7 @@ fun PantallaRegistro(navController: NavHostController) {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         OutlinedTextField(
+                            singleLine = true,
                             value = confirmPassword,
                             onValueChange = { confirmPassword = it },
                             label = { Text(traducir("confirmar_contrasena")) },

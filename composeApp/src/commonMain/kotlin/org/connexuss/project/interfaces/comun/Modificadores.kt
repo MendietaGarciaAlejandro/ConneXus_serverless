@@ -32,7 +32,7 @@ fun ResponsiveContent(content: @Composable (Modifier) -> Unit) {
 /**
  * Ajusta el tamaño del contenido basado en el ancho disponible.
  * Si el ancho máximo es mayor a 600dp, limita el ancho a 800dp y añade padding horizontal.
- * De lo contrario, utiliza todo el ancho disponible.
+ * De lo contrario, utiliza to-do el ancho disponible.
  *
  * @param content Composable lambda que recibe el modificador calculado.
  */

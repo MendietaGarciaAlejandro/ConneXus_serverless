@@ -1,8 +1,17 @@
 package org.connexuss.project
 
 //import android.app.Application
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
+
 //import com.google.firebase.FirebasePlatform
 //import dev.gitlive.firebase.Firebase
 //import dev.gitlive.firebase.FirebaseOptions
@@ -63,6 +72,20 @@ fun main() = application {
         onCloseRequest = ::exitApplication,
         title = "ConneXus_serverless",
     ) {
-        App()
+        // Contenedor de toda la ventana para capturar Escape
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .onPreviewKeyEvent { keyEvent ->
+                    if (keyEvent.type == KeyEventType.KeyUp && keyEvent.key == Key.Escape) {
+                        exitApplication()
+                        true
+                    } else {
+                        false
+                    }
+                }
+        ) {
+            App()
+        }
     }
 }

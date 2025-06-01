@@ -26,6 +26,11 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import kotlinx.coroutines.flow.map
@@ -124,6 +129,31 @@ fun HiloScreen(navController: NavHostController, hiloId: String, startRoute: Str
         }
     }
 
+    fun enviarPost() {
+        try {
+            require(
+                contenido.isNotBlank().or(contenido.isNotEmpty())
+            )
+            scope.launch {
+
+                val nuevoPost = UsuarioPrincipal?.let {
+                    encHelper.crearPostSinPadding(
+                        nombrePlain = contenido,
+                        idHilo = hiloId,
+                        aliaspublico = it.aliasPublico,
+                        idFirmante = UsuarioPrincipal!!.idUnico,
+                    )
+                }
+
+                refreshTrigger++ // Incrementamos el trigger para refrescar la lista
+                contenido = ""
+
+            }
+        } catch (e: Exception) {
+            println("Error al enviar el post: ${e.message}")
+        }
+    }
+
     Scaffold(
         topBar = {
             if (hiloBuscado != null) {
@@ -171,28 +201,7 @@ fun HiloScreen(navController: NavHostController, hiloId: String, startRoute: Str
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(onClick = {
-                        try {
-                            require(
-                                contenido.isNotBlank().or(contenido.isNotEmpty())
-                            )
-                            scope.launch {
-
-                                val nuevoPost = UsuarioPrincipal?.let {
-                                    encHelper.crearPostSinPadding(
-                                        nombrePlain = contenido,
-                                        idHilo = hiloId,
-                                        aliaspublico = it.aliasPublico,
-                                        idFirmante = UsuarioPrincipal!!.idUnico,
-                                    )
-                                }
-
-                                refreshTrigger++ // Incrementamos el trigger para refrescar la lista
-                                contenido = ""
-
-                            }
-                        } catch (e: Exception) {
-                            println("Error al enviar el post: ${e.message}")
-                        }
+                        enviarPost()
                     }) {
                         Text("Enviar")
                     }
@@ -201,4 +210,3 @@ fun HiloScreen(navController: NavHostController, hiloId: String, startRoute: Str
         }
     }
 }
-

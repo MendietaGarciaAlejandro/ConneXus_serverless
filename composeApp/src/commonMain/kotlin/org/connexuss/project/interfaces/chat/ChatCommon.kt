@@ -4,7 +4,9 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -21,6 +23,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,7 +31,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import dev.whyoleg.cryptography.algorithms.AES
+import kotlinx.coroutines.launch
 import org.connexuss.project.comunicacion.Mensaje
+import org.connexuss.project.encriptacion.EncriptacionSimetricaChats
 import org.connexuss.project.interfaces.foro.toFormattedString
 import org.connexuss.project.interfaces.foro.toFormattedStringSmall
 import org.connexuss.project.misc.esAndroid
@@ -65,15 +70,34 @@ fun MensajeCard(
 ) {
     var nombrePlano by remember { mutableStateOf("(cargando...)") }
 
-    LaunchedEffect(ClaveSimetricaChats.clave, mensaje.content) {
-        if (ClaveSimetricaChats.clave != null) {
-            val cipherBytes = mensaje.content.hexToByteArray()
-            val plainBytes = cipherBytes.let {
-                ClaveSimetricaChats.clave!!.cipher().decrypt(ciphertext = it)
+    val scope = rememberCoroutineScope()
+
+    val escHelper = remember { EncriptacionSimetricaChats() }
+
+//    LaunchedEffect(ClaveSimetricaChats.clave, mensaje.content) {
+//        if (ClaveSimetricaChats.clave != null) {
+//            val cipherBytes = mensaje.content.hexToByteArray()
+//            val plainBytes = cipherBytes.let {
+//                ClaveSimetricaChats.clave!!.cipher().decrypt(ciphertext = it)
+//            }
+//            nombrePlano = plainBytes.decodeToString()
+//        }
+//    }
+
+    // Desencriptar el mensaje usando la clave simétrica
+    if (mensaje.content.isNotBlank()) {
+        scope.launch {
+            ClaveSimetricaChats.clave?.let {
+                escHelper.leerMensaje(
+                    mensajeId = mensaje.id,
+                    clave = it
+                ).let { nombre ->
+                    nombrePlano = nombre
+                }
             }
-            nombrePlano = plainBytes.decodeToString()
         }
     }
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -99,7 +123,16 @@ fun MensajeCard(
                 }
             }
 
-            Text(nombrePlano)
+            // Primero, el texto (si lo hay)
+            if (nombrePlano.isNotEmpty()) {
+                Text(nombrePlano)
+                Spacer(Modifier.height(4.dp))
+            }
+
+            // Luego, la imagen (si viene)
+            mensaje.imageUrl?.let { url ->
+                ImageMensaje(url)
+            }
 
             // Abajo a la derecha en muy pequeñito se mostrará la fecha del mensaje
             Text(
@@ -108,48 +141,55 @@ fun MensajeCard(
                 color = Color.DarkGray,
                 modifier = Modifier.padding(top = 4.dp)
             )
-
-
-            mensaje.imageUrl?.let { imageUrl ->
-                when {
-                    esAndroid() || esDesktop() -> {
-                        val painter = rememberImagePainter(imageUrl)
-                        if (painter != null) {
-                            Image(
-                                painter = painter,
-                                contentDescription = null,
-                                modifier = Modifier
-                                    .size(200.dp)
-                                    .clip(RoundedCornerShape(8.dp))
-                            )
-                        }
-                    }
-
-                    esWeb() -> {
-                        Box(
-                            modifier = Modifier
-                                .size(200.dp, 120.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(Color.LightGray),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text("IMAGEN", color = Color.Black)
-                        }
-                    }
-                }
-            }
         }
     }
 }
 
-    /**
-     * Componente de botón para enviar mensajes.
-     *
-     * @param onClick Acción a realizar cuando se hace clic en el botón
-     */
-    @Composable
-    fun BotonEnviarMensaje(onClick: () -> Unit) {
-        IconButton(onClick = onClick) {
-            Icon(Icons.AutoMirrored.Rounded.Send, contentDescription = "Enviar")
+@Composable
+private fun ImageMensaje(url: String) {
+    if (esAndroid() || esDesktop()) {
+        val painter = rememberImagePainter(url)
+        if (painter != null) {
+            Image(
+                painter = painter,
+                contentDescription = null,
+                modifier = Modifier
+                    .size(200.dp)
+                    .clip(RoundedCornerShape(8.dp))
+            )
+        }
+    } else if (esWeb()) {
+        Box(
+            modifier = Modifier
+                .size(200.dp, 120.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(Color.LightGray),
+            contentAlignment = Alignment.Center
+        ) {
+            Text("IMAGEN", color = Color.Black)
+        }
+    } else {
+        // Manejo por defecto si no es Android, Desktop o Web
+        Box(
+            modifier = Modifier
+                .size(200.dp, 120.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(Color.LightGray),
+            contentAlignment = Alignment.Center
+        ) {
+            Text("IMAGEN", color = Color.Black)
         }
     }
+}
+
+/**
+ * Componente de botón para enviar mensajes.
+ *
+ * @param onClick Acción a realizar cuando se hace clic en el botón
+ */
+@Composable
+fun BotonEnviarMensaje(onClick: () -> Unit) {
+    IconButton(onClick = onClick) {
+        Icon(Icons.AutoMirrored.Rounded.Send, contentDescription = "Enviar")
+    }
+}

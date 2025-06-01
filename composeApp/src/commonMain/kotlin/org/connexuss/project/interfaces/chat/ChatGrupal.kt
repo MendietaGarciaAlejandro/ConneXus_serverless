@@ -1,5 +1,9 @@
 package org.connexuss.project.interfaces.chat
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -7,9 +11,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -20,6 +30,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import dev.whyoleg.cryptography.CryptographyProvider
@@ -28,8 +44,13 @@ import io.github.jan.supabase.postgrest.from
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.connexuss.project.comunicacion.Conversacion
+import org.connexuss.project.comunicacion.ConversacionesUsuario
 import org.connexuss.project.comunicacion.Mensaje
+import org.connexuss.project.encriptacion.EncriptacionSimetricaChats
+import org.connexuss.project.encriptacion.desencriptaTexto
+import org.connexuss.project.encriptacion.encriptarTexto
 import org.connexuss.project.encriptacion.toHex
+import org.connexuss.project.interfaces.navegacion.DefaultTopBar
 import org.connexuss.project.interfaces.navegacion.TopBarGrupo
 import org.connexuss.project.misc.ChatEnviarImagen
 import org.connexuss.project.misc.Imagen
@@ -63,6 +84,7 @@ fun mostrarChatGrupo(
     var todosUsuarios by remember { mutableStateOf<List<Usuario>>(emptyList()) }
 
     val secretoRepositorio = remember { SupabaseSecretosRepo() }
+    val escHelper = remember { EncriptacionSimetricaChats() }
 
     var claveLista by remember { mutableStateOf(false) }
 
@@ -90,6 +112,41 @@ fun mostrarChatGrupo(
         .collectAsState(initial = emptyList())
 
     val mensajes = todosLosMensajes.filter { it.idconversacion == chatId }
+    var mensajesDesencriptados by remember { mutableStateOf<List<Mensaje>>(emptyList()) }
+
+    LaunchedEffect(mensajes, claveLista) {
+        if (!claveLista) return@LaunchedEffect
+
+        val desencriptados = mensajes.map { mensaje ->
+            val content = mensaje.content?.trim()
+
+            // Validar contenido
+            val safeToDecrypt = mensaje.imageUrl == null &&
+                    !content.isNullOrBlank() &&
+                    content.length >= 24 &&
+                    content.matches(Regex("^[A-Za-z0-9+/=]+$")) &&
+                    try {
+                        val noPad = Base64.withPadding(Base64.PaddingOption.ABSENT)
+                        noPad.decode(content).size >= 16 // mínimo para IV + algo
+                    } catch (e: Exception) {
+                        false
+                    }
+
+            if (safeToDecrypt) {
+                try {
+                    val textoPlano = desencriptaTexto(content!!, ClaveSimetricaChats.clave!!)
+                    mensaje.copy(content = textoPlano)
+                } catch (e: Exception) {
+                    println("❌ Error al desencriptar id=${mensaje.id}: ${e.message}")
+                    mensaje.copy(content = "⚠️ Error al leer mensaje")
+                }
+            } else {
+                mensaje
+            }
+        }
+
+        mensajesDesencriptados = desencriptados
+    }
 
     LaunchedEffect(chatId) {
         if (chatId == null) return@LaunchedEffect
@@ -141,6 +198,18 @@ fun mostrarChatGrupo(
         return
     }
 
+    fun enviarMensaje() {
+        scope.launch {
+            val nuevoMensaje = escHelper.crearMensajeSinPadding(
+                contenidoPlain = mensajeNuevo,
+                idConversacion = chatId,
+                idUsuario = currentUserId,
+            )
+            mensajeNuevo = ""
+            println("📤 Mensaje enviado en realtime.")
+        }
+    }
+
     Scaffold(
         topBar = {
             TopBarGrupo(
@@ -165,17 +234,110 @@ fun mostrarChatGrupo(
                     .weight(1f)
                     .padding(8.dp)
             ) {
-                items(mensajes.sortedBy { it.fechaMensaje }) { mensaje ->
+                items(mensajesDesencriptados.sortedBy { it.fechaMensaje }) { mensaje ->
                     val esMio = mensaje.idusuario == currentUserId
+                    var expanded by remember { mutableStateOf(false) }
+                    var showEditDialog by remember { mutableStateOf(false) }
+                    var nuevoContenido by remember { mutableStateOf(mensaje.content) }
                     val senderAlias = todosUsuarios
                         .find { it.getIdUnicoMio() == mensaje.idusuario }
                         ?.getAliasPrivadoMio() ?: "Usuario"
 
-                    MensajeCard(
-                        mensaje = mensaje,
-                        esMio = esMio,
-                        senderAlias = senderAlias
-                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp)
+                            .pointerInput(Unit) {
+                                detectTapGestures(
+                                    onLongPress = {
+                                        if (esMio) expanded = true
+                                    }
+                                )
+                            },
+                        contentAlignment = if (esMio) Alignment.CenterEnd else Alignment.CenterStart
+                    ) {
+                        MensajeCard(
+                            mensaje = mensaje,
+                            esMio = esMio,
+                            senderAlias = senderAlias
+                        )
+
+                        if (esMio) {
+                            DropdownMenu(
+                                expanded = expanded,
+                                onDismissRequest = { expanded = false }
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("Editar") },
+                                    onClick = {
+                                        nuevoContenido = mensaje.content
+                                        showEditDialog = true
+                                        expanded = false
+                                    }
+                                )
+
+                                DropdownMenuItem(
+                                    text = { Text("Eliminar") },
+                                    onClick = {
+                                        scope.launch {
+                                            val textoMensajeBorrado = escHelper.borrarMensaje(
+                                                mensajeId = mensaje.id,
+                                                clave = ClaveSimetricaChats.clave ?: throw IllegalStateException("Clave no lista")
+                                            )
+                                            supabaseClient
+                                                .from("mensaje")
+                                                .update({ set("content", textoMensajeBorrado) }) {
+                                                    filter { eq("id", mensaje.id) }
+                                                }
+                                        }
+                                        expanded = false
+                                    }
+                                )
+                            }
+                        }
+
+                        if (showEditDialog) {
+                            scope.launch {
+                                nuevoContenido = desencriptaTexto(nuevoContenido, ClaveSimetricaChats.clave ?: throw IllegalStateException("Clave no lista"))
+                            }
+                            AlertDialog(
+                                onDismissRequest = { showEditDialog = false },
+                                title = { Text("Editar mensaje") },
+                                text = {
+                                    OutlinedTextField(
+                                        value = nuevoContenido,
+                                        onValueChange = { nuevoContenido = it },
+                                        label = { Text("Nuevo contenido") },
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                },
+                                confirmButton = {
+                                    TextButton(onClick = {
+                                        scope.launch {
+                                            val nuevoContenidoEncriptado = ClaveSimetricaChats.clave?.let {
+                                                encriptarTexto(nuevoContenido,
+                                                    it
+                                                )
+                                            }
+                                            supabaseClient
+                                                .from("mensaje")
+                                                .update({ set("content", nuevoContenidoEncriptado) }) {
+                                                    filter { eq("id", mensaje.id) }
+                                                }
+                                            showEditDialog = false
+                                        }
+                                    }) {
+                                        Text("Guardar")
+                                    }
+                                },
+                                dismissButton = {
+                                    TextButton(onClick = { showEditDialog = false }) {
+                                        Text("Cancelar")
+                                    }
+                                }
+                            )
+                        }
+                    }
                 }
             }
 
@@ -186,30 +348,23 @@ fun mostrarChatGrupo(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 OutlinedTextField(
+                    singleLine = true,
                     value = mensajeNuevo,
                     onValueChange = { mensajeNuevo = it },
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f)
+                        .onKeyEvent { event ->
+                            if (event.key == Key.Enter && event.type == KeyEventType.KeyUp) {
+                                enviarMensaje()
+                                true
+                            } else {
+                                false
+                            }
+                        },
                     placeholder = { Text("Escribe un mensaje...") }
                 )
                 BotonEnviarMensaje {
                     if (mensajeNuevo.isNotBlank()) {
-                        scope.launch {
-                            val key = ClaveSimetricaChats.clave
-                                ?: throw IllegalStateException("Clave no lista")
-                            // Ciframos con nonce incluido
-                            val encryptedFull =
-                                key.cipher().encrypt(mensajeNuevo.encodeToByteArray())
-                            val contenidoHex = encryptedFull.toHex()
-
-                            val nuevo = Mensaje(
-                                content = contenidoHex,
-                                idusuario = currentUserId,
-                                idconversacion = chatId
-                            )
-                            Supabase.client.from("mensaje").insert(nuevo)
-                            mensajeNuevo = ""
-                            println("📤 Mensaje enviado en realtime.")
-                        }
+                        enviarMensaje()
                     }
                 }
 
@@ -218,6 +373,73 @@ fun mostrarChatGrupo(
                         ChatEnviarImagen(
                             chatId = it,
                             currentUserId = currentUserId
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+@Composable
+fun mostrarParticipantesGrupo(
+    navController: NavHostController,
+    chatId: String
+) {
+    val currentUserId = UsuarioPrincipal?.idUnico ?: return
+    val repo = remember { SupabaseRepositorioGenerico() }
+    var participantes by remember { mutableStateOf<List<Usuario>>(emptyList()) }
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(chatId) {
+        try {
+            val relaciones = repo.getAll<ConversacionesUsuario>("conversaciones_usuario").first()
+            val ids = relaciones
+                .filter { it.idconversacion == chatId }
+                .map { it.idusuario }
+
+            val todosUsuarios = repo.getAll<Usuario>("usuario").first()
+            participantes = todosUsuarios.filter { it.idUnico in ids }
+        } catch (e: Exception) {
+            println("❌ Error cargando participantes: ${e.message}")
+        }
+    }
+
+    Scaffold(
+        topBar = {
+            DefaultTopBar(
+                title = "Participantes del grupo",
+                navController = navController,
+                showBackButton = true,
+                irParaAtras = true
+            )
+        }
+    ) { padding ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(participantes) { usuario ->
+                ElevatedCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            navController.navigate("mostrarPerfilUsuario/${usuario.idUnico}")
+                        }
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = "Nombre: ${usuario.getNombreCompletoMio()}",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Text(
+                            text = "Alias: ${usuario.getAliasMio()}",
+                            style = MaterialTheme.typography.bodyLarge
                         )
                     }
                 }

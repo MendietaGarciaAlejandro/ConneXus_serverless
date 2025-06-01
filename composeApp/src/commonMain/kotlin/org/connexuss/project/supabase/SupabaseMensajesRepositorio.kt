@@ -23,7 +23,7 @@ interface ISupabaseMensajesRepositorio {
 class SupabaseMensajesRepositorio : ISupabaseMensajesRepositorio {
 
     private val supabaseClient = instanciaSupabaseClient( tieneStorage = true, tieneAuth = false, tieneRealtime = true, tienePostgrest = true)
-    private val nombreTabla = "mensajes"
+    private val nombreTabla = "mensaje"
 
     override fun getMensajes() = flow {
         val response = supabaseClient
@@ -64,12 +64,12 @@ class SupabaseMensajesRepositorio : ISupabaseMensajesRepositorio {
     }
 
     override suspend fun updateMensaje(mensaje: Mensaje) {
-        val updateData = mapOf(
-            "id" to mensaje.id,
-            "idusuario" to mensaje.idusuario,
-            "idconversacion" to mensaje.idconversacion,
-            "content" to mensaje.content,
-            "fechaMensaje" to mensaje.fechaMensaje
+        val updateData = Mensaje(
+            id = mensaje.id,
+            idusuario = mensaje.idusuario,
+            idconversacion = mensaje.idconversacion,
+            content = mensaje.content,
+            fechaMensaje = mensaje.fechaMensaje
         )
         try {
             supabaseClient

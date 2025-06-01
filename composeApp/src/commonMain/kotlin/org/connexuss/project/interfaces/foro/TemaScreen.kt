@@ -145,6 +145,21 @@ fun TemaScreen(
         nombreTemaDesencriptado = "(clave o tema no disponible)"
     }
 
+    fun crearHilo(titulo: String) {
+        scope.launch {
+            try {
+                val nuevoHilo = encHelper.crearHiloSinPadding(
+                    nombrePlain = titulo,
+                    idTema = temaId,
+                )
+                refreshTrigger++
+                showNewThreadDialog = false
+            } catch (e: Exception) {
+                println("Error creando hilo: ${e.message}")
+            }
+        }
+    }
+
     // Si el tema no es nulo, mostrar la lista de hilos
     when {
         tema != null -> {
@@ -205,18 +220,7 @@ fun TemaScreen(
                             label = "Título del hilo",
                             onDismiss = { showNewThreadDialog = false },
                             onConfirm = { titulo ->
-                                scope.launch {
-                                    try {
-                                        val nuevoHilo = encHelper.crearHiloSinPadding(
-                                            nombrePlain = titulo,
-                                            idTema = temaId,
-                                        )
-                                        refreshTrigger++
-                                        showNewThreadDialog = false
-                                    } catch (e: Exception) {
-                                        println("Error creando hilo: ${e.message}")
-                                    }
-                                }
+                                crearHilo(titulo)
                             }
                         )
                     }

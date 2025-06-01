@@ -95,9 +95,7 @@ fun ChatCard(
                 .decodeFromByteArray(AES.Key.Format.RAW, keyBytes)
 
             if (claveChat != null) {
-                val cipherBytes = ultimoMensaje.content.hexToByteArray()
-                val plainBytes  = cipherBytes.let { claveChat!!.cipher().decrypt(ciphertext = it) }
-                ultimoMensajeDesencriptado    = plainBytes.decodeToString()
+                ultimoMensajeDesencriptado    = encHelper.leerMensaje(ultimoMensaje.id, claveChat!!)
             }
         }
     }
