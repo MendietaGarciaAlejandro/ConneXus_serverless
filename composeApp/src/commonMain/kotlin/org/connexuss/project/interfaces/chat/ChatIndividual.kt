@@ -260,39 +260,76 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
                             )
                         }
 
+//                        if (mensaje.imageUrl != null) {
+//                            when {
+//                                esAndroid() || esDesktop() -> {
+//                                    val painter = rememberImagePainter(mensaje.imageUrl)
+//                                    if (painter != null) {
+//                                        Image(
+//                                            painter = painter,
+//                                            contentDescription = "Imagen enviada",
+//                                            modifier = Modifier
+//                                                .size(200.dp)
+//                                                .clip(RoundedCornerShape(8.dp))
+//                                        )
+//                                    }
+//                                }
+//                                esWeb() -> {
+//                                    Box(
+//                                        modifier = Modifier
+//                                            .size(200.dp, 120.dp)
+//                                            .clip(RoundedCornerShape(8.dp))
+//                                            .background(Color.LightGray),
+//                                        contentAlignment = Alignment.Center
+//                                    ) {
+//                                        Text("IMAGEN", color = Color.Black)
+//                                    }
+//                                }
+//                            }
+//                        }
 
-                        if (mensaje.imageUrl != null) {
-                            when {
-                                esAndroid() || esDesktop() -> {
-                                    val painter = rememberImagePainter(mensaje.imageUrl)
-                                    if (painter != null) {
-                                        Image(
-                                            painter = painter,
-                                            contentDescription = "Imagen enviada",
-                                            modifier = Modifier
-                                                .size(200.dp)
-                                                .clip(RoundedCornerShape(8.dp))
-                                        )
+                        if (esMio) {
+                            DropdownMenu(
+                                expanded = expanded,
+                                onDismissRequest = { expanded = false }
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("Editar") },
+                                    onClick = {
+                                        nuevoContenido = mensaje.content
+                                        showEditDialog = true
+                                        expanded = false
                                     }
-                                }
-                                esWeb() -> {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(200.dp, 120.dp)
-                                            .clip(RoundedCornerShape(8.dp))
-                                            .background(Color.LightGray),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text("IMAGEN", color = Color.Black)
+                                )
+
+                                DropdownMenuItem(
+                                    text = { Text("Eliminar") },
+                                    onClick = {
+                                        scope.launch {
+                                            val textoMensajeBorrado = escHelper.borrarMensaje(
+                                                mensajeId = mensaje.id,
+                                                clave = ClaveSimetricaChats.clave ?: throw IllegalStateException("Clave no lista")
+                                            )
+                                            supabaseClient
+                                                .from("mensaje")
+                                                .update({ set("content", textoMensajeBorrado) }) {
+                                                    filter { eq("id", mensaje.id) }
+                                                }
+                                        }
+                                        expanded = false
                                     }
-                                }
+                                )
                             }
                         }
+
                         if (showEditDialog) {
                             scope.launch {
                                 if (nuevoContenido.isNotBlank()) {
                                     try {
-                                        nuevoContenido = desencriptaTexto(nuevoContenido, ClaveSimetricaChats.clave ?: return@launch)
+                                        nuevoContenido = escHelper.leerMensaje(
+                                            mensajeId = mensaje.id,
+                                            clave = ClaveSimetricaChats.clave ?: throw IllegalStateException("Clave no lista")
+                                        )
                                     } catch (e: Exception) {
                                         println("⚠️ Error desencriptando: ${e.message}")
                                         nuevoContenido = ""

@@ -146,7 +146,7 @@ fun MensajeCard(
 }
 
 @Composable
-private fun ImageMensaje(url: String) {
+fun ImageMensaje(url: String) {
     if (esAndroid() || esDesktop()) {
         val painter = rememberImagePainter(url)
         if (painter != null) {

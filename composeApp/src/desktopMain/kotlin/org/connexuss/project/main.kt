@@ -11,12 +11,19 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
+import connexus_serverless.composeapp.generated.resources.Res
+import connexus_serverless.composeapp.generated.resources.connexus
+import connexus_serverless.composeapp.generated.resources.connexus_windows
+import org.jetbrains.compose.resources.DrawableResource
+import org.jetbrains.compose.resources.InternalResourceApi
+import org.jetbrains.compose.resources.painterResource
 
 //import com.google.firebase.FirebasePlatform
 //import dev.gitlive.firebase.Firebase
 //import dev.gitlive.firebase.FirebaseOptions
 //import dev.gitlive.firebase.initialize
 
+@OptIn(InternalResourceApi::class)
 fun main() = application {
 
 //    FirebasePlatform.initializeFirebasePlatform(object : FirebasePlatform() {
@@ -71,6 +78,7 @@ fun main() = application {
     Window(
         onCloseRequest = ::exitApplication,
         title = "ConneXus_serverless",
+        icon = painterResource(Res.drawable.connexus),
     ) {
         // Contenedor de toda la ventana para capturar Escape
         Box(
