@@ -333,8 +333,18 @@ compose.desktop {
         mainClass = "org.connexuss.project.MainKt"
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Exe, TargetFormat.Deb, TargetFormat.AppImage, TargetFormat.Rpm)
-            packageName = "org.connexuss.project"
+            //packageName = "org.connexuss.project"
             packageVersion = "1.0.0"
+            windows {
+                iconFile.set(project.file("src/commonMain/composeResources/drawable/connexus_windows.ico"))
+                packageName = "ConneXus"
+                // Para que no salga le icono de Java y salga el que yo quiero en la JVM
+
+            }
+            linux {
+                iconFile.set(project.file("src/commonMain/composeResources/drawable/connexus_linux.png"))
+                packageName = "ConneXus"
+            }
         }
     }
 }
