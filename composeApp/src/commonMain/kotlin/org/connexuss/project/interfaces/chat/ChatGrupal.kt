@@ -298,7 +298,10 @@ fun mostrarChatGrupo(
 
                         if (showEditDialog) {
                             scope.launch {
-                                nuevoContenido = desencriptaTexto(nuevoContenido, ClaveSimetricaChats.clave ?: throw IllegalStateException("Clave no lista"))
+                                nuevoContenido = escHelper.leerMensaje(
+                                    mensajeId = mensaje.id,
+                                    clave = ClaveSimetricaChats.clave ?: throw IllegalStateException("Clave no lista")
+                                )
                             }
                             AlertDialog(
                                 onDismissRequest = { showEditDialog = false },
