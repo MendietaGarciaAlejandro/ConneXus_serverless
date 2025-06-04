@@ -50,6 +50,7 @@ import org.connexuss.project.encriptacion.EncriptacionSimetricaChats
 import org.connexuss.project.encriptacion.desencriptaTexto
 import org.connexuss.project.encriptacion.encriptarTexto
 import org.connexuss.project.encriptacion.toHex
+import org.connexuss.project.interfaces.comun.traducir
 import org.connexuss.project.interfaces.navegacion.DefaultTopBar
 import org.connexuss.project.interfaces.navegacion.TopBarGrupo
 import org.connexuss.project.misc.ChatEnviarImagen
@@ -80,6 +81,8 @@ fun mostrarChatGrupo(
     chatId: String?,
     imagenesPerfil: List<Imagen> // (No se usa de momento)
 ) {
+    val itemEditar = traducir("item_editar")
+    val itemEliminar = traducir("item_eliminar")
     val currentUserId = UsuarioPrincipal?.getIdUnicoMio() ?: return
     var todosUsuarios by remember { mutableStateOf<List<Usuario>>(emptyList()) }
 
@@ -99,7 +102,8 @@ fun mostrarChatGrupo(
 
     val scope = rememberCoroutineScope()
 
-    var chatNombre by remember { mutableStateOf("Grupo") }
+    val grupoTraduccion = traducir("grupo")
+    var chatNombre by remember { mutableStateOf(grupoTraduccion) }
     var chatNombreDesencriptado by remember { mutableStateOf<String>("") }
     var mensajeNuevo by remember { mutableStateOf("") }
 
@@ -178,7 +182,7 @@ fun mostrarChatGrupo(
 
         // Cargamos el nombre del grupo
         val conversaciones = repo.getAll<Conversacion>("conversacion").first()
-        chatNombre = conversaciones.find { it.id == chatId }?.nombre ?: "Grupo"
+        chatNombre = conversaciones.find { it.id == chatId }?.nombre ?: grupoTraduccion
     }
 
     LaunchedEffect(chatNombre) {
@@ -268,7 +272,7 @@ fun mostrarChatGrupo(
                                 onDismissRequest = { expanded = false }
                             ) {
                                 DropdownMenuItem(
-                                    text = { Text("Editar") },
+                                    text = { Text(itemEditar) },
                                     onClick = {
                                         nuevoContenido = mensaje.content
                                         showEditDialog = true
@@ -277,7 +281,7 @@ fun mostrarChatGrupo(
                                 )
 
                                 DropdownMenuItem(
-                                    text = { Text("Eliminar") },
+                                    text = { Text(itemEliminar) },
                                     onClick = {
                                         scope.launch {
                                             val textoMensajeBorrado = escHelper.borrarMensaje(
@@ -305,12 +309,12 @@ fun mostrarChatGrupo(
                             }
                             AlertDialog(
                                 onDismissRequest = { showEditDialog = false },
-                                title = { Text("Editar mensaje") },
+                                title = { Text(traducir("editar_mensaje")) },
                                 text = {
                                     OutlinedTextField(
                                         value = nuevoContenido,
                                         onValueChange = { nuevoContenido = it },
-                                        label = { Text("Nuevo contenido") },
+                                        label = { Text(traducir("nuevo_contenido")) },
                                         modifier = Modifier.fillMaxWidth()
                                     )
                                 },
@@ -330,12 +334,12 @@ fun mostrarChatGrupo(
                                             showEditDialog = false
                                         }
                                     }) {
-                                        Text("Guardar")
+                                        Text(traducir("guardar"))
                                     }
                                 },
                                 dismissButton = {
                                     TextButton(onClick = { showEditDialog = false }) {
-                                        Text("Cancelar")
+                                        Text(traducir("cancelar"))
                                     }
                                 }
                             )
@@ -363,7 +367,7 @@ fun mostrarChatGrupo(
                                 false
                             }
                         },
-                    placeholder = { Text("Escribe un mensaje...") }
+                    placeholder = { Text(traducir("escribe_mensaje")) }
                 )
                 BotonEnviarMensaje {
                     if (mensajeNuevo.isNotBlank()) {
@@ -410,7 +414,7 @@ fun mostrarParticipantesGrupo(
     Scaffold(
         topBar = {
             DefaultTopBar(
-                title = "Participantes del grupo",
+                title = traducir("participantes_grupo"),
                 navController = navController,
                 showBackButton = true,
                 irParaAtras = true

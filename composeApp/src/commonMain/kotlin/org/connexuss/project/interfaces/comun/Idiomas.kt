@@ -180,6 +180,13 @@ val espannol = Idioma(
         "cargando" to "(cargando...)",
         "imagen" to "Imagen",
         "enviar_mensaje" to "Enviar Mensaje",
+        "grupo" to "Grupo",
+        "item_editar" to "Editar",
+        "item_eliminar" to "Eliminar",
+        "participantes_grupo" to "Participantes del Grupo",
+        "editar_mensaje" to "Editar mensaje",
+        "nuevo_contenido" to "Nuevo contenido",
+        "error_leer_mensaje" to "Error al leer el mensaje",
 
 
 
@@ -188,7 +195,7 @@ val espannol = Idioma(
 
 
         "cambiar_idioma" to "Cambiar Idioma",
-        "escribe_mensaje" to "Escribe un mensaje",
+        "escribe_mensaje" to "Escribe un mensaje...",
 
         // Pantalla de Contactos
         "nuevo_contacto" to "Nuevo Contacto",
