@@ -160,6 +160,21 @@ fun traducir(key: String): String {
 
 val espannol = Idioma(
     palabras = mapOf(
+
+        // Nuevos pares clave-valor
+        "error_autenticacion_supabase" to "Error de autenticación en Supabase",
+        "error_autenticacion_1" to "Error en autenticación.",
+        "mantener_sesion" to "Mantener sesión",
+        "recordar_email" to "Recordar email",
+        "debug_zona_pruebas" to "Debug: Ir a la zona de pruebas",
+        "introduce_correo" to "Introduce tu correo",
+
+
+
+
+
+
+
         "cambiar_idioma" to "Cambiar Idioma",
         "escribe_mensaje" to "Escribe un mensaje",
 
