@@ -187,6 +187,22 @@ val espannol = Idioma(
         "editar_mensaje" to "Editar mensaje",
         "nuevo_contenido" to "Nuevo contenido",
         "error_leer_mensaje" to "Error al leer el mensaje",
+        "crear" to "Crear",
+        "tema_creado_correcto" to "Tema creado correctamente",
+        "error_crear_tema" to "Error al crear el tema",
+        "buscar" to "Buscar...",
+        "nuevo_tema" to "Nuevo Tema",
+        "mas_crea_temas" to "Presiona el + para crear un nuevo tema",
+        "no_temas_encontrados" to "No se encontraron temas",
+        "nuevo_tema" to "Nuevo Tema",
+        "nombre_tema" to "Nombre del Tema",
+        "cargando_tema" to "(cargando tema…)",
+        "hilo_no_encontrado" to "Hilo no encontrado",
+        "clave_no_disponible" to "(clave no disponible)",
+        "clave_tema_no_disponible" to "(clave o tema no disponible)",
+        "nuevo_hilo" to "Nuevo Hilo",
+        "titulo_nuevo_hilo" to "Título del Hilo",
+        "tema_no_encontrado" to "Tema no encontrado",
 
 
 

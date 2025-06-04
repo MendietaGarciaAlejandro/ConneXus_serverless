@@ -39,6 +39,7 @@ import org.connexuss.project.comunicacion.Hilo
 import org.connexuss.project.comunicacion.Tema
 import org.connexuss.project.encriptacion.EncriptacionSimetricaForo
 import org.connexuss.project.interfaces.comun.LimitaTamanioAncho
+import org.connexuss.project.interfaces.comun.traducir
 import org.connexuss.project.interfaces.navegacion.MiBottomBar
 import org.connexuss.project.supabase.SupabaseSecretosRepo
 
@@ -55,6 +56,10 @@ fun ForoScreen(navController: NavHostController) {
     // Tablas de temas y hilos
     val tablaTemas = "tema"
     val tablaHilos = "hilo"
+    val errorCrearTema = traducir("error_crear_tema")
+    val temaCreado = traducir("tema_creado_correcto")
+    val nuevoTema = traducir("nuevo_tema")
+    val nombreTema = traducir("nombre_tema")
 
     val temasFlow = remember(refreshTrigger.value) {
         repoForo.getAll<Tema>(tablaTemas)
@@ -82,12 +87,12 @@ fun ForoScreen(navController: NavHostController) {
                 // 2) Refresca UI y muestra notificación
                 refreshTrigger.value++
                 snackbarHostState.showSnackbar(
-                    "Tema '$nombre' creado correctamente",
+                    temaCreado,
                     duration = SnackbarDuration.Short
                 )
             } catch (e: Exception) {
                 snackbarHostState.showSnackbar(
-                    "Error al crear tema: ${e.message}",
+                    errorCrearTema,
                     duration = SnackbarDuration.Long
                 )
             } finally {
@@ -105,14 +110,14 @@ fun ForoScreen(navController: NavHostController) {
                     OutlinedTextField(
                         value = searchText,
                         onValueChange = { searchText = it },
-                        placeholder = { Text("Buscar...") },
+                        placeholder = { Text(traducir("buscar")) },
                         modifier = Modifier
                             .fillMaxHeight(0.8f)
                             .width(150.dp),
                         singleLine = true
                     )
                     IconButton(onClick = { showNewTopicDialog = true }) {
-                        Icon(Icons.Rounded.Add, contentDescription = "Nuevo tema")
+                        Icon(Icons.Rounded.Add, contentDescription = traducir("nuevo_tema"))
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -129,9 +134,9 @@ fun ForoScreen(navController: NavHostController) {
             LimitaTamanioAncho { modifier ->
                 when {
                     filteredTemas.isEmpty() && searchText.isBlank() ->
-                        EmptyStateMessage("Presiona el + para crear un nuevo tema")
+                        EmptyStateMessage(traducir("mas_crea_temas"))
                     filteredTemas.isEmpty() ->
-                        EmptyStateMessage("No se encontraron temas")
+                        EmptyStateMessage(traducir("no_temas_encontrados"))
                     else -> LazyColumn(
                         modifier = modifier.fillMaxSize(),
                         contentPadding = PaddingValues(16.dp),
@@ -150,8 +155,8 @@ fun ForoScreen(navController: NavHostController) {
 
             if (showNewTopicDialog) {
                 CrearElementoDialog(
-                    title = "Nuevo Tema",
-                    label = "Nombre del tema",
+                    title = nuevoTema,
+                    label = nombreTema,
                     onDismiss = { showNewTopicDialog = false },
                     onConfirm = { nombre ->
                         crearTema(nombre)

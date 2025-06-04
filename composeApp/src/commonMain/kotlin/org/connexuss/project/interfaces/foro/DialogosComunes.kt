@@ -12,6 +12,7 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
+import org.connexuss.project.interfaces.comun.traducir
 
 @Composable
 fun CrearElementoDialog(
@@ -46,10 +47,10 @@ fun CrearElementoDialog(
             Button(
                 onClick = { if (text.isNotBlank()) onConfirm(text) },
                 enabled = text.isNotBlank()
-            ) { Text("Crear") }
+            ) { Text(traducir("crear")) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancelar") }
+            TextButton(onClick = onDismiss) { Text(traducir("cancelar")) }
         }
     )
 }

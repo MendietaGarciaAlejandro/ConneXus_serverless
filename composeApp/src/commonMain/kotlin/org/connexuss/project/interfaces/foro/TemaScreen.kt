@@ -40,6 +40,7 @@ import org.connexuss.project.encriptacion.EncriptacionSimetricaForo
 import org.connexuss.project.encriptacion.desencriptaTexto
 import org.connexuss.project.encriptacion.toHex
 import org.connexuss.project.interfaces.comun.LimitaTamanioAncho
+import org.connexuss.project.interfaces.comun.traducir
 import org.connexuss.project.interfaces.navegacion.MiBottomBar
 import org.connexuss.project.supabase.ISecretosRepositorio
 import org.connexuss.project.supabase.SupabaseRepositorioGenerico
@@ -64,7 +65,9 @@ fun TemaScreen(
 
     //var aesKey by remember { mutableStateOf<AES.GCM.Key?>(null) }
     var isLoading by remember { mutableStateOf(true) }
-    var nombrePlano by remember { mutableStateOf("(cargando tema…)") }
+    val cargandoTema = traducir("cargando_tema")
+    var nombrePlano by remember { mutableStateOf(cargandoTema) }
+    val claveNoDisponible = traducir("clave_no_disponible")
 
     // Instancia de tu helper
     //val encHelper = remember { EncriptacionSimplificada() }
@@ -104,7 +107,7 @@ fun TemaScreen(
                 .decrypt(tema!!.nombre.hexToByteArray())
                 .decodeToString()
         } catch (e: Exception) {
-            nombrePlano = "(clave no disponible)"
+            nombrePlano = claveNoDisponible
         } finally {
             isLoading = false
         }
@@ -129,7 +132,12 @@ fun TemaScreen(
     val repoTemas = SupabaseTemasRepositorio()
     val temaBuscado = repoTemas.getTemaPorId(temaId).collectAsState(initial = null).value
 
-    var nombreTemaDesencriptado: String by remember { mutableStateOf("(cargando tema…)") }
+    val claveTemaNoDisponible = traducir("clave_tema_no_disponible")
+    val nuevoHiloTexto = traducir("nuevo_hilo")
+    val tituloHilo = traducir("titulo_nuevo_hilo")
+    val temaNoEncontrado = traducir("tema_no_encontrado")
+
+    var nombreTemaDesencriptado: String by remember { mutableStateOf(cargandoTema) }
     try {
         scope.launch {
             nombreTemaDesencriptado = if (temaBuscado != null && ClaveTemaHolder.clave != null) {
@@ -138,11 +146,11 @@ fun TemaScreen(
                     ClaveTemaHolder.clave!!
                 )
             } else {
-                "(clave o tema no disponible)"
+                claveTemaNoDisponible
             }
         }
     } catch (e: Exception) {
-        nombreTemaDesencriptado = "(clave o tema no disponible)"
+        nombreTemaDesencriptado = claveTemaNoDisponible
     }
 
     fun crearHilo(titulo: String) {
@@ -174,7 +182,7 @@ fun TemaScreen(
                         navigationIcon = { BackButton(navController) },
                         actions = {
                             IconButton(onClick = { showNewThreadDialog = true }) {
-                                Icon(Icons.Rounded.Add, contentDescription = "Nuevo hilo")
+                                Icon(Icons.Rounded.Add, contentDescription = nuevoHiloTexto)
                             }
                         },
                         colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -193,7 +201,7 @@ fun TemaScreen(
                                 .padding(padding),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text("Tema no encontrado")
+                            Text(temaNoEncontrado)
                         }
                     } else {
                         LazyColumn(
@@ -216,8 +224,8 @@ fun TemaScreen(
 
                     if (showNewThreadDialog && tema != null) {
                         CrearElementoDialog(
-                            title = "Nuevo Hilo",
-                            label = "Título del hilo",
+                            title = nuevoHiloTexto,
+                            label = tituloHilo,
                             onDismiss = { showNewThreadDialog = false },
                             onConfirm = { titulo ->
                                 crearHilo(titulo)
