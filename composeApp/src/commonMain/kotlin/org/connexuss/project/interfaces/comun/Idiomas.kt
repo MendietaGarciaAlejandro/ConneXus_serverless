@@ -203,6 +203,9 @@ val espannol = Idioma(
         "nuevo_hilo" to "Nuevo Hilo",
         "titulo_nuevo_hilo" to "Título del Hilo",
         "tema_no_encontrado" to "Tema no encontrado",
+        "usuario_no_encontrado" to "Usuario no encontrado",
+        "eliminar_contacto" to "Eliminar Contacto",
+        "bloquear_usuario" to "Bloquear Usuario",
 
 
 
