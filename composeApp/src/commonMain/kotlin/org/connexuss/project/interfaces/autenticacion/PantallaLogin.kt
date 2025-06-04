@@ -91,6 +91,9 @@ fun PantallaLogin(
     val scope = rememberCoroutineScope()
     val repoSupabase = remember { SupabaseUsuariosRepositorio() }
 
+    val errorAutenticacionSupabase = traducir("error_autenticacion_supabase")
+    val errorAutenticacion1 = traducir("error_autenticacion_1")
+
     // Mensajes de error
     val errorEmailNingunUsuario = traducir("error_email_ningun_usuario")
     val errorContrasenaIncorrecta = traducir("error_contrasena_incorrecta")
@@ -100,6 +103,10 @@ fun PantallaLogin(
     val visibilidadOff = Res.drawable.visibilidadOff
     var verContra: Boolean by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
+
+    val mantenerSesion = traducir("mantener_sesion")
+    val mantenerEmail = traducir("recordar_email")
+    val debugZonaPruebas = traducir("debug_zona_pruebas")
 
     // Cargar email guardado si existe
     LaunchedEffect(Unit) {
@@ -187,14 +194,14 @@ fun PantallaLogin(
                             popUpTo("login") { inclusive = true }
                         }
                     } else {
-                        errorMessage = "Error de autenticación en Supabase"
+                        errorMessage = errorAutenticacionSupabase
                     }
                 } catch (e: Exception) {
                     // Error de autenticación en Supabase
-                    errorMessage = "Error en autenticación."
+                    errorMessage = errorAutenticacion1
                 }
             } catch (e: Exception) {
-                errorMessage = "Error."
+                errorMessage = errorAutenticacion1
             }
         }
     }
@@ -315,7 +322,7 @@ fun PantallaLogin(
                         )
                     )
                     Text(
-                        text = "Mantener sesión",
+                        text = mantenerSesion,
                         style = MaterialTheme.typography.bodyLarge,
                         modifier = Modifier.padding(end = 16.dp)
                     )
@@ -334,7 +341,7 @@ fun PantallaLogin(
                         )
                     )
                     Text(
-                        text = "Recordar email",
+                        text = mantenerEmail,
                         style = MaterialTheme.typography.bodyLarge
                     )
                 }
@@ -391,7 +398,7 @@ fun PantallaLogin(
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Text(
-                            "Debug: Ir a la zona de pruebas",
+                            debugZonaPruebas,
                             style = MaterialTheme.typography.labelLarge
                         )
                     }

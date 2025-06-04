@@ -65,6 +65,7 @@ fun PantallaRestablecer(navController: NavHostController) {
     var email by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
     var mensaje by remember { mutableStateOf("") }
+    val introduceCorreo = traducir("introduce_correo")
 
     // Realiza la traducción fuera del bloque onClick
     val errorCorreoVacio = traducir("error_correo_vacio")
@@ -140,7 +141,7 @@ fun PantallaRestablecer(navController: NavHostController) {
                             onClick = {
                                 scope.launch {
                                     if (email.isBlank()) {
-                                        errorMessage = "Introduce tu correo"
+                                        errorMessage = introduceCorreo
                                         return@launch
                                     }
 
