@@ -206,6 +206,17 @@ val espannol = Idioma(
         "usuario_no_encontrado" to "Usuario no encontrado",
         "eliminar_contacto" to "Eliminar Contacto",
         "bloquear_usuario" to "Bloquear Usuario",
+        "zona_pruebas" to "Zona de Pruebas",
+        "debug_textos_realtime" to "Debug: Ir a las pruebas de textos Realtime",
+        "debug_pruebas_supabase" to "Debug: Ir a las pruebas con Supabase",
+        "debug_pruebas_encriptacion" to "Debug: Ir a las pruebas de encriptación",
+        "debug_pruebas_persistencia" to "Debug: Ir a las pruebas de persistencia de datos",
+        "admin_zona_reportes" to "ADMIN: Ir a la zona de reportes",
+        "bloqueado" to "Bloqueado",
+        "introduce_alias_privado_usuario" to "Introduce el alias privado del usuario:",
+        "crear_nuevo_chat" to "Crear Nuevo Chat",
+        "selecciona_participantes" to "Selecciona participantes:",
+        "nombre_del_grupo" to "Nombre del Grupo",
 
 
 
