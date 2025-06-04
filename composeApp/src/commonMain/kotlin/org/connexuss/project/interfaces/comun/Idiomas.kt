@@ -168,6 +168,15 @@ val espannol = Idioma(
         "recordar_email" to "Recordar email",
         "debug_zona_pruebas" to "Debug: Ir a la zona de pruebas",
         "introduce_correo" to "Introduce tu correo",
+        "correo_restablece_contrasennia" to "Se ha enviado un correo para restablecer tu contraseña. Revisa tu bandeja de entrada.",
+        "error_enviando_correo" to "Error al enviar el correo",
+        "info_restablecer_contrasennia" to "Una vez restablezcas tu contraseña desde el navegador, vuelve a esta app y entra con tu nueva clave.",
+        "formato_correo_invalido" to "Formato de correo inválido",
+        "error_registrar" to "Error al registrar",
+        "correo_aun_no_verificado" to "❗ Tu correo aún no está verificado.",
+        "correo_reenviado" to "Correo reenviado correctamente",
+        "falta_info_correo_reenviado" to "❌ Falta información para reenviar el correo",
+        "error_reenviar" to "❌ Error al reenviar.",
 
 
 
