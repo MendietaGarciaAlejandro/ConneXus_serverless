@@ -34,6 +34,7 @@ import dev.whyoleg.cryptography.algorithms.AES
 import kotlinx.coroutines.launch
 import org.connexuss.project.comunicacion.Mensaje
 import org.connexuss.project.encriptacion.EncriptacionSimetricaChats
+import org.connexuss.project.interfaces.comun.traducir
 import org.connexuss.project.interfaces.foro.toFormattedString
 import org.connexuss.project.interfaces.foro.toFormattedStringSmall
 import org.connexuss.project.misc.esAndroid
@@ -68,7 +69,9 @@ fun MensajeCard(
     modifier: Modifier = Modifier,
     senderAlias: String? = null
 ) {
-    var nombrePlano by remember { mutableStateOf("(cargando...)") }
+    val cargando = traducir("cargando")
+
+    var nombrePlano by remember { mutableStateOf(cargando) }
 
     val scope = rememberCoroutineScope()
 
@@ -147,6 +150,7 @@ fun MensajeCard(
 
 @Composable
 fun ImageMensaje(url: String) {
+    val imagen = traducir("imagen")
     if (esAndroid() || esDesktop()) {
         val painter = rememberImagePainter(url)
         if (painter != null) {
@@ -166,7 +170,7 @@ fun ImageMensaje(url: String) {
                 .background(Color.LightGray),
             contentAlignment = Alignment.Center
         ) {
-            Text("IMAGEN", color = Color.Black)
+            Text(imagen, color = Color.Black)
         }
     } else {
         // Manejo por defecto si no es Android, Desktop o Web
@@ -177,7 +181,7 @@ fun ImageMensaje(url: String) {
                 .background(Color.LightGray),
             contentAlignment = Alignment.Center
         ) {
-            Text("IMAGEN", color = Color.Black)
+            Text(imagen, color = Color.Black)
         }
     }
 }
@@ -189,7 +193,8 @@ fun ImageMensaje(url: String) {
  */
 @Composable
 fun BotonEnviarMensaje(onClick: () -> Unit) {
+    val enviarMensaje = traducir("enviar_mensaje")
     IconButton(onClick = onClick) {
-        Icon(Icons.AutoMirrored.Rounded.Send, contentDescription = "Enviar")
+        Icon(Icons.AutoMirrored.Rounded.Send, contentDescription = enviarMensaje)
     }
 }

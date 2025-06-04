@@ -177,6 +177,9 @@ val espannol = Idioma(
         "correo_reenviado" to "Correo reenviado correctamente",
         "falta_info_correo_reenviado" to "❌ Falta información para reenviar el correo",
         "error_reenviar" to "❌ Error al reenviar.",
+        "cargando" to "(cargando...)",
+        "imagen" to "Imagen",
+        "enviar_mensaje" to "Enviar Mensaje",
 
 
 
