@@ -161,6 +161,8 @@ fun traducir(key: String): String {
 val espannol = Idioma(
     palabras = mapOf(
 
+        "foro_general" to "Foro General",
+
         // Nuevos pares clave-valor
         "error_autenticacion_supabase" to "Error de autenticación en Supabase",
         "error_autenticacion_1" to "Error en autenticación.",
@@ -445,6 +447,8 @@ val espannol = Idioma(
 val ingles = Idioma(
     palabras = mapOf(
 
+        "foro_general" to "General Forum",
+
     "error_autenticacion_supabase" to "Supabase authentication error",
     "error_autenticacion_1" to "Authentication error.",
     "mantener_sesion" to "Stay signed in",
@@ -645,6 +649,8 @@ val ingles = Idioma(
  */
 val portugues = Idioma(
     palabras = mapOf(
+
+        "foro_general" to "Fórum Geral",
 
         "error_autenticacion_supabase" to "Erro de autenticação no Supabase",
         "error_autenticacion_1" to "Erro de autenticação.",
@@ -916,6 +922,8 @@ val portugues = Idioma(
  */
 val frances = Idioma(
     palabras = mapOf(
+
+        "foro_general" to "Forum Général",
 
         "error_autenticacion_supabase" to "Erreur d'authentification dans Supabase",
         "error_autenticacion_1" to "Erreur d'authentification.",
@@ -1190,6 +1198,8 @@ val frances = Idioma(
 val aleman = Idioma(
     palabras = mapOf(
 
+        "foro_general" to "Allgemeines Forum",
+
         "error_autenticacion_supabase" to "Authentifizierungsfehler in Supabase",
         "error_autenticacion_1" to "Authentifizierungsfehler.",
         "mantener_sesion" to "Angemeldet bleiben",
@@ -1463,6 +1473,8 @@ val aleman = Idioma(
  */
 val italiano = Idioma(
     palabras = mapOf(
+
+        "foro_general" to "Forum Generale",
 
         "error_autenticacion_supabase" to "Errore di autenticazione in Supabase",
         "error_autenticacion_1" to "Errore di autenticazione.",

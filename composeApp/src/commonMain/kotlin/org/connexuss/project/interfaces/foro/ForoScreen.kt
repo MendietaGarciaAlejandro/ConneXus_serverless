@@ -105,7 +105,7 @@ fun ForoScreen(navController: NavHostController) {
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Foro General") },
+                title = { Text(traducir("foro_general")) },
                 actions = {
                     OutlinedTextField(
                         value = searchText,
