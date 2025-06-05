@@ -42,6 +42,7 @@ import org.connexuss.project.encriptacion.EncriptacionSimetricaForo
 import org.connexuss.project.encriptacion.desencriptaTexto
 import org.connexuss.project.encriptacion.toHex
 import org.connexuss.project.interfaces.comun.LimitaTamanioAncho
+import org.connexuss.project.interfaces.comun.traducir
 import org.connexuss.project.interfaces.navegacion.MiBottomBar
 import org.connexuss.project.interfaces.notificaciones.HiloState
 import org.connexuss.project.interfaces.notificaciones.HiloTopBar
@@ -69,7 +70,11 @@ fun HiloScreen(navController: NavHostController, hiloId: String, startRoute: Str
     val tablaHilos = "hilo"
     val tablaPosts = "post"
 
-    var nombrePlano by remember { mutableStateOf("(cargando tema…)") }
+    val cargandoTema = traducir("cargando_tema")
+    val hiloNoEncontrado = traducir("hilo_no_encontrado")
+    val claveNoDisponible = traducir("clave_no_disponible")
+
+    var nombrePlano by remember { mutableStateOf(cargandoTema) }
     var claveLista by remember { mutableStateOf(false) }
 
     // Creamos el Flow dentro de un remember que observe el trigger
@@ -92,7 +97,7 @@ fun HiloScreen(navController: NavHostController, hiloId: String, startRoute: Str
     val posts by postsFlow.collectAsState(initial = emptyList())
 
     if (hilo == null) {
-        EmptyStateMessage("Hilo no encontrado")
+        EmptyStateMessage(hiloNoEncontrado)
         return
     }
 
@@ -121,9 +126,9 @@ fun HiloScreen(navController: NavHostController, hiloId: String, startRoute: Str
                 ClaveTemaHolder.clave?.cipher()
                     ?.decrypt(it.hexToByteArray())
                     ?.decodeToString()
-            } ?: "(clave no disponible)"
+            } ?: claveNoDisponible
         } catch (e: Exception) {
-            "(clave no disponible)"
+            claveNoDisponible
         } finally {
             claveLista = false
         }
@@ -196,14 +201,14 @@ fun HiloScreen(navController: NavHostController, hiloId: String, startRoute: Str
                     OutlinedTextField(
                         value = contenido,
                         onValueChange = { contenido = it },
-                        label = { Text("Nuevo mensaje") },
+                        label = { Text(traducir("nuevo_mensaje")) },
                         modifier = Modifier.weight(1f)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(onClick = {
                         enviarPost()
                     }) {
-                        Text("Enviar")
+                        Text(traducir("enviar"))
                     }
                 }
             }

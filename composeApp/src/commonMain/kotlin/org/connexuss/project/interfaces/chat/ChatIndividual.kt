@@ -53,6 +53,7 @@ import org.connexuss.project.comunicacion.Mensaje
 import org.connexuss.project.encriptacion.EncriptacionSimetricaChats
 import org.connexuss.project.encriptacion.desencriptaTexto
 import org.connexuss.project.encriptacion.encriptarTexto
+import org.connexuss.project.interfaces.comun.traducir
 import org.connexuss.project.interfaces.navegacion.TopBarUsuario
 import org.connexuss.project.misc.ChatEnviarImagen
 import org.connexuss.project.misc.UsuarioPrincipal
@@ -112,6 +113,7 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
         .filter { it.idconversacion == chatId }
         .sortedBy { it.fechaMensaje }
     var mensajesDesencriptados by remember { mutableStateOf<List<Mensaje>>(emptyList()) }
+    val errorLeerMensaje = traducir("error_leer_mensaje")
 
     LaunchedEffect(mensajes, claveLista) {
         if (!claveLista) return@LaunchedEffect
@@ -137,7 +139,7 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
                     mensaje.copy(content = textoPlano)
                 } catch (e: Exception) {
                     println("❌ Error al desencriptar id=${mensaje.id}: ${e.message}")
-                    mensaje.copy(content = "⚠️ Error al leer mensaje")
+                    mensaje.copy(content = errorLeerMensaje)
                 }
             } else {
                 mensaje
@@ -294,7 +296,7 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
                                 onDismissRequest = { expanded = false }
                             ) {
                                 DropdownMenuItem(
-                                    text = { Text("Editar") },
+                                    text = { Text(traducir("item_editar")) },
                                     onClick = {
                                         nuevoContenido = mensaje.content
                                         showEditDialog = true
@@ -303,7 +305,7 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
                                 )
 
                                 DropdownMenuItem(
-                                    text = { Text("Eliminar") },
+                                    text = { Text(traducir("item_eliminar")) },
                                     onClick = {
                                         scope.launch {
                                             val textoMensajeBorrado = escHelper.borrarMensaje(
@@ -338,12 +340,12 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
                             }
                             AlertDialog(
                                 onDismissRequest = { showEditDialog = false },
-                                title = { Text("Editar mensaje") },
+                                title = { Text(traducir("editar_mensaje")) },
                                 text = {
                                     OutlinedTextField(
                                         value = nuevoContenido,
                                         onValueChange = { nuevoContenido = it },
-                                        label = { Text("Nuevo contenido") },
+                                        label = { Text(traducir("nuevo_contenido")) },
                                         modifier = Modifier.fillMaxWidth()
                                     )
                                 },
@@ -363,12 +365,12 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
                                             showEditDialog = false
                                         }
                                     }) {
-                                        Text("Guardar")
+                                        Text(traducir("guardar"))
                                     }
                                 },
                                 dismissButton = {
                                     TextButton(onClick = { showEditDialog = false }) {
-                                        Text("Cancelar")
+                                        Text(traducir("cancelar"))
                                     }
                                 }
                             )
@@ -396,7 +398,7 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
                                 false
                             }
                         },
-                    placeholder = { Text("Escribe un mensaje...") }
+                    placeholder = { Text(traducir("escribe_mensaje")) }
                 )
                 BotonEnviarMensaje {
                     if (mensajeNuevo.isNotBlank()) {

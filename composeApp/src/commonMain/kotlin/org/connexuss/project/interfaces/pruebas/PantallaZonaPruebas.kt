@@ -27,11 +27,14 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 @Composable
 @Preview
 fun PantallaZonaPruebas(navController: NavHostController) {
+    val zonaPruebas = traducir("zona_pruebas")
+    val debugTextosRealtime = traducir("debug_textos_realtime")
+    val debugPruebasSupabase = traducir("debug_pruebas_supabase")
     MaterialTheme {
         Scaffold(
             topBar = {
                 DefaultTopBar(
-                    title = "Zona de Pruebas",
+                    title = zonaPruebas,
                     navController = navController,
                     showBackButton = true,
                     muestraEngranaje = true,
@@ -51,7 +54,7 @@ fun PantallaZonaPruebas(navController: NavHostController) {
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text("Zona de Pruebas")
+                        Text(zonaPruebas)
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -78,13 +81,13 @@ fun PantallaZonaPruebas(navController: NavHostController) {
                                 onClick = { navController.navigate("pruebasTextosRealtime") },
                                 modifier = Modifier.weight(1f)
                             ) {
-                                Text("Debug: Ir a las pruebas de textos Realtime")
+                                Text(debugTextosRealtime)
                             }
                             Button(
                                 onClick = { navController.navigate("supabasePruebas") },
                                 modifier = Modifier.weight(1f)
                             ) {
-                                Text("Debug: Ir a las pruebas con Supabase")
+                                Text(debugPruebasSupabase)
                             }
                         }
                         Spacer(modifier = Modifier.height(16.dp))
@@ -92,21 +95,21 @@ fun PantallaZonaPruebas(navController: NavHostController) {
                             onClick = { navController.navigate("pruebasEncriptacion") },
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("Debug: Ir a las pruebas de encriptación")
+                            Text(traducir("debug_pruebas_encriptacion"))
                         }
                         Spacer(modifier = Modifier.height(16.dp))
                         Button(
                             onClick = { navController.navigate("pruebasPersistencia") },
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("Debug: Ir a las pruebas de persistencia de datos")
+                            Text(traducir("debug_pruebas_persistencia"))
                         }
                         Spacer(modifier = Modifier.height(16.dp))
                         Button(
                             onClick = { navController.navigate("zonaReportes") },
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("ADMIN: Ir a la zona de reportes")
+                            Text(traducir("admin_zona_reportes"))
                         }
                     }
                 }

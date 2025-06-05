@@ -89,6 +89,8 @@ fun PantallaRegistro(navController: NavHostController) {
     val repoSupabase = SupabaseUsuariosRepositorio()
     val errorContrasenas = traducir("error_contrasenas")
     val errorEmailYaRegistrado = traducir("error_email_ya_registrado")
+    val formatoCorreoInvalido = traducir("formato_correo_invalido")
+    val errorRegistrar = traducir("error_registrar")
     val usuario = Usuario()
     val scope = rememberCoroutineScope()
 
@@ -259,7 +261,7 @@ fun PantallaRegistro(navController: NavHostController) {
                                             val emailTrimmed = emailInterno.trim()
 
                                             if (!esEmailValido(emailTrimmed)) {
-                                                errorMessage = "Formato de correo inválido"
+                                                errorMessage = formatoCorreoInvalido
                                                 return@launch
                                             }
 
@@ -271,7 +273,7 @@ fun PantallaRegistro(navController: NavHostController) {
                                             navController.navigate("registroVerificaCorreo/${emailTrimmed}/${nombre}/${password}")
 
                                         } catch (e: Exception) {
-                                            errorMessage = "❌ Error al registrar: ${e.message}"
+                                            errorMessage = errorRegistrar
                                         }
                                     }
                                 }
@@ -344,6 +346,10 @@ fun PantallaVerificaCorreo(
     val scope = rememberCoroutineScope()
     val repo = remember { SupabaseUsuariosRepositorio() }
     var mensaje by remember { mutableStateOf("") }
+    val correoAunNoVerificado = traducir("correo_aun_no_verificado")
+    val correoReenviado = traducir("correo_reenviado")
+    val faltaInfoCorreoReenviado = traducir("falta_info_correo_reenviado")
+    val errorReenviar = traducir("error_reenviar")
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -458,7 +464,7 @@ fun PantallaVerificaCorreo(
                                             popUpTo("registroVerificaCorreo") { inclusive = true }
                                         }
                                     } else {
-                                        mensaje = "❗ Tu correo aún no está verificado."
+                                        mensaje = correoAunNoVerificado
                                     }
                                 } catch (e: Exception) {
                                     navController.navigate("login")
@@ -494,12 +500,12 @@ fun PantallaVerificaCorreo(
                                             this.email = email
                                             this.password = password
                                         }
-                                        mensaje = "📧 Correo reenviado correctamente."
+                                        mensaje = correoReenviado
                                     } else {
-                                        mensaje = "⚠️ Falta información para reenviar el correo."
+                                        mensaje = faltaInfoCorreoReenviado
                                     }
                                 } catch (e: Exception) {
-                                    mensaje = "❌ Error al reenviar: ${e.message}"
+                                    mensaje = errorReenviar
                                 }
                             }
                         },

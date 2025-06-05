@@ -520,6 +520,7 @@ fun mostrarPerfilUsuario(
     val currentUserId = UsuarioPrincipal?.getIdUnicoMio() ?: return
     val repo = remember { SupabaseRepositorioGenerico() }
     var usuario by remember { mutableStateOf<Usuario?>(null) }
+    val usuarioNoEncontrado = traducir("usuario_no_encontrado")
 
     LaunchedEffect(userId) {
         if (userId == null) return@LaunchedEffect
@@ -562,7 +563,7 @@ fun mostrarPerfilUsuario(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "Usuario no encontrado",
+                    text = usuarioNoEncontrado,
                     style = MaterialTheme.typography.titleLarge
                 )
             }
@@ -615,7 +616,7 @@ fun mostrarPerfilUsuario(
                             value = aliasPrivado,
                             onValueChange = {},
                             readOnly = true,
-                            label = { Text("Alias Privado") },
+                            label = { Text(traducir("alias_privado")) },
                             modifier = Modifier.fillMaxWidth(),
                             colors = OutlinedTextFieldDefaults.colors(
                                 unfocusedBorderColor = MaterialTheme.colorScheme.outline,
@@ -627,7 +628,7 @@ fun mostrarPerfilUsuario(
                             value = aliasPublico,
                             onValueChange = {},
                             readOnly = true,
-                            label = { Text("Alias Público") },
+                            label = { Text(traducir("alias_publico")) },
                             modifier = Modifier.fillMaxWidth(),
                             colors = OutlinedTextFieldDefaults.colors(
                                 unfocusedBorderColor = MaterialTheme.colorScheme.outline,
@@ -639,7 +640,7 @@ fun mostrarPerfilUsuario(
                             value = descripcion,
                             onValueChange = {},
                             readOnly = true,
-                            label = { Text("Descripción") },
+                            label = { Text(traducir("descripcion")) },
                             modifier = Modifier.fillMaxWidth(),
                             maxLines = 3,
                             colors = OutlinedTextFieldDefaults.colors(
@@ -725,7 +726,7 @@ fun mostrarPerfilUsuario(
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(Modifier.width(8.dp))
-                        Text("Eliminar Contacto")
+                        Text(traducir("eliminar_contacto"))
                     }
 
                     FilledTonalButton(
@@ -758,7 +759,7 @@ fun mostrarPerfilUsuario(
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(Modifier.width(8.dp))
-                        Text("Bloquear Usuario")
+                        Text(traducir("bloquear_usuario"))
                     }
                 }
             }

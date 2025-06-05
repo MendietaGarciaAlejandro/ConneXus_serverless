@@ -19,6 +19,7 @@ import org.connexuss.project.comunicacion.Hilo
 import org.connexuss.project.comunicacion.Post
 import org.connexuss.project.comunicacion.Tema
 import org.connexuss.project.encriptacion.EncriptacionSimetricaForo
+import org.connexuss.project.interfaces.comun.traducir
 import org.connexuss.project.supabase.ISecretosRepositorio
 import org.connexuss.project.supabase.SupabaseSecretosRepo
 import kotlin.io.encoding.ExperimentalEncodingApi
@@ -58,7 +59,8 @@ fun TemaCard(
     onTemaClick: () -> Unit,
     secretsRepo: ISecretosRepositorio = remember { SupabaseSecretosRepo() }
 ) {
-    var nombrePlano by remember { mutableStateOf("(cargando…)") }
+    val cargando = traducir("cargando")
+    var nombrePlano by remember { mutableStateOf(cargando) }
 
     val encHelper = remember { EncriptacionSimetricaForo() }
 
@@ -103,8 +105,8 @@ fun HiloCard(
     postCount: Int = 0,
     onClick: () -> Unit
 ) {
-
-    var nombrePlano by remember { mutableStateOf("(cargando…)") }
+    val cargando = traducir("cargando")
+    var nombrePlano by remember { mutableStateOf(cargando) }
 
     val encHelper = remember { EncriptacionSimetricaForo() }
 
@@ -157,7 +159,8 @@ fun LocalDateTime.toFormattedStringSmall(): String {
 @Composable
 fun PostItem(post: Post) {
 
-    var nombrePlano by remember { mutableStateOf("(cargando...)") }
+    val cargando = traducir("cargando")
+    var nombrePlano by remember { mutableStateOf(cargando) }
 
     val encHelper = remember { EncriptacionSimetricaForo() }
 
@@ -194,8 +197,9 @@ fun PostItem(post: Post) {
 
 @Composable
 fun BackButton(navController: NavHostController) {
+    val atras = traducir("atras")
     IconButton(onClick = { navController.navigateUp() }) {
-        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Atrás")
+        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = atras)
     }
 }
 
