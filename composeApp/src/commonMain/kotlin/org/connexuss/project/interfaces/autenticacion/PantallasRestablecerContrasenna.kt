@@ -69,6 +69,9 @@ fun PantallaRestablecer(navController: NavHostController) {
 
     // Realiza la traducción fuera del bloque onClick
     val errorCorreoVacio = traducir("error_correo_vacio")
+    val correoRestableceContrasennia = traducir("correo_restablece_contrasennia")
+    val errorEnviandoCorreo = traducir("error_enviando_correo")
+    val infoRestableceContrasennia = traducir("info_restablecer_contrasennia")
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -147,10 +150,10 @@ fun PantallaRestablecer(navController: NavHostController) {
 
                                     try {
                                         Supabase.client.auth.resetPasswordForEmail(email = email)
-                                        mensaje = "📧 Se ha enviado un correo para restablecer tu contraseña. Revisa tu bandeja de entrada."
+                                        mensaje = correoRestableceContrasennia
                                         errorMessage = ""
                                     } catch (e: Exception) {
-                                        errorMessage = "❌ Error al enviar el correo: ${e.message}"
+                                        errorMessage = errorEnviandoCorreo
                                         mensaje = ""
                                     }
                                 }
@@ -201,7 +204,7 @@ fun PantallaRestablecer(navController: NavHostController) {
                         modifier = Modifier.padding(vertical = 8.dp)
                     ) {
                         Text(
-                            "Una vez restablezcas tu contraseña desde el navegador, vuelve a esta app y entra con tu nueva clave.",
+                            infoRestableceContrasennia,
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center,

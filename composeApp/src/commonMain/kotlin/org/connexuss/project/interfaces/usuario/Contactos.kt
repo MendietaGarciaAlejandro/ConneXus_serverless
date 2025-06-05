@@ -162,7 +162,7 @@ fun muestraContactos(navController: NavHostController) {
                                     )
                                     if (estaBloqueado) {
                                         Text(
-                                            text = "Bloqueado",
+                                            text = traducir("bloqueado"),
                                             style = MaterialTheme.typography.labelMedium,
                                             color = MaterialTheme.colorScheme.error
                                         )
@@ -188,7 +188,7 @@ fun muestraContactos(navController: NavHostController) {
                             onClick = { showNuevoChatDialog = true },
                             modifier = Modifier.weight(1f)
                         ) {
-                            Text(text = "Nuevo chat")
+                            Text(text = traducir("nuevo_chat"))
                         }
                     }
                 }
@@ -200,13 +200,13 @@ fun muestraContactos(navController: NavHostController) {
                         text = {
                             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Text(
-                                    text = "Introduce el alias privado del usuario:",
+                                    text = traducir("introduce_alias_privado_usuario"),
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                                 OutlinedTextField(
                                     value = nuevoContactoId,
                                     onValueChange = { nuevoContactoId = it },
-                                    label = { Text("Alias Privado") },
+                                    label = { Text(traducir("alias_privado")) },
                                     modifier = Modifier.fillMaxWidth()
                                 )
                             }
@@ -283,14 +283,14 @@ fun muestraContactos(navController: NavHostController) {
                             contactosSeleccionados = emptySet()
                             nombreGrupo = ""
                         },
-                        title = { Text(text = "Crear nuevo chat") },
+                        title = { Text(text = traducir("crear_nuevo_chat")) },
                         text = {
                             Column(
                                 modifier = Modifier.verticalScroll(rememberScrollState()),
                                 verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 Text(
-                                    "Selecciona participantes:",
+                                    traducir("selecciona_participantes"),
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                                 contactos.forEach { usuario ->
@@ -317,7 +317,7 @@ fun muestraContactos(navController: NavHostController) {
                                     OutlinedTextField(
                                         value = nombreGrupo,
                                         onValueChange = { nombreGrupo = it },
-                                        label = { Text("Nombre del grupo") },
+                                        label = { Text(traducir("nombre_del_grupo")) },
                                         modifier = Modifier.fillMaxWidth()
                                     )
                                 }
@@ -350,7 +350,7 @@ fun muestraContactos(navController: NavHostController) {
                                     }
                                 }
                             }) {
-                                Text("Crear")
+                                Text(traducir("crear"))
                             }
                         },
                         dismissButton = {
@@ -359,7 +359,7 @@ fun muestraContactos(navController: NavHostController) {
                                 contactosSeleccionados = emptySet()
                                 nombreGrupo = ""
                             }) {
-                                Text("Cancelar")
+                                Text(traducir("cancelar"))
                             }
                         }
                     )

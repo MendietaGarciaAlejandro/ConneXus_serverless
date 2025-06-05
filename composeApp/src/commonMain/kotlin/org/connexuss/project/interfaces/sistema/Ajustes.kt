@@ -56,7 +56,7 @@ fun muestraAjustes(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             DefaultTopBar(
-                title = "ajustes",
+                title = traducir("ajustes"),
                 navController = navController,
                 showBackButton = true,
                 irParaAtras = true,

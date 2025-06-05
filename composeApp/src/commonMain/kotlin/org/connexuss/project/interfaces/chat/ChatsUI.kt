@@ -71,7 +71,8 @@ fun ChatCard(
     val currentUserId = UsuarioPrincipal?.getIdUnicoMio()
     val esGrupo = !conversacion.nombre.isNullOrBlank()
 
-    var nombrePlano by remember { mutableStateOf("(cargando…)") }
+    val cargado = traducir("cargando")
+    var nombrePlano by remember { mutableStateOf(cargado) }
 
     var claveChat: AES.GCM.Key?
 
