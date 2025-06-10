@@ -46,7 +46,8 @@ actual fun ChatEnviarImagen(
                         content = "",
                         idusuario = currentUserId,
                         idconversacion = chatId,
-                        imageUrl = publicUrl
+                        imageUrl = publicUrl,
+                        fechaMensaje = null
                     )
                     Supabase.client.from("mensaje").insert(mensaje)
 

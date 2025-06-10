@@ -262,7 +262,7 @@ fun muestraChats(navController: NavHostController) {
 
         val ultimoMensaje = mensajes
             .filter { it.idconversacion == conversacion.id }
-            .maxByOrNull { it.fechaMensaje }
+            .maxByOrNull { it.fechaMensaje!! }
 
         Triple(conversacion, participantes, ultimoMensaje)
     }

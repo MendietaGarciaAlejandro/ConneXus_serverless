@@ -138,12 +138,14 @@ fun MensajeCard(
             }
 
             // Abajo a la derecha en muy pequeñito se mostrará la fecha del mensaje
-            Text(
-                text = mensaje.fechaMensaje.toFormattedStringSmall(),
-                style = MaterialTheme.typography.bodySmall,
-                color = Color.DarkGray,
-                modifier = Modifier.padding(top = 4.dp)
-            )
+            mensaje.fechaMensaje?.let {
+                Text(
+                    text = it.toFormattedStringSmall(),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.DarkGray,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+            }
         }
     }
 }

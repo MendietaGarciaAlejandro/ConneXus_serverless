@@ -23,8 +23,7 @@ data class Mensaje(
     val id: String = generateId(),
 
     @SerialName("fechamensaje")
-    val fechaMensaje: LocalDateTime = Clock.System.now()
-        .toLocalDateTime(TimeZone.currentSystemDefault()),
+    val fechaMensaje: LocalDateTime? = null,
 
     @SerialName("content")
     val content: String,
