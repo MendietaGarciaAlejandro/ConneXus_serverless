@@ -1169,6 +1169,7 @@ class EncriptacionSimetricaChats {
             content = contenidoB64,
             idconversacion = idConversacion,
             idusuario = idUsuario,
+            fechaMensaje = null,
         )
 
         try {
