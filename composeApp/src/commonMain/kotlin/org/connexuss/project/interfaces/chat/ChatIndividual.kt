@@ -262,33 +262,33 @@ fun mostrarChat(navController: NavHostController, chatId: String?) {
                             )
                         }
 
-//                        if (mensaje.imageUrl != null) {
-//                            when {
-//                                esAndroid() || esDesktop() -> {
-//                                    val painter = rememberImagePainter(mensaje.imageUrl)
-//                                    if (painter != null) {
-//                                        Image(
-//                                            painter = painter,
-//                                            contentDescription = "Imagen enviada",
-//                                            modifier = Modifier
-//                                                .size(200.dp)
-//                                                .clip(RoundedCornerShape(8.dp))
-//                                        )
-//                                    }
-//                                }
-//                                esWeb() -> {
-//                                    Box(
-//                                        modifier = Modifier
-//                                            .size(200.dp, 120.dp)
-//                                            .clip(RoundedCornerShape(8.dp))
-//                                            .background(Color.LightGray),
-//                                        contentAlignment = Alignment.Center
-//                                    ) {
-//                                        Text("IMAGEN", color = Color.Black)
-//                                    }
-//                                }
-//                            }
-//                        }
+                        if (mensaje.imageUrl != null) {
+                            when {
+                                esAndroid() || esDesktop() -> {
+                                    val painter = rememberImagePainter(mensaje.imageUrl)
+                                    if (painter != null) {
+                                        Image(
+                                            painter = painter,
+                                            contentDescription = "Imagen enviada",
+                                            modifier = Modifier
+                                                .size(200.dp)
+                                                .clip(RoundedCornerShape(8.dp))
+                                        )
+                                    }
+                                }
+                                esWeb() -> {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(200.dp, 120.dp)
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .background(Color.LightGray),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text("IMAGEN", color = Color.Black)
+                                    }
+                                }
+                            }
+                        }
 
                         if (esMio) {
                             DropdownMenu(

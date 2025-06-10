@@ -117,6 +117,7 @@ fun mostrarChatGrupo(
 
     val mensajes = todosLosMensajes.filter { it.idconversacion == chatId }
     var mensajesDesencriptados by remember { mutableStateOf<List<Mensaje>>(emptyList()) }
+    val grupoString = traducir("grupo")
 
     LaunchedEffect(mensajes, claveLista) {
         if (!claveLista) return@LaunchedEffect
@@ -193,7 +194,7 @@ fun mostrarChatGrupo(
             plainBytes.decodeToString()
         } catch (e: Exception) {
             println("Error al desencriptar el nombre del grupo: ${e.message}")
-            "Error"
+            grupoString
         }
     }
 
