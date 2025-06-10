@@ -71,7 +71,7 @@ fun MensajeCard(
 ) {
     val cargando = traducir("cargando")
 
-    var nombrePlano by remember { mutableStateOf(cargando) }
+    var nombrePlano by remember { mutableStateOf("") }
 
     val scope = rememberCoroutineScope()
 
