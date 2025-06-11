@@ -139,4 +139,4 @@ Este proyecto está bajo la **MIT License**. Consulta [LICENSE](LICENSE) para m�
 
 **Alejandro Mendieta García**  
 ✉️ alexmengar@outlook.es  
-GitHub: [MendietaGarciaAlejandro/ConneXus_serverless](https://github.com/MendietaGarciaAlejandro/ConneXus_serverless)
+GitHub: [MendietaGarciaAlejandro]([https://github.com/MendietaGarciaAlejandro/ConneXus_serverless](https://github.com/MendietaGarciaAlejandro))
