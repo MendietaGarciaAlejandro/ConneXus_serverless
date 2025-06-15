@@ -140,3 +140,11 @@ Este proyecto está bajo la **MIT License**. Consulta [LICENSE](LICENSE) para m�
 **Alejandro Mendieta García**  
 ✉️ alexmengar@outlook.es  
 GitHub: [MendietaGarciaAlejandro](https://github.com/MendietaGarciaAlejandro)
+
+**Anthony Castillo **  
+✉️   
+GitHub: [ajcastillo1](https://github.com/ajcastillo1)
+
+**David García Ramírez**  
+✉️   
+GitHub: [davidgarcia2304](https://github.com/davidgarcia2304)
