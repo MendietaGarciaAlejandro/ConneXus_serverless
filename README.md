@@ -141,7 +141,7 @@ Este proyecto está bajo la **MIT License**. Consulta [LICENSE](LICENSE) para m�
 ✉️ alexmengar@outlook.es  
 GitHub: [MendietaGarciaAlejandro](https://github.com/MendietaGarciaAlejandro)
 
-**Anthony Castillo **  
+**Anthony Castillo Intriago**  
 ✉️   
 GitHub: [ajcastillo1](https://github.com/ajcastillo1)
 
